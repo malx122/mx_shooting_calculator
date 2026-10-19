@@ -13,6 +13,7 @@ use crate::calculator::{CalculatorPage, Inputs};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
 use crate::rifles::RiflesPage;
+use crate::sync::{self, Sync};
 use crate::targets::TargetsPage;
 use crate::theme;
 use crate::units::{self, UnitPrefs};
@@ -90,6 +91,7 @@ impl Data {
 enum MenuSheet {
     Main,
     Units,
+    Sync,
     /// How to put the app on the home screen by hand.
     Install,
 }
@@ -97,6 +99,7 @@ enum MenuSheet {
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
 enum MenuChoice {
     Units,
+    Sync,
     Import,
     Export,
     Demo,
@@ -124,6 +127,9 @@ pub struct App {
     import: Option<ImportPreview>,
     /// The phone menu, when open.
     menu: Option<MenuSheet>,
+    sync: Sync,
+    /// The hunter's data changed this frame: sync it.
+    data_changed: bool,
     /// A backup picked in the browser, waiting to be previewed.
     #[cfg(target_arch = "wasm32")]
     picked: crate::web::PickedSlot,
@@ -141,7 +147,15 @@ impl App {
             .ok()
             .flatten()
             .unwrap_or_default();
+        #[allow(unused_mut)]
+        let mut sync = Sync::new(&store);
+        #[cfg(target_arch = "wasm32")]
+        {
+            sync.offered = crate::web::take_sync_link();
+        }
         let mut app = Self {
+            sync,
+            data_changed: false,
             store,
             data: Data::default(),
             page: Page::Calculate,
@@ -253,6 +267,7 @@ impl App {
                 "Using the bullet's own data again".to_owned()
             }),
         };
+        self.data_changed |= result.is_ok();
         self.report(result);
         self.reload();
     }
@@ -337,6 +352,7 @@ impl App {
             Ok(Decision::Imported(report, selected)) => {
                 self.import = None;
                 self.reload();
+                self.data_changed = true;
                 if let Some((rifle_id, bullet_id)) = selected {
                     self.calculator.inputs.rifle_id = Some(rifle_id);
                     self.calculator.inputs.bullet_id = bullet_id;
@@ -410,10 +426,42 @@ impl eframe::App for App {
         self.collect_picked_file();
         self.import_window(context);
         self.persist_inputs(context);
+        self.run_sync(context);
     }
 }
 
 impl App {
+    /// Syncs with the hunter's other devices, and shows the sync window
+    /// and any pairing offer.
+    fn run_sync(&mut self, context: &egui::Context) {
+        if std::mem::take(&mut self.data_changed) {
+            self.sync.changed(context.input(|input| input.time));
+        }
+        match self.sync.poll(&mut self.store, context) {
+            Some(sync::Event::Merged(report)) => {
+                self.reload();
+                let changes = report.added + report.updated + report.deleted;
+                self.report(Ok(format!(
+                    "Synced: {changes} change{} from your other devices",
+                    if changes == 1 { "" } else { "s" }
+                )));
+            }
+            Some(sync::Event::Stopped(message)) => self.report(Ok(message)),
+            None => {}
+        }
+        let mut open = self.sync.window_open;
+        egui::Window::new("Sync")
+            .open(&mut open)
+            .collapsible(false)
+            .resizable(false)
+            .default_width(420.0)
+            // Under the Sync button, where it stays when its content changes.
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-12.0, 60.0))
+            .show(context, |ui| self.sync.panel(ui, &self.store));
+        self.sync.window_open = open;
+        self.sync.offer_window(context, &self.store);
+    }
+
     fn desktop_header(&mut self, context: &egui::Context) {
         let header = egui::Frame::new()
             .fill(theme::FOREST_900)
@@ -438,6 +486,17 @@ impl App {
                         ui.menu_button("Units", |ui| changed = units::menu(ui, &mut self.units));
                         if changed {
                             self.units_changed(context);
+                        }
+                        let now = context.input(|input| input.time);
+                        let sync = ui.button("     Sync").on_hover_text(self.sync.status(now));
+                        // The font has no dot, so paint one.
+                        ui.painter().circle_filled(
+                            sync.rect.left_center() + egui::vec2(13.0, 0.0),
+                            4.0,
+                            self.sync.colour(),
+                        );
+                        if sync.clicked() {
+                            self.sync.window_open = !self.sync.window_open;
                         }
                         if ui
                             .button("Import…")
@@ -566,6 +625,10 @@ impl App {
                     {
                         choice = Some(MenuChoice::Units);
                     }
+                    let status = self.sync.status(ui.ctx().input(|input| input.time));
+                    if mobile::list_row(ui, "Sync", &status, false).clicked() {
+                        choice = Some(MenuChoice::Sync);
+                    }
                     if mobile::list_row(ui, "Import backup…", "From this app or Strelok Pro", false)
                         .clicked()
                     {
@@ -618,6 +681,7 @@ impl App {
                 }
                 match shown.inner {
                     Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
+                    Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
                     Some(MenuChoice::Import) => {
                         self.menu = None;
                         self.import(context);
@@ -655,6 +719,14 @@ impl App {
                          connection and keeps your data on this device. Export a backup now \
                          and then.",
                     );
+                });
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+            MenuSheet::Sync => {
+                let shown = mobile::sheet(context, "sync", "Sync", |ui| {
+                    self.sync.panel(ui, &self.store)
                 });
                 if shown.closed {
                     self.menu = None;

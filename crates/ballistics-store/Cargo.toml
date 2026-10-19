@@ -14,6 +14,8 @@ uuid = { version = "1", features = ["v4", "v5"] }
 roxmltree = "0.21"
 # The clock (std's panics in the browser; this is std's on desktop).
 web-time = "1"
+sha2 = "0.10"
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
 
 # In the browser: ids take their randomness from the browser.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]

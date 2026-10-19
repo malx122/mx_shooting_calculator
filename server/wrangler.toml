@@ -1,0 +1,21 @@
+# Cloudflare Worker for MX Shooting Calculator sync. See README.md here.
+name = "mxsc-sync"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mxsc-sync"
+# From `npx wrangler d1 create mxsc-sync` (see README.md).
+database_id = "71301240-75cf-453c-9b36-a89a5345c95b"
+migrations_dir = "migrations"
+
+[vars]
+# The app's Google OAuth client (a web client). Its secret is a Worker
+# secret: `npx wrangler secret put GOOGLE_CLIENT_SECRET`.
+GOOGLE_CLIENT_ID = "223667274903-qu244apl6nvu5423gfifmma588fnrqk7.apps.googleusercontent.com"
+
+# Weekly clean-up of copies unused for two years.
+[triggers]
+crons = ["17 3 * * SUN"]

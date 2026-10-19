@@ -6,6 +6,24 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Sync between devices:** keep rifles, bullets, loads, scopes and targets
+  the same on your phone and computer, either through your own Google Drive
+  (sign in with Google on each device) or with a sync key and no account
+  (scan the first device's QR code on the next). With a key the data is
+  encrypted on the device; the sync server (a small Cloudflare Worker, in
+  `server/`) can't read it. Changes sync on start, after each change and
+  every few minutes, and catch up after being offline.
+- **Deletions are remembered**, so they reach other devices and backups
+  (export format 5).
+
+### Changed
+
+- When the same record was saved at the same moment on two devices, every
+  device now keeps the same copy.
+- Restoring a backup brings back records deleted since.
+
 ## [0.3.0] - 2026-10-19
 
 ### Added

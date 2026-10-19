@@ -8,6 +8,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::StoreError;
+use crate::deletions::{Deletion, RecordKind};
 use crate::model::{
     BcModel, Bullet, BulletKind, ClickUnit, Construction, Rifle, RifleLoad, TableSettings, now_ms,
 };
@@ -105,7 +106,19 @@ pub(crate) const MIGRATIONS: &[&str] = &[
         updated_at INTEGER NOT NULL
     );
 "#,
+    r#"
+    CREATE TABLE deleted (
+        kind TEXT NOT NULL,
+        id TEXT NOT NULL,
+        deleted_at INTEGER NOT NULL,
+        PRIMARY KEY (kind, id)
+    );
+"#,
 ];
+
+/// The setting holding the store's clock: the latest time it has stamped
+/// or seen, so new stamps never go backwards (see `Store::stamp`).
+const CLOCK: &str = "clock";
 
 pub struct Store {
     connection: Connection,
@@ -171,14 +184,26 @@ impl Store {
     /// Validates, stamps `updated_at` and inserts or updates the rifle.
     pub fn save_rifle(&self, rifle: &mut Rifle) -> Result<(), StoreError> {
         rifle.validate().map_err(StoreError::Invalid)?;
-        rifle.updated_at = next_timestamp(rifle.updated_at);
+        rifle.updated_at = self.stamp(rifle.updated_at)?;
         put_rifle(&self.connection, rifle)
     }
 
-    /// Deletes the rifle and the loads measured in it.
+    /// Deletes the rifle and the loads measured in it, remembering the
+    /// deletions so a sync deletes them on other devices too.
     pub fn delete_rifle(&self, id: &str) -> Result<(), StoreError> {
-        self.connection
-            .execute("DELETE FROM rifles WHERE id = ?1", [id])?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let at = self.stamp(0)?;
+        let loads: Vec<String> = self.query_all(
+            "SELECT id FROM rifle_loads WHERE rifle_id = ?1",
+            [id],
+            |row| row.get(0),
+        )?;
+        for load in loads {
+            record_deletion(&transaction, RecordKind::RifleLoad, &load, at)?;
+        }
+        record_deletion(&transaction, RecordKind::Rifle, id, at)?;
+        transaction.execute("DELETE FROM rifles WHERE id = ?1", [id])?;
+        transaction.commit()?;
         Ok(())
     }
 
@@ -209,14 +234,25 @@ impl Store {
 
     pub fn save_bullet(&self, bullet: &mut Bullet) -> Result<(), StoreError> {
         bullet.validate().map_err(StoreError::Invalid)?;
-        bullet.updated_at = next_timestamp(bullet.updated_at);
+        bullet.updated_at = self.stamp(bullet.updated_at)?;
         put_bullet(&self.connection, bullet)
     }
 
     /// Deletes the bullet and any velocities measured with it.
     pub fn delete_bullet(&self, id: &str) -> Result<(), StoreError> {
-        self.connection
-            .execute("DELETE FROM bullets WHERE id = ?1", [id])?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let at = self.stamp(0)?;
+        let loads: Vec<String> = self.query_all(
+            "SELECT id FROM rifle_loads WHERE bullet_id = ?1",
+            [id],
+            |row| row.get(0),
+        )?;
+        for load in loads {
+            record_deletion(&transaction, RecordKind::RifleLoad, &load, at)?;
+        }
+        record_deletion(&transaction, RecordKind::Bullet, id, at)?;
+        transaction.execute("DELETE FROM bullets WHERE id = ?1", [id])?;
+        transaction.commit()?;
         Ok(())
     }
 
@@ -232,18 +268,20 @@ impl Store {
 
     pub fn save_scope(&self, scope: &mut UserScope) -> Result<(), StoreError> {
         scope.validate().map_err(StoreError::Invalid)?;
-        scope.updated_at = next_timestamp(scope.updated_at);
+        scope.updated_at = self.stamp(scope.updated_at)?;
         put_scope(&self.connection, scope)
     }
 
     /// Deletes a custom scope and takes it off the rifles that had it.
     pub fn delete_scope(&mut self, id: &str) -> Result<(), StoreError> {
+        let at = self.stamp(0)?;
         let transaction = self.connection.transaction()?;
         transaction.execute(
             "UPDATE rifles SET scope_id = NULL, reticle_id = NULL, updated_at = MAX(updated_at + 1, ?2)
              WHERE scope_id = ?1",
-            params![id, now_ms()],
+            params![id, at],
         )?;
+        record_deletion(&transaction, RecordKind::Scope, id, at)?;
         transaction.execute("DELETE FROM scopes WHERE id = ?1", [id])?;
         transaction.commit()?;
         Ok(())
@@ -261,13 +299,15 @@ impl Store {
 
     pub fn save_target(&self, target: &mut Target) -> Result<(), StoreError> {
         target.validate().map_err(StoreError::Invalid)?;
-        target.updated_at = next_timestamp(target.updated_at);
+        target.updated_at = self.stamp(target.updated_at)?;
         put_target(&self.connection, target)
     }
 
     pub fn delete_target(&self, id: &str) -> Result<(), StoreError> {
-        self.connection
-            .execute("DELETE FROM targets WHERE id = ?1", [id])?;
+        let transaction = self.connection.unchecked_transaction()?;
+        record_deletion(&transaction, RecordKind::Target, id, self.stamp(0)?)?;
+        transaction.execute("DELETE FROM targets WHERE id = ?1", [id])?;
+        transaction.commit()?;
         Ok(())
     }
 
@@ -296,14 +336,43 @@ impl Store {
         if let Some(existing) = self.rifle_load(&load.rifle_id, &load.bullet_id)? {
             load.id = existing.id;
         }
-        load.updated_at = next_timestamp(load.updated_at);
+        load.updated_at = self.stamp(load.updated_at)?;
         put_load(&self.connection, load)
     }
 
     pub fn delete_rifle_load(&self, id: &str) -> Result<(), StoreError> {
-        self.connection
-            .execute("DELETE FROM rifle_loads WHERE id = ?1", [id])?;
+        let transaction = self.connection.unchecked_transaction()?;
+        record_deletion(&transaction, RecordKind::RifleLoad, id, self.stamp(0)?)?;
+        transaction.execute("DELETE FROM rifle_loads WHERE id = ?1", [id])?;
+        transaction.commit()?;
         Ok(())
+    }
+
+    // Deletions and the clock ----------------------------------------------
+
+    /// The records deleted on this device (or learnt from others), so a
+    /// sync can pass the deletions on.
+    pub fn deletions(&self) -> Result<Vec<Deletion>, StoreError> {
+        self.query_all(
+            "SELECT kind, id, deleted_at FROM deleted ORDER BY kind, id",
+            [],
+            |row| {
+                let kind: String = row.get(0)?;
+                Ok(Deletion {
+                    kind: RecordKind::parse(&kind).unwrap_or(RecordKind::Rifle),
+                    id: row.get(1)?,
+                    deleted_at: row.get(2)?,
+                })
+            },
+        )
+    }
+
+    /// A time for a save or deletion: after now, after the record's previous
+    /// stamp and after every stamp this store has made or seen. A device
+    /// whose clock is behind still stamps its edits later than the copies
+    /// they were made from, so they win a merge.
+    pub(crate) fn stamp(&self, previous: i64) -> Result<i64, StoreError> {
+        stamp_on(&self.connection, previous)
     }
 
     // Settings -------------------------------------------------------------
@@ -350,10 +419,55 @@ impl Store {
     }
 }
 
-/// A timestamp later than both now and the record's previous one, so an
-/// edit always wins a later merge against the copy it was made from.
-fn next_timestamp(previous: i64) -> i64 {
-    now_ms().max(previous + 1)
+/// See `Store::stamp`; also works inside a transaction.
+pub(crate) fn stamp_on(connection: &Connection, previous: i64) -> Result<i64, StoreError> {
+    let at = now_ms().max(previous + 1).max(clock(connection)? + 1);
+    set_clock(connection, at)?;
+    Ok(at)
+}
+
+/// Moves the clock past a time seen in merged data.
+pub(crate) fn observe_on(connection: &Connection, seen: i64) -> Result<(), StoreError> {
+    if seen > clock(connection)? {
+        set_clock(connection, seen)?;
+    }
+    Ok(())
+}
+
+fn clock(connection: &Connection) -> Result<i64, StoreError> {
+    let text: Option<String> = connection
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            [CLOCK],
+            |row| row.get(0),
+        )
+        .optional()?;
+    Ok(text.and_then(|text| text.parse().ok()).unwrap_or(0))
+}
+
+fn set_clock(connection: &Connection, at: i64) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO settings (key, value) VALUES (?1, ?2) \
+         ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+        params![CLOCK, at.to_string()],
+    )?;
+    Ok(())
+}
+
+/// Remembers that a record was deleted; a later deletion of the same id
+/// keeps the later time.
+pub(crate) fn record_deletion(
+    connection: &Connection,
+    kind: RecordKind,
+    id: &str,
+    at: i64,
+) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO deleted (kind, id, deleted_at) VALUES (?1, ?2, ?3)
+         ON CONFLICT (kind, id) DO UPDATE SET deleted_at = MAX(deleted_at, excluded.deleted_at)",
+        params![kind.as_str(), id, at],
+    )?;
+    Ok(())
 }
 
 pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), StoreError> {

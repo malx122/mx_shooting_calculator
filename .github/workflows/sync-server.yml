@@ -1,0 +1,59 @@
+# Deploys the sync server (server/) to Cloudflare Workers for each release
+# tag, or by hand from the Actions tab. Needs the repository secrets
+# CLOUDFLARE_API_TOKEN (Workers Scripts: Edit and D1: Edit) and
+# CLOUDFLARE_ACCOUNT_ID; without them the job says so and does nothing.
+# GOOGLE_WEB_CLIENT_SECRET, when set, becomes the worker's
+# GOOGLE_CLIENT_SECRET for Google sign-in.
+name: Sync server
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GOOGLE_WEB_CLIENT_SECRET: ${{ secrets.GOOGLE_WEB_CLIENT_SECRET }}
+    steps:
+      - name: Skip without Cloudflare secrets
+        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
+        working-directory: .
+        run: echo "::notice::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not set; the sync server was not deployed."
+
+      - uses: actions/checkout@v7
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+
+      - uses: actions/setup-node@v6
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        with:
+          node-version: 22
+
+      - name: Install
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npm ci --no-audit --no-fund
+
+      - name: Test locally
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npm test
+
+      - name: Migrate the database and deploy
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npm run deploy
+
+      - name: Google client secret
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.GOOGLE_WEB_CLIENT_SECRET != ''
+        run: printf '%s' "$GOOGLE_WEB_CLIENT_SECRET" | npx wrangler secret put GOOGLE_CLIENT_SECRET

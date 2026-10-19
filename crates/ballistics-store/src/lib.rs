@@ -6,10 +6,12 @@
 
 pub mod catalog;
 pub mod db;
+pub mod deletions;
 pub mod drawings;
 pub mod model;
 pub mod optics;
 pub mod strelok;
+pub mod sync;
 pub mod targets;
 pub mod transfer;
 
@@ -20,6 +22,7 @@ use std::fmt;
 
 pub use catalog::{Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
+pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
@@ -28,6 +31,7 @@ pub use model::{
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
+pub use sync::{SyncKey, SyncRound};
 pub use targets::{Target, TargetGroup, TargetKind, TargetShape, swedish_class};
 pub use transfer::ImportReport;
 

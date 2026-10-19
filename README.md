@@ -269,15 +269,39 @@ custom scopes and custom targets as JSON. **Import…** also reads **Strelok Pro
 check, before writing anything, and importing the same backup again adds
 nothing. See [docs/strelok-import.md](docs/strelok-import.md). Import merges record by record and keeps whichever copy was edited
 last, so the same file can move data between devices. Backups from earlier
-versions (formats 1 to 3) still import.
+versions (formats 1 to 4) still import. Restoring a backup brings back
+records deleted since.
+
+**Sync** (in the header; in the phone's menu) keeps your rifles, bullets,
+loads, scopes and targets the same on all your devices, in one of two ways:
+
+- **With Google Drive:** **Sign in with Google** on each device, with the
+  same account. The data is kept in a hidden folder in your own Drive that
+  only this app can reach.
+- **With a sync key, no account:** **Start syncing with a key** on the first
+  device. It shows the key with a QR code; scan it on the next device (it
+  opens the app with the key) or type the key under **Join**. The data is
+  encrypted on the device before it is sent, so the sync server
+  ([server/](server/README.md), a small Cloudflare Worker) can't read it.
+  Keep the key to yourself: anyone with it can read and change the synced
+  data.
+
+A device that joins has its own data merged in. From then on the app syncs
+when it starts, a moment after each change, when it comes back to the front,
+and every few minutes; changes made offline go up later. When the same
+record is changed on two devices, the later change wins; a deletion and a
+later edit work the same way. **Stop syncing here** leaves the device's data
+as it is; **Delete the synced copy** turns sync off on every device. Units
+and calculator inputs stay per device.
 
 ## Code layout
 
 | Crate | What it does |
 |---|---|
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, spin drift, Coriolis and the hunting analyses. No dependencies, no I/O. |
-| `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), and JSON export/import. No UI. |
-| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. |
+| `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
+| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. |
+| `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |
 
 `ballistics-core` and `ballistics-store` build on desktop and mobile targets
 (SQLite is compiled in), and in the browser, where SQLite is compiled to
@@ -285,12 +309,19 @@ WebAssembly. The app crate builds for desktop and the web. Its few
 platform-specific parts (data folder, file dialogs, start-up) are behind
 `cfg(target_arch = "wasm32")`.
 
-### Preparing for sync
+### How sync merges
 
-Every record has a UUID and an `updated_at` timestamp, and import already
-merges by "newest wins". A sync service can reuse that rule. Deletions are not
-recorded yet; sync will need deletion markers ("tombstones"), added with a
-schema migration.
+Every record has a UUID and an `updated_at` time; deletions are kept too
+(the `deleted` table), so they reach the other devices instead of the record
+coming back. A merge keeps the later of two copies, and on equal times
+compares them, so every device settles on the same one. Times come from a
+clock that never runs behind anything the store has seen, so a device whose
+clock is slow still stamps its edits after the copies they were made from.
+The shared copy is the usual export (format 5): encrypted on the sync
+server, which checks versions so two devices writing at once can't overwrite
+each other; plain in Google Drive, which can't check versions, but a device
+whose write is overwritten still has its records and puts them back on its
+next round.
 
 ## Scopes and reticles
 
@@ -472,8 +503,11 @@ at your option. This is the usual dual licence for Rust projects.
   [THIRD-PARTY-LICENSES.txt](THIRD-PARTY-LICENSES.txt). Ship that file with
   any binary. All of them are permissive except `resvg`/`usvg` and
   `option-ext` (MPL-2.0: changes to those files must be shared) and the
-  fonts egui bundles (SIL Open Font License and Ubuntu Font Licence).
-  Regenerate the file after changing dependencies:
+  fonts egui bundles (SIL Open Font License and Ubuntu Font Licence). The
+  desktop app's list of trusted certificate authorities (`webpki-roots`) is
+  under CDLA-Permissive-2.0, which only asks that its licence text comes
+  along. The sync server's tooling (`wrangler`) is only used to build and
+  deploy it and doesn't ship. Regenerate the file after changing dependencies:
   `cargo about generate about.hbs -o THIRD-PARTY-LICENSES.txt` (install
   with `cargo install cargo-about --locked --features cli`).
 - **The built-in catalog** (see [NOTICE](NOTICE)): bullet and scope figures

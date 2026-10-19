@@ -165,7 +165,8 @@ fn export_then_import_recreates_the_data() {
             added: 3,
             updated: 0,
             unchanged: 0,
-            kept_local: 0
+            kept_local: 0,
+            deleted: 0
         }
     );
     assert_eq!(target.rifles().unwrap(), source.rifles().unwrap());
@@ -179,7 +180,8 @@ fn export_then_import_recreates_the_data() {
             added: 0,
             updated: 0,
             unchanged: 3,
-            kept_local: 0
+            kept_local: 0,
+            deleted: 0
         }
     );
 }
@@ -207,7 +209,8 @@ fn import_keeps_whichever_copy_was_edited_last() {
             added: 0,
             updated: 1,
             unchanged: 1,
-            kept_local: 1
+            kept_local: 1,
+            deleted: 0
         }
     );
     assert_eq!(
@@ -720,4 +723,223 @@ fn demo_data_loads_once() {
     let again = store.load_demo().unwrap();
     assert_eq!((again.added, again.updated), (0, 0));
     assert_eq!(store.rifles().unwrap().len(), 3);
+}
+
+// Sync ---------------------------------------------------------------------
+
+/// The shared copy a server or a cloud file would hold.
+#[derive(Default)]
+struct Shared {
+    data: Option<Vec<u8>>,
+    writes: usize,
+}
+
+/// One round of sync for a device; returns what merging changed there.
+fn sync(store: &mut Store, key: &SyncKey, shared: &mut Shared) -> ImportReport {
+    let round = store.sync_round(Some(key), shared.data.as_deref()).unwrap();
+    if let Some(upload) = round.upload {
+        shared.data = Some(upload);
+        shared.writes += 1;
+    }
+    round.report
+}
+
+/// The records two devices hold, without times or order.
+fn same_data(a: &Store, b: &Store) -> bool {
+    let records = |store: &Store| {
+        let data = store.export_data().unwrap();
+        let mut rifles: Vec<_> = data
+            .rifles
+            .iter()
+            .map(|r| (r.id.clone(), r.name.clone(), r.updated_at))
+            .collect();
+        let mut bullets: Vec<_> = data
+            .bullets
+            .iter()
+            .map(|b| (b.id.clone(), b.updated_at))
+            .collect();
+        let mut deleted: Vec<_> = data
+            .deleted
+            .iter()
+            .map(|d| (d.kind.as_str(), d.id.clone()))
+            .collect();
+        rifles.sort();
+        bullets.sort();
+        deleted.sort();
+        (rifles, bullets, deleted, data.rifle_loads.len())
+    };
+    records(a) == records(b)
+}
+
+#[test]
+fn sync_keys_read_back_in_any_spelling() {
+    let key = SyncKey::generate();
+    let shown = key.to_string();
+    assert_eq!(shown.len(), 26 + 6, "{shown}");
+    assert_eq!(SyncKey::parse(&shown), Some(key.clone()));
+    assert_eq!(
+        SyncKey::parse(&shown.to_lowercase().replace('-', " ")),
+        Some(key.clone())
+    );
+    let link = format!("https://example.com/app/#sync={}", key.compact());
+    assert_eq!(SyncKey::parse(&link), Some(key.clone()));
+    assert_ne!(SyncKey::generate(), key);
+    assert_eq!(SyncKey::parse("not a key"), None);
+    assert_eq!(SyncKey::parse(&shown[..20]), None);
+    // The place the copy is kept doesn't show the key.
+    assert_eq!(key.blob_id().len(), 64);
+    assert!(!key.blob_id().contains(&key.compact().to_lowercase()));
+}
+
+#[test]
+fn a_sealed_copy_opens_only_with_its_key() {
+    let key = SyncKey::generate();
+    let sealed = key.seal(b"rifles");
+    assert_eq!(key.open(&sealed).unwrap(), b"rifles");
+    assert_ne!(key.seal(b"rifles"), sealed, "a fresh nonce each time");
+    assert!(SyncKey::generate().open(&sealed).is_err());
+    let mut tampered = sealed.clone();
+    *tampered.last_mut().unwrap() ^= 1;
+    assert!(key.open(&tampered).is_err());
+    assert!(key.open(b"MXS1").is_err());
+}
+
+#[test]
+fn two_devices_converge_and_deletions_stay_deleted() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let (mut phone, tikka, oryx) = populated();
+    let mut desktop = Store::open_in_memory().unwrap();
+
+    // The phone has data; the desktop starts empty and gets it.
+    sync(&mut phone, &key, &mut shared);
+    assert_eq!(shared.writes, 1);
+    assert!(sync(&mut desktop, &key, &mut shared).changed());
+    assert!(same_data(&phone, &desktop));
+    assert_eq!(shared.writes, 1, "nothing new to write back");
+
+    // The desktop renames the rifle, the phone deletes the bullet.
+    let mut renamed = desktop.rifle(&tikka.id).unwrap().unwrap();
+    renamed.name = "Tikka T3x Hunter".into();
+    desktop.save_rifle(&mut renamed).unwrap();
+    phone.delete_bullet(&oryx.id).unwrap();
+    for _ in 0..2 {
+        sync(&mut desktop, &key, &mut shared);
+        sync(&mut phone, &key, &mut shared);
+    }
+    assert!(same_data(&phone, &desktop));
+    assert_eq!(
+        phone.rifle(&tikka.id).unwrap().unwrap().name,
+        "Tikka T3x Hunter"
+    );
+    assert!(
+        desktop.bullet(&oryx.id).unwrap().is_none(),
+        "deleted everywhere"
+    );
+    assert!(desktop.rifle_loads().unwrap().is_empty(), "with its loads");
+
+    // Rounds with nothing new write nothing.
+    let writes = shared.writes;
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    assert_eq!(shared.writes, writes);
+}
+
+#[test]
+fn plain_copies_sync_too() {
+    // As in Google Drive: no key, plain JSON.
+    let (mut phone, tikka, _) = populated();
+    let mut desktop = Store::open_in_memory().unwrap();
+    let round = phone.sync_round(None, None).unwrap();
+    let copy = round.upload.unwrap();
+    assert!(String::from_utf8(copy.clone()).unwrap().contains(&tikka.id));
+    let round = desktop.sync_round(None, Some(&copy)).unwrap();
+    assert!(round.report.changed());
+    assert!(round.upload.is_none());
+    assert!(same_data(&phone, &desktop));
+}
+
+#[test]
+fn an_edit_after_a_deletion_keeps_the_record() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let (mut phone, tikka, _) = populated();
+    sync(&mut phone, &key, &mut shared);
+    let mut desktop = Store::open_in_memory().unwrap();
+    sync(&mut desktop, &key, &mut shared);
+
+    phone.delete_rifle(&tikka.id).unwrap();
+    // The desktop hasn't heard, and edits the rifle afterwards (a deletion
+    // and an edit in the same millisecond would go to the deletion).
+    std::thread::sleep(std::time::Duration::from_millis(5));
+    let mut edited = desktop.rifle(&tikka.id).unwrap().unwrap();
+    edited.zero_range_m = 200.0;
+    desktop.save_rifle(&mut edited).unwrap();
+
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    assert_eq!(phone.rifle(&tikka.id).unwrap().unwrap().zero_range_m, 200.0);
+    assert!(same_data(&phone, &desktop));
+}
+
+#[test]
+fn restoring_a_backup_brings_deleted_records_back() {
+    let (mut store, tikka, _) = populated();
+    let backup = store.export_json().unwrap();
+    store.delete_rifle(&tikka.id).unwrap();
+    assert_eq!(
+        store.deletions().unwrap().len(),
+        2,
+        "the rifle and its load"
+    );
+    let report = store.import_json(&backup).unwrap();
+    assert!(report.added >= 1);
+    let restored = store.rifle(&tikka.id).unwrap().unwrap();
+    assert!(
+        restored.updated_at > tikka.updated_at,
+        "restored as a new edit"
+    );
+    assert!(store.deletions().unwrap().iter().all(|d| d.id != tikka.id));
+}
+
+#[test]
+fn the_clock_never_runs_behind_merged_data() {
+    let (mut store, tikka, _) = populated();
+    let mut future = tikka.clone();
+    future.name = "From a device a day ahead".into();
+    future.updated_at = model::now_ms() + 86_400_000;
+    let mut data = store.export_data().unwrap();
+    data.rifles = vec![future.clone()];
+    data.rifle_loads.clear();
+    store.merge_sync(&data).unwrap();
+    // An edit here, now, must still beat the copy it was made from.
+    let mut edited = store.rifle(&tikka.id).unwrap().unwrap();
+    edited.name = "Edited here".into();
+    store.save_rifle(&mut edited).unwrap();
+    assert!(edited.updated_at > future.updated_at);
+    let mut other = rifle("Sako", "308-win");
+    store.save_rifle(&mut other).unwrap();
+    assert!(other.updated_at > future.updated_at);
+}
+
+#[test]
+fn copies_saved_at_the_same_moment_settle_on_one() {
+    let mut a = Store::open_in_memory().unwrap();
+    let mut b = Store::open_in_memory().unwrap();
+    let mut first = rifle("Tikka", "308-win");
+    first.updated_at = 1_000;
+    let mut second = first.clone();
+    second.name = "Sako".into();
+    let data = |rifle: &Rifle| transfer::PersonalData {
+        format: transfer::FORMAT.into(),
+        version: transfer::VERSION,
+        rifles: vec![rifle.clone()],
+        ..Default::default()
+    };
+    a.merge_sync(&data(&first)).unwrap();
+    b.merge_sync(&data(&second)).unwrap();
+    a.merge_sync(&b.export_data().unwrap()).unwrap();
+    b.merge_sync(&a.export_data().unwrap()).unwrap();
+    assert_eq!(a.rifles().unwrap(), b.rifles().unwrap());
 }

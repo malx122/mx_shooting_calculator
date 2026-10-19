@@ -67,6 +67,26 @@ pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
     });
 }
 
+/// A sync key from a pairing link (`…#sync=KEY`), taken off the address so
+/// a reload or a bookmark doesn't offer it again.
+pub fn take_sync_link() -> Option<ballistics_store::SyncKey> {
+    let window = web_sys::window()?;
+    let location = window.location();
+    let hash = location.hash().ok()?;
+    if !hash.contains("sync=") {
+        return None;
+    }
+    let clean = format!(
+        "{}{}",
+        location.pathname().unwrap_or_default(),
+        location.search().unwrap_or_default()
+    );
+    if let Ok(history) = window.history() {
+        let _ = history.replace_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&clean));
+    }
+    ballistics_store::SyncKey::parse(&hash)
+}
+
 /// Opens the database kept in this browser's IndexedDB. SQLite works on
 /// a copy in memory that is written back to IndexedDB in the background
 /// after each change.
