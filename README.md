@@ -296,7 +296,7 @@ schema migration.
 
 `crates/ballistics-store/catalog/scopes/` (one file per maker) and
 `reticles.json` hold scope specifications and reticle geometry. Reticles
-stay in one file because makers' scopes can share a reticle. They cover two makers:
+stay in one file because makers' scopes can share a reticle. They cover three makers:
 
 - **Kahles:** 8 scopes with their 4-Dot, G4B, 4-DH and SKMR4 reticles drawn.
   Kahles publishes dimensioned drawings for every hunting reticle.
@@ -313,6 +313,21 @@ stay in one file because makers' scopes can share a reticle. They cover two make
     from 2× up are set to Vortex's standard ¼ MOA or 0.1 MRAD, which the
     notes say.
   - **Not cross-checked.** This data was collected in one quick pass.
+- **Delta Optical:** 42 scopes from Titanium HD, Titanium, Classic, Entry,
+  Javelin, Stryker HD and Hornet, with 17 of their reticles drawn (4A S,
+  4A SB, 2D, Mil-Dot, Multi-X, SMR-1/2, SDOG-1, DLR-1, LRD-1P, DLS-1/2/3,
+  DSMR, DGMR, D²BR, D²MR).
+  - **Sources.** Delta's own sites (deltaoptical.pl and the older
+    deltaoptical.eu with its dimensioned reticle sheets), Delta's user
+    manuals, and optics-trade.eu for a few gaps; each entry's notes say
+    which.
+  - **Estimates.** Several Delta pictures carry no dimensions (4A S, 2D,
+    Mil-Dot, Multi-X, SDOG-1): their angular size is estimated and the
+    notes say so. Where Delta doesn't say at which magnification a
+    second-focal-plane reticle is true, the top magnification is assumed.
+  - **Not drawn.** Delta publishes nothing to draw SKR-1/2, DLR-3, Di MD,
+    2D FFP or the Javelin's 4A SB from, so those scopes offer the plain
+    crosshair.
 
 **How reticles are drawn.** Every reticle is the project's own drawing:
 code builds it from the subtension figures the maker publishes (spacings,

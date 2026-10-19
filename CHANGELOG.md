@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-19
+
 ### Added
 
 - **All Swedish game species:** every species on Svenska Jägareförbundet's
@@ -20,9 +22,13 @@ any release may still change things noticeably.
 - **Swedish ammunition classes:** each Swedish species shows the class
   required with a rifle, and the results say whether your load meets it.
   Your own targets can have a group and a class too.
+- **Delta Optical scopes:** 42 scopes (Titanium HD, Titanium, Classic,
+  Entry, Javelin, Stryker HD, Hornet) with 17 of their reticles drawn.
+  Some reticle sizes are estimates, as each entry's notes say.
 
 ### Changed
 
+- **Catalog files per maker:** bullets and scopes have one file per maker.
 - **Reticles redrawn:** the 20 reticles that had been taken from the makers'
   vector drawings (Kahles SKMR4; Vortex EBR-2C, EBR-4, EBR-7C, EBR-7D,
   EBR-8, EBR-9, VMR-2, XLR-2, HSR-5i and G4i BDC) are now the project's own
@@ -80,6 +86,7 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/malx122/mx_shooting_calculator/releases/tag/v0.1.0
