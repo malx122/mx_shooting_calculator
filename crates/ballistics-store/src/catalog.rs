@@ -1,15 +1,31 @@
 //! The read-only base catalog of calibers and ready-made bullets. It is
 //! compiled into the program from the JSON files in `catalog/`, so an app
 //! update can replace it without touching the hunter's own database.
+//! Bullets and scopes have one file per maker (`catalog/bullets/*.json`,
+//! `catalog/scopes/*.json`); the build script lists them.
 
 use std::sync::OnceLock;
 
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 use crate::drawings::{Drawing, RENAMED};
 use crate::model::{BcModel, Bullet, BulletKind, Construction, new_id};
 use crate::optics::{Reticle, Scope};
 use crate::targets::Target;
+
+mod files {
+    include!(concat!(env!("OUT_DIR"), "/catalog_files.rs"));
+}
+
+/// One list from the files of a catalog folder, in file name order.
+fn from_files<T: DeserializeOwned>(files: &[(&str, &str)]) -> serde_json::Result<Vec<T>> {
+    let mut all = Vec::new();
+    for (_, json) in files {
+        all.extend(serde_json::from_str::<Vec<T>>(json)?);
+    }
+    Ok(all)
+}
 
 /// Bullets whose diameters differ by less than this fit the same bore.
 const DIAMETER_TOLERANCE_MM: f64 = 0.03;
@@ -146,24 +162,23 @@ impl Catalog {
     pub fn builtin() -> &'static Catalog {
         static CATALOG: OnceLock<Catalog> = OnceLock::new();
         CATALOG.get_or_init(|| {
-            Catalog::from_json(
-                include_str!("../catalog/calibers.json"),
-                include_str!("../catalog/bullets.json"),
-            )
-            .and_then(|catalog| {
-                catalog.with_optics(
-                    include_str!("../catalog/scopes.json"),
-                    include_str!("../catalog/reticles.json"),
-                )
-            })
-            .and_then(|catalog| {
-                catalog.with_targets(
-                    include_str!("../catalog/targets.json"),
-                    include_str!("../catalog/drawings.json"),
-                )
-            })
-            .expect("the built-in catalog is valid JSON (checked by tests)")
+            Catalog::builtin_parts().expect("the built-in catalog is valid JSON (checked by tests)")
         })
+    }
+
+    fn builtin_parts() -> serde_json::Result<Catalog> {
+        Catalog {
+            calibers: serde_json::from_str(include_str!("../catalog/calibers.json"))?,
+            bullets: from_files(files::BULLETS)?,
+            scopes: from_files(files::SCOPES)?,
+            reticles: serde_json::from_str(include_str!("../catalog/reticles.json"))?,
+            targets: Vec::new(),
+            drawings: Vec::new(),
+        }
+        .with_targets(
+            include_str!("../catalog/targets.json"),
+            include_str!("../catalog/drawings.json"),
+        )
     }
 
     pub fn from_json(calibers: &str, bullets: &str) -> serde_json::Result<Catalog> {
@@ -433,6 +448,44 @@ mod tests {
             "vortex-ar-bdc3-moa"
         );
         assert_eq!(catalog.reticle_id("unknown"), "unknown");
+    }
+
+    #[test]
+    fn each_maker_file_holds_that_maker_only() {
+        let slug = |maker: &str| {
+            maker
+                .to_lowercase()
+                .split(|c: char| !c.is_ascii_alphanumeric())
+                .filter(|part| !part.is_empty())
+                .collect::<Vec<_>>()
+                .join("-")
+        };
+        for (name, json) in files::BULLETS {
+            let bullets: Vec<CatalogBullet> = serde_json::from_str(json)
+                .unwrap_or_else(|error| panic!("bullets/{name}: {error}"));
+            assert!(!bullets.is_empty(), "bullets/{name} is empty");
+            for bullet in bullets {
+                assert_eq!(
+                    format!("{}.json", slug(&bullet.manufacturer)),
+                    *name,
+                    "{}",
+                    bullet.id
+                );
+            }
+        }
+        for (name, json) in files::SCOPES {
+            let scopes: Vec<Scope> =
+                serde_json::from_str(json).unwrap_or_else(|error| panic!("scopes/{name}: {error}"));
+            assert!(!scopes.is_empty(), "scopes/{name} is empty");
+            for scope in scopes {
+                assert_eq!(
+                    format!("{}.json", slug(&scope.manufacturer)),
+                    *name,
+                    "{}",
+                    scope.id
+                );
+            }
+        }
     }
 
     #[test]

@@ -1,0 +1,23 @@
+[
+ {
+  "id": "winchester-varmint-lf-ntx-17-hmr-16gr-ammunition",
+  "kind": "ammunition",
+  "manufacturer": "Winchester",
+  "product": "Varmint LF NTX",
+  "caliber": "17-hmr",
+  "diameter_mm": null,
+  "mass_g": 1.0,
+  "mass_gr": 15.5,
+  "length_mm": null,
+  "bc_g1": 0.115,
+  "bc_g7": null,
+  "muzzle_velocity_mps": 777,
+  "test_barrel_mm": null,
+  "construction": "polymer_tip",
+  "lead_free": true,
+  "min_expansion_mps": null,
+  "source_url": "https://ammosight.com/rimfire-ammo/17-hmr/winchester-rimfire-17-hmr-15-5gr-ntx-lead-free-ammo",
+  "notes": "Symbol S17HMR1LF (UPC 020892102781). BC: third-party, two independent sources agree on .115: AmmoSight (https://ammosight.com/rimfire-ammo/17-hmr/winchester-rimfire-17-hmr-15-5gr-ntx-lead-free-ammo, '.115 BC (G1)', 2550 fps; footnote attributes figures to the maker's advertised data; no SKU on page, but it is the only Winchester 15.5 gr NTX lead-free 17 HMR load); Black Basin (https://blackbasin.com/winchester-17-hmr-varmint-lead-free-15-5-grain-ntx-ammo/, BC .115, 2550 fps, UPC 020892102781 = S17HMR1LF; drag model not stated). G1 stated only by AmmoSight. Weaker than the Hornady entries: only two sources, and one does not name the SKU; AmmoSight's trajectory note also says '16gr' while its title/spec table say 15.5 gr. Muzzle velocity 2550 fps from Winchester's Varmint LF line page (https://winchester.com/Products/Ammunition/Rimfire/Varmint-LF: S17HMR1LF, 17 HMR, 15.5 gr, Polymer Tip, 2550), consistent with AmmoSight, Black Basin, Able Ammo and Ventura Munitions. Note: the current Winchester S17HMR1LF product page (https://winchester.com/Products/Ammunition/Rimfire/Varmint-LF/S17HMR1LF) shows line boilerplate for the 22 LR tin load ('Tin Hollow Point', '1650 fps'), which is wrong for this load and was ignored. No test barrel length stated. Construction: Hornady NTX polymer tip with a non-lead core; lead_free=true per product line name and retailer listings.",
+  "verified_on": "2026-10-19"
+ }
+]

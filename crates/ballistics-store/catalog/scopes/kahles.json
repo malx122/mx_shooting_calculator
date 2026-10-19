@@ -1,0 +1,205 @@
+[
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 1-5x24i",
+  "magnification_min": 1,
+  "magnification_max": 5,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 5,
+  "reticles": [
+   "kahles-4-dh-helia-1-5x24i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   42.4,
+   8.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia-1-5x24i",
+  "notes": "Click value is not published on the product page or the data sheet (click_value null; unit assumed cm_at_100m only to express the 2.5 m/100 m adjustment range). Kahles lists 'Adjustment range (E/W)' as 2.5/2.5 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range). Driven-hunt scope; AUTOMATICLIGHT.",
+  "id": "kahles-helia-1-5x24i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 1,6-8x42i",
+  "magnification_min": 1.6,
+  "magnification_max": 8,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "kahles-4-dot-helia-1-6-8x42i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   25.3,
+   5.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia-1_6-8x42i",
+  "notes": "Impact correction per click 10 mm (at 100 m). Kahles lists 'Adjustment range (E/W)' as 1.5/1.5 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range).",
+  "id": "kahles-helia-1-6-8x42i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 2-10x50i",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "kahles-4-dot-helia-2-10x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   21.0,
+   4.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia-2-10x50i",
+  "notes": "Impact correction per click 0.36 inch (100 yds) / 10 mm (100 m) / .1 MIL. Kahles lists 'Adjustment range (E/W)' as 1.6/1.6 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range).",
+  "id": "kahles-helia-2-10x50i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 2,4-12x56i",
+  "magnification_min": 2.4,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "kahles-4-dot-helia-2-4-12x56i",
+   "kahles-g4b-helia-2-4-12x56i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 190,
+  "fov_m_at_100m": [
+   16.5,
+   3.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia-2_4-12x56i",
+  "notes": "Impact correction per click 0.36 inch (100 yds) / 10 mm (100 m) / .1 MIL. Kahles lists 'Adjustment range (E/W)' as 1.9/1.9 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range).",
+  "id": "kahles-helia-2-4-12x56i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 3,5-18x50i",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "kahles-4-dot-helia-3-5-18x50i",
+   "kahles-g4b-helia-3-5-18x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 190,
+  "fov_m_at_100m": [
+   12.2,
+   2.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia-3-5-18x50i",
+  "notes": "Impact correction per click 10 mm/100 m. Parallax 50 m - infinity. Kahles lists 'Adjustment range (E/W)' as 1.9/1.9 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range).",
+  "id": "kahles-helia-3-5-18x50i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 3 4-12x44i",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 44,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "kahles-4-dot-helia-3-4-12x44i",
+   "kahles-g4b-helia-3-4-12x44i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 110,
+  "fov_m_at_100m": [
+   9.2,
+   3.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia3-4-12x44i",
+  "notes": "Impact correction per click 0.36 inch (100 yds) / 10 mm (100 m). 1-inch tube. Kahles lists 'Adjustment range (E/W)' as 1.1/1.1 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range).",
+  "id": "kahles-helia-3-4-12x44i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "HELIA 3 3-10x50i",
+  "magnification_min": 3,
+  "magnification_max": 10,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "kahles-4-dot-helia-3-3-10x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1,
+  "elevation_travel": 130,
+  "fov_m_at_100m": [
+   11.2,
+   4.0
+  ],
+  "illuminated": true,
+  "source_url": "https://www.kahles.at/en/hunt/riflescopes/helia3-3-10x50i",
+  "notes": "Impact correction per click 0.36 inch (100 yds) / 10 mm (100 m). 1-inch tube. Kahles lists 'Adjustment range (E/W)' as 1.3/1.3 m/100 m; elevation_travel is that elevation figure in cm at 100 m (taken as the total range). The product page lists only the 4-Dot reticle, although Kahles' G4B drawing also has a 'Helia 3 3-10' column (not included here).",
+  "id": "kahles-helia-3-3-10x50i",
+  "verified_on": "2026-10-19"
+ },
+ {
+  "manufacturer": "Kahles",
+  "model": "K318i REFINED 3,5-18x50i",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "kahles-skmr4"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 30,
+  "fov_m_at_100m": [
+   9.6,
+   2.0
+  ],
+  "illuminated": true,
+  "source_url": "https://verwaltung.kahles.at/files/shares/Zielfernrohre/K318i_REFINED/KAHLES_K318i_REFINED_Factsheet_EN-ROW_2026_web.pdf",
+  "notes": "Fact sheet: FFP, .1 MRAD per click, 100 clicks/rev (10 MIL per revolution), adjustment range E/W 3,0/1,5 m/100 m (= 30 / 15 mrad), CCW, parallax 25 m - infinity. Listed under Kahles 'sport' scopes (all-round crossover), used here as the long-range FFP option. Also offered with the MSR2/Ki reticle, which is not included (complex ranging reticle; not drawn). Product page: https://www.kahles.at/en/sport/riflescopes/k318i-refined",
+  "id": "kahles-k318i-refined-3-5-18x50i",
+  "verified_on": "2026-10-19"
+ }
+]

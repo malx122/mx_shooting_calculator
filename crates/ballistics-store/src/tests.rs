@@ -612,10 +612,18 @@ fn catalog_drawings_are_sound() {
     let ids: std::collections::HashSet<_> = catalog.drawings.iter().map(|d| &d.id).collect();
     assert_eq!(ids.len(), catalog.drawings.len(), "duplicate drawing id");
     for drawing in &catalog.drawings {
-        assert!(drawing.shoulder_height_m > 0.0 && drawing.length_m > 0.0, "{}", drawing.id);
+        assert!(
+            drawing.shoulder_height_m > 0.0 && drawing.length_m > 0.0,
+            "{}",
+            drawing.id
+        );
         for part in &drawing.parts {
             assert!(part.points.len() >= 3, "{}", drawing.id);
-            assert!(part.points.iter().all(|p| p[1] >= -1e-9), "{} below ground", drawing.id);
+            assert!(
+                part.points.iter().all(|p| p[1] >= -1e-9),
+                "{} below ground",
+                drawing.id
+            );
             assert!(
                 part.fill.len() == 7 && part.fill.starts_with('#'),
                 "{}: fill {}",
@@ -625,7 +633,10 @@ fn catalog_drawings_are_sound() {
         }
     }
     // Ids from before the drawings were data still find one.
-    assert_eq!(catalog.drawing("no-such-drawing").id, catalog.drawings[0].id);
+    assert_eq!(
+        catalog.drawing("no-such-drawing").id,
+        catalog.drawings[0].id
+    );
 }
 
 #[test]

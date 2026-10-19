@@ -294,8 +294,9 @@ schema migration.
 
 ## Scopes and reticles
 
-`crates/ballistics-store/catalog/scopes.json` and `reticles.json` hold scope
-specifications and reticle geometry. They cover two makers:
+`crates/ballistics-store/catalog/scopes/` (one file per maker) and
+`reticles.json` hold scope specifications and reticle geometry. Reticles
+stay in one file because makers' scopes can share a reticle. They cover two makers:
 
 - **Kahles:** 8 scopes with their 4-Dot, G4B, 4-DH and SKMR4 reticles drawn.
   Kahles publishes dimensioned drawings for every hunting reticle.
@@ -379,15 +380,22 @@ app:
 
 - **`calibers.json`:** about 50 calibers, each with bullet diameter and a
   typical twist.
-- **`bullets.json`:** 225 bullets and loads. These are factory loads from
-  Norma, Lapua, Sako, Hornady, Barnes, Geco, Federal, CCI, Remington and
-  Winchester, and component bullets from Hornady, Nosler, Sierra, Barnes,
-  Lapua and Norma.
-- **`targets.json`:** game animals (moose, red deer, elk, fallow,
-  white-tailed and roe deer, wild boar, brown bear, red fox), small game
-  (mountain hare, rabbit, capercaillie, black grouse, ptarmigan) and sport
-  targets (ISSF 300 m, 50 m and 10 m rifle targets; 10, 20 and 30 cm steel
-  plates).
+- **`bullets/`:** 225 bullets and loads, one file per maker (for example
+  `bullets/norma.json`). These are factory loads from Norma, Lapua, Sako,
+  Hornady, Barnes, Geco, Federal, CCI, Remington and Winchester, and
+  component bullets from Hornady, Nosler, Sierra, Barnes, Lapua and Norma.
+- **`scopes/`:** scopes, one file per maker; see below.
+
+  A new maker only needs a new file: the build script compiles in every
+  `.json` file in these folders, in name order. A file holds only its own
+  maker's entries, named after the maker in lower case (a test checks it).
+- **`reticles.json`:** reticle geometry, in one file since scopes from
+  different makers can share a reticle.
+- **`targets.json`:** every Swedish game species, a few others (elk,
+  white-tailed deer) and sport targets (ISSF 300 m, 50 m and 10 m rifle
+  targets; 10, 20 and 30 cm steel plates), each in a list group.
+- **`drawings.json`:** the animal drawings the targets use, as coloured
+  polygons in metres.
 
   The animals' vital zones and minimum energies are common **guidelines**,
   not law. Legal rules differ by country and are often stated differently
