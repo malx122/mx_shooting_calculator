@@ -264,6 +264,15 @@ pub enum Construction {
 }
 
 impl Construction {
+    /// Whether the bullet is made to expand; `None` when unknown (Other).
+    pub fn expanding(self) -> Option<bool> {
+        match self {
+            Construction::Fmj | Construction::Match => Some(false),
+            Construction::Other => None,
+            _ => Some(true),
+        }
+    }
+
     pub const ALL: [Construction; 10] = [
         Construction::CupAndCore,
         Construction::Bonded,

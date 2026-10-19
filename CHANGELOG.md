@@ -6,6 +6,21 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **All Swedish game species:** every species on Svenska Jägareförbundet's
+  hunting-season list, from moose to fieldfare, with Swedish names,
+  estimated sizes and vital zones.
+- **A drawing for each species:** the males, with the features that tell
+  them apart (the capercaillie's beard and fan tail, the black grouse's
+  lyre tail, the mallard's green head). Species that look alike share a
+  drawing. Moose, wild boar, bear and fox are redrawn in more detail.
+- **Groups:** target lists fold into groups (deer, birds, ducks and geese
+  and so on), and search also finds Swedish names.
+- **Swedish ammunition classes:** each Swedish species shows the class
+  required with a rifle, and the results say whether your load meets it.
+  Your own targets can have a group and a class too.
+
 ## [0.2.0] - 2026-10-19
 
 ### Added

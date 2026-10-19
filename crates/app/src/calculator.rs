@@ -390,6 +390,7 @@ impl CalculatorPage {
                             min_velocity: aim
                                 .min_velocity_mps
                                 .unwrap_or_else(|| effective_min_velocity(&self.inputs, bullet)),
+                            load_class: load_class(bullet, solution),
                         };
                         let requested = egui::ScrollArea::vertical()
                             .show(ui, |ui| view.show(ui, solution, computed.optimal.as_ref()))
@@ -1143,6 +1144,19 @@ fn from_radians(unit: ClickUnit, radians: f64) -> f64 {
     }
 }
 
+/// The Swedish ammunition class of the load: its weight, its energy at the
+/// muzzle and at 100 m, and whether it expands.
+fn load_class(bullet: &Bullet, solution: &Solution) -> Option<u8> {
+    let energy_at = |range: f64| solution.at(range).map_or(0.0, |row| row.energy_j);
+    ballistics_store::swedish_class(
+        bullet.mass_g,
+        energy_at(100.0),
+        energy_at(0.0),
+        bullet.construction.expanding(),
+        bullet.lead_free,
+    )
+}
+
 /// View settings changed in the results, applied by the page.
 #[derive(Default)]
 struct ViewRequests {
@@ -1156,6 +1170,8 @@ struct ResultsView<'a> {
     optics: Option<&'a (Scope, Reticle)>,
     aim: &'a Aim,
     min_velocity: f64,
+    /// The Swedish ammunition class the load meets, if any.
+    load_class: Option<u8>,
 }
 
 impl ResultsView<'_> {
@@ -1479,6 +1495,29 @@ impl ResultsView<'_> {
     }
 
     fn warnings(&self, ui: &mut egui::Ui, solution: &Solution) {
+        if let Some(needed) = self.aim.target.as_ref().and_then(|t| t.swedish_class) {
+            let name = self.aim.name();
+            match self.load_class {
+                Some(class) if class <= needed => {
+                    ui.label(format!(
+                        "✔ Swedish class {class}: allowed for {name} with a rifle."
+                    ))
+                    .on_hover_text(crate::targets::CLASS_HELP);
+                }
+                class => {
+                    let load = class.map_or("meets no class".to_owned(), |class| {
+                        format!("is class {class}")
+                    });
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        format!(
+                            "⚠ Not allowed in Sweden: {name} needs class {needed} or stricter, this load {load}."
+                        ),
+                    )
+                    .on_hover_text(crate::targets::CLASS_HELP);
+                }
+            }
+        }
         match solution.stability {
             Some(sg) if sg < 1.0 => {
                 ui.colored_label(

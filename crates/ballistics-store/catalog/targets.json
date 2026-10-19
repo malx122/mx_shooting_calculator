@@ -5,71 +5,94 @@
     "kind": "game",
     "shape": "animal",
     "silhouette": "moose",
-    "shoulder_height_cm": 185,
-    "body_length_cm": 290,
+    "shoulder_height_cm": 185.0,
+    "body_length_cm": 293.0,
     "vital_diameter_cm": 30,
     "min_energy_j": 2000,
-    "notes": "Adult moose broadside. The heart–lung area is larger than 30 cm; the zone is kept smaller for a margin. Energy is a common guideline at the animal, not a law."
+    "notes": "Adult moose broadside. The heart–lung area is larger than 30 cm; the zone is kept smaller for a margin. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "group": "deer",
+    "other_names": [
+      "Älg",
+      "Elk"
+    ],
+    "swedish_class": 1
   },
   {
     "id": "red-deer",
     "name": "Red deer",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "deer",
-    "shoulder_height_cm": 120,
-    "body_length_cm": 200,
+    "silhouette": "red-deer",
+    "shoulder_height_cm": 119.0,
+    "body_length_cm": 200.0,
     "vital_diameter_cm": 25,
     "min_energy_j": 2000,
-    "notes": "Stag or hind broadside. Energy is a common guideline at the animal, not a law."
+    "notes": "Stag or hind broadside. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "group": "deer",
+    "other_names": [
+      "Kronhjort"
+    ],
+    "swedish_class": 1
   },
   {
     "id": "wapiti",
     "name": "Elk (wapiti)",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "deer",
-    "shoulder_height_cm": 145,
-    "body_length_cm": 230,
+    "silhouette": "red-deer",
+    "shoulder_height_cm": 136.9,
+    "body_length_cm": 230.0,
     "vital_diameter_cm": 30,
     "min_energy_j": 2000,
-    "notes": "North American elk broadside. 2000 J is the often quoted 1500 ft·lbf at the animal; a guideline, not a law."
+    "notes": "North American elk broadside. 2000 J is the often quoted 1500 ft·lbf at the animal; a guideline, not a law.",
+    "group": "deer"
   },
   {
     "id": "fallow-deer",
     "name": "Fallow deer",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "deer",
-    "shoulder_height_cm": 90,
-    "body_length_cm": 150,
+    "silhouette": "fallow-deer",
+    "shoulder_height_cm": 95.0,
+    "body_length_cm": 150.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 1350,
-    "notes": "Buck or doe broadside. Energy is a common guideline at the animal, not a law."
+    "notes": "Buck or doe broadside. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "group": "deer",
+    "other_names": [
+      "Dovhjort"
+    ],
+    "swedish_class": 1
   },
   {
     "id": "white-tailed-deer",
     "name": "White-tailed deer",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "deer",
-    "shoulder_height_cm": 95,
-    "body_length_cm": 170,
+    "silhouette": "white-tailed-deer",
+    "shoulder_height_cm": 100.0,
+    "body_length_cm": 180.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 1350,
-    "notes": "Broadside. 20 cm is the familiar 8-inch vital zone; 1350 J is the often quoted 1000 ft·lbf. Guidelines, not law."
+    "notes": "Broadside. 20 cm is the familiar 8-inch vital zone; 1350 J is the often quoted 1000 ft·lbf. Guidelines, not law.",
+    "group": "deer"
   },
   {
     "id": "roe-deer",
     "name": "Roe deer",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "deer",
-    "shoulder_height_cm": 70,
-    "body_length_cm": 115,
+    "silhouette": "roe-deer",
+    "shoulder_height_cm": 72.0,
+    "body_length_cm": 115.0,
     "vital_diameter_cm": 15,
     "min_energy_j": 800,
-    "notes": "Buck or doe broadside. Energy is a guideline at the animal, not a law."
+    "notes": "Buck or doe broadside. Energy is a guideline at the animal, not a law. Sweden: class 2 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "deer",
+    "other_names": [
+      "Rådjur"
+    ],
+    "swedish_class": 2
   },
   {
     "id": "wild-boar",
@@ -77,11 +100,33 @@
     "kind": "game",
     "shape": "animal",
     "silhouette": "boar",
-    "shoulder_height_cm": 85,
-    "body_length_cm": 150,
+    "shoulder_height_cm": 85.0,
+    "body_length_cm": 160.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 2000,
-    "notes": "Adult boar broadside; the vitals sit low and well forward, behind the front leg. Energy is a guideline, not a law."
+    "notes": "Adult boar broadside; the vitals sit low and well forward, behind the front leg. Energy is a guideline, not a law. Sweden: class 1 rifle ammunition.",
+    "group": "boar_and_mouflon",
+    "other_names": [
+      "Vildsvin"
+    ],
+    "swedish_class": 1
+  },
+  {
+    "id": "mouflon",
+    "name": "Mouflon",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "mouflon",
+    "shoulder_height_cm": 75.0,
+    "body_length_cm": 125.0,
+    "vital_diameter_cm": 20,
+    "min_energy_j": 2000,
+    "notes": "Male broadside. Sizes and the zone are estimates. Sweden: class 1 rifle ammunition.",
+    "group": "boar_and_mouflon",
+    "other_names": [
+      "Mufflonfår"
+    ],
+    "swedish_class": 1
   },
   {
     "id": "brown-bear",
@@ -89,11 +134,16 @@
     "kind": "game",
     "shape": "animal",
     "silhouette": "bear",
-    "shoulder_height_cm": 110,
-    "body_length_cm": 200,
+    "shoulder_height_cm": 110.0,
+    "body_length_cm": 200.0,
     "vital_diameter_cm": 25,
     "min_energy_j": 2700,
-    "notes": "Adult bear broadside. Energy is a guideline at the animal, not a law."
+    "notes": "Adult bear broadside. Energy is a guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "group": "bear",
+    "other_names": [
+      "Björn"
+    ],
+    "swedish_class": 1
   },
   {
     "id": "red-fox",
@@ -101,76 +151,857 @@
     "kind": "game",
     "shape": "animal",
     "silhouette": "fox",
-    "shoulder_height_cm": 40,
-    "body_length_cm": 70,
+    "shoulder_height_cm": 40.0,
+    "body_length_cm": 72.0,
     "vital_diameter_cm": 8,
     "min_energy_j": 200,
-    "notes": "Broadside. A rough guideline for small game; follow your bullet maker's expansion data."
+    "notes": "Broadside. A rough guideline for small game; follow your bullet maker's expansion data. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too; class 4 at the den or under ground.",
+    "group": "small_predators",
+    "other_names": [
+      "Rödräv"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "badger",
+    "name": "Badger",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "badger",
+    "shoulder_height_cm": 30.0,
+    "body_length_cm": 80.0,
+    "vital_diameter_cm": 10,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too; class 4 at the den or under ground.",
+    "group": "small_predators",
+    "other_names": [
+      "Grävling"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "pine-marten",
+    "name": "Pine marten",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "pine-marten",
+    "shoulder_height_cm": 17.0,
+    "body_length_cm": 48.0,
+    "vital_diameter_cm": 5,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "small_predators",
+    "other_names": [
+      "Mård"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "polecat",
+    "name": "Polecat",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "polecat",
+    "shoulder_height_cm": 12.0,
+    "body_length_cm": 45.0,
+    "vital_diameter_cm": 4,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "small_predators",
+    "other_names": [
+      "Iller"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "mink",
+    "name": "Mink",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "mink",
+    "shoulder_height_cm": 11.0,
+    "body_length_cm": 40.0,
+    "vital_diameter_cm": 4,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "small_predators",
+    "other_names": [
+      "Mink"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "weasel",
+    "name": "Weasel",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "weasel",
+    "shoulder_height_cm": 5.0,
+    "body_length_cm": 22.0,
+    "vital_diameter_cm": 2.5,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "small_predators",
+    "other_names": [
+      "Vessla",
+      "Least weasel"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "brown-hare",
+    "name": "Brown hare",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "brown-hare",
+    "shoulder_height_cm": 30.0,
+    "body_length_cm": 65.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Fälthare",
+      "European hare"
+    ],
+    "swedish_class": 3
   },
   {
     "id": "mountain-hare",
     "name": "Mountain hare",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "hare",
-    "shoulder_height_cm": 30,
-    "body_length_cm": 55,
+    "silhouette": "mountain-hare",
+    "shoulder_height_cm": 28.0,
+    "body_length_cm": 58.0,
     "vital_diameter_cm": 7,
     "min_energy_j": 80,
     "min_velocity_mps": 0,
-    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for."
+    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Skogshare"
+    ],
+    "swedish_class": 3
   },
   {
     "id": "european-rabbit",
     "name": "Rabbit",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "hare",
-    "shoulder_height_cm": 20,
-    "body_length_cm": 40,
+    "silhouette": "rabbit",
+    "shoulder_height_cm": 18.0,
+    "body_length_cm": 42.0,
     "vital_diameter_cm": 5,
     "min_energy_j": 60,
     "min_velocity_mps": 0,
-    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for."
+    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Vildkanin"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "beaver",
+    "name": "Beaver",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "beaver",
+    "shoulder_height_cm": 30.0,
+    "body_length_cm": 85.0,
+    "vital_diameter_cm": 10,
+    "min_energy_j": 800,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 2 rifle ammunition or stricter.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Bäver"
+    ],
+    "swedish_class": 2
   },
   {
     "id": "capercaillie",
     "name": "Capercaillie",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "grouse",
-    "shoulder_height_cm": 40,
-    "body_length_cm": 85,
+    "silhouette": "capercaillie",
+    "shoulder_height_cm": 50.0,
+    "body_length_cm": 85.0,
     "vital_diameter_cm": 10,
     "min_energy_j": 100,
     "min_velocity_mps": 0,
-    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds."
+    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Tjäder"
+    ],
+    "swedish_class": 3
   },
   {
     "id": "black-grouse",
     "name": "Black grouse",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "grouse",
-    "shoulder_height_cm": 26,
-    "body_length_cm": 55,
+    "silhouette": "black-grouse",
+    "shoulder_height_cm": 35.0,
+    "body_length_cm": 53.0,
     "vital_diameter_cm": 7,
     "min_energy_j": 80,
     "min_velocity_mps": 0,
-    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds."
+    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Orre"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "hazel-grouse",
+    "name": "Hazel grouse",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "hazel-grouse",
+    "shoulder_height_cm": 17.0,
+    "body_length_cm": 36.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Järpe"
+    ],
+    "swedish_class": 4
   },
   {
     "id": "willow-ptarmigan",
-    "name": "Ptarmigan",
+    "name": "Willow ptarmigan",
     "kind": "game",
     "shape": "animal",
-    "silhouette": "ptarmigan",
-    "shoulder_height_cm": 20,
-    "body_length_cm": 38,
+    "silhouette": "willow-ptarmigan",
+    "shoulder_height_cm": 20.0,
+    "body_length_cm": 38.0,
     "vital_diameter_cm": 5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Willow or rock ptarmigan broadside; height to the back, length beak to tail. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds."
+    "notes": "Willow or rock ptarmigan broadside; height to the back, length beak to tail. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Dalripa",
+      "Willow grouse",
+      "Red grouse"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "rock-ptarmigan",
+    "name": "Rock ptarmigan",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "rock-ptarmigan",
+    "shoulder_height_cm": 18.0,
+    "body_length_cm": 35.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Fjällripa"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "pheasant",
+    "name": "Pheasant",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "pheasant",
+    "shoulder_height_cm": 28.0,
+    "body_length_cm": 80.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Fasan"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "grey-partridge",
+    "name": "Grey partridge",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "grey-partridge",
+    "shoulder_height_cm": 20.0,
+    "body_length_cm": 30.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "forest_birds",
+    "other_names": [
+      "Rapphöna"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "mallard",
+    "name": "Mallard",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "mallard",
+    "shoulder_height_cm": 13.6,
+    "body_length_cm": 58.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Gräsand"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "teal",
+    "name": "Teal",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "teal",
+    "shoulder_height_cm": 9.2,
+    "body_length_cm": 36.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Kricka",
+      "Eurasian teal"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "wigeon",
+    "name": "Wigeon",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "wigeon",
+    "shoulder_height_cm": 11.6,
+    "body_length_cm": 47.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Bläsand",
+      "Eurasian wigeon"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "goldeneye",
+    "name": "Goldeneye",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "goldeneye",
+    "shoulder_height_cm": 10.5,
+    "body_length_cm": 46.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Knipa"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "tufted-duck",
+    "name": "Tufted duck",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "tufted-duck",
+    "shoulder_height_cm": 9.9,
+    "body_length_cm": 43.0,
+    "vital_diameter_cm": 7,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Vigg"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "long-tailed-duck",
+    "name": "Long-tailed duck",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "long-tailed-duck",
+    "shoulder_height_cm": 9.2,
+    "body_length_cm": 45.0,
+    "vital_diameter_cm": 7,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Alfågel"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "eider",
+    "name": "Eider",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "eider",
+    "shoulder_height_cm": 14.2,
+    "body_length_cm": 58.0,
+    "vital_diameter_cm": 10,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Ejder",
+      "Common eider"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "common-scoter",
+    "name": "Common scoter",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "common-scoter",
+    "shoulder_height_cm": 11.2,
+    "body_length_cm": 49.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Sjöorre",
+      "Black scoter"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "goosander",
+    "name": "Goosander",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "goosander",
+    "shoulder_height_cm": 11.2,
+    "body_length_cm": 64.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Storskrake",
+      "Common merganser"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "red-breasted-merganser",
+    "name": "Red-breasted merganser",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "red-breasted-merganser",
+    "shoulder_height_cm": 10.8,
+    "body_length_cm": 55.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Småskrake"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "greylag-goose",
+    "name": "Greylag goose",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "grey-goose",
+    "shoulder_height_cm": 42.0,
+    "body_length_cm": 80.0,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Grågås"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "bean-goose",
+    "name": "Taiga bean goose",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "grey-goose",
+    "shoulder_height_cm": 42.0,
+    "body_length_cm": 80.0,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Sädgås",
+      "Bean goose"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "white-fronted-goose",
+    "name": "White-fronted goose",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "white-fronted-goose",
+    "shoulder_height_cm": 38.0,
+    "body_length_cm": 68.0,
+    "vital_diameter_cm": 11,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Bläsgås"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "canada-goose",
+    "name": "Canada goose",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "canada-goose",
+    "shoulder_height_cm": 45.0,
+    "body_length_cm": 95.0,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Kanadagås"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "barnacle-goose",
+    "name": "Barnacle goose",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "barnacle-goose",
+    "shoulder_height_cm": 35.0,
+    "body_length_cm": 63.0,
+    "vital_diameter_cm": 10,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "waterfowl",
+    "other_names": [
+      "Vitkindad gås"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "whooper-swan",
+    "name": "Whooper swan",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "whooper-swan",
+    "shoulder_height_cm": 70.0,
+    "body_length_cm": 104.0,
+    "vital_diameter_cm": 20,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too. Normally protected: only hunted under special decisions; check the current rules.",
+    "group": "waterfowl",
+    "other_names": [
+      "Sångsvan"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "woodcock",
+    "name": "Woodcock",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "woodcock",
+    "shoulder_height_cm": 14.0,
+    "body_length_cm": 34.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Morkulla"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "wood-pigeon",
+    "name": "Wood pigeon",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "wood-pigeon",
+    "shoulder_height_cm": 18.0,
+    "body_length_cm": 41.0,
+    "vital_diameter_cm": 7,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Ringduva",
+      "Common wood pigeon"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "common-gull",
+    "name": "Common gull",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "herring-gull",
+    "shoulder_height_cm": 19.1,
+    "body_length_cm": 41.0,
+    "vital_diameter_cm": 7,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Fiskmås",
+      "Mew gull"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "herring-gull",
+    "name": "Herring gull",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "herring-gull",
+    "shoulder_height_cm": 28.0,
+    "body_length_cm": 60.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Gråtrut"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "great-black-backed-gull",
+    "name": "Great black-backed gull",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "black-backed-gull",
+    "shoulder_height_cm": 35.0,
+    "body_length_cm": 71.0,
+    "vital_diameter_cm": 11,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Havstrut"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "raven",
+    "name": "Raven",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "raven",
+    "shoulder_height_cm": 30.0,
+    "body_length_cm": 63.0,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Korp"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "hooded-crow",
+    "name": "Hooded crow",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "hooded-crow",
+    "shoulder_height_cm": 24.0,
+    "body_length_cm": 47.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Kråka"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "rook",
+    "name": "Rook",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "rook",
+    "shoulder_height_cm": 24.0,
+    "body_length_cm": 46.0,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Råka"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "jackdaw",
+    "name": "Jackdaw",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "jackdaw",
+    "shoulder_height_cm": 17.0,
+    "body_length_cm": 34.0,
+    "vital_diameter_cm": 6,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Kaja"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "magpie",
+    "name": "Magpie",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "magpie",
+    "shoulder_height_cm": 18.0,
+    "body_length_cm": 46.0,
+    "vital_diameter_cm": 5,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Skata"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "jay",
+    "name": "Jay",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "jay",
+    "shoulder_height_cm": 15.0,
+    "body_length_cm": 34.0,
+    "vital_diameter_cm": 5,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Nötskrika"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "fieldfare",
+    "name": "Fieldfare",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "fieldfare",
+    "shoulder_height_cm": 11.0,
+    "body_length_cm": 25.0,
+    "vital_diameter_cm": 4,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Björktrast"
+    ],
+    "swedish_class": 4
+  },
+  {
+    "id": "cormorant",
+    "name": "Great cormorant",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "cormorant",
+    "shoulder_height_cm": 47.0,
+    "body_length_cm": 67.0,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "group": "other_birds",
+    "other_names": [
+      "Storskarv",
+      "Cormorant"
+    ],
+    "swedish_class": 3
+  },
+  {
+    "id": "crane",
+    "name": "Common crane",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "crane",
+    "shoulder_height_cm": 80.0,
+    "body_length_cm": 83.0,
+    "vital_diameter_cm": 15,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too. Mostly hunted under protective-hunting decisions; check the current rules.",
+    "group": "other_birds",
+    "other_names": [
+      "Trana",
+      "Crane"
+    ],
+    "swedish_class": 3
   },
   {
     "id": "issf-300m-rifle",
@@ -183,7 +1014,8 @@
     "black_mm": 600,
     "vital_diameter_cm": 60,
     "min_energy_j": null,
-    "notes": "10 ring 100 mm, 1 ring 1000 mm. The hit zone is the 600 mm black (rings 5–10)."
+    "notes": "10 ring 100 mm, 1 ring 1000 mm. The hit zone is the 600 mm black (rings 5–10).",
+    "group": "sport"
   },
   {
     "id": "issf-50m-rifle",
@@ -196,7 +1028,8 @@
     "black_mm": 112.4,
     "vital_diameter_cm": 11.24,
     "min_energy_j": null,
-    "notes": "10 ring 10.4 mm, 1 ring 154.4 mm. The hit zone is the 112.4 mm black (rings 4–10)."
+    "notes": "10 ring 10.4 mm, 1 ring 154.4 mm. The hit zone is the 112.4 mm black (rings 4–10).",
+    "group": "sport"
   },
   {
     "id": "issf-10m-air-rifle",
@@ -209,7 +1042,8 @@
     "black_mm": 30.5,
     "vital_diameter_cm": 3.05,
     "min_energy_j": null,
-    "notes": "10 ring 0.5 mm (a dot), 1 ring 45.5 mm. The hit zone is the 30.5 mm black (rings 4–9)."
+    "notes": "10 ring 0.5 mm (a dot), 1 ring 45.5 mm. The hit zone is the 30.5 mm black (rings 4–9).",
+    "group": "sport"
   },
   {
     "id": "steel-plate-10cm",
@@ -219,7 +1053,8 @@
     "diameter_mm": 100,
     "vital_diameter_cm": 10,
     "min_energy_j": null,
-    "notes": "Round gong. Keep the plate maker's minimum distance for your cartridge."
+    "notes": "Round gong. Keep the plate maker's minimum distance for your cartridge.",
+    "group": "sport"
   },
   {
     "id": "steel-plate-20cm",
@@ -229,7 +1064,8 @@
     "diameter_mm": 200,
     "vital_diameter_cm": 20,
     "min_energy_j": null,
-    "notes": "Round gong, about 8 inches. Keep the plate maker's minimum distance for your cartridge."
+    "notes": "Round gong, about 8 inches. Keep the plate maker's minimum distance for your cartridge.",
+    "group": "sport"
   },
   {
     "id": "steel-plate-30cm",
@@ -239,6 +1075,7 @@
     "diameter_mm": 300,
     "vital_diameter_cm": 30,
     "min_energy_j": null,
-    "notes": "Round gong, about 12 inches. Keep the plate maker's minimum distance for your cartridge."
+    "notes": "Round gong, about 12 inches. Keep the plate maker's minimum distance for your cartridge.",
+    "group": "sport"
   }
 ]

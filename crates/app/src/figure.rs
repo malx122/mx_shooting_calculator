@@ -1,10 +1,10 @@
-//! A target as flat, convex shapes in metres, for drawing at true size
-//! through the scope, in the 3D view and in previews. The origin is the
-//! centre of the vital (or hit) zone, where the hunter aims; x runs towards
-//! an animal's head (or to the right), y up.
+//! A target as flat shapes in metres, for drawing at true size through the
+//! scope, in the 3D view and in previews. The origin is the centre of the
+//! vital (or hit) zone, where the hunter aims; x runs towards an animal's
+//! head (or to the right), y up.
 
-use ballistics_store::{Silhouette, Target, TargetShape};
-use eframe::egui::Color32;
+use ballistics_store::{Catalog, Drawing, Target, TargetShape};
+use eframe::egui::{self, Color32, Pos2, Shape, Stroke};
 
 use crate::theme;
 
@@ -13,53 +13,54 @@ const CIRCLE_POINTS: usize = 48;
 /// target is too big for it.
 const STAND_HEIGHT: f64 = 1.0;
 
-const MOOSE: Color32 = Color32::from_rgb(0x2E, 0x22, 0x1A);
-const DEER: Color32 = Color32::from_rgb(0x6B, 0x45, 0x2C);
-const BOAR: Color32 = Color32::from_rgb(0x3A, 0x33, 0x2D);
-const BEAR: Color32 = Color32::from_rgb(0x4A, 0x34, 0x24);
-const FOX: Color32 = Color32::from_rgb(0xB8, 0x5A, 0x24);
-const HARE: Color32 = Color32::from_rgb(0x8C, 0x76, 0x5E);
-const GROUSE: Color32 = Color32::from_rgb(0x2A, 0x2A, 0x2E);
-const PTARMIGAN: Color32 = Color32::from_rgb(0xA8, 0x94, 0x74);
-
-/// A grouse standing broadside, beak to the right: tail, legs, body, neck,
-/// head and beak. 0.85 m from beak to tail, 0.41 m to the top of the back.
-const BIRD: &[&[[f64; 2]]] = &[
-    &[[-0.24, 0.22], [-0.44, 0.24], [-0.47, 0.38], [-0.27, 0.34]],
-    &[[0.0, 0.0], [0.025, 0.0], [0.035, 0.11], [0.01, 0.11]],
-    &[[0.07, 0.0], [0.095, 0.0], [0.1, 0.11], [0.075, 0.11]],
-    &[
-        [-0.28, 0.3],
-        [-0.25, 0.14],
-        [-0.05, 0.08],
-        [0.15, 0.1],
-        [0.26, 0.2],
-        [0.24, 0.32],
-        [0.1, 0.4],
-        [-0.12, 0.41],
-    ],
-    &[[0.16, 0.3], [0.25, 0.24], [0.31, 0.46], [0.23, 0.5]],
-    &[
-        [0.23, 0.47],
-        [0.31, 0.44],
-        [0.37, 0.48],
-        [0.36, 0.55],
-        [0.28, 0.57],
-        [0.23, 0.53],
-    ],
-    &[[0.36, 0.48], [0.41, 0.5], [0.365, 0.53]],
-];
-const ANTLER: Color32 = Color32::from_rgb(0xC8, 0xB8, 0x96);
 const CARD: Color32 = Color32::from_rgb(0xF4, 0xF1, 0xE8);
 const PRINT: Color32 = Color32::from_rgb(0x14, 0x14, 0x14);
 const STEEL: Color32 = Color32::from_rgb(0x8A, 0x91, 0x96);
 const POST: Color32 = Color32::from_rgb(0x7A, 0x5C, 0x3E);
 
-/// One convex shape, filled and optionally outlined.
+/// One shape, filled and optionally outlined.
 pub struct Part {
     pub points: Vec<[f64; 2]>,
     pub fill: Color32,
     pub stroke: Option<Color32>,
+    /// How to fill a concave shape, as corners of triangles; empty when
+    /// the shape is convex.
+    pub triangles: Vec<[u32; 3]>,
+}
+
+impl Part {
+    fn new(points: Vec<[f64; 2]>, fill: Color32, stroke: Option<Color32>) -> Part {
+        Part {
+            triangles: triangulate(&points),
+            points,
+            fill,
+            stroke,
+        }
+    }
+
+    /// The part on screen, its corners at `points`.
+    pub fn shape(&self, points: Vec<Pos2>) -> Shape {
+        let stroke = self
+            .stroke
+            .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour));
+        if self.triangles.is_empty() {
+            return Shape::convex_polygon(points, self.fill, stroke);
+        }
+        let mut mesh = egui::Mesh::default();
+        for &point in &points {
+            mesh.colored_vertex(point, self.fill);
+        }
+        for &[a, b, c] in &self.triangles {
+            mesh.add_triangle(a, b, c);
+        }
+        // A thin edge in the fill smooths the mesh's jagged border.
+        let edge = if stroke == Stroke::NONE {
+            Stroke::new(0.75_f32, self.fill)
+        } else {
+            stroke
+        };
+        Shape::Vec(vec![Shape::mesh(mesh), Shape::closed_line(points, edge)])
+    }
 }
 
 pub struct Figure {
@@ -78,12 +79,12 @@ impl Figure {
         let vital_radius = vital_diameter_cm / 200.0;
         let (mut parts, aim_height) = match target.shape {
             TargetShape::Animal {
-                silhouette,
+                ref silhouette,
                 shoulder_height_cm,
                 body_length_cm,
                 antlers,
             } => animal(
-                silhouette,
+                Catalog::builtin().drawing(silhouette),
                 shoulder_height_cm / 100.0,
                 body_length_cm / 100.0,
                 antlers,
@@ -95,17 +96,17 @@ impl Figure {
         };
         // The zone that counts: shaded on game, outlined on sport targets.
         parts.push(if target.is_game() {
-            Part {
-                points: circle(vital_radius),
-                fill: theme::MEADOW.gamma_multiply(0.55),
-                stroke: Some(theme::FOREST_600),
-            }
+            Part::new(
+                circle(vital_radius),
+                theme::MEADOW.gamma_multiply(0.55),
+                Some(theme::FOREST_600),
+            )
         } else {
-            Part {
-                points: circle(vital_radius),
-                fill: Color32::TRANSPARENT,
-                stroke: Some(theme::MEADOW),
-            }
+            Part::new(
+                circle(vital_radius),
+                Color32::TRANSPARENT,
+                Some(theme::MEADOW),
+            )
         });
         let mut low = [f64::INFINITY; 2];
         let mut high = [f64::NEG_INFINITY; 2];
@@ -133,244 +134,104 @@ pub fn circle(radius: f64) -> Vec<[f64; 2]> {
         .collect()
 }
 
-/// A drawing of a reference animal, in metres from its feet: x towards the
-/// head, y up.
-struct Outline {
-    shoulder_height: f64,
-    length: f64,
-    /// Centre of the heart–lung area.
-    vital: [f64; 2],
-    colour: Color32,
-    body: &'static [&'static [[f64; 2]]],
-    /// Antler beams as (from, to, width), drawn only with antlers on.
-    antlers: &'static [([f64; 2], [f64; 2], f64)],
-    antler_plates: &'static [&'static [[f64; 2]]],
-}
-
-fn outline(silhouette: Silhouette) -> Outline {
-    match silhouette {
-        Silhouette::Moose => Outline {
-            shoulder_height: 1.85,
-            length: 3.1,
-            vital: [0.55, 1.25],
-            colour: MOOSE,
-            body: &[
-                &[[-1.05, 1.0], [1.0, 0.95], [1.15, 1.75], [-0.95, 1.65]],
-                &[[0.3, 1.6], [1.15, 1.75], [1.05, 1.98], [0.45, 1.88]],
-                &[[0.95, 1.4], [1.35, 1.55], [1.55, 1.95], [1.1, 1.97]],
-                &[[1.4, 1.72], [1.95, 1.5], [2.08, 1.66], [1.62, 2.0]],
-                &[[0.75, 0.0], [0.85, 0.0], [0.97, 1.0], [0.72, 1.0]],
-                &[[0.5, 0.0], [0.6, 0.0], [0.72, 1.0], [0.5, 1.0]],
-                &[[-0.9, 0.0], [-0.8, 0.0], [-0.72, 1.05], [-1.0, 1.05]],
-                &[[-0.65, 0.0], [-0.55, 0.0], [-0.5, 1.0], [-0.76, 1.0]],
-            ],
-            antlers: &[],
-            antler_plates: &[
-                &[[1.5, 1.95], [1.28, 2.28], [1.72, 2.38], [1.72, 2.02]],
-                &[[1.58, 1.98], [1.85, 2.3], [2.0, 2.22], [1.78, 1.98]],
-            ],
-        },
-        Silhouette::Deer => Outline {
-            shoulder_height: 1.2,
-            length: 2.1,
-            vital: [0.38, 0.9],
-            colour: DEER,
-            body: &[
-                &[[-0.8, 0.68], [0.55, 0.66], [0.62, 1.16], [-0.75, 1.12]],
-                &[[0.35, 1.0], [0.62, 0.9], [0.98, 1.42], [0.74, 1.56]],
-                &[
-                    [0.78, 1.44],
-                    [1.02, 1.34],
-                    [1.25, 1.29],
-                    [1.26, 1.39],
-                    [0.96, 1.6],
-                ],
-                &[[0.8, 1.55], [0.86, 1.52], [0.72, 1.68]],
-                &[[0.38, 0.0], [0.45, 0.0], [0.52, 0.72], [0.36, 0.72]],
-                &[[0.22, 0.0], [0.29, 0.0], [0.33, 0.7], [0.2, 0.7]],
-                &[[-0.62, 0.0], [-0.55, 0.0], [-0.48, 0.78], [-0.72, 0.78]],
-                &[[-0.46, 0.0], [-0.39, 0.0], [-0.36, 0.74], [-0.52, 0.74]],
-            ],
-            antlers: &[
-                ([0.86, 1.56], [0.72, 1.85], 0.04),
-                ([0.72, 1.85], [0.62, 2.12], 0.035),
-                ([0.84, 1.62], [1.0, 1.66], 0.03),
-                ([0.74, 1.8], [0.92, 1.88], 0.03),
-                ([0.67, 1.98], [0.85, 2.08], 0.03),
-                ([0.62, 2.12], [0.72, 2.25], 0.03),
-                ([0.62, 2.12], [0.52, 2.22], 0.03),
-            ],
-            antler_plates: &[],
-        },
-        Silhouette::Boar => Outline {
-            shoulder_height: 0.85,
-            length: 1.6,
-            vital: [0.22, 0.5],
-            colour: BOAR,
-            body: &[
-                &[
-                    [-0.65, 0.35],
-                    [0.45, 0.3],
-                    [0.55, 0.8],
-                    [0.1, 0.9],
-                    [-0.6, 0.72],
-                ],
-                &[[0.4, 0.38], [0.95, 0.36], [0.95, 0.5], [0.55, 0.84]],
-                &[[0.48, 0.78], [0.56, 0.76], [0.5, 0.93]],
-                &[[0.25, 0.0], [0.33, 0.0], [0.36, 0.36], [0.22, 0.36]],
-                &[[0.1, 0.0], [0.18, 0.0], [0.2, 0.36], [0.08, 0.36]],
-                &[[-0.5, 0.0], [-0.42, 0.0], [-0.38, 0.42], [-0.56, 0.42]],
-                &[[-0.36, 0.0], [-0.28, 0.0], [-0.26, 0.38], [-0.4, 0.38]],
-            ],
-            antlers: &[],
-            antler_plates: &[],
-        },
-        Silhouette::Bear => Outline {
-            shoulder_height: 1.1,
-            length: 2.0,
-            vital: [0.3, 0.7],
-            colour: BEAR,
-            body: &[
-                &[
-                    [-0.82, 0.45],
-                    [0.55, 0.4],
-                    [0.62, 1.02],
-                    [0.15, 1.12],
-                    [-0.78, 0.95],
-                ],
-                &[[0.45, 0.55], [0.85, 0.68], [0.88, 0.95], [0.5, 1.05]],
-                &[
-                    [0.75, 0.68],
-                    [1.15, 0.7],
-                    [1.13, 0.84],
-                    [0.92, 1.0],
-                    [0.76, 0.95],
-                ],
-                &[[0.82, 0.96], [0.9, 0.98], [0.84, 1.07]],
-                &[[0.3, 0.0], [0.5, 0.0], [0.53, 0.5], [0.28, 0.5]],
-                &[[0.12, 0.0], [0.3, 0.0], [0.32, 0.5], [0.1, 0.5]],
-                &[[-0.72, 0.0], [-0.52, 0.0], [-0.46, 0.56], [-0.78, 0.56]],
-                &[[-0.52, 0.0], [-0.34, 0.0], [-0.3, 0.5], [-0.52, 0.5]],
-            ],
-            antlers: &[],
-            antler_plates: &[],
-        },
-        Silhouette::Fox => Outline {
-            shoulder_height: 0.4,
-            length: 0.75,
-            vital: [0.06, 0.28],
-            colour: FOX,
-            body: &[
-                &[[-0.28, 0.33], [-0.32, 0.22], [-0.7, 0.12], [-0.76, 0.18]],
-                &[[-0.3, 0.2], [0.18, 0.19], [0.21, 0.37], [-0.3, 0.35]],
-                &[
-                    [0.18, 0.35],
-                    [0.32, 0.325],
-                    [0.45, 0.31],
-                    [0.43, 0.36],
-                    [0.3, 0.46],
-                    [0.2, 0.45],
-                ],
-                &[[0.24, 0.44], [0.3, 0.44], [0.27, 0.53]],
-                &[[0.12, 0.0], [0.16, 0.0], [0.17, 0.22], [0.11, 0.22]],
-                &[[0.05, 0.0], [0.09, 0.0], [0.1, 0.22], [0.04, 0.22]],
-                &[[-0.27, 0.0], [-0.23, 0.0], [-0.2, 0.24], [-0.29, 0.24]],
-                &[[-0.2, 0.0], [-0.16, 0.0], [-0.14, 0.22], [-0.21, 0.22]],
-            ],
-            antlers: &[],
-            antler_plates: &[],
-        },
-        Silhouette::Hare => Outline {
-            shoulder_height: 0.3,
-            length: 0.55,
-            vital: [0.03, 0.17],
-            colour: HARE,
-            body: &[
-                &[[0.11, 0.29], [0.15, 0.3], [0.07, 0.5], [0.03, 0.49]],
-                &[[-0.24, 0.0], [-0.06, 0.0], [-0.1, 0.07], [-0.26, 0.09]],
-                &[
-                    [-0.3, 0.17],
-                    [-0.27, 0.08],
-                    [0.1, 0.06],
-                    [0.16, 0.18],
-                    [0.02, 0.3],
-                    [-0.19, 0.29],
-                ],
-                &[[0.07, 0.0], [0.12, 0.0], [0.13, 0.12], [0.06, 0.12]],
-                &[
-                    [0.09, 0.2],
-                    [0.2, 0.17],
-                    [0.27, 0.21],
-                    [0.23, 0.29],
-                    [0.13, 0.31],
-                ],
-                &[[-0.31, 0.19], [-0.27, 0.2], [-0.29, 0.25], [-0.33, 0.24]],
-            ],
-            antlers: &[],
-            antler_plates: &[],
-        },
-        Silhouette::Grouse | Silhouette::Ptarmigan => Outline {
-            shoulder_height: 0.41,
-            length: 0.88,
-            vital: [0.1, 0.24],
-            colour: if silhouette == Silhouette::Grouse {
-                GROUSE
-            } else {
-                PTARMIGAN
-            },
-            body: BIRD,
-            antlers: &[],
-            antler_plates: &[],
-        },
-    }
-}
-
-/// Whether the silhouette can carry antlers.
-pub fn has_antlers(silhouette: Silhouette) -> bool {
-    let outline = outline(silhouette);
-    !outline.antlers.is_empty() || !outline.antler_plates.is_empty()
-}
-
-fn animal(silhouette: Silhouette, height: f64, length: f64, antlers: bool) -> (Vec<Part>, f64) {
-    let outline = outline(silhouette);
-    let (sx, sy) = (length / outline.length, height / outline.shoulder_height);
-    let [vx, vy] = outline.vital;
-    let place = |[x, y]: [f64; 2]| [(x - vx) * sx, (y - vy) * sy];
-    let mut parts = Vec::new();
-    if antlers {
-        for &(from, to, width) in outline.antlers {
-            let (a, b) = (place(from), place(to));
-            let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
-            let norm = dx.hypot(dy).max(1e-9);
-            let half = width * sy / 2.0;
-            let (nx, ny) = (-dy / norm * half, dx / norm * half);
-            parts.push(Part {
-                points: vec![
-                    [a[0] + nx, a[1] + ny],
-                    [b[0] + nx, b[1] + ny],
-                    [b[0] - nx, b[1] - ny],
-                    [a[0] - nx, a[1] - ny],
-                ],
-                fill: ANTLER,
-                stroke: None,
-            });
-        }
-        for plate in outline.antler_plates {
-            parts.push(Part {
-                points: plate.iter().map(|&p| place(p)).collect(),
-                fill: ANTLER,
-                stroke: None,
-            });
-        }
-    }
-    for shape in outline.body {
-        parts.push(Part {
-            points: shape.iter().map(|&p| place(p)).collect(),
-            fill: outline.colour,
-            stroke: None,
-        });
-    }
+/// The drawing scaled to an animal `height` tall at the shoulder and
+/// `length` long, around its vital point; and the vital point's height.
+fn animal(drawing: &Drawing, height: f64, length: f64, antlers: bool) -> (Vec<Part>, f64) {
+    let (sx, sy) = (
+        length / drawing.length_m,
+        height / drawing.shoulder_height_m,
+    );
+    let [vx, vy] = drawing.vital;
+    let parts = drawing
+        .parts
+        .iter()
+        .filter(|part| antlers || !part.antler)
+        .map(|part| {
+            let [r, g, b] = part.rgb();
+            Part::new(
+                part.points
+                    .iter()
+                    .map(|&[x, y]| [(x - vx) * sx, (y - vy) * sy])
+                    .collect(),
+                Color32::from_rgb(r, g, b),
+                None,
+            )
+        })
+        .collect();
     (parts, vy * sy)
+}
+
+/// Triangles filling a simple polygon by ear clipping, as corner indices;
+/// none when it is convex (or too broken to fill).
+fn triangulate(points: &[[f64; 2]]) -> Vec<[u32; 3]> {
+    let n = points.len();
+    if n < 4 {
+        return Vec::new();
+    }
+    let turn = |a: [f64; 2], b: [f64; 2], c: [f64; 2]| {
+        (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+    };
+    // Twice the signed area: positive when the corners run anticlockwise.
+    let area: f64 = (0..n)
+        .map(|i| {
+            let (a, b) = (points[i], points[(i + 1) % n]);
+            a[0] * b[1] - b[0] * a[1]
+        })
+        .sum();
+    let sign = if area < 0.0 { -1.0 } else { 1.0 };
+    let convex =
+        (0..n).all(|i| turn(points[i], points[(i + 1) % n], points[(i + 2) % n]) * sign >= -1e-12);
+    if convex {
+        return Vec::new();
+    }
+    let mut corners: Vec<usize> = (0..n).collect();
+    let mut triangles = Vec::with_capacity(n - 2);
+    while corners.len() > 3 {
+        let count = corners.len();
+        let ear = (0..count).find(|&i| {
+            let [a, b, c] = [
+                corners[(i + count - 1) % count],
+                corners[i],
+                corners[(i + 1) % count],
+            ]
+            .map(|k| points[k]);
+            turn(a, b, c) * sign > 1e-15
+                && corners.iter().all(|&k| {
+                    let p = points[k];
+                    p == a
+                        || p == b
+                        || p == c
+                        || turn(a, b, p) * sign < 0.0
+                        || turn(b, c, p) * sign < 0.0
+                        || turn(c, a, p) * sign < 0.0
+                })
+        });
+        // A flat corner (three points in a line) or a broken polygon: drop
+        // the corner and carry on.
+        let i = ear.unwrap_or_else(|| {
+            (0..count)
+                .find(|&i| {
+                    let [a, b, c] = [
+                        corners[(i + count - 1) % count],
+                        corners[i],
+                        corners[(i + 1) % count],
+                    ]
+                    .map(|k| points[k]);
+                    turn(a, b, c).abs() <= 1e-15
+                })
+                .unwrap_or(0)
+        });
+        if ear.is_some() {
+            triangles.push([
+                corners[(i + count - 1) % count] as u32,
+                corners[i] as u32,
+                corners[(i + 1) % count] as u32,
+            ]);
+        }
+        corners.remove(i);
+    }
+    triangles.push([corners[0] as u32, corners[1] as u32, corners[2] as u32]);
+    triangles
 }
 
 /// A paper target on a stand: card, black, rings.
@@ -379,25 +240,21 @@ fn rings(diameters_mm: &[f64], black: f64) -> (Vec<Part>, f64) {
     let half = outer / 2.0 + (outer * 0.15).max(0.01);
     let aim_height = STAND_HEIGHT.max(half + 0.3);
     let mut parts = posts(aim_height, half, &[-half * 0.7, half * 0.7]);
-    parts.push(Part {
-        points: vec![[-half, -half], [half, -half], [half, half], [-half, half]],
-        fill: CARD,
-        stroke: None,
-    });
+    parts.push(Part::new(
+        vec![[-half, -half], [half, -half], [half, half], [-half, half]],
+        CARD,
+        None,
+    ));
     if black > 0.0 {
-        parts.push(Part {
-            points: circle(black / 2.0),
-            fill: PRINT,
-            stroke: None,
-        });
+        parts.push(Part::new(circle(black / 2.0), PRINT, None));
     }
     for &diameter in diameters_mm {
         let radius = diameter / 2000.0;
-        parts.push(Part {
-            points: circle(radius),
-            fill: Color32::TRANSPARENT,
-            stroke: Some(if radius * 2.0 < black { CARD } else { PRINT }),
-        });
+        parts.push(Part::new(
+            circle(radius),
+            Color32::TRANSPARENT,
+            Some(if radius * 2.0 < black { CARD } else { PRINT }),
+        ));
     }
     (parts, aim_height)
 }
@@ -406,11 +263,7 @@ fn rings(diameters_mm: &[f64], black: f64) -> (Vec<Part>, f64) {
 fn plate(diameter: f64) -> (Vec<Part>, f64) {
     let aim_height = STAND_HEIGHT.max(diameter / 2.0 + 0.3);
     let mut parts = posts(aim_height, 0.0, &[0.0]);
-    parts.push(Part {
-        points: circle(diameter / 2.0),
-        fill: STEEL,
-        stroke: Some(PRINT),
-    });
+    parts.push(Part::new(circle(diameter / 2.0), STEEL, Some(PRINT)));
     (parts, aim_height)
 }
 
@@ -418,15 +271,17 @@ fn plate(diameter: f64) -> (Vec<Part>, f64) {
 fn posts(aim_height: f64, top: f64, at: &[f64]) -> Vec<Part> {
     let width = 0.05;
     at.iter()
-        .map(|&x| Part {
-            points: vec![
-                [x - width / 2.0, -aim_height],
-                [x + width / 2.0, -aim_height],
-                [x + width / 2.0, -top],
-                [x - width / 2.0, -top],
-            ],
-            fill: POST,
-            stroke: None,
+        .map(|&x| {
+            Part::new(
+                vec![
+                    [x - width / 2.0, -aim_height],
+                    [x + width / 2.0, -aim_height],
+                    [x + width / 2.0, -top],
+                    [x - width / 2.0, -top],
+                ],
+                POST,
+                None,
+            )
         })
         .collect()
 }
@@ -436,29 +291,55 @@ mod tests {
     use super::*;
     use ballistics_store::Catalog;
 
+    /// Twice the area of a polygon, ignoring which way it runs.
+    fn area(points: &[[f64; 2]]) -> f64 {
+        (0..points.len())
+            .map(|i| {
+                let (a, b) = (points[i], points[(i + 1) % points.len()]);
+                a[0] * b[1] - b[0] * a[1]
+            })
+            .sum::<f64>()
+            .abs()
+    }
+
     #[test]
-    fn every_outline_part_is_convex() {
-        for silhouette in Silhouette::ALL {
-            let outline = outline(silhouette);
-            for (index, part) in outline.body.iter().chain(outline.antler_plates).enumerate() {
-                let turns: Vec<f64> = (0..part.len())
-                    .map(|i| {
-                        let [a, b, c] = [
-                            part[i],
-                            part[(i + 1) % part.len()],
-                            part[(i + 2) % part.len()],
-                        ];
-                        (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
-                    })
-                    .collect();
-                let all_left = turns.iter().all(|&turn| turn >= -1e-12);
-                let all_right = turns.iter().all(|&turn| turn <= 1e-12);
+    fn every_drawing_part_fills_completely() {
+        for drawing in &Catalog::builtin().drawings {
+            for (index, part) in drawing.parts.iter().enumerate() {
+                let triangles = triangulate(&part.points);
+                if triangles.is_empty() {
+                    continue;
+                }
+                let filled: f64 = triangles
+                    .iter()
+                    .map(|corners| area(&corners.map(|k| part.points[k as usize])))
+                    .sum();
+                let whole = area(&part.points);
                 assert!(
-                    all_left || all_right,
-                    "{silhouette:?} part {index} is not convex: {turns:?}"
+                    (filled - whole).abs() <= whole * 1e-6,
+                    "{} part {index}: triangles cover {filled}, the shape {whole}",
+                    drawing.id
                 );
             }
         }
+    }
+
+    #[test]
+    fn triangulates_concave_shapes_only() {
+        let square = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+        assert!(triangulate(&square).is_empty());
+        // An L, either way round.
+        let mut l = vec![
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [2.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+            [0.0, 2.0],
+        ];
+        assert_eq!(triangulate(&l).len(), 4);
+        l.reverse();
+        assert_eq!(triangulate(&l).len(), 4);
     }
 
     #[test]

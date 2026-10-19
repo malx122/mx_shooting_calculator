@@ -6,6 +6,7 @@
 
 pub mod catalog;
 pub mod db;
+pub mod drawings;
 pub mod model;
 pub mod optics;
 pub mod strelok;
@@ -19,6 +20,7 @@ use std::fmt;
 
 pub use catalog::{Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
+pub use drawings::{Drawing, DrawingPart};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
     RifleLoad, TableColumns, TableSettings, VelocityModel, VelocityPoint, ZeroWeather,
@@ -26,7 +28,7 @@ pub use model::{
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
-pub use targets::{Silhouette, Target, TargetKind, TargetShape};
+pub use targets::{Target, TargetGroup, TargetKind, TargetShape, swedish_class};
 pub use transfer::ImportReport;
 
 pub const GRAMS_PER_GRAIN: f64 = 0.064_798_91;

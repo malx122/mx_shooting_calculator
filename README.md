@@ -219,7 +219,10 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    zone) and, for game, the minimum energy. You can change either for this
    calculation; ↺ goes back to the target's value. Sport targets have no
    ethical limits. The target is drawn at true size through the scope and in
-   3D.
+   3D. When the target has a **Swedish ammunition class**, the results say
+   whether your load meets it: the class is worked out from the bullet's
+   weight, whether it expands, lead-free or not, and its energy at the
+   muzzle and at 100 m (NFS 2023:8).
 
    The **Trajectory** can be shown in 2D (a graph of drop and wind drift) or
    in 3D. The 3D view is a true-scale scene: a hunter at the muzzle, the
@@ -232,11 +235,19 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    scene is true to scale, the hunter and the target are small at long range
    in the wide views.
 4. **Targets:** the catalog's game animals and sport targets, and **My
-   targets**. Copy a catalog target to adjust it, or make a new one:
-   - an animal: drawn as a moose, deer, wild boar, bear, fox, hare or
-     rabbit, grouse or ptarmigan, at your size, with or without antlers.
-     Birds and hares are measured to the top of the back, and birds from
-     beak to tail;
+   targets**. The catalog has every species on Svenska Jägareförbundet's
+   list of Swedish hunting seasons, in folding groups (deer; wild boar and
+   mouflon; bear; fox, badger and martens; hares, rabbits and beaver;
+   grouse, ptarmigan and pheasant; ducks, geese and swans; other birds;
+   sport). Search finds them by English or Swedish name. Each species has
+   its own drawing of the male (birds in the plumage they have in the
+   hunting season); species that look alike share one, such as the grey
+   geese or the gulls. Sizes and vital zones are estimates. Each Swedish
+   species shows the least ammunition class the law allows for it with a
+   rifle. Copy a catalog target to adjust it, or make a new one:
+   - an animal: drawn as any of the catalog's animals, at your size, with
+     or without antlers or horns. Birds and small animals are measured to
+     the top of the back, and birds from beak to tail;
    - a paper target with rings: innermost ring, ring spacing, number of
      rings and black;
    - a steel plate.

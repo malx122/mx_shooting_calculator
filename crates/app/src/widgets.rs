@@ -3,7 +3,7 @@
 use std::ops::RangeInclusive;
 
 use ballistics_store::{
-    Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, Scope, Target, TargetKind, UserScope,
+    Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, Scope, Target, TargetGroup, UserScope,
 };
 use eframe::egui::{self, RichText};
 
@@ -159,16 +159,13 @@ pub fn target_picker(
                 };
             let catalog = &Catalog::builtin().targets;
             group(ui, "My targets", &mut data.targets.iter());
-            group(
-                ui,
-                "Game",
-                &mut catalog.iter().filter(|t| t.kind == TargetKind::Game),
-            );
-            group(
-                ui,
-                "Sport",
-                &mut catalog.iter().filter(|t| t.kind == TargetKind::Sport),
-            );
+            for kind in TargetGroup::ALL {
+                group(
+                    ui,
+                    kind.label(),
+                    &mut catalog.iter().filter(|t| t.group() == kind),
+                );
+            }
         });
     *selected != before
 }

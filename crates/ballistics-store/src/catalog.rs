@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
+use crate::drawings::{Drawing, RENAMED};
 use crate::model::{BcModel, Bullet, BulletKind, Construction, new_id};
 use crate::optics::{Reticle, Scope};
 use crate::targets::Target;
@@ -137,6 +138,7 @@ pub struct Catalog {
     pub scopes: Vec<Scope>,
     pub reticles: Vec<Reticle>,
     pub targets: Vec<Target>,
+    pub drawings: Vec<Drawing>,
 }
 
 impl Catalog {
@@ -154,7 +156,12 @@ impl Catalog {
                     include_str!("../catalog/reticles.json"),
                 )
             })
-            .and_then(|catalog| catalog.with_targets(include_str!("../catalog/targets.json")))
+            .and_then(|catalog| {
+                catalog.with_targets(
+                    include_str!("../catalog/targets.json"),
+                    include_str!("../catalog/drawings.json"),
+                )
+            })
             .expect("the built-in catalog is valid JSON (checked by tests)")
         })
     }
@@ -166,6 +173,7 @@ impl Catalog {
             scopes: Vec::new(),
             reticles: Vec::new(),
             targets: Vec::new(),
+            drawings: Vec::new(),
         })
     }
 
@@ -177,11 +185,25 @@ impl Catalog {
         })
     }
 
-    pub fn with_targets(self, targets: &str) -> serde_json::Result<Catalog> {
+    pub fn with_targets(self, targets: &str, drawings: &str) -> serde_json::Result<Catalog> {
         Ok(Catalog {
             targets: serde_json::from_str(targets)?,
+            drawings: serde_json::from_str(drawings)?,
             ..self
         })
+    }
+
+    /// The drawing with this id (or the one that replaced it), else the
+    /// first one, so a target always has something to show.
+    pub fn drawing(&self, id: &str) -> &Drawing {
+        let find = |id: &str| self.drawings.iter().find(|drawing| drawing.id == id);
+        find(id)
+            .or_else(|| {
+                let (_, new) = RENAMED.iter().find(|(old, _)| *old == id)?;
+                find(new)
+            })
+            .or(self.drawings.first())
+            .expect("the built-in catalog has drawings")
     }
 
     pub fn target(&self, id: &str) -> Option<&Target> {

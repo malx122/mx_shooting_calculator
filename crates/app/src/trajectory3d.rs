@@ -721,18 +721,36 @@ fn add_figure(faces: &mut Vec<Face>, projector: &Projector, frame: &Frame, figur
             .iter()
             .map(|&[x, y]| frame.at(frame.range, y, x))
             .collect();
-        if let Some(points) = projector.polygon(&corners) {
+        // Equal depths keep their order in the stable sort; later parts
+        // are a hair nearer so they are painted on top.
+        let depth = depth - index as f64 * 1e-6;
+        if part.triangles.is_empty() {
+            if let Some(points) = projector.polygon(&corners) {
+                faces.push(Face {
+                    depth,
+                    shape: part.shape(points),
+                });
+            }
+        } else if let Some(points) = corners
+            .iter()
+            .map(|&corner| projector.project(corner))
+            .collect::<Option<Vec<Pos2>>>()
+        {
             faces.push(Face {
-                // Equal depths keep their order in the stable sort; later
-                // parts are a hair nearer so they are painted on top.
-                depth: depth - index as f64 * 1e-6,
-                shape: Shape::convex_polygon(
-                    points,
-                    part.fill,
-                    part.stroke
-                        .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour)),
-                ),
+                depth,
+                shape: part.shape(points),
             });
+        } else {
+            // Partly behind the camera: each triangle clipped on its own.
+            for triangle in &part.triangles {
+                let corners = triangle.map(|k| corners[k as usize]);
+                if let Some(points) = projector.polygon(&corners) {
+                    faces.push(Face {
+                        depth,
+                        shape: egui::Shape::convex_polygon(points, part.fill, Stroke::NONE),
+                    });
+                }
+            }
         }
     }
 }

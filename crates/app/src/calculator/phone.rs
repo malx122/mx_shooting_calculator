@@ -6,7 +6,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use ballistics_core::Solution;
 use ballistics_core::analysis::OptimalZero;
-use ballistics_store::{Bullet, Catalog, ClickUnit, Reticle, Rifle, RifleLoad, Scope, Target};
+use ballistics_store::{Bullet, ClickUnit, Reticle, Rifle, RifleLoad, Scope, Target};
 use eframe::egui::{
     self, Align2, Color32, FontId, Pos2, Rect, RichText, Sense, Shape, Stroke, Ui, UiBuilder, pos2,
     vec2,
@@ -201,6 +201,7 @@ impl CalculatorPage {
                             .aim
                             .min_velocity_mps
                             .unwrap_or_else(|| effective_min_velocity(&self.inputs, bullet)),
+                        load_class: super::load_class(bullet, solution),
                     };
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }
@@ -487,7 +488,7 @@ impl CalculatorPage {
         let shown = mobile::sheet(context, "target-picker", "Target", |ui| {
             ui.add(
                 egui::TextEdit::singleline(search)
-                    .hint_text("Search: roe, fox, ISSF, plate…")
+                    .hint_text("Search: roe, rådjur, fox, ISSF…")
                     .desired_width(f32::INFINITY)
                     .min_size(vec2(0.0, 40.0)),
             );
@@ -524,30 +525,22 @@ impl CalculatorPage {
                     }
                 }
             }
-            let catalog = &Catalog::builtin().targets;
-            let groups: [(&str, Vec<&Target>); 3] = [
-                ("MY TARGETS", data.targets.iter().collect()),
-                ("GAME", catalog.iter().filter(|t| t.is_game()).collect()),
-                ("SPORT", catalog.iter().filter(|t| !t.is_game()).collect()),
-            ];
-            for (title, targets) in groups {
-                let targets: Vec<&Target> = targets
-                    .into_iter()
-                    .filter(|target| {
-                        query.is_empty() || target.name.to_lowercase().contains(&query)
-                    })
-                    .collect();
-                if targets.is_empty() {
-                    continue;
-                }
+            let mine: Vec<&Target> = data.targets.iter().filter(|t| t.matches(&query)).collect();
+            if !mine.is_empty() {
                 ui.add_space(6.0);
-                ui.weak(title);
-                for target in targets {
+                ui.weak("MY TARGETS");
+                for target in mine {
                     if row(ui, target) {
                         chosen = Some(Some(target.id.clone()));
                     }
                 }
             }
+            ui.add_space(6.0);
+            crate::targets::catalog_groups(ui, &query, |ui, target| {
+                if row(ui, target) {
+                    chosen = Some(Some(target.id.clone()));
+                }
+            });
         });
         if let Some(target) = chosen {
             if target != self.inputs.target_id {

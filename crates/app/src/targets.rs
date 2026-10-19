@@ -1,11 +1,11 @@
 //! The Targets page: the catalog's game animals and sport targets, and the
 //! hunter's own, with an editor and a drawing to scale.
 
-use ballistics_store::{Catalog, Silhouette, Target, TargetKind, TargetShape};
-use eframe::egui::{self, Color32, Pos2, RichText, Shape, Stroke, pos2, vec2};
+use ballistics_store::{Catalog, Drawing, Target, TargetGroup, TargetKind, TargetShape};
+use eframe::egui::{self, Color32, Pos2, RichText, pos2, vec2};
 
 use crate::app::{Action, Data};
-use crate::figure::{Figure, has_antlers};
+use crate::figure::Figure;
 use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
@@ -23,12 +23,14 @@ enum Showing {
 
 pub struct TargetsPage {
     showing: Showing,
+    search: String,
 }
 
 impl Default for TargetsPage {
     fn default() -> Self {
         Self {
             showing: Showing::Nothing,
+            search: String::new(),
         }
     }
 }
@@ -98,13 +100,14 @@ impl TargetsPage {
         }
     }
 
-    /// The phone's list: own targets, then the catalog's game and sport.
+    /// The phone's list: own targets, then the catalog's by group.
     fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data) {
+        search_field(ui, &mut self.search);
         ui.heading("My targets");
         if ui.button("+ New target").clicked() {
             self.showing = Showing::Custom(Target::new_custom());
         }
-        for target in &data.targets {
+        for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
             if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
                 self.showing = Showing::Custom(target.clone());
             }
@@ -112,24 +115,26 @@ impl TargetsPage {
         if data.targets.is_empty() {
             ui.weak("None yet: copy one below or make a new one.");
         }
-        for (title, kind) in [("Game", TargetKind::Game), ("Sport", TargetKind::Sport)] {
-            ui.add_space(10.0);
-            ui.heading(title);
-            for target in Catalog::builtin().targets.iter().filter(|t| t.kind == kind) {
-                if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
-                    self.showing = Showing::Catalog(target.id.clone());
-                }
+        ui.add_space(10.0);
+        let mut chosen = None;
+        catalog_groups(ui, &self.search, |ui, target| {
+            if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
+                chosen = Some(target.id.clone());
             }
+        });
+        if let Some(id) = chosen {
+            self.showing = Showing::Catalog(id);
         }
     }
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data) {
+        search_field(ui, &mut self.search);
         ui.heading("My targets");
         if ui.button("➕ New target").clicked() {
             self.showing = Showing::Custom(Target::new_custom());
         }
         ui.add_space(4.0);
-        for target in &data.targets {
+        for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
             let selected =
                 matches!(&self.showing, Showing::Custom(editing) if editing.id == target.id);
             if ui.selectable_label(selected, &target.name).clicked() {
@@ -139,16 +144,65 @@ impl TargetsPage {
         if data.targets.is_empty() {
             ui.weak("None yet: copy one below or make a new one.");
         }
-        for (title, kind) in [("Game", TargetKind::Game), ("Sport", TargetKind::Sport)] {
-            ui.separator();
-            ui.heading(title);
-            for target in Catalog::builtin().targets.iter().filter(|t| t.kind == kind) {
-                let selected = matches!(&self.showing, Showing::Catalog(id) if *id == target.id);
-                if ui.selectable_label(selected, &target.name).clicked() {
-                    self.showing = Showing::Catalog(target.id.clone());
-                }
+        ui.separator();
+        let showing = match &self.showing {
+            Showing::Catalog(id) => Some(id.clone()),
+            _ => None,
+        };
+        let mut chosen = None;
+        catalog_groups(ui, &self.search, |ui, target| {
+            let selected = showing.as_deref() == Some(target.id.as_str());
+            if ui.selectable_label(selected, &target.name).clicked() {
+                chosen = Some(target.id.clone());
             }
+        });
+        if let Some(id) = chosen {
+            self.showing = Showing::Catalog(id);
         }
+    }
+}
+
+fn search_field(ui: &mut egui::Ui, search: &mut String) {
+    ui.add(
+        egui::TextEdit::singleline(search)
+            .hint_text("Search, also Swedish names")
+            .desired_width(f32::INFINITY),
+    );
+    ui.add_space(4.0);
+}
+
+/// The catalog's targets that match the search, in folding sections by
+/// group; all open while searching.
+pub fn catalog_groups(
+    ui: &mut egui::Ui,
+    search: &str,
+    mut row: impl FnMut(&mut egui::Ui, &Target),
+) {
+    let searching = !search.trim().is_empty();
+    let mut found = false;
+    for group in TargetGroup::ALL {
+        let targets: Vec<&Target> = Catalog::builtin()
+            .targets
+            .iter()
+            .filter(|target| target.group() == group && target.matches(search))
+            .collect();
+        if targets.is_empty() {
+            continue;
+        }
+        found = true;
+        egui::CollapsingHeader::new(
+            RichText::new(format!("{} ({})", group.label(), targets.len())).strong(),
+        )
+        .id_salt(("target-group", group.label()))
+        .open(searching.then_some(true))
+        .show(ui, |ui| {
+            for target in targets {
+                row(ui, target);
+            }
+        });
+    }
+    if !found {
+        ui.weak("Nothing in the catalog matches.");
     }
 }
 
@@ -224,6 +278,14 @@ fn facts(ui: &mut egui::Ui, target: &Target) {
     let u = units::prefs(ui.ctx());
     let short = |cm: f64| u.format(Quantity::ShortLength, cm);
     grid(ui, "target-facts", |ui| {
+        if !target.other_names.is_empty() {
+            ui.label("Also called");
+            ui.label(target.other_names.join(", "));
+            ui.end_row();
+        }
+        ui.label("Group");
+        ui.label(target.group().label());
+        ui.end_row();
         match &target.shape {
             TargetShape::Animal {
                 silhouette,
@@ -231,10 +293,11 @@ fn facts(ui: &mut egui::Ui, target: &Target) {
                 body_length_cm,
                 ..
             } => {
+                let drawing = Catalog::builtin().drawing(silhouette);
                 ui.label("Drawn as");
-                ui.label(silhouette.label());
+                ui.label(&drawing.name);
                 ui.end_row();
-                let (height_label, length_label) = size_labels(*silhouette);
+                let (height_label, length_label) = size_labels(drawing);
                 ui.label(height_label);
                 ui.label(short(*shoulder_height_cm));
                 ui.end_row();
@@ -283,6 +346,11 @@ fn facts(ui: &mut egui::Ui, target: &Target) {
                 None => "the bullet's or your general one".to_owned(),
             });
             ui.end_row();
+            if let Some(class) = target.swedish_class {
+                ui.label("Swedish class");
+                ui.label(class_text(class)).on_hover_text(CLASS_HELP);
+                ui.end_row();
+            }
         }
     });
 }
@@ -358,6 +426,18 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
         });
         ui.end_row();
 
+        ui.label("Group");
+        let mut group = target.group();
+        egui::ComboBox::from_id_salt("target-group")
+            .selected_text(group.label())
+            .show_ui(ui, |ui| {
+                for option in TargetGroup::ALL {
+                    ui.selectable_value(&mut group, option, option.label());
+                }
+            });
+        target.group = Some(group);
+        ui.end_row();
+
         ui.label("Shape");
         ui.horizontal(|ui| {
             let current = shape_name(&target.shape);
@@ -379,16 +459,26 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
                 body_length_cm,
                 antlers,
             } => {
+                let drawing = Catalog::builtin().drawing(silhouette);
                 ui.label("Drawn as");
                 egui::ComboBox::from_id_salt("silhouette")
-                    .selected_text(silhouette.label())
+                    .selected_text(&drawing.name)
+                    .height(320.0)
                     .show_ui(ui, |ui| {
-                        for option in Silhouette::ALL {
-                            ui.selectable_value(silhouette, option, option.label());
+                        let mut drawings: Vec<&Drawing> =
+                            Catalog::builtin().drawings.iter().collect();
+                        drawings.sort_by(|a, b| a.name.cmp(&b.name));
+                        for option in drawings {
+                            if ui
+                                .selectable_label(option.id == drawing.id, &option.name)
+                                .clicked()
+                            {
+                                *silhouette = option.id.clone();
+                            }
                         }
                     });
                 ui.end_row();
-                let (height_label, length_label) = size_labels(*silhouette);
+                let (height_label, length_label) = size_labels(drawing);
                 quantity(
                     ui,
                     height_label,
@@ -405,7 +495,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
                     10.0..=600.0,
                     1.0,
                 );
-                if has_antlers(*silhouette) {
+                if drawing.has_antlers() {
                     ui.label("Antlers");
                     ui.checkbox(antlers, "");
                     ui.end_row();
@@ -473,6 +563,20 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
                 0.0..=1500.0,
                 5.0,
             );
+            ui.label("Swedish class").on_hover_text(CLASS_HELP);
+            egui::ComboBox::from_id_salt("swedish-class")
+                .selected_text(target.swedish_class.map_or("None".to_owned(), class_text))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut target.swedish_class, None, "None");
+                    for class in 1..=4 {
+                        ui.selectable_value(
+                            &mut target.swedish_class,
+                            Some(class),
+                            class_text(class),
+                        );
+                    }
+                });
+            ui.end_row();
         }
         ui.label("Notes");
         ui.text_edit_multiline(&mut target.notes);
@@ -480,12 +584,29 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
     });
 }
 
+pub const CLASS_HELP: &str = "The least ammunition class Swedish law allows for this \
+     animal with a rifle (Naturvårdsverket, NFS 2023:8). Class 1 is the strictest: an \
+     expanding bullet of at least 9 g with 2 700 J at 100 m (or 10 g with 2 000 J, or a \
+     lead-free 7.7 g with 2 000 J). Class 2: expanding, 3.2 g, 800 J at 100 m. Class 3: \
+     2.5 g, 200 J at 100 m. Class 4: 150 J at the muzzle. Check the current rules.";
+
+/// "Class 2 or higher": a load of a stricter class is allowed too.
+pub fn class_text(class: u8) -> String {
+    if class == 1 {
+        "Class 1".to_owned()
+    } else {
+        format!("Class {class} or stricter")
+    }
+}
+
 /// What an animal's two sizes measure.
-fn size_labels(silhouette: Silhouette) -> (&'static str, &'static str) {
-    match silhouette {
-        bird if bird.is_bird() => ("Height to the back", "Beak to tail"),
-        Silhouette::Hare => ("Height to the back", "Body length"),
-        _ => ("Shoulder height", "Body length"),
+fn size_labels(drawing: &Drawing) -> (&'static str, &'static str) {
+    if drawing.bird {
+        ("Height to the back", "Beak to tail")
+    } else if drawing.shoulder_height_m < 0.45 {
+        ("Height to the back", "Body length")
+    } else {
+        ("Shoulder height", "Body length")
     }
 }
 
@@ -507,7 +628,7 @@ fn default_shape(name: &str) -> TargetShape {
         },
         "Plate" => TargetShape::Plate { diameter_mm: 200.0 },
         _ => TargetShape::Animal {
-            silhouette: Silhouette::Deer,
+            silhouette: "roe-deer".to_owned(),
             shoulder_height_cm: 100.0,
             body_length_cm: 170.0,
             antlers: true,
@@ -545,11 +666,7 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
         FIELD,
     );
     for part in &figure.parts {
-        let points = part.points.iter().map(|&point| at(point)).collect();
-        let outline = part
-            .stroke
-            .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour));
-        painter.add(Shape::convex_polygon(points, part.fill, outline));
+        painter.add(part.shape(part.points.iter().map(|&point| at(point)).collect()));
     }
     let u = units::prefs(ui.ctx());
     painter.text(

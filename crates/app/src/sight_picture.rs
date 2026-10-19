@@ -67,13 +67,8 @@ impl SightPicture<'_> {
                 );
             }
             for part in &figure.parts {
-                let points: Vec<Pos2> = part.points.iter().map(|&point| at(point)).collect();
-                let outline = part
-                    .stroke
-                    .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour));
-                eyepiece
-                    .painter
-                    .add(Shape::convex_polygon(points, part.fill, outline));
+                let points = part.points.iter().map(|&point| at(point)).collect();
+                eyepiece.painter.add(part.shape(points));
             }
         }
         // Second-focal-plane marks change angular size with magnification.

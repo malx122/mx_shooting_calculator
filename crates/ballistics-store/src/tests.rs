@@ -607,6 +607,28 @@ fn custom_targets_save_export_and_import_once() {
 }
 
 #[test]
+fn catalog_drawings_are_sound() {
+    let catalog = Catalog::builtin();
+    let ids: std::collections::HashSet<_> = catalog.drawings.iter().map(|d| &d.id).collect();
+    assert_eq!(ids.len(), catalog.drawings.len(), "duplicate drawing id");
+    for drawing in &catalog.drawings {
+        assert!(drawing.shoulder_height_m > 0.0 && drawing.length_m > 0.0, "{}", drawing.id);
+        for part in &drawing.parts {
+            assert!(part.points.len() >= 3, "{}", drawing.id);
+            assert!(part.points.iter().all(|p| p[1] >= -1e-9), "{} below ground", drawing.id);
+            assert!(
+                part.fill.len() == 7 && part.fill.starts_with('#'),
+                "{}: fill {}",
+                drawing.id,
+                part.fill
+            );
+        }
+    }
+    // Ids from before the drawings were data still find one.
+    assert_eq!(catalog.drawing("no-such-drawing").id, catalog.drawings[0].id);
+}
+
+#[test]
 fn catalog_targets_are_valid() {
     let catalog = Catalog::builtin();
     let ids: std::collections::HashSet<_> = catalog.targets.iter().map(|t| &t.id).collect();
@@ -621,8 +643,17 @@ fn catalog_targets_are_valid() {
             "{}",
             target.name
         );
+        // Every target sits in a list section.
+        assert!(target.group.is_some(), "{}", target.name);
         match &target.shape {
-            TargetShape::Animal { .. } => assert!(target.is_game(), "{}", target.name),
+            TargetShape::Animal { silhouette, .. } => {
+                assert!(target.is_game(), "{}", target.name);
+                assert!(
+                    catalog.drawings.iter().any(|d| d.id == *silhouette),
+                    "{}: no drawing {silhouette}",
+                    target.name
+                );
+            }
             TargetShape::Rings { black_mm, .. } => {
                 assert!(
                     (target.vital_diameter_cm * 10.0 - black_mm).abs() < 1e-9,
@@ -639,6 +670,14 @@ fn catalog_targets_are_valid() {
             }
         }
     }
+    // Swedish names find the species.
+    let found: Vec<_> = catalog
+        .targets
+        .iter()
+        .filter(|t| t.matches("tjäder"))
+        .map(|t| t.id.as_str())
+        .collect();
+    assert_eq!(found, ["capercaillie"]);
     let issf50 = catalog.target("issf-50m-rifle").unwrap();
     let rings = issf50.shape.ring_diameters_mm();
     assert_eq!(rings.len(), 10);
