@@ -19,6 +19,8 @@ use crate::theme;
 use crate::units::{self, UnitPrefs};
 
 const CALCULATOR_SETTINGS: &str = "calculator";
+/// The version the hunter last used, to mention an update once.
+const SEEN_VERSION: &str = "seen_version";
 const UNIT_SETTINGS: &str = "units";
 
 #[derive(Clone, Copy, PartialEq)]
@@ -92,6 +94,7 @@ enum MenuSheet {
     Main,
     Units,
     Sync,
+    WhatsNew,
     /// How to put the app on the home screen by hand.
     Install,
 }
@@ -100,6 +103,7 @@ enum MenuSheet {
 enum MenuChoice {
     Units,
     Sync,
+    WhatsNew,
     Import,
     Export,
     Demo,
@@ -128,6 +132,8 @@ pub struct App {
     /// The phone menu, when open.
     menu: Option<MenuSheet>,
     sync: Sync,
+    /// The desktop's What's new window is open.
+    whats_new_open: bool,
     /// The hunter's data changed this frame: sync it.
     data_changed: bool,
     /// A backup picked in the browser, waiting to be previewed.
@@ -155,6 +161,7 @@ impl App {
         }
         let mut app = Self {
             sync,
+            whats_new_open: false,
             data_changed: false,
             store,
             data: Data::default(),
@@ -172,10 +179,31 @@ impl App {
             picked: Default::default(),
         };
         app.reload();
+        app.mention_update();
         if app.data.rifles.is_empty() {
             app.page = Page::Rifles;
         }
         app
+    }
+
+    /// Says once that the app was updated (not on the very first start).
+    fn mention_update(&mut self) {
+        let seen: Option<String> = self.store.setting(SEEN_VERSION).ok().flatten();
+        if seen.as_deref() == Some(crate::VERSION) {
+            return;
+        }
+        let used_before = seen.is_some() || !self.data.rifles.is_empty();
+        if used_before {
+            self.status = Some(Status {
+                text: format!(
+                    "Updated to version {}. What's new: click the version number (on a phone, \
+                     in the menu).",
+                    crate::VERSION
+                ),
+                error: false,
+            });
+        }
+        let _ = self.store.set_setting(SEEN_VERSION, &crate::VERSION);
     }
 
     fn reload(&mut self) {
@@ -449,6 +477,17 @@ impl App {
             Some(sync::Event::Stopped(message)) => self.report(Ok(message)),
             None => {}
         }
+        let mut open = self.whats_new_open;
+        egui::Window::new("What's new")
+            .open(&mut open)
+            .collapsible(false)
+            .default_size([520.0, 560.0])
+            .show(context, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, crate::changelog::show);
+            });
+        self.whats_new_open = open;
         let mut open = self.sync.window_open;
         egui::Window::new("Sync")
             .open(&mut open)
@@ -471,7 +510,9 @@ impl App {
             .frame(header)
             .show(context, |ui| {
                 ui.horizontal(|ui| {
-                    brand(ui);
+                    if brand(ui) {
+                        self.whats_new_open = !self.whats_new_open;
+                    }
                     ui.add_space(28.0);
                     for (page, label) in [
                         (Page::Calculate, "Calculate"),
@@ -666,6 +707,16 @@ impl App {
                     {
                         choice = Some(MenuChoice::Install);
                     }
+                    if mobile::list_row(
+                        ui,
+                        "What's new",
+                        &format!("Version {} and earlier", crate::VERSION),
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::WhatsNew);
+                    }
                     ui.add_space(8.0);
                     ui.label(RichText::new(crate::APP_NAME).strong());
                     let version = if crate::COMMIT.is_empty() {
@@ -682,6 +733,7 @@ impl App {
                 match shown.inner {
                     Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
+                    Some(MenuChoice::WhatsNew) => self.menu = Some(MenuSheet::WhatsNew),
                     Some(MenuChoice::Import) => {
                         self.menu = None;
                         self.import(context);
@@ -728,6 +780,13 @@ impl App {
                 let shown = mobile::sheet(context, "sync", "Sync", |ui| {
                     self.sync.panel(ui, &self.store)
                 });
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+            MenuSheet::WhatsNew => {
+                let shown =
+                    mobile::sheet(context, "whats-new", "What's new", crate::changelog::show);
                 if shown.closed {
                     self.menu = None;
                 }
@@ -798,24 +857,34 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
 }
 
 /// The logo in the header: icon, MX wordmark and tagline, all vector.
-fn brand(ui: &mut egui::Ui) {
+/// Returns true when the version number was clicked (for What's new).
+fn brand(ui: &mut egui::Ui) -> bool {
+    let mut clicked = false;
     ui.add(egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(36.0, 36.0)));
     ui.vertical(|ui| {
         ui.spacing_mut().item_spacing.y = 3.0;
         ui.horizontal(|ui| {
             ui.add(egui::Image::new(theme::wordmark()).fit_to_exact_size(egui::vec2(34.0, 19.0)));
-            let version = ui.label(
-                RichText::new(format!("v{}", crate::VERSION))
-                    .size(10.0)
-                    .color(theme::BONE_MUTED),
-            );
-            if !crate::COMMIT.is_empty() {
-                version.on_hover_text(format!(
-                    "Version {}, built from commit {}",
+            let version = ui
+                .add(
+                    egui::Label::new(
+                        RichText::new(format!("v{}", crate::VERSION))
+                            .size(10.0)
+                            .color(theme::BONE_MUTED),
+                    )
+                    .sense(egui::Sense::click()),
+                )
+                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            let hover = if crate::COMMIT.is_empty() {
+                format!("Version {}. Click for what's new.", crate::VERSION)
+            } else {
+                format!(
+                    "Version {}, built from commit {}. Click for what's new.",
                     crate::VERSION,
                     crate::COMMIT
-                ));
-            }
+                )
+            };
+            clicked = version.on_hover_text(hover).clicked();
         });
         ui.label(
             RichText::new("SHOOTING CALCULATOR")
@@ -825,4 +894,5 @@ fn brand(ui: &mut egui::Ui) {
                 .extra_letter_spacing(1.6),
         );
     });
+    clicked
 }

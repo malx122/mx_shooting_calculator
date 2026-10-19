@@ -1,6 +1,7 @@
 mod app;
 mod bullets;
 mod calculator;
+mod changelog;
 mod figure;
 mod google;
 mod http;

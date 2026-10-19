@@ -111,7 +111,10 @@ from.
 To make a release:
 
 1. Move the notes under "Unreleased" in [CHANGELOG.md](CHANGELOG.md) to a new
-   version heading, and set the same version in `Cargo.toml`.
+   version heading, and set the same version in `Cargo.toml`. The changelog
+   is compiled into the app and shown under **What's new** (click the
+   version number; on a phone, in the menu), so write it for hunters. A
+   test fails if `Cargo.toml`'s version has no heading in it.
 2. Commit, then tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
 3. The tag builds and publishes the web version. The workflow refuses a tag
    that doesn't match `Cargo.toml`.

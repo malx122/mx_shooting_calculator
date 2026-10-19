@@ -6,6 +6,12 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **What's new:** this changelog in the app. Click the version number by the
+  logo, or open What's new in the phone's menu. After an update the app
+  says so once.
+
 ## [0.4.0] - 2026-10-20
 
 ### Added
