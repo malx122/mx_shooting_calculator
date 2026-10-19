@@ -12,7 +12,7 @@ use eframe::egui::{
     vec2,
 };
 
-use ballistics_shot::{from_radians, load_class, unit_label};
+use ballistics_shot::{from_radians, unit_label};
 
 use super::{
     Aim, CalculatorPage, PressureSource, RAD_PER_MOA, ResultsView, SOLVE_RANGE_M, ViewRequests,
@@ -53,6 +53,7 @@ pub(super) struct PhoneFrame<'a> {
     pub optics: Option<&'a (Scope, Reticle)>,
     pub aim: &'a Aim,
     pub effective_load: Option<&'a RifleLoad>,
+    pub country: Option<ballistics_store::Country>,
 }
 
 /// What the results asked for.
@@ -202,7 +203,9 @@ impl CalculatorPage {
                         min_velocity: frame.aim.min_velocity_mps.unwrap_or_else(|| {
                             ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)
                         }),
-                        load_class: load_class(bullet, solution),
+                        assessment: frame
+                            .country
+                            .map(|country| ballistics_shot::assess(bullet, solution, country)),
                     };
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }

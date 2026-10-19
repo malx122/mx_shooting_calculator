@@ -401,6 +401,7 @@ pub fn read_export(json: &str) -> Result<PersonalData, StoreError> {
     data.rifle_loads
         .iter_mut()
         .for_each(RifleLoad::upgrade_legacy);
+    data.targets.iter_mut().for_each(Target::upgrade_legacy);
     if data.format != FORMAT && !LEGACY_FORMATS.contains(&data.format.as_str()) {
         return Err(StoreError::Invalid(
             "this is not an MX Shooting Calculator export".into(),

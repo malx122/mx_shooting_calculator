@@ -12,6 +12,12 @@ any release may still change things noticeably.
   or Claude) for holdovers, dope tables and whether a shot is ethical and
   legal, computed by the app's own engine with your rifles and bullets. See
   "AI assistants" in the README for setting it up.
+- **Hunting rules per country:** choose Sweden, Finland or none (the flag
+  in the header; on a phone, in the menu). Finland's rifle ammunition rules
+  (Metsästysasetus 666/1993 § 16 a) are new, with each species' level, its
+  Finnish name and what else Finnish law says. Sweden's rules moved to a
+  file of their own; more countries can follow. The app starts from the
+  device's language and region.
 - **What's new:** this changelog in the app. Click the version number by the
   logo, or open What's new in the phone's menu. After an update the app
   says so once.

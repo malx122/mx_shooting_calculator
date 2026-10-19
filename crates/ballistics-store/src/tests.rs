@@ -943,3 +943,20 @@ fn copies_saved_at_the_same_moment_settle_on_one() {
     b.merge_sync(&a.export_data().unwrap()).unwrap();
     assert_eq!(a.rifles().unwrap(), b.rifles().unwrap());
 }
+
+#[test]
+fn a_swedish_class_from_an_older_backup_becomes_the_swedish_level() {
+    let mut store = Store::open_in_memory().unwrap();
+    let old = r#"{"format":"mxsc/personal-data","version":4,"exported_at":0,
+        "rifles":[],"bullets":[],"rifle_loads":[],"scopes":[],
+        "targets":[{"id":"t1","name":"My roe","kind":"game","shape":"animal","silhouette":"roe-deer",
+          "shoulder_height_cm":70,"body_length_cm":115,"antlers":true,"vital_diameter_cm":15,
+          "min_energy_j":800,"swedish_class":2,"updated_at":5}]}"#;
+    store.import_json(old).unwrap();
+    let target = store.targets().unwrap().remove(0);
+    assert_eq!(target.ammunition_level(Country::Sweden), Some(2));
+    assert_eq!(target.ammunition_level(Country::Finland), None);
+    let exported = store.export_json().unwrap();
+    assert!(exported.contains(r#""sweden": 2"#), "{exported}");
+    assert!(!exported.contains("swedish_class"));
+}

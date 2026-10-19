@@ -13,7 +13,7 @@ use eframe::egui::{self, RichText};
 use egui_plot::{HLine, Legend, Line, Plot, PlotBounds, PlotPoints, VLine};
 use serde::{Deserialize, Serialize};
 
-use ballistics_shot::{from_radians, load_class, to_radians, unit_label};
+use ballistics_shot::{from_radians, to_radians, unit_label};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
@@ -331,6 +331,7 @@ impl CalculatorPage {
                     optics: optics.as_ref(),
                     aim: &aim,
                     effective_load: effective_load.as_ref(),
+                    country: data.country,
                 },
                 &mut actions,
             );
@@ -415,7 +416,9 @@ impl CalculatorPage {
                             min_velocity: aim.min_velocity_mps.unwrap_or_else(|| {
                                 ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)
                             }),
-                            load_class: load_class(bullet, solution),
+                            assessment: data
+                                .country
+                                .map(|country| ballistics_shot::assess(bullet, solution, country)),
                         };
                         let requested = egui::ScrollArea::vertical()
                             .show(ui, |ui| view.show(ui, solution, computed.optimal.as_ref()))
@@ -1064,8 +1067,8 @@ struct ResultsView<'a> {
     optics: Option<&'a (Scope, Reticle)>,
     aim: &'a Aim,
     min_velocity: f64,
-    /// The Swedish ammunition class the load meets, if any.
-    load_class: ballistics_shot::LoadClass,
+    /// How the load fares under the hunter's country's rules, if one is set.
+    assessment: Option<ballistics_shot::Assessment>,
 }
 
 impl ResultsView<'_> {
@@ -1389,9 +1392,15 @@ impl ResultsView<'_> {
     }
 
     fn warnings(&self, ui: &mut egui::Ui, solution: &Solution) {
-        if let Some(needed) = self.aim.target.as_ref().and_then(|t| t.swedish_class) {
+        if let Some(assessment) = &self.assessment
+            && let Some(needed) = self
+                .aim
+                .target
+                .as_ref()
+                .and_then(|target| target.ammunition_level(assessment.country))
+        {
             let name = self.aim.name();
-            let (allowed, text) = self.load_class.verdict(needed, name);
+            let (allowed, text) = assessment.verdict(needed, name);
             let text = match allowed {
                 ballistics_shot::Allowed::Yes => format!("✔ {text}"),
                 _ => format!("⚠ {text}"),
@@ -1401,8 +1410,11 @@ impl ResultsView<'_> {
                 ballistics_shot::Allowed::IfExpanding => ui.visuals().warn_fg_color,
                 ballistics_shot::Allowed::No => ui.visuals().error_fg_color,
             };
-            ui.colored_label(colour, text)
-                .on_hover_text(crate::targets::CLASS_HELP);
+            ui.horizontal_top(|ui| {
+                crate::flags::show(ui, assessment.country, 11.0);
+                ui.add(egui::Label::new(RichText::new(text).color(colour)).wrap())
+                    .on_hover_text(assessment.country.rules().help());
+            });
         }
         match solution.stability {
             Some(sg) if sg < 1.0 => {

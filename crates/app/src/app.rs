@@ -3,8 +3,8 @@
 //! they return `Action`s, which keeps them easy to reuse on mobile.
 
 use ballistics_store::{
-    Bullet, Catalog, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad, Scope, Store, StoreError, Target,
-    UserScope,
+    Bullet, Catalog, Country, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad, Scope, Store, StoreError,
+    Target, UserScope,
 };
 use eframe::egui::{self, RichText};
 
@@ -19,6 +19,9 @@ use crate::theme;
 use crate::units::{self, UnitPrefs};
 
 const CALCULATOR_SETTINGS: &str = "calculator";
+/// Whose hunting rules to check: a country, or `null` for none. Absent
+/// until the hunter chooses; then the device's language decides.
+const COUNTRY_SETTING: &str = "country";
 /// The version the hunter last used, to mention an update once.
 const SEEN_VERSION: &str = "seen_version";
 const UNIT_SETTINGS: &str = "units";
@@ -58,6 +61,8 @@ pub struct Data {
     pub loads: Vec<RifleLoad>,
     pub scopes: Vec<UserScope>,
     pub targets: Vec<Target>,
+    /// Whose hunting rules to check, if any.
+    pub country: Option<Country>,
 }
 
 impl Data {
@@ -93,6 +98,7 @@ impl Data {
 enum MenuSheet {
     Main,
     Units,
+    Country,
     Sync,
     WhatsNew,
     /// How to put the app on the home screen by hand.
@@ -102,6 +108,7 @@ enum MenuSheet {
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
 enum MenuChoice {
     Units,
+    Country,
     Sync,
     WhatsNew,
     Import,
@@ -132,6 +139,7 @@ pub struct App {
     /// The phone menu, when open.
     menu: Option<MenuSheet>,
     sync: Sync,
+    country: Option<Country>,
     /// The desktop's What's new window is open.
     whats_new_open: bool,
     /// The hunter's data changed this frame: sync it.
@@ -159,8 +167,15 @@ impl App {
         {
             sync.offered = crate::web::take_sync_link();
         }
+        let country = match store.setting::<Option<Country>>(COUNTRY_SETTING) {
+            Ok(Some(chosen)) => chosen,
+            _ => sys_locale::get_locale()
+                .as_deref()
+                .and_then(Country::from_locale),
+        };
         let mut app = Self {
             sync,
+            country,
             whats_new_open: false,
             data_changed: false,
             store,
@@ -214,6 +229,7 @@ impl App {
                 loads: self.store.rifle_loads()?,
                 scopes: self.store.scopes()?,
                 targets: self.store.targets()?,
+                country: self.country,
             })
         })();
         match loaded {
@@ -528,6 +544,24 @@ impl App {
                         if changed {
                             self.units_changed(context);
                         }
+                        let mut chosen = None;
+                        let button = ui
+                            .menu_button(country_label(self.country), |ui| {
+                                chosen = country_menu(ui, self.country);
+                            })
+                            .response
+                            .on_hover_text("Whose hunting rules to check ammunition against");
+                        if let Some(country) = self.country {
+                            crate::flags::paint(
+                                ui.painter(),
+                                button.rect.left_center() + egui::vec2(8.0, 0.0),
+                                country,
+                                11.0,
+                            );
+                        }
+                        if let Some(country) = chosen {
+                            self.set_country(country);
+                        }
                         let now = context.input(|input| input.time);
                         let sync = ui.button("     Sync").on_hover_text(self.sync.status(now));
                         // The font has no dot, so paint one.
@@ -556,6 +590,14 @@ impl App {
                     });
                 });
             });
+    }
+
+    fn set_country(&mut self, country: Option<Country>) {
+        self.country = country;
+        self.data.country = country;
+        if let Err(error) = self.store.set_setting(COUNTRY_SETTING, &country) {
+            self.report(Err(error));
+        }
     }
 
     fn units_changed(&mut self, context: &egui::Context) {
@@ -666,6 +708,18 @@ impl App {
                     {
                         choice = Some(MenuChoice::Units);
                     }
+                    let row = mobile::list_row(
+                        ui,
+                        "Hunting rules",
+                        self.country.map_or("None: no legal checks", Country::name),
+                        false,
+                    );
+                    if let Some(country) = self.country {
+                        flag_in_row(ui, &row, country);
+                    }
+                    if row.clicked() {
+                        choice = Some(MenuChoice::Country);
+                    }
                     let status = self.sync.status(ui.ctx().input(|input| input.time));
                     if mobile::list_row(ui, "Sync", &status, false).clicked() {
                         choice = Some(MenuChoice::Sync);
@@ -732,6 +786,7 @@ impl App {
                 }
                 match shown.inner {
                     Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
+                    Some(MenuChoice::Country) => self.menu = Some(MenuSheet::Country),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
                     Some(MenuChoice::WhatsNew) => self.menu = Some(MenuSheet::WhatsNew),
                     Some(MenuChoice::Import) => {
@@ -784,6 +839,29 @@ impl App {
                     self.menu = None;
                 }
             }
+            MenuSheet::Country => {
+                let current = self.country;
+                let shown = mobile::sheet(context, "country", "Hunting rules", |ui| {
+                    let mut chosen = None;
+                    for country in Country::ALL.map(Some).into_iter().chain([None]) {
+                        let (title, detail) = country_choice(country);
+                        let row = mobile::list_row(ui, title, detail, current == country);
+                        if let Some(country) = country {
+                            flag_in_row(ui, &row, country);
+                        }
+                        if row.clicked() {
+                            chosen = Some(country);
+                        }
+                    }
+                    chosen
+                });
+                if let Some(country) = shown.inner {
+                    self.set_country(country);
+                    self.menu = None;
+                } else if shown.closed {
+                    self.menu = None;
+                }
+            }
             MenuSheet::WhatsNew => {
                 let shown =
                     mobile::sheet(context, "whats-new", "What's new", crate::changelog::show);
@@ -804,6 +882,61 @@ impl App {
             }
         }
     }
+}
+
+/// The header's country menu button; room is left for the flag.
+fn country_label(country: Option<Country>) -> String {
+    match country {
+        Some(country) => format!("        {}", country.name()),
+        None => "Rules: none".to_owned(),
+    }
+}
+
+/// A flag at the right of a phone list row, before its chevron.
+fn flag_in_row(ui: &egui::Ui, row: &egui::Response, country: Country) {
+    let height = 16.0;
+    let left = row.rect.right() - 34.0 - crate::flags::width(country, height);
+    crate::flags::paint(
+        ui.painter(),
+        egui::pos2(left, row.rect.center().y),
+        country,
+        height,
+    );
+}
+
+/// A country choice's name and what it means.
+fn country_choice(country: Option<Country>) -> (&'static str, &'static str) {
+    match country {
+        Some(country) => (country.name(), country.rules().law),
+        None => ("None", "No legal checks, just the ethical guidelines"),
+    }
+}
+
+/// The countries to choose from; returns the choice.
+fn country_menu(ui: &mut egui::Ui, current: Option<Country>) -> Option<Option<Country>> {
+    let mut chosen = None;
+    ui.label(RichText::new("Check ammunition against the hunting rules of").small());
+    for country in Country::ALL.map(Some).into_iter().chain([None]) {
+        let (title, detail) = country_choice(country);
+        let clicked = ui
+            .horizontal(|ui| {
+                match country {
+                    Some(country) => {
+                        crate::flags::show(ui, country, 11.0);
+                    }
+                    None => ui.add_space(crate::flags::width(Country::Sweden, 11.0)),
+                }
+                ui.selectable_label(current == country, title)
+                    .on_hover_text(detail)
+                    .clicked()
+            })
+            .inner;
+        if clicked {
+            chosen = Some(country);
+            ui.close_menu();
+        }
+    }
+    chosen
 }
 
 /// A tab's icon, drawn in a 24-point box around `center`.

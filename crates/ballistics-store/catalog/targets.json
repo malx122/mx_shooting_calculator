@@ -9,13 +9,20 @@
     "body_length_cm": 293.0,
     "vital_diameter_cm": 30,
     "min_energy_j": 2000,
-    "notes": "Adult moose broadside. The heart–lung area is larger than 30 cm; the zone is kept smaller for a margin. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "notes": "Adult moose broadside. The heart–lung area is larger than 30 cm; the zone is kept smaller for a margin. Energy is a common guideline at the animal, not a law.",
     "group": "deer",
     "other_names": [
       "Älg",
-      "Elk"
+      "Elk",
+      "Hirvi"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 1
+    },
+    "rules_notes": {
+      "finland": "Licence (pyyntilupa) needed. Shot and slugs are not allowed."
+    }
   },
   {
     "id": "red-deer",
@@ -27,12 +34,19 @@
     "body_length_cm": 200.0,
     "vital_diameter_cm": 25,
     "min_energy_j": 2000,
-    "notes": "Stag or hind broadside. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "notes": "Stag or hind broadside. Energy is a common guideline at the animal, not a law.",
     "group": "deer",
     "other_names": [
-      "Kronhjort"
+      "Kronhjort",
+      "Saksanhirvi"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 2
+    },
+    "rules_notes": {
+      "finland": "Licence needed. Shot is not allowed."
+    }
   },
   {
     "id": "wapiti",
@@ -45,7 +59,10 @@
     "vital_diameter_cm": 30,
     "min_energy_j": 2000,
     "notes": "North American elk broadside. 2000 J is the often quoted 1500 ft·lbf at the animal; a guideline, not a law.",
-    "group": "deer"
+    "group": "deer",
+    "rules_notes": {
+      "finland": "Not game in Finland."
+    }
   },
   {
     "id": "fallow-deer",
@@ -57,12 +74,19 @@
     "body_length_cm": 150.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 1350,
-    "notes": "Buck or doe broadside. Energy is a common guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "notes": "Buck or doe broadside. Energy is a common guideline at the animal, not a law.",
     "group": "deer",
     "other_names": [
-      "Dovhjort"
+      "Dovhjort",
+      "Kuusipeura"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 2
+    },
+    "rules_notes": {
+      "finland": "Licence needed. Shot is not allowed."
+    }
   },
   {
     "id": "white-tailed-deer",
@@ -75,7 +99,16 @@
     "vital_diameter_cm": 20,
     "min_energy_j": 1350,
     "notes": "Broadside. 20 cm is the familiar 8-inch vital zone; 1350 J is the often quoted 1000 ft·lbf. Guidelines, not law.",
-    "group": "deer"
+    "group": "deer",
+    "ammunition": {
+      "finland": 2
+    },
+    "other_names": [
+      "Valkohäntäpeura"
+    ],
+    "rules_notes": {
+      "finland": "Licence needed. Shot is not allowed."
+    }
   },
   {
     "id": "roe-deer",
@@ -87,12 +120,20 @@
     "body_length_cm": 115.0,
     "vital_diameter_cm": 15,
     "min_energy_j": 800,
-    "notes": "Buck or doe broadside. Energy is a guideline at the animal, not a law. Sweden: class 2 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Buck or doe broadside. Energy is a guideline at the animal, not a law.",
     "group": "deer",
     "other_names": [
-      "Rådjur"
+      "Rådjur",
+      "Metsäkauris"
     ],
-    "swedish_class": 2
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "No expanding bullet required. A shotgun with shot is allowed too."
+    }
   },
   {
     "id": "wild-boar",
@@ -104,12 +145,19 @@
     "body_length_cm": 160.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 2000,
-    "notes": "Adult boar broadside; the vitals sit low and well forward, behind the front leg. Energy is a guideline, not a law. Sweden: class 1 rifle ammunition.",
+    "notes": "Adult boar broadside; the vitals sit low and well forward, behind the front leg. Energy is a guideline, not a law.",
     "group": "boar_and_mouflon",
     "other_names": [
-      "Vildsvin"
+      "Vildsvin",
+      "Villisika"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 1
+    },
+    "rules_notes": {
+      "finland": "Shot is not allowed; slugs are."
+    }
   },
   {
     "id": "mouflon",
@@ -121,12 +169,19 @@
     "body_length_cm": 125.0,
     "vital_diameter_cm": 20,
     "min_energy_j": 2000,
-    "notes": "Male broadside. Sizes and the zone are estimates. Sweden: class 1 rifle ammunition.",
+    "notes": "Male broadside. Sizes and the zone are estimates.",
     "group": "boar_and_mouflon",
     "other_names": [
-      "Mufflonfår"
+      "Mufflonfår",
+      "Mufloni"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 3
+    },
+    "rules_notes": {
+      "finland": "Shot is not allowed."
+    }
   },
   {
     "id": "brown-bear",
@@ -138,12 +193,19 @@
     "body_length_cm": 200.0,
     "vital_diameter_cm": 25,
     "min_energy_j": 2700,
-    "notes": "Adult bear broadside. Energy is a guideline at the animal, not a law. Sweden: class 1 rifle ammunition.",
+    "notes": "Adult bear broadside. Energy is a guideline at the animal, not a law.",
     "group": "bear",
     "other_names": [
-      "Björn"
+      "Björn",
+      "Karhu"
     ],
-    "swedish_class": 1
+    "ammunition": {
+      "sweden": 1,
+      "finland": 1
+    },
+    "rules_notes": {
+      "finland": "Protected: only under a derogation. Shot and slugs are not allowed."
+    }
   },
   {
     "id": "red-fox",
@@ -155,12 +217,19 @@
     "body_length_cm": 72.0,
     "vital_diameter_cm": 8,
     "min_energy_j": 200,
-    "notes": "Broadside. A rough guideline for small game; follow your bullet maker's expansion data. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too; class 4 at the den or under ground.",
+    "notes": "Broadside. A rough guideline for small game; follow your bullet maker's expansion data.",
     "group": "small_predators",
     "other_names": [
-      "Rödräv"
+      "Rödräv",
+      "Kettu"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too. Class 4 is allowed at the den or under ground."
+    }
   },
   {
     "id": "badger",
@@ -173,12 +242,19 @@
     "vital_diameter_cm": 10,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too; class 4 at the den or under ground.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "small_predators",
     "other_names": [
-      "Grävling"
+      "Grävling",
+      "Mäyrä"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too. Class 4 is allowed at the den or under ground."
+    }
   },
   {
     "id": "pine-marten",
@@ -191,12 +267,19 @@
     "vital_diameter_cm": 5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "small_predators",
     "other_names": [
-      "Mård"
+      "Mård",
+      "Näätä"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "polecat",
@@ -209,12 +292,19 @@
     "vital_diameter_cm": 4,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "small_predators",
     "other_names": [
-      "Iller"
+      "Iller",
+      "Hilleri"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "mink",
@@ -227,12 +317,20 @@
     "vital_diameter_cm": 4,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "small_predators",
     "other_names": [
-      "Mink"
+      "Mink",
+      "Minkki"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game: an invasive species (704/2019); 100 J, and shotguns down to gauge 36."
+    }
   },
   {
     "id": "weasel",
@@ -245,13 +343,20 @@
     "vital_diameter_cm": 2.5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "small_predators",
     "other_names": [
       "Vessla",
-      "Least weasel"
+      "Least weasel",
+      "Lumikko"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "brown-hare",
@@ -264,13 +369,20 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "hares_and_rodents",
     "other_names": [
       "Fälthare",
-      "European hare"
+      "European hare",
+      "Rusakko"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "mountain-hare",
@@ -283,12 +395,19 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 80,
     "min_velocity_mps": 0,
-    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for.",
     "group": "hares_and_rodents",
     "other_names": [
-      "Skogshare"
+      "Skogshare",
+      "Metsäjänis"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "european-rabbit",
@@ -301,12 +420,20 @@
     "vital_diameter_cm": 5,
     "min_energy_j": 60,
     "min_velocity_mps": 0,
-    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Crouched broadside; height to the back. The zone is the chest. Small-game energy is a rough guideline: placement matters most. No expansion velocity is asked for.",
     "group": "hares_and_rodents",
     "other_names": [
-      "Vildkanin"
+      "Vildkanin",
+      "Villikani"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "beaver",
@@ -318,12 +445,19 @@
     "body_length_cm": 85.0,
     "vital_diameter_cm": 10,
     "min_energy_j": 800,
-    "notes": "Broadside; height to the back. Sizes and the zone are estimates. Sweden: class 2 rifle ammunition or stricter.",
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
     "group": "hares_and_rodents",
     "other_names": [
-      "Bäver"
+      "Bäver",
+      "Majava"
     ],
-    "swedish_class": 2
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "finland": "European beaver: licence needed."
+    }
   },
   {
     "id": "capercaillie",
@@ -336,12 +470,19 @@
     "vital_diameter_cm": 10,
     "min_energy_j": 100,
     "min_velocity_mps": 0,
-    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check what your country allows for birds.",
     "group": "forest_birds",
     "other_names": [
-      "Tjäder"
+      "Tjäder",
+      "Metso"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "black-grouse",
@@ -354,12 +495,19 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 80,
     "min_velocity_mps": 0,
-    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Cock broadside; height to the back, length beak to tail. Often shot in trees; drawn on the ground. The zone is the chest. Energy is a rough guideline; check what your country allows for birds.",
     "group": "forest_birds",
     "other_names": [
-      "Orre"
+      "Orre",
+      "Teeri"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "hazel-grouse",
@@ -372,12 +520,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "forest_birds",
     "other_names": [
-      "Järpe"
+      "Järpe",
+      "Pyy"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "willow-ptarmigan",
@@ -390,14 +546,22 @@
     "vital_diameter_cm": 5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Willow or rock ptarmigan broadside; height to the back, length beak to tail. The zone is the chest. Energy is a rough guideline; check which calibres your country allows for birds. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Willow or rock ptarmigan broadside; height to the back, length beak to tail. The zone is the chest. Energy is a rough guideline; check what your country allows for birds.",
     "group": "forest_birds",
     "other_names": [
       "Dalripa",
       "Willow grouse",
-      "Red grouse"
+      "Red grouse",
+      "Riekko"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "rock-ptarmigan",
@@ -410,12 +574,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "forest_birds",
     "other_names": [
-      "Fjällripa"
+      "Fjällripa",
+      "Kiiruna"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "pheasant",
@@ -428,12 +600,19 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "forest_birds",
     "other_names": [
-      "Fasan"
+      "Fasan",
+      "Fasaani"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "grey-partridge",
@@ -446,12 +625,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "forest_birds",
     "other_names": [
-      "Rapphöna"
+      "Rapphöna",
+      "Peltopyy"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Licence needed. Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "mallard",
@@ -464,12 +651,19 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Gräsand"
+      "Gräsand",
+      "Heinäsorsa"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "teal",
@@ -482,13 +676,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Kricka",
-      "Eurasian teal"
+      "Eurasian teal",
+      "Tavi"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "wigeon",
@@ -501,13 +702,20 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Bläsand",
-      "Eurasian wigeon"
+      "Eurasian wigeon",
+      "Haapana"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "goldeneye",
@@ -520,12 +728,19 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Knipa"
+      "Knipa",
+      "Telkkä"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "tufted-duck",
@@ -538,12 +753,19 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Vigg"
+      "Vigg",
+      "Tukkasotka"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "long-tailed-duck",
@@ -556,12 +778,19 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Alfågel"
+      "Alfågel",
+      "Alli"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "eider",
@@ -574,13 +803,20 @@
     "vital_diameter_cm": 10,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Ejder",
-      "Common eider"
+      "Common eider",
+      "Haahka"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "common-scoter",
@@ -593,13 +829,20 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Sjöorre",
-      "Black scoter"
+      "Black scoter",
+      "Mustalintu"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "goosander",
@@ -612,13 +855,20 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Storskrake",
-      "Common merganser"
+      "Common merganser",
+      "Isokoskelo"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "red-breasted-merganser",
@@ -631,12 +881,19 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Drake swimming broadside; height of the back above the water, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Småskrake"
+      "Småskrake",
+      "Tukkakoskelo"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "greylag-goose",
@@ -649,12 +906,19 @@
     "vital_diameter_cm": 12,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Grågås"
+      "Grågås",
+      "Merihanhi"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "bean-goose",
@@ -667,13 +931,20 @@
     "vital_diameter_cm": 12,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
       "Sädgås",
-      "Bean goose"
+      "Bean goose",
+      "Metsähanhi"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "white-fronted-goose",
@@ -686,12 +957,19 @@
     "vital_diameter_cm": 11,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Bläsgås"
+      "Bläsgås",
+      "Tundrahanhi"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "canada-goose",
@@ -704,12 +982,19 @@
     "vital_diameter_cm": 12,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Kanadagås"
+      "Kanadagås",
+      "Kanadanhanhi"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
   },
   {
     "id": "barnacle-goose",
@@ -722,12 +1007,20 @@
     "vital_diameter_cm": 10,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Vitkindad gås"
+      "Vitkindad gås",
+      "Valkoposkihanhi"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected: only under a derogation."
+    }
   },
   {
     "id": "whooper-swan",
@@ -740,12 +1033,19 @@
     "vital_diameter_cm": 20,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too. Normally protected: only hunted under special decisions; check the current rules.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "waterfowl",
     "other_names": [
-      "Sångsvan"
+      "Sångsvan",
+      "Laulujoutsen"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too. Normally protected: only hunted under special decisions; check the current rules.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "woodcock",
@@ -758,12 +1058,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Morkulla"
+      "Morkulla",
+      "Lehtokurppa"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "wood-pigeon",
@@ -776,13 +1084,21 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
       "Ringduva",
-      "Common wood pigeon"
+      "Common wood pigeon",
+      "Sepelkyyhky"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
   },
   {
     "id": "common-gull",
@@ -795,13 +1111,20 @@
     "vital_diameter_cm": 7,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
       "Fiskmås",
-      "Mew gull"
+      "Mew gull",
+      "Kalalokki"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "herring-gull",
@@ -814,12 +1137,20 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Gråtrut"
+      "Gråtrut",
+      "Harmaalokki"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "great-black-backed-gull",
@@ -832,12 +1163,20 @@
     "vital_diameter_cm": 11,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Havstrut"
+      "Havstrut",
+      "Merilokki"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "raven",
@@ -850,12 +1189,20 @@
     "vital_diameter_cm": 9,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Korp"
+      "Korp",
+      "Korppi"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Unprotected only in the reindeer-herding area (100 J); protected elsewhere."
+    }
   },
   {
     "id": "hooded-crow",
@@ -868,12 +1215,20 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Kråka"
+      "Kråka",
+      "Varis"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "rook",
@@ -886,12 +1241,19 @@
     "vital_diameter_cm": 8,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Råka"
+      "Råka",
+      "Mustavaris"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "jackdaw",
@@ -904,12 +1266,20 @@
     "vital_diameter_cm": 6,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Kaja"
+      "Kaja",
+      "Naakka"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "magpie",
@@ -922,12 +1292,20 @@
     "vital_diameter_cm": 5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Skata"
+      "Skata",
+      "Harakka"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "jay",
@@ -940,12 +1318,19 @@
     "vital_diameter_cm": 5,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Nötskrika"
+      "Nötskrika",
+      "Närhi"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "fieldfare",
@@ -958,12 +1343,20 @@
     "vital_diameter_cm": 4,
     "min_energy_j": 50,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: any rifle class (4 or stricter); shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
-      "Björktrast"
+      "Björktrast",
+      "Räkättirastas"
     ],
-    "swedish_class": 4
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but unprotected (§ 21): 100 J, or a gauge 10–20 shotgun."
+    }
   },
   {
     "id": "cormorant",
@@ -976,13 +1369,21 @@
     "vital_diameter_cm": 12,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
       "Storskarv",
-      "Cormorant"
+      "Cormorant",
+      "Merimetso"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Protected: only under a derogation."
+    }
   },
   {
     "id": "crane",
@@ -995,13 +1396,20 @@
     "vital_diameter_cm": 15,
     "min_energy_j": 200,
     "min_velocity_mps": 0,
-    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates. Sweden: class 3 rifle ammunition or stricter; shotgun allowed too. Mostly hunted under protective-hunting decisions; check the current rules.",
+    "notes": "Male broadside; height to the back, length beak to tail. Sizes and the zone are estimates.",
     "group": "other_birds",
     "other_names": [
       "Trana",
-      "Crane"
+      "Crane",
+      "Kurki"
     ],
-    "swedish_class": 3
+    "ammunition": {
+      "sweden": 3
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too. Mostly hunted under protective-hunting decisions; check the current rules.",
+      "finland": "Protected in Finland."
+    }
   },
   {
     "id": "issf-300m-rifle",

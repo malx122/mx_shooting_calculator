@@ -201,8 +201,10 @@ impl Catalog {
     }
 
     pub fn with_targets(self, targets: &str, drawings: &str) -> serde_json::Result<Catalog> {
+        let mut targets: Vec<Target> = serde_json::from_str(targets)?;
+        targets.iter_mut().for_each(Target::upgrade_legacy);
         Ok(Catalog {
-            targets: serde_json::from_str(targets)?,
+            targets,
             drawings: serde_json::from_str(drawings)?,
             ..self
         })

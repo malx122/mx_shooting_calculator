@@ -4,13 +4,15 @@
 
 use ballistics_core::{Coriolis, analysis, solver};
 use ballistics_shot::{Conditions, Hold, Pressure, unit_label};
-use ballistics_store::{Bullet, Catalog, Rifle, RifleLoad, Store, Target, TargetGroup};
+use ballistics_store::{Bullet, Catalog, Country, Rifle, RifleLoad, Store, Target, TargetGroup};
 use serde_json::{Value, json};
 
 /// The engine always flies this far, so the ethical limit can be found.
 const SOLVE_RANGE_M: f64 = 1200.0;
 /// The app's setting with the calculator's last inputs (weather and more).
 const CALCULATOR_SETTINGS: &str = "calculator";
+/// The app's setting with the hunter's country (whose rules to check).
+const COUNTRY_SETTING: &str = "country";
 /// The general minimum velocity for expansion, when the app has none saved.
 const GENERAL_MIN_VELOCITY_MPS: f64 = 550.0;
 
@@ -65,7 +67,7 @@ pub fn list() -> Value {
         {
             "name": "list_targets",
             "title": "List targets",
-            "description": "Game animals and sport targets with their vital zone, minimum energy and Swedish ammunition class. Search by English or Swedish name.",
+            "description": "Game animals and sport targets with their vital zone, minimum energy and the rifle ammunition level Swedish and Finnish rules ask for. Search by English, Swedish or Finnish name.",
             "inputSchema": {"type": "object", "properties": {
                 "search": {"type": "string", "description": "Part of a name, e.g. \"roe\", \"rådjur\", \"grouse\"."}
             }},
@@ -74,12 +76,13 @@ pub fn list() -> Value {
         {
             "name": "holdover",
             "title": "Holdover at a range",
-            "description": "What to dial or hold with one of the hunter's rifles at a range: elevation and windage in the scope's units (mil or MOA) and clicks, drop, drift, velocity and energy, computed by the app's ballistic engine. With a target it also says whether the shot is inside the ethical range and meets Swedish ammunition rules. Use this instead of estimating.",
+            "description": "What to dial or hold with one of the hunter's rifles at a range: elevation and windage in the scope's units (mil or MOA) and clicks, drop, drift, velocity and energy, computed by the app's ballistic engine. With a target it also says whether the shot is inside the ethical range and whether the load is legal for that animal in the hunter's country (Sweden or Finland). Use this instead of estimating.",
             "inputSchema": with(json!({
                 "rifle": {"type": "string", "description": "The rifle's name (or part of it, or its caliber)."},
                 "bullet": {"type": "string", "description": "The bullet or load. Default: the one last used with this rifle."},
                 "range_m": {"type": "number", "description": "Distance to the target in metres (line of sight)."},
-                "target": {"type": "string", "description": "Optional animal or target, e.g. \"moose\" or \"rådjur\"."}
+                "target": {"type": "string", "description": "Optional animal or target, e.g. \"moose\" or \"rådjur\"."},
+                "country": {"type": "string", "description": "Whose hunting law to check the ammunition against: \"Sweden\", \"Finland\" or \"none\". Default: the country set in the app."}
             }), &["rifle", "range_m"]),
             "annotations": {"readOnlyHint": true}
         },
@@ -270,6 +273,39 @@ fn all_targets(store: &Store) -> Result<Vec<Target>, String> {
     Ok(targets)
 }
 
+/// Whose rules to check: the `country` argument, else the app's setting,
+/// else the device's language. `None` checks no law.
+fn country(store: &Store, arguments: &Value) -> Result<Option<Country>, String> {
+    if let Some(name) = arguments["country"]
+        .as_str()
+        .filter(|name| !name.trim().is_empty())
+    {
+        let wanted = name.trim().to_lowercase();
+        if wanted == "none" {
+            return Ok(None);
+        }
+        return Country::ALL
+            .into_iter()
+            .find(|country| {
+                country.name().to_lowercase() == wanted
+                    || country.adjective().to_lowercase() == wanted
+            })
+            .map(Some)
+            .ok_or_else(|| {
+                format!(
+                    "the app knows the rules of {} only",
+                    Country::ALL.map(Country::name).join(" and ")
+                )
+            });
+    }
+    Ok(match store.setting::<Option<Country>>(COUNTRY_SETTING) {
+        Ok(Some(chosen)) => chosen,
+        _ => sys_locale::get_locale()
+            .as_deref()
+            .and_then(Country::from_locale),
+    })
+}
+
 fn target_line(target: &Target) -> String {
     let mut text = format!(
         "{}{}: vital zone {} cm",
@@ -284,8 +320,17 @@ fn target_line(target: &Target) -> String {
     if let Some(energy) = target.min_energy_j.filter(|_| target.is_game()) {
         text.push_str(&format!(", guideline ≥ {energy} J at the animal"));
     }
-    if let Some(class) = target.swedish_class {
-        text.push_str(&format!(", Swedish rifle class {class} or stricter"));
+    for country in Country::ALL {
+        if let Some(level) = target.ammunition_level(country) {
+            text.push_str(&format!(
+                ", {} rules: rifle {}",
+                country.adjective(),
+                country.rules().requirement_text(level).to_lowercase()
+            ));
+        }
+        if let Some(notes) = target.rules_notes.get(&country) {
+            text.push_str(&format!(" ({notes})"));
+        }
     }
     text
 }
@@ -666,7 +711,8 @@ fn holdover(store: &Store, arguments: &Value) -> Result<Answer, String> {
             names.extend(t.other_names.iter().cloned());
             names
         })?;
-        let (ethics, facts) = ethics(store, &bullet, &solution, target, range);
+        let country = country(store, arguments)?;
+        let (ethics, facts) = ethics(store, &bullet, &solution, target, range, country);
         text.push('\n');
         text.push_str(&ethics);
         data["target"] = facts;
@@ -677,13 +723,15 @@ fn holdover(store: &Store, arguments: &Value) -> Result<Answer, String> {
     })
 }
 
-/// Whether a shot at `range` is ethical for the target, and Swedish law.
+/// Whether a shot at `range` is ethical for the target, and what the
+/// country's law says.
 fn ethics(
     store: &Store,
     bullet: &Bullet,
     solution: &ballistics_core::Solution,
     target: &Target,
     range: f64,
+    country: Option<Country>,
 ) -> (String, Value) {
     let mut lines = vec![format!("Target: {}", target_line(target))];
     let mut facts = json!({ "name": target.name, "vital_zone_cm": target.vital_diameter_cm });
@@ -703,13 +751,30 @@ fn ethics(
         });
         facts["ethical_range_m"] = json!(limit);
         facts["inside_ethical_range"] = json!(inside);
-        if let Some(needed) = target.swedish_class {
-            let class = ballistics_shot::load_class(bullet, solution);
-            let (allowed, text) = class.verdict(needed, &target.name);
-            lines.push(text);
-            facts["swedish_class_needed"] = json!(needed);
-            facts["load_class"] = json!(class);
-            facts["allowed_in_sweden"] = json!(allowed);
+        match country {
+            Some(country) => match target.ammunition_level(country) {
+                Some(needed) => {
+                    let assessment = ballistics_shot::assess(bullet, solution, country);
+                    let (allowed, text) = assessment.verdict(needed, &target.name);
+                    lines.push(text);
+                    if let Some(notes) = target.rules_notes.get(&country) {
+                        lines.push(notes.clone());
+                    }
+                    lines.push(format!("(Law: {}.)", country.rules().law));
+                    facts["country"] = json!(country);
+                    facts["level_needed"] = json!(needed);
+                    facts["load"] = json!(assessment);
+                    facts["allowed"] = json!(allowed);
+                }
+                None => lines.push(format!(
+                    "The app has no {} rifle rule for {}.",
+                    country.adjective(),
+                    target.name
+                )),
+            },
+            None => lines.push(
+                "No country set in the app, so no legal check (pass \"country\" for one).".into(),
+            ),
         }
     }
     (lines.join("\n"), facts)
@@ -871,13 +936,25 @@ mod tests {
         let answer = text(
             &store,
             "holdover",
-            json!({"rifle": "browning", "range_m": 300, "wind_speed_mps": 4, "wind_clock": 3, "target": "älg"}),
+            json!({"rifle": "browning", "range_m": 300, "wind_speed_mps": 4, "wind_clock": 3, "target": "älg", "country": "sweden"}),
         );
         assert!(answer.contains("Browning X-Bolt"), "{answer}");
         assert!(answer.contains("Dial or hold up"), "{answer}");
         assert!(answer.contains("right"), "{answer}");
         assert!(answer.contains("Moose"), "{answer}");
         assert!(answer.contains("Swedish rules"), "{answer}");
+        let finnish = text(
+            &store,
+            "holdover",
+            json!({"rifle": "browning", "range_m": 300, "target": "moose", "country": "finland"}),
+        );
+        assert!(finnish.contains("Finnish rules"), "{finnish}");
+        let none = text(
+            &store,
+            "holdover",
+            json!({"rifle": "browning", "range_m": 300, "target": "moose", "country": "none"}),
+        );
+        assert!(none.contains("no legal check"), "{none}");
     }
 
     #[test]

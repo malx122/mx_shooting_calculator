@@ -10,7 +10,9 @@ use std::sync::Arc;
 use ballistics_core::{
     Atmosphere, BcBands, Coriolis, DragCurve, DragModel, Load, RangeRow, Scenario, Solution, Wind,
 };
-use ballistics_store::{BcModel, Bullet, ClickUnit, LoadZero, Rifle, RifleLoad, ZeroWeather};
+use ballistics_store::{
+    BcModel, Bullet, ClickUnit, Country, LoadZero, Rifle, RifleLoad, RulesLoad, ZeroWeather,
+};
 use serde::{Deserialize, Serialize};
 
 const METRES_PER_INCH: f64 = 0.0254;
@@ -248,17 +250,18 @@ pub fn min_velocity(bullet: &Bullet, general_mps: f64) -> f64 {
     bullet.min_expansion_mps.unwrap_or(general_mps)
 }
 
-/// The Swedish ammunition class a load meets (NFS 2023:8).
+/// How a load fares under a country's rifle ammunition rules.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
-pub struct LoadClass {
-    /// The strictest class met, 1 being the strictest; `None` for none.
-    pub class: Option<u8>,
+pub struct Assessment {
+    pub country: Country,
+    /// The strictest level met, 1 being the strictest; `None` for none.
+    pub level: Option<u8>,
     /// The bullet's construction isn't known (a Strelok import, say), so
-    /// `class` assumes it is made to expand.
+    /// `level` assumes it is made to expand.
     pub assumes_expanding: bool,
 }
 
-/// Whether a load may be used on a game species in Sweden.
+/// Whether a load may be used on a species.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Allowed {
@@ -268,53 +271,55 @@ pub enum Allowed {
     No,
 }
 
-impl LoadClass {
-    /// Whether the load meets the class the species needs, and why, in a
-    /// sentence for `species`.
+impl Assessment {
+    /// Whether the load meets the level `needed` for `species`, and why, in
+    /// a sentence.
     pub fn verdict(&self, needed: u8, species: &str) -> (Allowed, String) {
-        let met = self.class.is_some_and(|class| class <= needed);
-        let class = self.class.map_or("meets no class".to_owned(), |class| {
-            format!("is class {class}")
+        let rules = self.country.rules();
+        let met = self.level.is_some_and(|level| level <= needed);
+        let rules_name = format!("{} rules", self.country.adjective());
+        let wanted = rules.requirement_text(needed).to_lowercase();
+        let load = self.level.map_or("meets no level".to_owned(), |level| {
+            format!("is {}", rules.level_name(level).to_lowercase())
         });
         match (met, self.assumes_expanding) {
             (true, false) => (
                 Allowed::Yes,
-                format!(
-                    "Swedish rules: {species} needs class {needed} or stricter; this load {class}: allowed."
-                ),
+                format!("{rules_name}: {species} needs {wanted}; this load {load}: allowed."),
             ),
             (true, true) => (
                 Allowed::IfExpanding,
                 format!(
-                    "Swedish rules: {species} needs class {needed} or stricter; this load {class} if the \
-                     bullet is made to expand. Its construction isn't set in the app: set it on the \
-                     bullet to be sure."
+                    "{rules_name}: {species} needs {wanted}; this load {load} if the bullet is made \
+                     to expand. Its construction isn't set in the app: set it on the bullet to be \
+                     sure."
                 ),
             ),
             (false, _) => (
                 Allowed::No,
-                format!(
-                    "Swedish rules: {species} needs class {needed} or stricter; this load {class}: not allowed."
-                ),
+                format!("{rules_name}: {species} needs {wanted}; this load {load}: not allowed."),
             ),
         }
     }
 }
 
-/// The Swedish ammunition class of the load: its weight, its energy at the
-/// muzzle and at 100 m, and whether it expands. When the construction is
-/// unknown it is assumed to expand, and the answer says so.
-pub fn load_class(bullet: &Bullet, solution: &Solution) -> LoadClass {
+/// The level of `country`'s rules the load meets: its weight, its energy at
+/// the muzzle and at 100 m, whether it expands and whether it is lead-free.
+/// When the construction is unknown it is assumed to expand, and the
+/// assessment says so.
+pub fn assess(bullet: &Bullet, solution: &Solution, country: Country) -> Assessment {
     let energy_at = |range: f64| solution.at(range).map_or(0.0, |row| row.energy_j);
     let expanding = bullet.construction.expanding();
-    LoadClass {
-        class: ballistics_store::swedish_class(
-            bullet.mass_g,
-            energy_at(100.0),
-            energy_at(0.0),
-            Some(expanding.unwrap_or(true)),
-            bullet.lead_free,
-        ),
+    let load = RulesLoad {
+        mass_g: bullet.mass_g,
+        e0_j: energy_at(0.0),
+        e100_j: energy_at(100.0),
+        expanding: expanding.unwrap_or(true),
+        lead_free: bullet.lead_free,
+    };
+    Assessment {
+        country,
+        level: country.rules().level_met(&load),
         assumes_expanding: expanding.is_none(),
     }
 }
@@ -381,19 +386,24 @@ mod tests {
             400.0,
         )
         .unwrap();
-        let class = load_class(&bullet, &solution);
-        assert_eq!(class.class, Some(1));
-        assert!(class.assumes_expanding);
-        assert_eq!(class.verdict(1, "Moose").0, Allowed::IfExpanding);
+        let sweden = assess(&bullet, &solution, Country::Sweden);
+        assert_eq!(sweden.level, Some(1));
+        assert!(sweden.assumes_expanding);
+        assert_eq!(sweden.verdict(1, "Moose").0, Allowed::IfExpanding);
         bullet.construction = ballistics_store::Construction::Fmj;
-        let fmj = load_class(&bullet, &solution);
-        assert_eq!(fmj.class, Some(3));
-        assert_eq!(fmj.verdict(2, "Roe deer").0, Allowed::No);
-        bullet.construction = ballistics_store::Construction::Bonded;
-        assert_eq!(
-            load_class(&bullet, &solution).verdict(1, "Moose").0,
-            Allowed::Yes
+        let fmj = assess(&bullet, &solution, Country::Sweden);
+        assert_eq!(fmj.level, Some(3));
+        let (allowed, text) = fmj.verdict(2, "Roe deer");
+        assert_eq!(allowed, Allowed::No);
+        assert!(
+            text.starts_with(
+                "Swedish rules: Roe deer needs class 2 or stricter; this load is class 3"
+            ),
+            "{text}"
         );
+        bullet.construction = ballistics_store::Construction::Bonded;
+        let bonded = assess(&bullet, &solution, Country::Sweden);
+        assert_eq!(bonded.verdict(1, "Moose").0, Allowed::Yes);
     }
 
     #[test]

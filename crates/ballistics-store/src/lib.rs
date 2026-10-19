@@ -10,6 +10,7 @@ pub mod deletions;
 pub mod drawings;
 pub mod model;
 pub mod optics;
+pub mod rules;
 pub mod strelok;
 pub mod sync;
 pub mod targets;
@@ -31,8 +32,9 @@ pub use model::{
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
+pub use rules::{Country, Load as RulesLoad, Rules};
 pub use sync::{SyncKey, SyncRound};
-pub use targets::{Target, TargetGroup, TargetKind, TargetShape, swedish_class};
+pub use targets::{Target, TargetGroup, TargetKind, TargetShape};
 pub use transfer::ImportReport;
 
 pub const GRAMS_PER_GRAIN: f64 = 0.064_798_91;

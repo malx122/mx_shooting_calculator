@@ -3,6 +3,7 @@ mod bullets;
 mod calculator;
 mod changelog;
 mod figure;
+mod flags;
 mod google;
 mod http;
 mod import;

@@ -1,7 +1,7 @@
 //! The Targets page: the catalog's game animals and sport targets, and the
 //! hunter's own, with an editor and a drawing to scale.
 
-use ballistics_store::{Catalog, Drawing, Target, TargetGroup, TargetKind, TargetShape};
+use ballistics_store::{Catalog, Country, Drawing, Target, TargetGroup, TargetKind, TargetShape};
 use eframe::egui::{self, Color32, Pos2, RichText, pos2, vec2};
 
 use crate::app::{Action, Data};
@@ -18,7 +18,7 @@ enum Showing {
     Nothing,
     Catalog(String),
     /// One of the hunter's targets (or a new one) being edited.
-    Custom(Target),
+    Custom(Box<Target>),
 }
 
 pub struct TargetsPage {
@@ -39,7 +39,7 @@ impl TargetsPage {
     /// Keeps the editor on the target that was just saved.
     pub fn saved(&mut self, target: &Target) {
         if matches!(&self.showing, Showing::Custom(editing) if editing.id == target.id) {
-            self.showing = Showing::Custom(target.clone());
+            self.showing = Showing::Custom(Box::new(target.clone()));
         }
     }
 
@@ -87,9 +87,9 @@ impl TargetsPage {
             }
             Showing::Catalog(id) => {
                 if let Some(target) = Catalog::builtin().target(id)
-                    && catalog_view(ui, target)
+                    && catalog_view(ui, target, data.country)
                 {
-                    self.showing = Showing::Custom(target.to_custom());
+                    self.showing = Showing::Custom(Box::new(target.to_custom()));
                 }
             }
             Showing::Custom(target) => {
@@ -105,11 +105,11 @@ impl TargetsPage {
         search_field(ui, &mut self.search);
         ui.heading("My targets");
         if ui.button("+ New target").clicked() {
-            self.showing = Showing::Custom(Target::new_custom());
+            self.showing = Showing::Custom(Box::new(Target::new_custom()));
         }
         for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
             if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
-                self.showing = Showing::Custom(target.clone());
+                self.showing = Showing::Custom(Box::new(target.clone()));
             }
         }
         if data.targets.is_empty() {
@@ -131,14 +131,14 @@ impl TargetsPage {
         search_field(ui, &mut self.search);
         ui.heading("My targets");
         if ui.button("➕ New target").clicked() {
-            self.showing = Showing::Custom(Target::new_custom());
+            self.showing = Showing::Custom(Box::new(Target::new_custom()));
         }
         ui.add_space(4.0);
         for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
             let selected =
                 matches!(&self.showing, Showing::Custom(editing) if editing.id == target.id);
             if ui.selectable_label(selected, &target.name).clicked() {
-                self.showing = Showing::Custom(target.clone());
+                self.showing = Showing::Custom(Box::new(target.clone()));
             }
         }
         if data.targets.is_empty() {
@@ -165,7 +165,7 @@ impl TargetsPage {
 fn search_field(ui: &mut egui::Ui, search: &mut String) {
     ui.add(
         egui::TextEdit::singleline(search)
-            .hint_text("Search, also Swedish names")
+            .hint_text("Search, also Swedish or Finnish names")
             .desired_width(f32::INFINITY),
     );
     ui.add_space(4.0);
@@ -235,7 +235,7 @@ fn preview_size(ui: &egui::Ui) -> egui::Vec2 {
 
 /// A catalog target, read-only. Returns true when the hunter asks for
 /// their own copy.
-fn catalog_view(ui: &mut egui::Ui, target: &Target) -> bool {
+fn catalog_view(ui: &mut egui::Ui, target: &Target, country: Option<Country>) -> bool {
     ui.heading(&target.name);
     ui.weak(match target.kind {
         TargetKind::Game => "Game, from the catalog",
@@ -244,7 +244,7 @@ fn catalog_view(ui: &mut egui::Ui, target: &Target) -> bool {
     ui.add_space(6.0);
     let size = preview_size(ui);
     let details = |ui: &mut egui::Ui| {
-        facts(ui, target);
+        facts(ui, target, country);
         ui.add_space(6.0);
         if !target.notes.is_empty() {
             ui.label(&target.notes);
@@ -274,7 +274,7 @@ fn catalog_view(ui: &mut egui::Ui, target: &Target) -> bool {
     }
 }
 
-fn facts(ui: &mut egui::Ui, target: &Target) {
+fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>) {
     let u = units::prefs(ui.ctx());
     let short = |cm: f64| u.format(Quantity::ShortLength, cm);
     grid(ui, "target-facts", |ui| {
@@ -346,9 +346,25 @@ fn facts(ui: &mut egui::Ui, target: &Target) {
                 None => "the bullet's or your general one".to_owned(),
             });
             ui.end_row();
-            if let Some(class) = target.swedish_class {
-                ui.label("Swedish class");
-                ui.label(class_text(class)).on_hover_text(CLASS_HELP);
+            if let Some(country) = country {
+                let rules = country.rules();
+                ui.horizontal(|ui| {
+                    crate::flags::show(ui, country, 11.0);
+                    ui.label(format!("{} rules", country.adjective()))
+                        .on_hover_text(rules.help());
+                });
+                let mut text = match target.ammunition_level(country) {
+                    Some(level) => {
+                        format!("Rifle: {}", rules.requirement_text(level).to_lowercase())
+                    }
+                    None => "No rifle level known".to_owned(),
+                };
+                if let Some(notes) = target.rules_notes.get(&country) {
+                    text.push_str(". ");
+                    text.push_str(notes);
+                }
+                ui.add(egui::Label::new(text).wrap())
+                    .on_hover_text(rules.help());
                 ui.end_row();
             }
         }
@@ -373,7 +389,7 @@ fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec
             let close = ui
                 .vertical(|ui| {
                     ui.set_max_width(420.0);
-                    editor_fields(ui, target, stored, actions)
+                    editor_fields(ui, target, stored, data.country, actions)
                 })
                 .inner;
             ui.add_space(16.0);
@@ -384,7 +400,7 @@ fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec
     } else {
         preview(ui, target, size);
         ui.add_space(8.0);
-        editor_fields(ui, target, stored, actions)
+        editor_fields(ui, target, stored, data.country, actions)
     }
 }
 
@@ -393,9 +409,10 @@ fn editor_fields(
     ui: &mut egui::Ui,
     target: &mut Target,
     stored: bool,
+    country: Option<Country>,
     actions: &mut Vec<Action>,
 ) -> bool {
-    fields(ui, target);
+    fields(ui, target, country);
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         if ui.button("Save").clicked() {
@@ -409,7 +426,7 @@ fn editor_fields(
     .inner
 }
 
-fn fields(ui: &mut egui::Ui, target: &mut Target) {
+fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>) {
     grid(ui, "target-editor", |ui| {
         text(ui, "Name", &mut target.name);
         ui.label("Kind");
@@ -563,40 +580,39 @@ fn fields(ui: &mut egui::Ui, target: &mut Target) {
                 0.0..=1500.0,
                 5.0,
             );
-            ui.label("Swedish class").on_hover_text(CLASS_HELP);
-            egui::ComboBox::from_id_salt("swedish-class")
-                .selected_text(target.swedish_class.map_or("None".to_owned(), class_text))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut target.swedish_class, None, "None");
-                    for class in 1..=4 {
-                        ui.selectable_value(
-                            &mut target.swedish_class,
-                            Some(class),
-                            class_text(class),
-                        );
-                    }
+            if let Some(country) = country {
+                let rules = country.rules();
+                ui.horizontal(|ui| {
+                    crate::flags::show(ui, country, 11.0);
+                    ui.label(format!("{} rifle level", country.adjective()))
+                        .on_hover_text(rules.help());
                 });
-            ui.end_row();
+                let mut level = target.ammunition_level(country);
+                egui::ComboBox::from_id_salt("ammunition-level")
+                    .selected_text(
+                        level.map_or("None".to_owned(), |level| rules.requirement_text(level)),
+                    )
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut level, None, "None");
+                        for option in rules.levels {
+                            ui.selectable_value(
+                                &mut level,
+                                Some(option.number),
+                                rules.requirement_text(option.number),
+                            )
+                            .on_hover_text(option.needs);
+                        }
+                    });
+                if level != target.ammunition_level(country) {
+                    target.set_ammunition_level(country, level);
+                }
+                ui.end_row();
+            }
         }
         ui.label("Notes");
         ui.text_edit_multiline(&mut target.notes);
         ui.end_row();
     });
-}
-
-pub const CLASS_HELP: &str = "The least ammunition class Swedish law allows for this \
-     animal with a rifle (Naturvårdsverket, NFS 2023:8). Class 1 is the strictest: an \
-     expanding bullet of at least 9 g with 2 700 J at 100 m (or 10 g with 2 000 J, or a \
-     lead-free 7.7 g with 2 000 J). Class 2: expanding, 3.2 g, 800 J at 100 m. Class 3: \
-     2.5 g, 200 J at 100 m. Class 4: 150 J at the muzzle. Check the current rules.";
-
-/// "Class 2 or higher": a load of a stricter class is allowed too.
-pub fn class_text(class: u8) -> String {
-    if class == 1 {
-        "Class 1".to_owned()
-    } else {
-        format!("Class {class} or stricter")
-    }
 }
 
 /// What an animal's two sizes measure.

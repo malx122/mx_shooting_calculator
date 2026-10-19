@@ -222,10 +222,19 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    zone) and, for game, the minimum energy. You can change either for this
    calculation; ↺ goes back to the target's value. Sport targets have no
    ethical limits. The target is drawn at true size through the scope and in
-   3D. When the target has a **Swedish ammunition class**, the results say
-   whether your load meets it: the class is worked out from the bullet's
-   weight, whether it expands, lead-free or not, and its energy at the
-   muzzle and at 100 m (NFS 2023:8).
+   3D. When the target is game in your country, the results say whether
+   your load meets the **legal rifle ammunition level** for it, worked out
+   from the bullet's weight, whether it expands, lead-free or not, and its
+   energy at the muzzle and at 100 m. A bullet whose construction isn't set
+   (a Strelok import, say) is assumed to expand, and the result says so.
+
+   **Hunting rules** (the flag in the header; on a phone, in the menu)
+   chooses the country: **Sweden** (Naturvårdsverket, NFS 2023:8, classes
+   1–4), **Finland** (Metsästysasetus 666/1993 § 16 a: moose, deer, roe
+   deer, fox and small game classes) or **none** for no legal checks. It
+   starts from the device's language and region. Each country's rules are a
+   file of their own in `crates/ballistics-store/src/rules/`; adding a
+   country means adding a file and its levels to the targets.
 
    The **Trajectory** can be shown in 2D (a graph of drop and wind drift) or
    in 3D. The 3D view is a true-scale scene: a hunter at the muzzle, the
@@ -242,12 +251,13 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    list of Swedish hunting seasons, in folding groups (deer; wild boar and
    mouflon; bear; fox, badger and martens; hares, rabbits and beaver;
    grouse, ptarmigan and pheasant; ducks, geese and swans; other birds;
-   sport). Search finds them by English or Swedish name. Each species has
+   sport). Search finds them by English, Swedish or Finnish name. Each species has
    its own drawing of the male (birds in the plumage they have in the
    hunting season); species that look alike share one, such as the grey
-   geese or the gulls. Sizes and vital zones are estimates. Each Swedish
-   species shows the least ammunition class the law allows for it with a
-   rifle. Copy a catalog target to adjust it, or make a new one:
+   geese or the gulls. Sizes and vital zones are estimates. Each species
+   shows, with your country's flag, the least rifle ammunition its law
+   allows for it, and what else the law says (a shotgun allowed too, a
+   licence needed, protected). Copy a catalog target to adjust it, or make a new one:
    - an animal: drawn as any of the catalog's animals, at your size, with
      or without antlers or horns. Birds and small animals are measured to
      the top of the back, and birds from beak to tail;
@@ -310,7 +320,7 @@ The assistant gets these tools (read-only for now):
 
 | Tool | What it does |
 |---|---|
-| `list_rifles`, `list_bullets`, `list_targets` | Your rifles (with scope, zero, clicks and measured bullets), your bullets, and the game and sport targets (search by English or Swedish name) |
+| `list_rifles`, `list_bullets`, `list_targets` | Your rifles (with scope, zero, clicks and measured bullets), your bullets, and the game and sport targets (search by English, Swedish or Finnish name) |
 | `holdover` | Elevation and windage to dial or hold at a range, in the scope's units and clicks, with drop, drift, velocity and energy; with a target, whether the shot is inside the ethical range and meets Swedish ammunition rules |
 | `dope_table` | The same over a span of ranges |
 | `search_catalog` | The bullet catalog |
@@ -359,7 +369,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, spin drift, Coriolis and the hunting analyses. No dependencies, no I/O. |
 | `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
 | `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. |
-| `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the Swedish ammunition class. Shared by the app and `mxsc-mcp`, so both give the same answers. |
+| `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
 | `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
 | `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |
 
@@ -499,7 +509,10 @@ app:
   different makers can share a reticle.
 - **`targets.json`:** every Swedish game species, a few others (elk,
   white-tailed deer) and sport targets (ISSF 300 m, 50 m and 10 m rifle
-  targets; 10, 20 and 30 cm steel plates), each in a list group.
+  targets; 10, 20 and 30 cm steel plates), each in a list group. Each
+  species has its rifle level per country (`"ammunition": {"sweden": 2,
+  "finland": 3}`) and what else each country's rules say (`rules_notes`).
+  Older files with `swedish_class` still read.
 - **`drawings.json`:** the animal drawings the targets use, as coloured
   polygons in metres.
 

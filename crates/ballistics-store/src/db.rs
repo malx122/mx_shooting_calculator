@@ -293,11 +293,13 @@ impl Store {
         let mut targets = self.query_all("SELECT data FROM targets", [], |row| {
             from_json_column::<Target>(&row.get::<_, String>(0)?)
         })?;
+        targets.iter_mut().for_each(Target::upgrade_legacy);
         targets.sort_by_key(|target| target.name.to_lowercase());
         Ok(targets)
     }
 
     pub fn save_target(&self, target: &mut Target) -> Result<(), StoreError> {
+        target.upgrade_legacy();
         target.validate().map_err(StoreError::Invalid)?;
         target.updated_at = self.stamp(target.updated_at)?;
         put_target(&self.connection, target)

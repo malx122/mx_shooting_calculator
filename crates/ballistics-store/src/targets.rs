@@ -5,7 +5,11 @@
 //! The catalog's targets and the hunter's own share one shape; the hunter's
 //! are kept in the database and travel with exports.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
+
+use crate::rules::Country;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -57,41 +61,6 @@ impl TargetGroup {
             TargetGroup::Sport => "Sport targets",
             TargetGroup::Other => "Other",
         }
-    }
-}
-
-/// The ammunition class a load meets under Swedish rules (Naturvårdsverket,
-/// NFS 2023:8, 2 kap 11–14 §§), the strictest first:
-///
-/// - 1: expanding bullet of at least 9 g with E100 ≥ 2 700 J, or 10 g with
-///   E100 ≥ 2 000 J, or lead-free 7.7 g with E100 ≥ 2 000 J;
-/// - 2: expanding bullet of at least 3.2 g with E100 ≥ 800 J;
-/// - 3: any bullet of at least 2.5 g with E100 ≥ 200 J;
-/// - 4: any bullet with E0 ≥ 150 J.
-///
-/// `expanding` is `None` when the bullet's construction doesn't say.
-pub fn swedish_class(
-    mass_g: f64,
-    e100_j: f64,
-    e0_j: f64,
-    expanding: Option<bool>,
-    lead_free: bool,
-) -> Option<u8> {
-    let expanding = expanding == Some(true);
-    if expanding
-        && ((mass_g >= 9.0 && e100_j >= 2700.0)
-            || (mass_g >= 10.0 && e100_j >= 2000.0)
-            || (lead_free && mass_g >= 7.7 && e100_j >= 2000.0))
-    {
-        Some(1)
-    } else if expanding && mass_g >= 3.2 && e100_j >= 800.0 {
-        Some(2)
-    } else if mass_g >= 2.5 && e100_j >= 200.0 {
-        Some(3)
-    } else if e0_j >= 150.0 {
-        Some(4)
-    } else {
-        None
     }
 }
 
@@ -166,13 +135,20 @@ pub struct Target {
     /// Where it is listed; `None` for the hunter's own until they choose.
     #[serde(default)]
     pub group: Option<TargetGroup>,
-    /// Other names to find it by, such as the Swedish one.
+    /// Other names to find it by, such as the Swedish and Finnish ones.
     #[serde(default)]
     pub other_names: Vec<String>,
-    /// The ammunition class Swedish rules ask for (1–4, see
-    /// `swedish_class`), when it is game in Sweden.
-    #[serde(default)]
-    pub swedish_class: Option<u8>,
+    /// The rifle ammunition level each country's rules ask for (see
+    /// `crate::rules`), where it is game there.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub ammunition: BTreeMap<Country, u8>,
+    /// What else each country's rules say about it ("a shotgun is allowed
+    /// too").
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub rules_notes: BTreeMap<Country, String>,
+    /// Sweden's class as earlier versions kept it; read into `ammunition`.
+    #[serde(default, rename = "swedish_class", skip_serializing)]
+    pub legacy_swedish_class: Option<u8>,
     /// The catalog target a custom one was copied from.
     #[serde(default)]
     pub catalog_id: Option<String>,
@@ -200,7 +176,9 @@ impl Target {
             notes: String::new(),
             group: None,
             other_names: Vec::new(),
-            swedish_class: None,
+            ammunition: BTreeMap::new(),
+            rules_notes: BTreeMap::new(),
+            legacy_swedish_class: None,
             catalog_id: None,
             updated_at: 0,
         }
@@ -219,6 +197,33 @@ impl Target {
 
     pub fn is_game(&self) -> bool {
         self.kind == TargetKind::Game
+    }
+
+    /// The rifle ammunition level `country`'s rules ask for, if it is game
+    /// there and the level is known.
+    pub fn ammunition_level(&self, country: Country) -> Option<u8> {
+        self.ammunition.get(&country).copied().or(match country {
+            Country::Sweden => self.legacy_swedish_class,
+            _ => None,
+        })
+    }
+
+    /// Sets (or with `None`, clears) the level `country` asks for.
+    pub fn set_ammunition_level(&mut self, country: Country, level: Option<u8>) {
+        if country == Country::Sweden {
+            self.legacy_swedish_class = None;
+        }
+        match level {
+            Some(level) => self.ammunition.insert(country, level),
+            None => self.ammunition.remove(&country),
+        };
+    }
+
+    /// Moves a level kept the earlier way into `ammunition`.
+    pub(crate) fn upgrade_legacy(&mut self) {
+        if let Some(class) = self.legacy_swedish_class.take() {
+            self.ammunition.entry(Country::Sweden).or_insert(class);
+        }
     }
 
     /// The list section the target goes in.
@@ -250,11 +255,14 @@ impl Target {
             .is_some_and(|energy| energy < 0.0 || energy.is_nan())
         {
             Some("minimum energy can't be negative")
-        } else if self
-            .swedish_class
-            .is_some_and(|class| !(1..=4).contains(&class))
-        {
-            Some("the Swedish ammunition class must be 1 to 4")
+        } else if let Some(country) = Country::ALL.into_iter().find(|&country| {
+            self.ammunition_level(country)
+                .is_some_and(|level| !country.rules().valid_level(level))
+        }) {
+            return Err(format!(
+                "that ammunition level doesn't exist in {}'s rules",
+                country.name()
+            ));
         } else if self
             .min_velocity_mps
             .is_some_and(|velocity| !(0.0..=1500.0).contains(&velocity))
