@@ -21,6 +21,15 @@ any release may still change things noticeably.
   required with a rifle, and the results say whether your load meets it.
   Your own targets can have a group and a class too.
 
+### Changed
+
+- **Reticles redrawn:** the 20 reticles that had been taken from the makers'
+  vector drawings (Kahles SKMR4; Vortex EBR-2C, EBR-4, EBR-7C, EBR-7D,
+  EBR-8, EBR-9, VMR-2, XLR-2, HSR-5i and G4i BDC) are now the project's own
+  drawings, built from the published subtension figures and the makers'
+  pictures. The licence notes say so: the project's own catalog drawings
+  are under the code's licences.
+
 ## [0.2.0] - 2026-10-19
 
 ### Added

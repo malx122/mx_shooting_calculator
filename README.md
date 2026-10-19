@@ -302,20 +302,22 @@ specifications and reticle geometry. They cover two makers:
 - **Vortex:** 43 scopes from Crossfire HD, Diamondback (and Tactical),
   Strike Eagle, Venom, Viper HD, Viper PST Gen II, Razor HD Gen III and
   Razor HD LHT.
-  - **Reticles:** 26 Vortex reticles are drawn. The first-focal-plane
-    ones (EBR-2C, EBR-7C, EBR-7D, EBR-4, EBR-8, EBR-9, XLR-2), and the
-    LHT's HSR-5i and G4i BDC, are taken from the vector drawings in
-    Vortex's subtension PDFs. The second-focal-plane
-    ones (Dead-Hold BDC and 2A, VMR-1, VMR-2, VMR-3, AR-BDC3) are measured
-    from Vortex's subtension images, with one entry per scope where Vortex
-    publishes per-model values. Each reticle's notes say what was published
-    and what was assumed; line widths were often assumed.
+  - **Reticles:** 26 Vortex reticles are drawn, with one entry per scope
+    where Vortex publishes per-model values. Each reticle's notes say what
+    was published and what was measured from the picture or assumed; line
+    widths were often assumed.
   - **Gaps.** Vortex loads many of its spec tables dynamically, so some
     fields are missing. Where the field of view is missing, the scope view
     estimates it from the magnification. Missing click values on scopes
     from 2× up are set to Vortex's standard ¼ MOA or 0.1 MRAD, which the
     notes say.
   - **Not cross-checked.** This data was collected in one quick pass.
+
+**How reticles are drawn.** Every reticle is the project's own drawing:
+code builds it from the subtension figures the maker publishes (spacings,
+line widths, hold-point positions), and what the maker doesn't print is
+measured from the maker's published picture. Nothing is traced or copied
+from the makers' vector artwork.
 
 **Reticle format.** A reticle is a list of vector shapes in angular units
 around the aiming point (x to the right, y up):
@@ -451,9 +453,10 @@ at your option. This is the usual dual licence for Rust projects.
   Regenerate the file after changing dependencies:
   `cargo about generate about.hbs -o THIRD-PARTY-LICENSES.txt` (install
   with `cargo install cargo-about --locked --features cli`).
-- **The built-in catalog data is not covered by the code licence.** See
-  [NOTICE](NOTICE): bullet and scope figures are facts compiled from
-  manufacturers' publications, the reticle drawings reproduce
-  manufacturers' diagrams, and the names are their owners' trademarks. Get
-  the manufacturers' permission for the reticles before distributing the
-  app publicly or commercially.
+- **The built-in catalog** (see [NOTICE](NOTICE)): bullet and scope figures
+  are facts compiled from manufacturers' publications, each with its
+  source. The reticle and animal drawings are the project's own: the
+  reticles are built by the project's code from the subtension figures the
+  makers publish, not traced from their artwork. The project's own parts
+  are under the same licences as the code. Product and reticle names are
+  their owners' trademarks.

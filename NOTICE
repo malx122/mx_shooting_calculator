@@ -16,19 +16,27 @@ with any binary you distribute.
 
 Built-in catalog data
 ---------------------
-The files in crates/ballistics-store/catalog/ (calibers, bullets, scopes,
-reticles and targets) are NOT covered by the licences above.
+The files in crates/ballistics-store/catalog/ hold calibers, bullets,
+scopes, reticles, targets and animal drawings.
 
   * Bullet, ammunition and scope figures are factual specifications compiled
     from the manufacturers' published product information (and, for a few
-    entries, retailers' pages). Each entry names its source.
-  * Reticle drawings reproduce the manufacturers' published subtension
-    diagrams so the app can show holds through the scope. Some are traced
-    from the manufacturers' own vector drawings. Before distributing the app
-    publicly or commercially, get the manufacturers' permission or replace
-    these drawings.
-  * ISSF target dimensions follow the ISSF rules; the game guideline values
-    (vital zones, minimum energies) are the project's own.
+    entries, retailers' pages). Each entry names its source. Facts like
+    these belong to no one; they are given as found, without warranty.
+  * Reticle drawings are the project's own. Each is built by the project's
+    own code from the subtension figures the maker publishes (spacings, line
+    widths, hold-point positions), with the layout read from the maker's
+    published picture; none is traced or copied from the makers' artwork.
+    Each entry names its source and says which values were published and
+    which were measured from the picture.
+  * Animal drawings are the project's own.
+  * ISSF target dimensions follow the ISSF rules. The game guideline values
+    (vital zones, minimum energies, sizes) are the project's own estimates;
+    the Swedish ammunition classes summarise Naturvårdsverket's rules
+    (NFS 2023:8), which are public law. Check the current rules.
+
+The project's own parts of the catalog (the drawings, notes and guideline
+values) are licensed under the same licences as the source code.
 
 Product and company names (for example Kahles, Vortex, Norma, Lapua,
 Hornady, Federal, Strelok Pro) and reticle names (for example EBR-7C,
