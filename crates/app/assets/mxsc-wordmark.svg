@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 146" width="260" height="146">
+  <!-- MX wordmark for the app's dark header, drawn with strokes; the X
+       crossing is the orange aim point. -->
+  <g transform="translate(0 13)" fill="none" stroke="#F1EADB" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="4">
+    <polyline points="13,120 13,13 64,84 115,13 115,120"/>
+    <line x1="150" y1="0" x2="246" y2="120"/>
+    <line x1="246" y1="0" x2="150" y2="120"/>
+    <circle cx="198" cy="60" r="15" fill="#E8702A" stroke="#12261A" stroke-width="6"/>
+  </g>
+</svg>

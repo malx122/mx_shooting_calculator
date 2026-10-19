@@ -1,0 +1,14 @@
+# Build output (also holds the development database, target/dev.sqlite)
+/target
+
+# Local databases and backups
+*.sqlite
+*.sqlite-journal
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Web build output
+/crates/app/dist

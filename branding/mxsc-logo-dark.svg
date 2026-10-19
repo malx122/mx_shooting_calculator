@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <!-- MX Shooting Calculator logo, for dark backgrounds. The MX wordmark is drawn with
+       strokes (no font needed); the X crossing is the orange aim point. The
+       tagline uses a system sans-serif font. -->
+  <rect width="800" height="240" rx="24" fill="#12261A"/>
+  <g transform="translate(20 20) scale(0.390625)">
+    <defs>
+    <linearGradient id="icon-forest" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2B5A3E"/>
+    <stop offset="1" stop-color="#12261A"/>
+    </linearGradient>
+    <linearGradient id="icon-dusk" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#3E6B52"/>
+    <stop offset="0.62" stop-color="#7FA08A"/>
+    <stop offset="1" stop-color="#C9C2A8"/>
+    </linearGradient>
+    <clipPath id="icon-lens">
+    <circle cx="256" cy="256" r="176"/>
+    </clipPath>
+    </defs>
+    <rect width="512" height="512" rx="112" fill="url(#icon-forest)"/>
+    <g clip-path="url(#icon-lens)">
+    <rect x="80" y="80" width="352" height="352" fill="url(#icon-dusk)"/>
+    <path d="M80 330 L130 300 L170 316 L214 284 L262 306 L312 276 L360 300 L432 270 L432 432 L80 432 Z" fill="#2E5139"/>
+    <path d="M80 372 L124 350 L176 366 L232 338 L290 360 L346 334 L398 352 L432 340 L432 432 L80 432 Z" fill="#1A3524"/>
+    </g>
+    <circle cx="256" cy="256" r="176" fill="none" stroke="#0B1A11" stroke-width="22"/>
+    <circle cx="256" cy="256" r="188" fill="none" stroke="#F1EADB" stroke-width="6" stroke-opacity="0.9"/>
+    <g fill="#0B1A11" clip-path="url(#icon-lens)">
+    <rect x="80" y="246" width="118" height="20"/>
+    <rect x="314" y="246" width="118" height="20"/>
+    <rect x="246" y="314" width="20" height="118"/>
+    <rect x="198" y="254" width="116" height="4"/>
+    <rect x="254" y="80" width="4" height="234"/>
+    </g>
+    <path d="M 104 372 Q 180 150 256 256" fill="none" stroke="#E8702A" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="19" fill="#E8702A" stroke="#0B1A11" stroke-width="6"/>
+  </g>
+  <g transform="translate(262 46)" fill="none" stroke="#F1EADB" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="4">
+    <polyline points="13,120 13,13 64,84 115,13 115,120"/>
+    <line x1="150" y1="0" x2="246" y2="120"/>
+    <line x1="246" y1="0" x2="150" y2="120"/>
+    <circle cx="198" cy="60" r="15" fill="#E8702A" stroke="#12261A" stroke-width="6"/>
+  </g>
+  <text x="264" y="208" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="30" font-weight="600" letter-spacing="7" fill="#E8702A">SHOOTING CALCULATOR</text>
+</svg>

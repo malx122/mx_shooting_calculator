@@ -1,0 +1,20 @@
+Third-party software in MX Shooting Calculator
+==============================================
+
+The app is built with the open-source libraries below. Each is used under
+the licence shown; the full licence texts follow, each with the libraries
+it covers.
+
+{{#each overview}}
+- {{{name}}} ({{{id}}}), libraries: {{count}}
+{{/each}}
+
+{{#each licenses}}
+================================================================================
+{{{name}}} ({{{id}}})
+Used by: {{#each used_by}}{{{crate.name}}} {{{crate.version}}}{{#unless @last}}, {{/unless}}{{/each}}
+================================================================================
+
+{{{text}}}
+
+{{/each}}

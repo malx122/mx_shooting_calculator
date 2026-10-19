@@ -1,0 +1,20 @@
+[package]
+name = "ballistics-store"
+description = "Rifles, bullet collection and base catalog for the ballistic calculator. Local SQLite plus JSON export/import."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "v5"] }
+roxmltree = "0.21"
+# The clock (std's panics in the browser; this is std's on desktop).
+web-time = "1"
+
+# In the browser: ids take their randomness from the browser.
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+uuid = { version = "1", features = ["v4", "v5", "js"] }

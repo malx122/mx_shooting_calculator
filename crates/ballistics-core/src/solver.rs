@@ -1,0 +1,646 @@
+//! Point-mass (3-DOF) trajectory solver.
+//!
+//! Frame: the muzzle is the origin, `x` points horizontally down range, `y`
+//! up and `z` to the right. Drag acts against the bullet's velocity relative
+//! to the moving air, scaled by the standard drag table and the BC. Results
+//! are reported against the line of sight through the scope, the way a
+//! hunter reads them: slant range from a rangefinder, and drop and windage
+//! perpendicular to that line.
+
+use std::fmt;
+use std::ops::{Add, Mul, Sub};
+use std::sync::Arc;
+
+use super::atmosphere::Atmosphere;
+use super::drag::{DragCurve, DragModel};
+use super::stability;
+
+pub const GRAVITY: f64 = 9.806_65;
+const EARTH_ROTATION_RAD_PER_S: f64 = 7.292_115e-5;
+/// BC in lb/in² (the number printed on ammunition boxes) to kg/m².
+const BC_LB_PER_IN2_TO_KG_PER_M2: f64 = 703.069_58;
+const TIME_STEP_S: f64 = 0.000_5;
+const MAX_FLIGHT_TIME_S: f64 = 15.0;
+const MIN_SPEED: f64 = 20.0;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Bullet {
+    pub mass_kg: f64,
+    pub diameter_m: f64,
+    /// Needed for stability and spin drift; often unpublished.
+    pub length_m: Option<f64>,
+    /// Ballistic coefficient in lb/in² against `drag_model`.
+    pub ballistic_coefficient: f64,
+    pub drag_model: DragModel,
+    /// BCs for velocity bands; when present they replace
+    /// `ballistic_coefficient`.
+    pub bc_bands: BcBands,
+    /// The bullet's own drag curve. When present it replaces the standard
+    /// drag model and every BC.
+    pub drag_curve: Option<Arc<DragCurve>>,
+}
+
+impl Bullet {
+    /// The BC at a speed through the air, in lb/in².
+    pub fn bc_at(&self, speed: f64) -> f64 {
+        self.bc_bands
+            .at(speed)
+            .unwrap_or(self.ballistic_coefficient)
+    }
+
+    /// Ballistic coefficient in kg/m² at a speed through the air. With the
+    /// bullet's own drag curve there is no reference projectile, so it is
+    /// just mass over diameter squared.
+    fn bc_si_at(&self, speed: f64) -> f64 {
+        match self.drag_curve {
+            Some(_) => self.mass_kg / (self.diameter_m * self.diameter_m),
+            None => self.bc_at(speed) * BC_LB_PER_IN2_TO_KG_PER_M2,
+        }
+    }
+
+    fn drag_coefficient(&self, mach: f64) -> f64 {
+        match &self.drag_curve {
+            Some(curve) => curve.drag_coefficient(mach),
+            None => self.drag_model.drag_coefficient(mach),
+        }
+    }
+}
+
+pub const MAX_BC_BANDS: usize = 5;
+
+/// A BC that changes with velocity, as some makers publish it: points of
+/// (velocity in m/s, BC), interpolated linearly and held constant beyond the
+/// first and last point.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BcBands {
+    points: [(f64, f64); MAX_BC_BANDS],
+    len: usize,
+}
+
+impl BcBands {
+    pub const NONE: BcBands = BcBands {
+        points: [(0.0, 0.0); MAX_BC_BANDS],
+        len: 0,
+    };
+
+    pub fn new(points: &[(f64, f64)]) -> Result<BcBands, &'static str> {
+        if points.len() > MAX_BC_BANDS {
+            return Err("at most five BC bands");
+        }
+        if points
+            .iter()
+            .any(|&(velocity, bc)| !(velocity > 0.0 && bc > 0.0))
+        {
+            return Err("BC bands need a positive velocity and BC");
+        }
+        let mut bands = BcBands::NONE;
+        bands.points[..points.len()].copy_from_slice(points);
+        bands.len = points.len();
+        bands.points[..bands.len].sort_by(|a, b| a.0.total_cmp(&b.0));
+        if bands.points[..bands.len]
+            .windows(2)
+            .any(|pair| pair[0].0 == pair[1].0)
+        {
+            return Err("two BC bands have the same velocity");
+        }
+        Ok(bands)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn at(&self, speed: f64) -> Option<f64> {
+        let points = &self.points[..self.len];
+        let (first, last) = (points.first()?, points.last()?);
+        if speed <= first.0 {
+            return Some(first.1);
+        }
+        if speed >= last.0 {
+            return Some(last.1);
+        }
+        let upper = points.partition_point(|&(velocity, _)| velocity < speed);
+        let ((v0, bc0), (v1, bc1)) = (points[upper - 1], points[upper]);
+        Some(bc0 + (bc1 - bc0) * (speed - v0) / (v1 - v0))
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Rifle {
+    /// Centre of the scope above the centre of the bore.
+    pub sight_height_m: f64,
+    pub zero_range_m: f64,
+    /// Barrel length for one full turn of the rifling.
+    pub twist_m: f64,
+    pub right_hand_twist: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Load {
+    /// Muzzle velocity measured (or published) at `reference_temperature_c`.
+    pub muzzle_velocity: f64,
+    pub reference_temperature_c: f64,
+    /// Change in muzzle velocity per °C of powder temperature, in m/s.
+    pub temperature_sensitivity: f64,
+}
+
+impl Load {
+    pub fn velocity_at(&self, powder_temperature_c: f64) -> f64 {
+        self.muzzle_velocity
+            + self.temperature_sensitivity * (powder_temperature_c - self.reference_temperature_c)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Wind {
+    pub speed: f64,
+    /// Direction the wind blows *from*, clockwise from the line of fire:
+    /// 0° from the target (headwind), 90° from the right, 180° from behind.
+    pub from_degrees: f64,
+}
+
+impl Wind {
+    pub const CALM: Wind = Wind {
+        speed: 0.0,
+        from_degrees: 0.0,
+    };
+
+    fn velocity(&self) -> Vec3 {
+        let angle = self.from_degrees.to_radians();
+        Vec3::new(-angle.cos(), 0.0, -angle.sin()) * self.speed
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Coriolis {
+    pub latitude_degrees: f64,
+    /// Compass direction of the shot: 0° north, 90° east.
+    pub azimuth_degrees: f64,
+}
+
+/// Where and in what weather the shot is taken.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Conditions {
+    pub atmosphere: Atmosphere,
+    pub powder_temperature_c: f64,
+    pub wind: Wind,
+    /// Angle of the line of sight: positive uphill, negative downhill.
+    pub inclination_degrees: f64,
+    pub coriolis: Option<Coriolis>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Scenario {
+    pub bullet: Bullet,
+    pub rifle: Rifle,
+    pub load: Load,
+    /// Weather on the day the rifle was zeroed. The zero is taken level and
+    /// in calm air.
+    pub zero_atmosphere: Atmosphere,
+    pub zero_powder_temperature_c: f64,
+    /// Where this load hits relative to the rifle's zero, as an angle in
+    /// radians: [right, up]. Used when the rifle was zeroed with another load.
+    pub impact_offset: [f64; 2],
+    pub shot: Conditions,
+    pub spin_drift: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SolveError {
+    InvalidInput(&'static str),
+    ZeroOutOfReach,
+}
+
+impl fmt::Display for SolveError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SolveError::InvalidInput(what) => write!(formatter, "invalid input: {what}"),
+            SolveError::ZeroOutOfReach => {
+                write!(formatter, "the bullet cannot reach the zero range")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SolveError {}
+
+/// One integration step, relative to the line of sight.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sample {
+    pub time: f64,
+    /// Distance along the line of sight (what a rangefinder reads).
+    pub range: f64,
+    /// Height above the line of sight; negative is below the crosshair.
+    pub drop: f64,
+    /// Sideways offset including spin drift; positive is right.
+    pub windage: f64,
+    pub velocity: f64,
+    pub mach: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RangeRow {
+    pub range: f64,
+    pub time: f64,
+    pub drop: f64,
+    pub windage: f64,
+    /// Angle to dial or hold up, in radians (negative means hold low).
+    pub elevation_correction: f64,
+    /// Angle to dial or hold right, in radians (negative means hold left).
+    pub windage_correction: f64,
+    pub velocity: f64,
+    pub mach: f64,
+    pub energy_j: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Solution {
+    /// Muzzle velocity after powder-temperature correction.
+    pub muzzle_velocity: f64,
+    /// Miller stability factor at the muzzle in the shot conditions, when
+    /// the bullet length is known.
+    pub stability: Option<f64>,
+    /// Bore elevation and windage relative to the line of sight that the
+    /// zero produces, in radians.
+    pub zero_elevation: f64,
+    pub zero_windage: f64,
+    pub samples: Vec<Sample>,
+    pub mass_kg: f64,
+}
+
+impl Solution {
+    /// Trajectory values at a slant range, or `None` beyond the computed path.
+    pub fn at(&self, range: f64) -> Option<RangeRow> {
+        let sample = interpolate(&self.samples, range)?;
+        Some(RangeRow {
+            range,
+            time: sample.time,
+            drop: sample.drop,
+            windage: sample.windage,
+            elevation_correction: (-sample.drop).atan2(range),
+            windage_correction: (-sample.windage).atan2(range),
+            velocity: sample.velocity,
+            mach: sample.mach,
+            energy_j: kinetic_energy(self.mass_kg, sample.velocity),
+        })
+    }
+}
+
+pub fn kinetic_energy(mass_kg: f64, velocity: f64) -> f64 {
+    0.5 * mass_kg * velocity * velocity
+}
+
+/// Zeroes the rifle, then flies the shot out to `max_range` (slant).
+pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError> {
+    validate(scenario)?;
+    let (zero_elevation, zero_windage) = zero_angles(scenario)?;
+    let shot = &scenario.shot;
+    let muzzle_velocity = scenario.load.velocity_at(shot.powder_temperature_c);
+    let stability = muzzle_stability(scenario, muzzle_velocity, &shot.atmosphere);
+    let flight = Flight::new(scenario, shot, stability);
+    let [offset_right, offset_up] = scenario.impact_offset;
+    let launch = launch_velocity(
+        muzzle_velocity,
+        shot.inclination_degrees.to_radians() + zero_elevation + offset_up,
+        zero_windage + offset_right,
+    );
+    let samples = flight.fly(launch, |sample| sample.range < max_range);
+    Ok(Solution {
+        muzzle_velocity,
+        stability,
+        zero_elevation,
+        zero_windage,
+        samples,
+        mass_kg: scenario.bullet.mass_kg,
+    })
+}
+
+/// Flies a level, calm-air shot in the shot's atmosphere with the bore
+/// raised `elevation` radians above the line of sight. Used by analyses that
+/// pick their own zero, such as maximum point-blank range.
+pub fn fly_level(
+    scenario: &Scenario,
+    elevation: f64,
+    keep_going: impl FnMut(&Sample) -> bool,
+) -> Vec<Sample> {
+    let conditions = Conditions {
+        wind: Wind::CALM,
+        inclination_degrees: 0.0,
+        coriolis: None,
+        ..scenario.shot
+    };
+    let velocity = scenario.load.velocity_at(conditions.powder_temperature_c);
+    let stability = muzzle_stability(scenario, velocity, &conditions.atmosphere);
+    Flight::new(scenario, &conditions, stability)
+        .fly(launch_velocity(velocity, elevation, 0.0), keep_going)
+}
+
+/// Linear interpolation of a sample path at a slant range.
+pub fn interpolate(samples: &[Sample], range: f64) -> Option<Sample> {
+    let after = samples.partition_point(|sample| sample.range < range);
+    if after == 0 {
+        return (samples.first()?.range == range).then(|| samples[0]);
+    }
+    if after == samples.len() {
+        return None;
+    }
+    let (a, b) = (samples[after - 1], samples[after]);
+    let t = (range - a.range) / (b.range - a.range);
+    let lerp = |from: f64, to: f64| from + (to - from) * t;
+    Some(Sample {
+        time: lerp(a.time, b.time),
+        range,
+        drop: lerp(a.drop, b.drop),
+        windage: lerp(a.windage, b.windage),
+        velocity: lerp(a.velocity, b.velocity),
+        mach: lerp(a.mach, b.mach),
+    })
+}
+
+fn validate(scenario: &Scenario) -> Result<(), SolveError> {
+    let Scenario {
+        bullet,
+        rifle,
+        load,
+        zero_atmosphere,
+        shot,
+        ..
+    } = scenario;
+    let checks = [
+        (bullet.mass_kg > 0.0, "bullet mass must be positive"),
+        (bullet.diameter_m > 0.0, "bullet diameter must be positive"),
+        (
+            bullet.length_m.is_none_or(|length| length > 0.0),
+            "bullet length must be positive",
+        ),
+        (
+            bullet.drag_curve.is_some() || bullet.ballistic_coefficient > 0.0,
+            "ballistic coefficient must be positive",
+        ),
+        (
+            rifle.sight_height_m >= 0.0,
+            "sight height cannot be negative",
+        ),
+        (rifle.zero_range_m > 0.0, "zero range must be positive"),
+        (rifle.twist_m > 0.0, "twist rate must be positive"),
+        (
+            load.velocity_at(shot.powder_temperature_c) > 0.0,
+            "muzzle velocity must be positive",
+        ),
+        (
+            load.velocity_at(scenario.zero_powder_temperature_c) > 0.0,
+            "muzzle velocity must be positive",
+        ),
+        (
+            scenario
+                .impact_offset
+                .iter()
+                .all(|angle| angle.abs() < 0.05),
+            "impact offset is implausibly large",
+        ),
+        (
+            shot.inclination_degrees.abs() < 90.0,
+            "shot angle must be between -90° and 90°",
+        ),
+        (shot.wind.speed >= 0.0, "wind speed cannot be negative"),
+    ];
+    for atmosphere in [zero_atmosphere, &shot.atmosphere] {
+        if atmosphere.pressure_hpa <= 0.0 || atmosphere.temperature_c <= -273.15 {
+            return Err(SolveError::InvalidInput("atmosphere is not physical"));
+        }
+    }
+    match checks.iter().find(|(ok, _)| !ok) {
+        Some((_, message)) => Err(SolveError::InvalidInput(message)),
+        None => Ok(()),
+    }
+}
+
+fn muzzle_stability(scenario: &Scenario, velocity: f64, atmosphere: &Atmosphere) -> Option<f64> {
+    let length = scenario.bullet.length_m?;
+    Some(stability::miller_stability(
+        scenario.bullet.mass_kg,
+        scenario.bullet.diameter_m,
+        length,
+        scenario.rifle.twist_m,
+        velocity,
+        atmosphere,
+    ))
+}
+
+/// Finds the bore angles that put the bullet on the crosshair at the zero
+/// range, in the zero-day weather.
+fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
+    let conditions = Conditions {
+        atmosphere: scenario.zero_atmosphere,
+        powder_temperature_c: scenario.zero_powder_temperature_c,
+        wind: Wind::CALM,
+        inclination_degrees: 0.0,
+        coriolis: None,
+    };
+    let velocity = scenario.load.velocity_at(conditions.powder_temperature_c);
+    let stability = muzzle_stability(scenario, velocity, &conditions.atmosphere);
+    let flight = Flight::new(scenario, &conditions, stability);
+    let zero_range = scenario.rifle.zero_range_m;
+    let at_zero = |elevation: f64| {
+        let samples = flight.fly(launch_velocity(velocity, elevation, 0.0), |s| {
+            s.range < zero_range
+        });
+        interpolate(&samples, zero_range).ok_or(SolveError::ZeroOutOfReach)
+    };
+
+    // Drop at the zero range is almost linear in the bore angle, so the
+    // secant method converges in a few shots.
+    let (mut previous_angle, mut angle) = (0.0, 0.002);
+    let mut previous_drop = at_zero(previous_angle)?.drop;
+    for _ in 0..30 {
+        let sample = at_zero(angle)?;
+        if sample.drop.abs() < 1e-6 {
+            // In calm air the horizontal path is a straight line, so one
+            // angle cancels the spin drift at the zero range.
+            let windage = (-sample.windage).atan2(zero_range);
+            return Ok((angle, windage));
+        }
+        let slope = (sample.drop - previous_drop) / (angle - previous_angle);
+        if !slope.is_finite() || slope <= 0.0 {
+            break;
+        }
+        (previous_angle, previous_drop) = (angle, sample.drop);
+        angle -= sample.drop / slope;
+        if angle.abs() > 0.5 {
+            break;
+        }
+    }
+    Err(SolveError::ZeroOutOfReach)
+}
+
+/// Bore direction rotated `elevation` up from horizontal and `windage` to the
+/// right about the sight's vertical axis.
+fn launch_velocity(speed: f64, elevation: f64, windage: f64) -> Vec3 {
+    Vec3::new(
+        windage.cos() * elevation.cos(),
+        windage.cos() * elevation.sin(),
+        windage.sin(),
+    ) * speed
+}
+
+struct Flight {
+    /// Air at the muzzle; thinned with height as the bullet climbs or falls.
+    atmosphere: Atmosphere,
+    bullet: Bullet,
+    wind: Vec3,
+    earth_rotation: Option<Vec3>,
+    sight_position: Vec3,
+    sight_direction: Vec3,
+    sight_up: Vec3,
+    spin: Option<(f64, bool)>,
+}
+
+impl Flight {
+    fn new(scenario: &Scenario, conditions: &Conditions, stability: Option<f64>) -> Self {
+        let inclination = conditions.inclination_degrees.to_radians();
+        let sight_direction = Vec3::new(inclination.cos(), inclination.sin(), 0.0);
+        let sight_up = Vec3::new(-inclination.sin(), inclination.cos(), 0.0);
+        let earth_rotation = conditions.coriolis.map(|coriolis| {
+            let latitude = coriolis.latitude_degrees.to_radians();
+            let azimuth = coriolis.azimuth_degrees.to_radians();
+            Vec3::new(
+                latitude.cos() * azimuth.cos(),
+                latitude.sin(),
+                -latitude.cos() * azimuth.sin(),
+            ) * EARTH_ROTATION_RAD_PER_S
+        });
+        Self {
+            atmosphere: conditions.atmosphere,
+            bullet: scenario.bullet.clone(),
+            wind: conditions.wind.velocity(),
+            earth_rotation,
+            sight_position: sight_up * scenario.rifle.sight_height_m,
+            sight_direction,
+            sight_up,
+            spin: stability
+                .filter(|_| scenario.spin_drift)
+                .map(|sg| (sg, scenario.rifle.right_hand_twist)),
+        }
+    }
+
+    fn acceleration(&self, velocity: Vec3, air: (f64, f64)) -> Vec3 {
+        let (density, speed_of_sound) = air;
+        let airspeed = velocity - self.wind;
+        let speed = airspeed.length();
+        let bc = self.bullet.bc_si_at(speed);
+        // ρ·π / (8·BC) turns Cd(Mach)·v² into a deceleration.
+        let drag_scale = density * std::f64::consts::PI / (8.0 * bc);
+        let drag_coefficient = self.bullet.drag_coefficient(speed / speed_of_sound);
+        let mut acceleration = airspeed * (-drag_scale * drag_coefficient * speed);
+        acceleration.y -= GRAVITY;
+        if let Some(rotation) = self.earth_rotation {
+            acceleration = acceleration - rotation.cross(velocity) * 2.0;
+        }
+        acceleration
+    }
+
+    /// Air density and speed of sound at a height above the muzzle.
+    fn air_at(&self, height: f64) -> (f64, f64) {
+        let air = self.atmosphere.at_height(height);
+        (air.density(), air.speed_of_sound())
+    }
+
+    fn sample(&self, time: f64, position: Vec3, velocity: Vec3) -> Sample {
+        let relative = position - self.sight_position;
+        let spin_drift = self.spin.map_or(0.0, |(sg, right_hand)| {
+            stability::spin_drift(sg, time, right_hand)
+        });
+        Sample {
+            time,
+            range: relative.dot(self.sight_direction),
+            drop: relative.dot(self.sight_up),
+            windage: relative.z + spin_drift,
+            velocity: velocity.length(),
+            mach: (velocity - self.wind).length() / self.air_at(position.y).1,
+        }
+    }
+
+    /// Integrates with RK4 until `keep_going` rejects a sample (which is
+    /// still recorded, so the path brackets the range asked for).
+    fn fly(&self, launch: Vec3, mut keep_going: impl FnMut(&Sample) -> bool) -> Vec<Sample> {
+        let dt = TIME_STEP_S;
+        let (mut position, mut velocity, mut time) = (Vec3::ZERO, launch, 0.0);
+        let mut samples = vec![self.sample(time, position, velocity)];
+        while time < MAX_FLIGHT_TIME_S && velocity.length() > MIN_SPEED {
+            // Density barely changes within one step, so it is evaluated once.
+            let air = self.air_at(position.y);
+            let k1 = self.acceleration(velocity, air);
+            let v2 = velocity + k1 * (dt * 0.5);
+            let k2 = self.acceleration(v2, air);
+            let v3 = velocity + k2 * (dt * 0.5);
+            let k3 = self.acceleration(v3, air);
+            let v4 = velocity + k3 * dt;
+            let k4 = self.acceleration(v4, air);
+            position = position + (velocity + v2 * 2.0 + v3 * 2.0 + v4) * (dt / 6.0);
+            velocity = velocity + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (dt / 6.0);
+            time += dt;
+            let sample = self.sample(time, position, velocity);
+            samples.push(sample);
+            if !keep_going(&sample) {
+                break;
+            }
+        }
+        samples
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Vec3 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+impl Vec3 {
+    const ZERO: Vec3 = Vec3 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+
+    fn dot(self, other: Vec3) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    fn cross(self, other: Vec3) -> Vec3 {
+        Vec3::new(
+            self.y * other.z - self.z * other.y,
+            self.z * other.x - self.x * other.z,
+            self.x * other.y - self.y * other.x,
+        )
+    }
+
+    fn length(self) -> f64 {
+        self.dot(self).sqrt()
+    }
+}
+
+impl Add for Vec3 {
+    type Output = Vec3;
+    fn add(self, other: Vec3) -> Vec3 {
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+}
+
+impl Sub for Vec3 {
+    type Output = Vec3;
+    fn sub(self, other: Vec3) -> Vec3 {
+        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    }
+}
+
+impl Mul<f64> for Vec3 {
+    type Output = Vec3;
+    fn mul(self, scale: f64) -> Vec3 {
+        Vec3::new(self.x * scale, self.y * scale, self.z * scale)
+    }
+}

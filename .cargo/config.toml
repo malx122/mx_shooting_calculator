@@ -1,0 +1,6 @@
+# Development shortcuts. Run them from the repository root.
+[alias]
+# Rebuild target/dev.sqlite from dev-data/sample.json.
+seed = "run --quiet -p ballistics-store --example seed"
+# Run the app on the development database instead of your real one.
+dev = "run -p mxsc -- --db target/dev.sqlite"

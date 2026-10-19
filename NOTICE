@@ -1,0 +1,46 @@
+MX Shooting Calculator
+Copyright (c) 2026 David Rosendahl
+
+The source code is licensed under either of
+
+  * Apache License, Version 2.0 (LICENSE-APACHE), or
+  * MIT License (LICENSE-MIT)
+
+at your option.
+
+Third-party libraries
+---------------------
+The app is built with open-source libraries under their own licences,
+listed with their full texts in THIRD-PARTY-LICENSES.txt. Include that file
+with any binary you distribute.
+
+Built-in catalog data
+---------------------
+The files in crates/ballistics-store/catalog/ (calibers, bullets, scopes,
+reticles and targets) are NOT covered by the licences above.
+
+  * Bullet, ammunition and scope figures are factual specifications compiled
+    from the manufacturers' published product information (and, for a few
+    entries, retailers' pages). Each entry names its source.
+  * Reticle drawings reproduce the manufacturers' published subtension
+    diagrams so the app can show holds through the scope. Some are traced
+    from the manufacturers' own vector drawings. Before distributing the app
+    publicly or commercially, get the manufacturers' permission or replace
+    these drawings.
+  * ISSF target dimensions follow the ISSF rules; the game guideline values
+    (vital zones, minimum energies) are the project's own.
+
+Product and company names (for example Kahles, Vortex, Norma, Lapua,
+Hornady, Federal, Strelok Pro) and reticle names (for example EBR-7C,
+Dead-Hold, SKMR4) are trademarks of their owners. They are used only to
+identify the products. This project is not affiliated with or endorsed by
+any of them.
+
+The Strelok Pro importer reads backup files for interoperability. It
+contains no Strelok code or data.
+
+No warranty
+-----------
+Ballistic predictions are estimates. Always confirm your rifle's point of
+impact on paper at real distances before hunting, and follow your country's
+hunting laws.

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- MX Shooting Calculator app icon: the view through a rifle scope.
+       A German #4 reticle over a forest ridge, with a blaze-orange
+       trajectory arcing into the aim point. -->
+  <defs>
+    <linearGradient id="forest" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B5A3E"/>
+      <stop offset="1" stop-color="#12261A"/>
+    </linearGradient>
+    <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3E6B52"/>
+      <stop offset="0.62" stop-color="#7FA08A"/>
+      <stop offset="1" stop-color="#C9C2A8"/>
+    </linearGradient>
+    <clipPath id="lens">
+      <circle cx="256" cy="256" r="176"/>
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#forest)"/>
+
+  <!-- Lens: evening sky and two ridges of forest -->
+  <g clip-path="url(#lens)">
+    <rect x="80" y="80" width="352" height="352" fill="url(#dusk)"/>
+    <path d="M80 330 L130 300 L170 316 L214 284 L262 306 L312 276 L360 300 L432 270 L432 432 L80 432 Z" fill="#2E5139"/>
+    <path d="M80 372 L124 350 L176 366 L232 338 L290 360 L346 334 L398 352 L432 340 L432 432 L80 432 Z" fill="#1A3524"/>
+  </g>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#0B1A11" stroke-width="22"/>
+  <circle cx="256" cy="256" r="188" fill="none" stroke="#F1EADB" stroke-width="6" stroke-opacity="0.9"/>
+
+  <!-- German #4 reticle: three heavy posts and a fine crosshair -->
+  <g fill="#0B1A11" clip-path="url(#lens)">
+    <rect x="80" y="246" width="118" height="20"/>
+    <rect x="314" y="246" width="118" height="20"/>
+    <rect x="246" y="314" width="20" height="118"/>
+    <rect x="198" y="254" width="116" height="4"/>
+    <rect x="254" y="80" width="4" height="234"/>
+  </g>
+
+  <!-- Trajectory into the aim point -->
+  <path d="M 104 372 Q 180 150 256 256" fill="none" stroke="#E8702A" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="19" fill="#E8702A" stroke="#0B1A11" stroke-width="6"/>
+</svg>

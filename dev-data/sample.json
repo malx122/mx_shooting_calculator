@@ -1,0 +1,459 @@
+{
+  "format": "mxsc/personal-data",
+  "version": 4,
+  "exported_at": 1760832000000,
+  "rifles": [
+    {
+      "id": "c637c063-fdbf-5704-8943-cbe892708205",
+      "name": "CZ 457",
+      "caliber": "17-hmr",
+      "barrel_length_mm": 525.0,
+      "twist_in": 9.0,
+      "right_hand_twist": true,
+      "sight_height_cm": 4.0,
+      "zero_range_m": 100.0,
+      "zero_temperature_c": 15.0,
+      "zero_pressure_hpa": 1013.25,
+      "click_unit": "mil",
+      "click_value": 0.1,
+      "notes": "Rimfire for small game and foxes.",
+      "updated_at": 1760832000000,
+      "scope_id": "kahles-helia-3-4-12x44i",
+      "reticle_id": "kahles-g4b-helia-3-4-12x44i",
+      "zero_powder_temperature_c": null,
+      "zero_humidity_percent": 50.0,
+      "table": {
+        "start_m": 0.0,
+        "end_m": 200.0,
+        "step_m": 25.0,
+        "columns": {
+          "drop_length": true,
+          "drop_mil": true,
+          "drop_moa": false,
+          "drop_clicks": true,
+          "wind_length": true,
+          "wind_mil": true,
+          "wind_moa": false,
+          "wind_clicks": true,
+          "velocity": true,
+          "energy": true,
+          "time": true
+        }
+      }
+    },
+    {
+      "id": "e0da971c-b935-5372-92f0-ad2a18519022",
+      "name": "Tikka T3",
+      "caliber": "223-rem",
+      "barrel_length_mm": 570.0,
+      "twist_in": 8.0,
+      "right_hand_twist": true,
+      "sight_height_cm": 4.5,
+      "zero_range_m": 100.0,
+      "zero_temperature_c": 15.0,
+      "zero_pressure_hpa": 1013.25,
+      "click_unit": "mil",
+      "click_value": 0.1,
+      "notes": "",
+      "updated_at": 1760832000000,
+      "scope_id": "kahles-k318i-refined-3-5-18x50i",
+      "reticle_id": "kahles-skmr4",
+      "zero_powder_temperature_c": null,
+      "zero_humidity_percent": 50.0,
+      "table": {
+        "start_m": 0.0,
+        "end_m": 400.0,
+        "step_m": 50.0,
+        "columns": {
+          "drop_length": true,
+          "drop_mil": true,
+          "drop_moa": false,
+          "drop_clicks": true,
+          "wind_length": true,
+          "wind_mil": true,
+          "wind_moa": false,
+          "wind_clicks": true,
+          "velocity": true,
+          "energy": true,
+          "time": true
+        }
+      }
+    },
+    {
+      "id": "9f017006-3ab4-50b9-b751-ea5070d9b3b7",
+      "name": "Browning X-Bolt",
+      "caliber": "308-win",
+      "barrel_length_mm": 560.0,
+      "twist_in": 12.0,
+      "right_hand_twist": true,
+      "sight_height_cm": 4.5,
+      "zero_range_m": 100.0,
+      "zero_temperature_c": 15.0,
+      "zero_pressure_hpa": 1013.25,
+      "click_unit": "mil",
+      "click_value": 0.1,
+      "notes": "Moose and deer rifle.",
+      "updated_at": 1760832000000,
+      "scope_id": "kahles-helia-2-4-12x56i",
+      "reticle_id": "kahles-4-dot-helia-2-4-12x56i",
+      "zero_powder_temperature_c": null,
+      "zero_humidity_percent": 70.0,
+      "table": {
+        "start_m": 100.0,
+        "end_m": 400.0,
+        "step_m": 25.0,
+        "columns": {
+          "drop_length": true,
+          "drop_mil": true,
+          "drop_moa": true,
+          "drop_clicks": true,
+          "wind_length": true,
+          "wind_mil": true,
+          "wind_moa": true,
+          "wind_clicks": true,
+          "velocity": true,
+          "energy": true,
+          "time": true
+        }
+      }
+    }
+  ],
+  "bullets": [
+    {
+      "id": "28b82aec-736f-541b-b500-cb067a0298b1",
+      "kind": "factory",
+      "manufacturer": "CCI",
+      "name": "V-Max",
+      "caliber": "17-hmr",
+      "diameter_mm": 4.37,
+      "mass_g": 1.1,
+      "length_mm": null,
+      "bc_g1": 0.128,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 777,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "polymer_tip",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "cci-v-max-17-hmr-17gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "e67f36ce-5424-51fe-9205-9b1818a52320",
+      "kind": "factory",
+      "manufacturer": "CCI",
+      "name": "Gamepoint",
+      "caliber": "17-hmr",
+      "diameter_mm": 4.37,
+      "mass_g": 1.3,
+      "length_mm": null,
+      "bc_g1": 0.125,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 724,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "cup_and_core",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "cci-gamepoint-17-hmr-20gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "50f64e7e-5cba-5493-bfdb-44e6837a9343",
+      "kind": "factory",
+      "manufacturer": "Norma",
+      "name": "Oryx",
+      "caliber": "223-rem",
+      "diameter_mm": 5.69,
+      "mass_g": 3.6,
+      "length_mm": null,
+      "bc_g1": 0.185,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 950,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": 610,
+      "construction": "bonded",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "norma-oryx-223-rem-55gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "2a39365e-86f9-5929-a776-b93939a58a6e",
+      "kind": "factory",
+      "manufacturer": "Lapua",
+      "name": "Naturalis",
+      "caliber": "223-rem",
+      "diameter_mm": 5.69,
+      "mass_g": 3.2,
+      "length_mm": null,
+      "bc_g1": 0.197,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 1015,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "polymer_tip_monolithic",
+      "lead_free": true,
+      "min_expansion_mps": null,
+      "catalog_id": "lapua-naturalis-223-rem-50gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "5e88862d-acbc-5cde-b884-20367b2c163e",
+      "kind": "factory",
+      "manufacturer": "Norma",
+      "name": "Oryx",
+      "caliber": "308-win",
+      "diameter_mm": 7.82,
+      "mass_g": 11.7,
+      "length_mm": null,
+      "bc_g1": 0.354,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 796,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": 610,
+      "construction": "bonded",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "norma-oryx-308-win-180gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "c8c47f9b-7bc2-5e90-990a-e9e556da65df",
+      "kind": "factory",
+      "manufacturer": "Federal",
+      "name": "Terminal Ascent",
+      "caliber": "308-win",
+      "diameter_mm": 7.82,
+      "mass_g": 11.34,
+      "length_mm": 37.24,
+      "bc_g1": 0.52,
+      "bc_g7": 0.258,
+      "drag_model": "G7",
+      "muzzle_velocity_mps": 792,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "polymer_tip_bonded",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "federal-terminal-ascent-308-win-175gr-ammunition",
+      "notes": "",
+      "updated_at": 1760832000000,
+      "bc_bands": []
+    },
+    {
+      "id": "c251775b-5176-5236-a3ef-01b7f2d5aa10",
+      "kind": "handload",
+      "manufacturer": "Nosler",
+      "name": "AccuBond",
+      "caliber": "308-win",
+      "diameter_mm": 7.82,
+      "mass_g": 10.69,
+      "length_mm": 32.8,
+      "bc_g1": 0.475,
+      "bc_g7": null,
+      "drag_model": "G1",
+      "muzzle_velocity_mps": 820.0,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "polymer_tip_bonded",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": "nosler-accubond-7-82mm-165gr-component",
+      "notes": "Development sample handload; the velocity and BC bands are made up for testing.",
+      "updated_at": 1760832000000,
+      "bc_bands": [
+        {
+          "velocity_mps": 800.0,
+          "bc": 0.475
+        },
+        {
+          "velocity_mps": 600.0,
+          "bc": 0.46
+        },
+        {
+          "velocity_mps": 450.0,
+          "bc": 0.44
+        }
+      ]
+    },
+    {
+      "id": "81bd9b66-3f1b-51e9-8f2f-f91887bd93e6",
+      "kind": "handload",
+      "manufacturer": "Test",
+      "name": "Custom-curve sample",
+      "caliber": "223-rem",
+      "diameter_mm": 5.69,
+      "mass_g": 4.47,
+      "length_mm": 23.8,
+      "bc_g1": null,
+      "bc_g7": null,
+      "drag_model": "Custom",
+      "bc_bands": [],
+      "drag_curve": [
+        {
+          "mach": 0.0,
+          "cd": 0.2396
+        },
+        {
+          "mach": 0.5,
+          "cd": 0.2388
+        },
+        {
+          "mach": 0.8,
+          "cd": 0.2484
+        },
+        {
+          "mach": 0.9,
+          "cd": 0.2928
+        },
+        {
+          "mach": 0.95,
+          "cd": 0.4108
+        },
+        {
+          "mach": 1.0,
+          "cd": 0.7606
+        },
+        {
+          "mach": 1.05,
+          "cd": 0.8086
+        },
+        {
+          "mach": 1.2,
+          "cd": 0.7768
+        },
+        {
+          "mach": 1.5,
+          "cd": 0.688
+        },
+        {
+          "mach": 2.0,
+          "cd": 0.596
+        },
+        {
+          "mach": 2.5,
+          "cd": 0.5394
+        },
+        {
+          "mach": 3.0,
+          "cd": 0.4848
+        }
+      ],
+      "muzzle_velocity_mps": 850.0,
+      "velocity_temperature_c": 15.0,
+      "velocity_per_degree": 0.5,
+      "test_barrel_mm": null,
+      "construction": "match",
+      "lead_free": false,
+      "min_expansion_mps": null,
+      "catalog_id": null,
+      "notes": "Development sample: the drag curve is made up (a G7 shape) for testing.",
+      "updated_at": 1760832000000
+    }
+  ],
+  "rifle_loads": [
+    {
+      "id": "8af1ab1a-4a19-55df-872d-06d10f88a476",
+      "rifle_id": "9f017006-3ab4-50b9-b751-ea5070d9b3b7",
+      "bullet_id": "5e88862d-acbc-5cde-b884-20367b2c163e",
+      "velocities": [
+        {
+          "temperature_c": 12.0,
+          "velocity_mps": 781.0
+        },
+        {
+          "temperature_c": -8.0,
+          "velocity_mps": 769.0
+        }
+      ],
+      "impact_offset_mrad": [
+        0.0,
+        0.0
+      ],
+      "zero": {
+        "mode": "rifle"
+      },
+      "notes": "Development sample chronograph results.",
+      "updated_at": 1760832000000
+    },
+    {
+      "id": "67a4673c-6ccd-5007-9e91-927c4f5ff7c0",
+      "rifle_id": "9f017006-3ab4-50b9-b751-ea5070d9b3b7",
+      "bullet_id": "c8c47f9b-7bc2-5e90-990a-e9e556da65df",
+      "velocities": [],
+      "impact_offset_mrad": [
+        0.1,
+        0.3
+      ],
+      "zero": {
+        "mode": "same_as_shot"
+      },
+      "notes": "Development sample: hits 3 cm high and 1 cm right of the Oryx zero at 100 m.",
+      "updated_at": 1760832000000
+    }
+  ],
+  "scopes": [
+    {
+      "id": "2a82dbfb-6920-509a-8ea1-e91b01ecda48",
+      "manufacturer": "Sample",
+      "model": "Custom 6.8-20x50",
+      "magnification_min": 6.8,
+      "magnification_max": 20.0,
+      "objective_mm": 50.0,
+      "focal_plane": "sfp",
+      "reticle_reference_magnification": 20.0,
+      "click_unit": "moa",
+      "click_value": 0.25,
+      "elevation_travel": 60.0,
+      "fov_m_at_100m": [
+        5.5,
+        1.9
+      ],
+      "illuminated": false,
+      "reticle_id": null,
+      "notes": "Development sample: a scope entered by hand (plain crosshair).",
+      "updated_at": 1760832000000
+    }
+  ],
+  "targets": [
+    {
+      "id": "5b0c7a52-6f0e-4d7b-9a51-2f6d3c1e8a40",
+      "name": "Fox at the bait site",
+      "kind": "game",
+      "shape": "animal",
+      "silhouette": "fox",
+      "shoulder_height_cm": 38.0,
+      "body_length_cm": 65.0,
+      "antlers": true,
+      "vital_diameter_cm": 7.0,
+      "min_energy_j": 150.0,
+      "notes": "Development sample: a custom target copied from the red fox and made smaller.",
+      "catalog_id": "red-fox",
+      "updated_at": 1760832000000
+    }
+  ]
+}
