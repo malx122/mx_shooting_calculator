@@ -6,6 +6,35 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-19
+
+### Added
+
+- **Phone layout:** one column with a bottom tab bar, bigger text and touch
+  targets, and a menu sheet for Units, Import, Export and Install.
+- **Calculate on a phone:** results first, with quick fields for range,
+  shot angle and wind. Each opens a picker:
+  - a range ruler with presets and recent ranges;
+  - an inclinometer dial, which can measure the angle with the phone's tilt;
+  - a wind clock with quick speeds.
+
+  A target button sits beside the scope view, and all inputs are on a
+  Conditions page.
+- **Demo data:** "Load demo data" in the menu and on the empty screens. It
+  loads three rifles with bullets, loads, a scope and a target, and loading
+  it twice adds nothing.
+- **No target:** just the reticle and the impact point, without a vital
+  zone or energy limits. It is available on the desktop too.
+- **Installable web app:** a manifest, home-screen icons and a service
+  worker, so the web version opens offline after the first visit. It also
+  asks the browser to keep its data.
+
+### Fixed
+
+- **Demo Browning X-Bolt twist:** now 1:10, as Browning makes the .308. With
+  1:12 the 175 gr bullet showed as unstable.
+- **Long list text:** cut with "…" instead of running under the arrow.
+
 ## [0.1.0] - 2026-10-19
 
 The first public version.
@@ -27,5 +56,6 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/malx122/mx_shooting_calculator/releases/tag/v0.1.0

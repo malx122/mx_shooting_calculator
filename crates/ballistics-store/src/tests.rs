@@ -661,3 +661,13 @@ fn backups_from_the_earlier_app_names_still_import() {
             .is_err()
     );
 }
+
+#[test]
+fn demo_data_loads_once() {
+    let mut store = Store::open_in_memory().unwrap();
+    let first = store.load_demo().unwrap();
+    assert!(first.added >= 10, "{first:?}");
+    let again = store.load_demo().unwrap();
+    assert_eq!((again.added, again.updated), (0, 0));
+    assert_eq!(store.rifles().unwrap().len(), 3);
+}

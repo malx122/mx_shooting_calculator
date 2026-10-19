@@ -6,6 +6,7 @@ use eframe::egui::{self, Color32, Pos2, RichText, Shape, Stroke, pos2, vec2};
 
 use crate::app::{Action, Data};
 use crate::figure::{Figure, has_antlers};
+use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{confirm_button, grid, number, text};
@@ -48,6 +49,21 @@ impl TargetsPage {
 
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
         let mut actions = Vec::new();
+        if mobile::is_narrow(context) {
+            // On a phone: the list, or one target with a way back.
+            egui::CentralPanel::default().show(context, |ui| {
+                if matches!(self.showing, Showing::Nothing) {
+                    egui::ScrollArea::vertical().show(ui, |ui| self.phone_list(ui, data));
+                } else {
+                    if mobile::back_button(ui, "Targets") {
+                        self.showing = Showing::Nothing;
+                        return;
+                    }
+                    egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, &mut actions));
+                }
+            });
+            return actions;
+        }
         egui::SidePanel::left("target-list")
             .resizable(true)
             .default_width(260.0)
@@ -55,25 +71,56 @@ impl TargetsPage {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data));
             });
         egui::CentralPanel::default().show(context, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| match &mut self.showing {
-                Showing::Nothing => {
-                    ui.weak("Choose a target, or make your own.");
-                }
-                Showing::Catalog(id) => {
-                    if let Some(target) = Catalog::builtin().target(id)
-                        && catalog_view(ui, target)
-                    {
-                        self.showing = Showing::Custom(target.to_custom());
-                    }
-                }
-                Showing::Custom(target) => {
-                    if editor(ui, target, data, &mut actions) {
-                        self.showing = Showing::Nothing;
-                    }
-                }
-            });
+            egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, &mut actions));
         });
         actions
+    }
+
+    /// The chosen target: a catalog one to look at, or the hunter's own to
+    /// edit.
+    fn detail(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        match &mut self.showing {
+            Showing::Nothing => {
+                ui.weak("Choose a target, or make your own.");
+            }
+            Showing::Catalog(id) => {
+                if let Some(target) = Catalog::builtin().target(id)
+                    && catalog_view(ui, target)
+                {
+                    self.showing = Showing::Custom(target.to_custom());
+                }
+            }
+            Showing::Custom(target) => {
+                if editor(ui, target, data, actions) {
+                    self.showing = Showing::Nothing;
+                }
+            }
+        }
+    }
+
+    /// The phone's list: own targets, then the catalog's game and sport.
+    fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data) {
+        ui.heading("My targets");
+        if ui.button("+ New target").clicked() {
+            self.showing = Showing::Custom(Target::new_custom());
+        }
+        for target in &data.targets {
+            if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
+                self.showing = Showing::Custom(target.clone());
+            }
+        }
+        if data.targets.is_empty() {
+            ui.weak("None yet: copy one below or make a new one.");
+        }
+        for (title, kind) in [("Game", TargetKind::Game), ("Sport", TargetKind::Sport)] {
+            ui.add_space(10.0);
+            ui.heading(title);
+            for target in Catalog::builtin().targets.iter().filter(|t| t.kind == kind) {
+                if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
+                    self.showing = Showing::Catalog(target.id.clone());
+                }
+            }
+        }
     }
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data) {
@@ -105,6 +152,33 @@ impl TargetsPage {
     }
 }
 
+/// A target's zone and energy, for list rows.
+fn summary(ui: &egui::Ui, target: &Target) -> String {
+    let u = units::prefs(ui.ctx());
+    let zone = u.format(Quantity::ShortLength, target.vital_diameter_cm);
+    match target.min_energy_j {
+        Some(energy) if target.is_game() => {
+            format!("{zone} · {}", u.format(Quantity::Energy, energy))
+        }
+        _ => zone,
+    }
+}
+
+/// Whether the details and the drawing fit side by side.
+fn wide(ui: &egui::Ui) -> bool {
+    ui.available_width() >= 760.0
+}
+
+/// The drawing's size: a fixed box when side by side, else the width.
+fn preview_size(ui: &egui::Ui) -> egui::Vec2 {
+    if wide(ui) {
+        vec2(360.0, 260.0)
+    } else {
+        let width = ui.available_width().min(420.0);
+        vec2(width, width * 0.72)
+    }
+}
+
 /// A catalog target, read-only. Returns true when the hunter asks for
 /// their own copy.
 fn catalog_view(ui: &mut egui::Ui, target: &Target) -> bool {
@@ -114,25 +188,36 @@ fn catalog_view(ui: &mut egui::Ui, target: &Target) -> bool {
         TargetKind::Sport => "Sport target, from the catalog",
     });
     ui.add_space(6.0);
-    let mut copy = false;
-    ui.horizontal_top(|ui| {
-        ui.vertical(|ui| {
-            ui.set_max_width(360.0);
-            facts(ui, target);
+    let size = preview_size(ui);
+    let details = |ui: &mut egui::Ui| {
+        facts(ui, target);
+        ui.add_space(6.0);
+        if !target.notes.is_empty() {
+            ui.label(&target.notes);
             ui.add_space(6.0);
-            if !target.notes.is_empty() {
-                ui.label(&target.notes);
-                ui.add_space(6.0);
-            }
-            copy = ui
-                .button("Make my own copy")
-                .on_hover_text("An editable copy under My targets")
-                .clicked();
-        });
-        ui.add_space(16.0);
-        ui.vertical(|ui| preview(ui, target, vec2(360.0, 260.0)));
-    });
-    copy
+        }
+        ui.button("Make my own copy")
+            .on_hover_text("An editable copy under My targets")
+            .clicked()
+    };
+    if wide(ui) {
+        ui.horizontal_top(|ui| {
+            let copy = ui
+                .vertical(|ui| {
+                    ui.set_max_width(360.0);
+                    details(ui)
+                })
+                .inner;
+            ui.add_space(16.0);
+            ui.vertical(|ui| preview(ui, target, size));
+            copy
+        })
+        .inner
+    } else {
+        preview(ui, target, size);
+        ui.add_space(8.0);
+        details(ui)
+    }
 }
 
 fn facts(ui: &mut egui::Ui, target: &Target) {
@@ -214,26 +299,46 @@ fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec
         ui.weak(format!("Copied from the catalog's {}", source.name));
     }
     ui.add_space(4.0);
-    let mut close = false;
-    ui.horizontal_top(|ui| {
-        ui.vertical(|ui| {
-            ui.set_max_width(420.0);
-            fields(ui, target);
-            ui.add_space(8.0);
-            ui.horizontal(|ui| {
-                if ui.button("Save").clicked() {
-                    actions.push(Action::SaveTarget(target.clone()));
-                }
-                if stored && confirm_button(ui, "delete-target", "Delete") {
-                    actions.push(Action::DeleteTarget(target.id.clone()));
-                }
-                close = ui.button("Close").clicked();
-            });
-        });
-        ui.add_space(16.0);
-        ui.vertical(|ui| preview(ui, target, vec2(360.0, 260.0)));
-    });
-    close
+    let size = preview_size(ui);
+    if wide(ui) {
+        ui.horizontal_top(|ui| {
+            let close = ui
+                .vertical(|ui| {
+                    ui.set_max_width(420.0);
+                    editor_fields(ui, target, stored, actions)
+                })
+                .inner;
+            ui.add_space(16.0);
+            ui.vertical(|ui| preview(ui, target, size));
+            close
+        })
+        .inner
+    } else {
+        preview(ui, target, size);
+        ui.add_space(8.0);
+        editor_fields(ui, target, stored, actions)
+    }
+}
+
+/// The editor's fields and buttons. Returns true to close the editor.
+fn editor_fields(
+    ui: &mut egui::Ui,
+    target: &mut Target,
+    stored: bool,
+    actions: &mut Vec<Action>,
+) -> bool {
+    fields(ui, target);
+    ui.add_space(8.0);
+    ui.horizontal(|ui| {
+        if ui.button("Save").clicked() {
+            actions.push(Action::SaveTarget(target.clone()));
+        }
+        if stored && confirm_button(ui, "delete-target", "Delete") {
+            actions.push(Action::DeleteTarget(target.id.clone()));
+        }
+        ui.button("Close").clicked()
+    })
+    .inner
 }
 
 fn fields(ui: &mut egui::Ui, target: &mut Target) {

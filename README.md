@@ -66,6 +66,38 @@ How the web version differs from the desktop one:
   browser's file picker (JSON exports and Strelok `.srl` backups).
 - **Drawing:** WebGPU where the browser has it, otherwise WebGL.
 - **Size:** about 9 MB of WebAssembly, 3.6 MB gzipped or 2.6 MB with brotli.
+- **Installable and offline:** a web app manifest and a service worker
+  (`crates/app/manifest.webmanifest`, `crates/app/sw.js`, icons in
+  `crates/app/assets/pwa/`). "Add to Home Screen" gives an app icon and a
+  full-screen app; after the first visit it opens without a connection. The
+  page is fetched from the network first, so a new release loads as soon as
+  there is a connection. The app asks the browser to keep its data.
+
+### On a phone
+
+Below 640 points of width (any phone, and a narrow desktop window) the app
+switches to a one-column layout with bigger text and touch targets
+(`mobile.rs`, `calculator/phone.rs`):
+
+- **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets) and
+  a compact header whose menu holds Units, Import, Export, Load demo data,
+  Install and the version.
+- **Calculate, results first:**
+  - The rifle and bullet line opens a Conditions page with every input.
+  - Under it are quick fields for **range**, **shot angle** and **wind**.
+  - Then the holds, and the scope view with the **target** button beside
+    it, its edge following the eyepiece's rim.
+  - Trajectory (2D/3D), dope table and limits fold out below.
+- **Pickers:** sheets that slide up from the bottom.
+  - **Range:** a drag ruler, ± steps, and distances from the dope table plus
+    recent ranges.
+  - **Shot angle:** an inclinometer dial and presets. In the browser, "Measure
+    with the phone" reads the phone's tilt.
+  - **Wind:** a clock dial for the direction and quick speeds.
+  - **Target:** search, recent targets, and **No target** (just the reticle
+    and the impact point).
+- **Rifles, Bullets and Targets:** a list, then the record full screen with
+  a way back.
 
 ### Versions and releases
 

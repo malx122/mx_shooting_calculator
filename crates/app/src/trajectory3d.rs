@@ -28,7 +28,8 @@ pub struct Scene<'a> {
     pub samples: &'a [Sample],
     pub target_range: f64,
     pub inclination_degrees: f64,
-    pub figure: &'a Figure,
+    /// The target; none without one.
+    pub figure: Option<&'a Figure>,
     pub wind_speed: f64,
     pub wind_from_degrees: f64,
 }
@@ -400,10 +401,13 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
         up: v3(-theta.sin(), theta.cos(), 0.0),
         right: v3(0.0, 0.0, 1.0),
         range: scene.target_range.max(10.0),
-        aim_height: scene.figure.aim_height,
+        // Without a target the line of sight ends at the usual vital height.
+        aim_height: scene.figure.map_or(1.25, |figure| figure.aim_height),
         target_size: {
-            let [low, high] = scene.figure.bounds;
-            (high[0] - low[0]).max(high[1] - low[1])
+            scene.figure.map_or(1.0, |figure| {
+                let [low, high] = figure.bounds;
+                (high[0] - low[0]).max(high[1] - low[1])
+            })
         },
     };
 
@@ -459,7 +463,9 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
 
     let mut faces = Vec::new();
     add_hunter(&mut faces, &projector, &frame);
-    add_figure(&mut faces, &projector, &frame, scene.figure);
+    if let Some(figure) = scene.figure {
+        add_figure(&mut faces, &projector, &frame, figure);
+    }
 
     // The line of sight, dashed, from the scope to the aiming point, and
     // the bullet's path up to the target, sorted with the solids so the

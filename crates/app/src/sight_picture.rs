@@ -23,8 +23,9 @@ pub struct SightPicture<'a> {
     /// Where the bullet lands relative to the aiming point, in mrad: x to
     /// the right, y up.
     pub impact_mrad: [f64; 2],
-    /// The target, drawn with its vital zone where the bullet lands.
-    pub figure: &'a Figure,
+    /// The target, drawn with its vital zone where the bullet lands; none
+    /// without a target.
+    pub figure: Option<&'a Figure>,
     pub range_m: f64,
     /// Draw the illuminated parts of the reticle lit (red).
     pub illumination: bool,
@@ -53,25 +54,27 @@ impl SightPicture<'_> {
                 self.impact_mrad[1] + y * mrad_per_metre,
             ])
         };
-        let feet = at([0.0, -self.figure.aim_height]).y;
-        if feet < eyepiece.rect.bottom() {
-            eyepiece.painter.rect_filled(
-                egui::Rect::from_min_max(
-                    pos2(eyepiece.rect.left(), feet.max(eyepiece.rect.top())),
-                    eyepiece.rect.max,
-                ),
-                0.0,
-                FIELD,
-            );
-        }
-        for part in &self.figure.parts {
-            let points: Vec<Pos2> = part.points.iter().map(|&point| at(point)).collect();
-            let outline = part
-                .stroke
-                .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour));
-            eyepiece
-                .painter
-                .add(Shape::convex_polygon(points, part.fill, outline));
+        if let Some(figure) = self.figure {
+            let feet = at([0.0, -figure.aim_height]).y;
+            if feet < eyepiece.rect.bottom() {
+                eyepiece.painter.rect_filled(
+                    egui::Rect::from_min_max(
+                        pos2(eyepiece.rect.left(), feet.max(eyepiece.rect.top())),
+                        eyepiece.rect.max,
+                    ),
+                    0.0,
+                    FIELD,
+                );
+            }
+            for part in &figure.parts {
+                let points: Vec<Pos2> = part.points.iter().map(|&point| at(point)).collect();
+                let outline = part
+                    .stroke
+                    .map_or(Stroke::NONE, |colour| Stroke::new(1.0_f32, colour));
+                eyepiece
+                    .painter
+                    .add(Shape::convex_polygon(points, part.fill, outline));
+            }
         }
         // Second-focal-plane marks change angular size with magnification.
         eyepiece.draw_reticle(

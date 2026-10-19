@@ -7,6 +7,25 @@
   <title>MX Shooting Calculator</title>
   <link data-trunk rel="rust" data-bin="mxsc" data-wasm-opt="z" />
   <link data-trunk rel="icon" href="assets/mxsc-icon.svg" />
+  <!-- Installable web app: manifest, icons and the offline service worker. -->
+  <link data-trunk rel="copy-file" href="manifest.webmanifest" />
+  <link data-trunk rel="copy-file" href="sw.js" />
+  <link data-trunk rel="copy-dir" href="assets/pwa" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="pwa/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MXSC">
+  <script>
+    // Keep the install prompt (Chrome, Android) until the app asks for it.
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      window.mxscInstallPrompt = event;
+    });
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+    }
+  </script>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #12261A; }
     canvas#mxsc { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

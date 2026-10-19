@@ -8,6 +8,7 @@ use ballistics_store::{
 use eframe::egui;
 
 use crate::app::{Action, Data};
+use crate::mobile;
 use crate::sight_picture::reticle_preview;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{
@@ -75,29 +76,33 @@ impl RiflesPage {
 
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
         let mut actions = Vec::new();
+        if mobile::is_narrow(context) {
+            // On a phone: the list, or one editor with a way back.
+            egui::CentralPanel::default().show(context, |ui| {
+                if matches!(self.editing, Editing::Nothing) {
+                    egui::ScrollArea::vertical()
+                        .show(ui, |ui| self.phone_list(ui, data, &mut actions));
+                } else {
+                    let back = mobile::back_button(ui, "Rifles");
+                    let cancel = egui::ScrollArea::vertical()
+                        .show(ui, |ui| self.editor(ui, data, &mut actions))
+                        .inner;
+                    if back || cancel {
+                        self.editing = Editing::Nothing;
+                    }
+                }
+            });
+            return actions;
+        }
         egui::SidePanel::left("rifle-list")
             .resizable(true)
             .default_width(280.0)
             .show(context, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data));
+                egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, &mut actions));
             });
         egui::CentralPanel::default().show(context, |ui| {
             let cancel = egui::ScrollArea::vertical()
-                .show(ui, |ui| match &mut self.editing {
-                    Editing::Nothing => {
-                        ui.weak("Choose a rifle or scope, or add a new one.");
-                        false
-                    }
-                    Editing::Rifle(rifle) => rifle_editor(
-                        ui,
-                        rifle,
-                        data,
-                        &mut self.caliber_search,
-                        &mut self.scope_search,
-                        &mut actions,
-                    ),
-                    Editing::Scope(scope) => scope_editor(ui, scope, data, &mut actions),
-                })
+                .show(ui, |ui| self.editor(ui, data, &mut actions))
                 .inner;
             if cancel {
                 self.editing = Editing::Nothing;
@@ -106,13 +111,77 @@ impl RiflesPage {
         actions
     }
 
-    fn list(&mut self, ui: &mut egui::Ui, data: &Data) {
+    /// The open editor. Returns true when the hunter cancels a new record.
+    fn editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) -> bool {
+        match &mut self.editing {
+            Editing::Nothing => {
+                ui.weak("Choose a rifle or scope, or add a new one.");
+                false
+            }
+            Editing::Rifle(rifle) => rifle_editor(
+                ui,
+                rifle,
+                data,
+                &mut self.caliber_search,
+                &mut self.scope_search,
+                actions,
+            ),
+            Editing::Scope(scope) => scope_editor(ui, scope, data, actions),
+        }
+    }
+
+    /// The phone's list: big rows for rifles and own scopes.
+    fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        ui.heading("Rifles");
+        if ui.button("+ New rifle").clicked() {
+            self.new_rifle();
+        }
+        for rifle in &data.rifles {
+            let scope = rifle
+                .scope_id
+                .as_deref()
+                .and_then(|id| data.scope(id))
+                .map(|scope| format!(" · {}", scope.display_name()))
+                .unwrap_or_default();
+            let detail = format!("{}{scope}", caliber_name(&rifle.caliber));
+            if mobile::list_row(ui, &rifle.name, &detail, false).clicked() {
+                self.editing = Editing::Rifle(rifle.clone());
+            }
+        }
+        if data.rifles.is_empty() {
+            ui.weak("No rifles yet.");
+            if ui
+                .button("Load demo data")
+                .on_hover_text("Three rifles with bullets, a scope and a target, to try the app")
+                .clicked()
+            {
+                actions.push(Action::LoadDemo);
+            }
+        }
+        ui.add_space(12.0);
+        ui.heading("My scopes");
+        ui.weak("For scopes that aren't in the catalog.");
+        if ui.button("+ New scope").clicked() {
+            self.editing = Editing::Scope(UserScope::new());
+        }
+        for scope in &data.scopes {
+            if mobile::list_row(ui, &scope.display_name(), "", false).clicked() {
+                self.editing = Editing::Scope(scope.clone());
+            }
+        }
+    }
+
+    fn new_rifle(&mut self) {
+        let caliber = Catalog::builtin()
+            .caliber("308-win")
+            .expect("308 Win is in the catalog");
+        self.editing = Editing::Rifle(Rifle::new("", &caliber.key, caliber.typical_twist_in));
+    }
+
+    fn list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
         ui.heading("Rifles");
         if ui.button("➕ New rifle").clicked() {
-            let caliber = Catalog::builtin()
-                .caliber("308-win")
-                .expect("308 Win is in the catalog");
-            self.editing = Editing::Rifle(Rifle::new("", &caliber.key, caliber.typical_twist_in));
+            self.new_rifle();
         }
         ui.add_space(4.0);
         for rifle in &data.rifles {
@@ -125,6 +194,13 @@ impl RiflesPage {
         }
         if data.rifles.is_empty() {
             ui.weak("No rifles yet.");
+            if ui
+                .button("Load demo data")
+                .on_hover_text("Three rifles with bullets, a scope and a target, to try the app")
+                .clicked()
+            {
+                actions.push(Action::LoadDemo);
+            }
         }
 
         ui.separator();

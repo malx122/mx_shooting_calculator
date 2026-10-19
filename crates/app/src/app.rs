@@ -11,6 +11,7 @@ use eframe::egui::{self, RichText};
 use crate::bullets::BulletsPage;
 use crate::calculator::{CalculatorPage, Inputs};
 use crate::import::{self, Decision, ImportPreview};
+use crate::mobile;
 use crate::rifles::RiflesPage;
 use crate::targets::TargetsPage;
 use crate::theme;
@@ -42,6 +43,8 @@ pub enum Action {
     DeleteScope(String),
     SaveTarget(Target),
     DeleteTarget(String),
+    /// Load the built-in demo rifles, bullets, scope and target.
+    LoadDemo,
 }
 
 /// The hunter's records, reloaded from the store after every change.
@@ -82,6 +85,25 @@ impl Data {
     }
 }
 
+/// The phone menu's sheets.
+#[derive(Clone, Copy, PartialEq)]
+enum MenuSheet {
+    Main,
+    Units,
+    /// How to put the app on the home screen by hand.
+    Install,
+}
+
+/// What a tap in the phone menu asked for, done once the sheet is drawn.
+enum MenuChoice {
+    Units,
+    Import,
+    Export,
+    Demo,
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    Install,
+}
+
 struct Status {
     text: String,
     error: bool,
@@ -100,6 +122,8 @@ pub struct App {
     status: Option<Status>,
     /// An import being previewed.
     import: Option<ImportPreview>,
+    /// The phone menu, when open.
+    menu: Option<MenuSheet>,
     /// A backup picked in the browser, waiting to be previewed.
     #[cfg(target_arch = "wasm32")]
     picked: crate::web::PickedSlot,
@@ -129,6 +153,7 @@ impl App {
             units,
             status: None,
             import: None,
+            menu: None,
             #[cfg(target_arch = "wasm32")]
             picked: Default::default(),
         };
@@ -218,6 +243,10 @@ impl App {
             Action::DeleteTarget(id) => self.store.delete_target(&id).map(|()| {
                 self.targets.deleted(&id);
                 "Target deleted".to_owned()
+            }),
+            Action::LoadDemo => self.store.load_demo().map(|report| {
+                self.page = Page::Calculate;
+                format!("Demo data: {}", import::summary(&report))
             }),
             Action::DeleteLoad(id) => self.store.delete_rifle_load(&id).map(|()| {
                 self.calculator.forget_load_draft();
@@ -337,54 +366,18 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, context: &egui::Context, _frame: &mut eframe::Frame) {
         self.units.install(context);
-        let header = egui::Frame::new()
-            .fill(theme::FOREST_900)
-            .inner_margin(egui::Margin::symmetric(14, 8))
-            .stroke(theme::hairline(theme::FOREST_600));
-        egui::TopBottomPanel::top("navigation")
-            .frame(header)
-            .show(context, |ui| {
-                ui.horizontal(|ui| {
-                    brand(ui);
-                    ui.add_space(28.0);
-                    for (page, label) in [
-                        (Page::Calculate, "Calculate"),
-                        (Page::Rifles, "Rifles"),
-                        (Page::Bullets, "My bullets"),
-                        (Page::Targets, "Targets"),
-                    ] {
-                        ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
-                    }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let mut changed = false;
-                        ui.menu_button("Units", |ui| changed = units::menu(ui, &mut self.units));
-                        if changed {
-                            self.units.install(context);
-                            if let Err(error) = self.store.set_setting(UNIT_SETTINGS, &self.units) {
-                                self.report(Err(error));
-                            }
-                        }
-                        if ui
-                            .button("Import…")
-                            .on_hover_text("Merge a backup into this device's data")
-                            .clicked()
-                        {
-                            self.import(context);
-                        }
-                        if ui
-                            .button("Export…")
-                            .on_hover_text("Save your rifles and bullets as JSON")
-                            .clicked()
-                        {
-                            self.export();
-                        }
-                    });
-                });
-            });
+        mobile::apply_style(context);
+        let narrow = mobile::is_narrow(context);
+        if narrow {
+            self.phone_header(context);
+            self.tab_bar(context);
+        } else {
+            self.desktop_header(context);
+        }
         if let Some(status) = &self.status {
             let mut dismiss = false;
             egui::TopBottomPanel::bottom("status").show(context, |ui| {
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     let text = RichText::new(&status.text);
                     if status.error {
                         ui.colored_label(ui.visuals().error_fg_color, text);
@@ -408,10 +401,327 @@ impl eframe::App for App {
         for action in actions {
             self.apply(action);
         }
+        if narrow {
+            self.menu_sheet(context);
+        } else {
+            self.menu = None;
+        }
         #[cfg(target_arch = "wasm32")]
         self.collect_picked_file();
         self.import_window(context);
         self.persist_inputs(context);
+    }
+}
+
+impl App {
+    fn desktop_header(&mut self, context: &egui::Context) {
+        let header = egui::Frame::new()
+            .fill(theme::FOREST_900)
+            .inner_margin(egui::Margin::symmetric(14, 8))
+            .stroke(theme::hairline(theme::FOREST_600));
+        egui::TopBottomPanel::top("navigation")
+            .frame(header)
+            .show(context, |ui| {
+                ui.horizontal(|ui| {
+                    brand(ui);
+                    ui.add_space(28.0);
+                    for (page, label) in [
+                        (Page::Calculate, "Calculate"),
+                        (Page::Rifles, "Rifles"),
+                        (Page::Bullets, "My bullets"),
+                        (Page::Targets, "Targets"),
+                    ] {
+                        ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let mut changed = false;
+                        ui.menu_button("Units", |ui| changed = units::menu(ui, &mut self.units));
+                        if changed {
+                            self.units_changed(context);
+                        }
+                        if ui
+                            .button("Import…")
+                            .on_hover_text("Merge a backup into this device's data")
+                            .clicked()
+                        {
+                            self.import(context);
+                        }
+                        if ui
+                            .button("Export…")
+                            .on_hover_text("Save your rifles and bullets as JSON")
+                            .clicked()
+                        {
+                            self.export();
+                        }
+                    });
+                });
+            });
+    }
+
+    fn units_changed(&mut self, context: &egui::Context) {
+        self.units.install(context);
+        if let Err(error) = self.store.set_setting(UNIT_SETTINGS, &self.units) {
+            self.report(Err(error));
+        }
+    }
+
+    /// The phone's header: the logo and the menu button.
+    fn phone_header(&mut self, context: &egui::Context) {
+        let header = egui::Frame::new()
+            .fill(theme::FOREST_900)
+            .inner_margin(egui::Margin::symmetric(12, 6))
+            .stroke(theme::hairline(theme::FOREST_600));
+        egui::TopBottomPanel::top("phone-header")
+            .frame(header)
+            .show(context, |ui| {
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(30.0, 30.0)),
+                    );
+                    ui.add(
+                        egui::Image::new(theme::wordmark())
+                            .fit_to_exact_size(egui::vec2(32.0, 18.0)),
+                    );
+                    ui.label(
+                        RichText::new(format!("v{}", crate::VERSION))
+                            .small()
+                            .color(theme::BONE_MUTED),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let menu = ui.add(
+                            egui::Button::new(RichText::new("•••").color(theme::BONE))
+                                .min_size(egui::vec2(mobile::TOUCH, mobile::TOUCH)),
+                        );
+                        if menu.on_hover_text("Menu").clicked() {
+                            self.menu = Some(MenuSheet::Main);
+                        }
+                    });
+                });
+            });
+    }
+
+    /// The phone's tab bar: one tab per page.
+    fn tab_bar(&mut self, context: &egui::Context) {
+        let frame = egui::Frame::new()
+            .fill(theme::FOREST_900)
+            .inner_margin(egui::Margin {
+                left: 4,
+                right: 4,
+                top: 4,
+                bottom: 10,
+            })
+            .stroke(theme::hairline(theme::FOREST_600));
+        egui::TopBottomPanel::bottom("tabs")
+            .frame(frame)
+            .show(context, |ui| {
+                let tabs = [
+                    (Page::Calculate, "Calculate"),
+                    (Page::Rifles, "Rifles"),
+                    (Page::Bullets, "Bullets"),
+                    (Page::Targets, "Targets"),
+                ];
+                let width = ui.available_width() / tabs.len() as f32;
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    for (page, label) in tabs {
+                        let (rect, response) =
+                            ui.allocate_exact_size(egui::vec2(width, 54.0), egui::Sense::click());
+                        let colour = if self.page == page {
+                            theme::BLAZE
+                        } else {
+                            theme::BONE_MUTED
+                        };
+                        tab_icon(
+                            ui.painter(),
+                            rect.center() - egui::vec2(0.0, 9.0),
+                            page,
+                            colour,
+                        );
+                        ui.painter().text(
+                            rect.center() + egui::vec2(0.0, 15.0),
+                            egui::Align2::CENTER_CENTER,
+                            label,
+                            egui::FontId::proportional(12.0),
+                            colour,
+                        );
+                        if response.clicked() {
+                            self.page = page;
+                        }
+                    }
+                });
+            });
+    }
+
+    /// The phone menu: units, backups and what version this is.
+    fn menu_sheet(&mut self, context: &egui::Context) {
+        let Some(sheet) = self.menu else {
+            return;
+        };
+        match sheet {
+            MenuSheet::Main => {
+                let shown = mobile::sheet(context, "menu", "Menu", |ui| {
+                    let mut choice = None;
+                    if mobile::list_row(ui, "Units", "Metric or imperial, per quantity", false)
+                        .clicked()
+                    {
+                        choice = Some(MenuChoice::Units);
+                    }
+                    if mobile::list_row(ui, "Import backup…", "From this app or Strelok Pro", false)
+                        .clicked()
+                    {
+                        choice = Some(MenuChoice::Import);
+                    }
+                    if mobile::list_row(
+                        ui,
+                        "Export backup",
+                        "Your rifles, bullets, scopes and targets",
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::Export);
+                    }
+                    if mobile::list_row(
+                        ui,
+                        "Load demo data",
+                        "Three rifles with bullets, a scope and a target",
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::Demo);
+                    }
+                    #[cfg(target_arch = "wasm32")]
+                    if crate::web::install_state() != crate::web::Install::Installed
+                        && mobile::list_row(
+                            ui,
+                            "Install on home screen",
+                            "Opens like an app and works offline",
+                            false,
+                        )
+                        .clicked()
+                    {
+                        choice = Some(MenuChoice::Install);
+                    }
+                    ui.add_space(8.0);
+                    ui.label(RichText::new(crate::APP_NAME).strong());
+                    let version = if crate::COMMIT.is_empty() {
+                        format!("Version {}", crate::VERSION)
+                    } else {
+                        format!("Version {} ({})", crate::VERSION, crate::COMMIT)
+                    };
+                    ui.weak(version);
+                    choice
+                });
+                if shown.closed {
+                    self.menu = None;
+                }
+                match shown.inner {
+                    Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
+                    Some(MenuChoice::Import) => {
+                        self.menu = None;
+                        self.import(context);
+                    }
+                    Some(MenuChoice::Demo) => {
+                        self.menu = None;
+                        self.apply(Action::LoadDemo);
+                    }
+                    Some(MenuChoice::Export) => {
+                        self.menu = None;
+                        self.export();
+                    }
+                    Some(MenuChoice::Install) => {
+                        #[cfg(target_arch = "wasm32")]
+                        if crate::web::install_state() == crate::web::Install::Prompt {
+                            crate::web::prompt_install();
+                            self.menu = None;
+                            return;
+                        }
+                        self.menu = Some(MenuSheet::Install);
+                    }
+                    None => {}
+                }
+            }
+            MenuSheet::Install => {
+                let shown = mobile::sheet(context, "install", "Install on home screen", |ui| {
+                    ui.label(RichText::new("iPhone and iPad (Safari)").strong());
+                    ui.label("Tap the Share button, then Add to Home Screen.");
+                    ui.add_space(8.0);
+                    ui.label(RichText::new("Android (Chrome)").strong());
+                    ui.label("Open the menu (⋮), then Install app or Add to Home screen.");
+                    ui.add_space(8.0);
+                    ui.weak(
+                        "The app then opens full screen from its icon, works without a \
+                         connection and keeps your data on this device. Export a backup now \
+                         and then.",
+                    );
+                });
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+            MenuSheet::Units => {
+                let shown = mobile::sheet(context, "units", "Units", |ui| {
+                    units::menu(ui, &mut self.units)
+                });
+                if shown.inner {
+                    self.units_changed(context);
+                }
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+        }
+    }
+}
+
+/// A tab's icon, drawn in a 24-point box around `center`.
+fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egui::Color32) {
+    let stroke = egui::Stroke::new(1.8_f32, colour);
+    let at = |x: f32, y: f32| center + egui::vec2(x - 12.0, y - 12.0);
+    let line = |points: &[(f32, f32)]| {
+        egui::Shape::line(points.iter().map(|&(x, y)| at(x, y)).collect(), stroke)
+    };
+    match page {
+        Page::Calculate => {
+            painter.circle_stroke(center, 8.0, stroke);
+            for points in [
+                [(12.0, 2.0), (12.0, 8.0)],
+                [(12.0, 16.0), (12.0, 22.0)],
+                [(2.0, 12.0), (8.0, 12.0)],
+                [(16.0, 12.0), (22.0, 12.0)],
+            ] {
+                painter.add(line(&points));
+            }
+        }
+        Page::Rifles => {
+            painter.add(line(&[
+                (2.0, 14.0),
+                (15.0, 14.0),
+                (18.0, 11.0),
+                (22.0, 11.0),
+            ]));
+            painter.add(line(&[(5.0, 14.0), (4.0, 19.0), (8.0, 19.0), (9.0, 14.0)]));
+            painter.add(line(&[(10.0, 11.0), (14.0, 11.0)]));
+        }
+        Page::Bullets => {
+            painter.add(line(&[
+                (9.0, 21.0),
+                (9.0, 9.0),
+                (10.5, 5.0),
+                (12.0, 2.0),
+                (13.5, 5.0),
+                (15.0, 9.0),
+                (15.0, 21.0),
+                (9.0, 21.0),
+            ]));
+            painter.add(line(&[(9.0, 15.0), (15.0, 15.0)]));
+        }
+        Page::Targets => {
+            painter.circle_stroke(center, 9.0, stroke);
+            painter.circle_stroke(center, 5.0, stroke);
+            painter.circle_filled(center, 1.5, colour);
+        }
     }
 }
 

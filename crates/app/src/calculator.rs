@@ -19,11 +19,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
+use crate::mobile;
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
 use crate::trajectory3d;
 use crate::units::{self, Quantity, UnitPrefs, quantity};
 use crate::widgets::{caliber_name, confirm_button, grid, number, section, target_picker};
+
+mod phone;
 
 const METRES_PER_INCH: f64 = 0.0254;
 const RAD_PER_MOA: f64 = std::f64::consts::PI / (180.0 * 60.0);
@@ -61,8 +64,13 @@ pub struct Inputs {
     pub azimuth_degrees: f64,
     pub spin_drift: bool,
     pub target_range_m: f64,
-    /// The target: one of the hunter's own or the catalog's.
-    pub target_id: String,
+    /// The target: one of the hunter's own or the catalog's; `None` for
+    /// no target (just the reticle and the shot).
+    pub target_id: Option<String>,
+    /// The targets picked lately, newest first, for quick choices.
+    pub recent_targets: Vec<String>,
+    /// Ranges picked lately (metres), newest first.
+    pub recent_ranges: Vec<f64>,
     /// The hunter's own vital (or hit) zone instead of the target's.
     pub vital_override_cm: Option<f64>,
     /// The hunter's own minimum energy instead of the target's.
@@ -103,7 +111,9 @@ impl Default for Inputs {
             azimuth_degrees: 0.0,
             spin_drift: true,
             target_range_m: 150.0,
-            target_id: DEFAULT_TARGET.to_owned(),
+            target_id: Some(DEFAULT_TARGET.to_owned()),
+            recent_targets: Vec::new(),
+            recent_ranges: Vec::new(),
             vital_override_cm: None,
             min_energy_override_j: None,
             min_velocity_override_mps: None,
@@ -118,20 +128,31 @@ impl Default for Inputs {
 }
 
 /// The target and what it asks of the shot, with the hunter's changes.
+/// Without a target there is no zone and no ethical limit.
 pub struct Aim {
-    pub target: Target,
-    pub vital_diameter_cm: f64,
-    /// `None` for sport targets: no ethical limits.
+    pub target: Option<Target>,
+    /// The zone a shot must land in, across.
+    pub vital_diameter_cm: Option<f64>,
+    /// `None` for sport targets and no target: no ethical limits.
     pub min_energy_j: Option<f64>,
     /// The game's own minimum velocity, when it sets one.
     pub min_velocity_mps: Option<f64>,
-    pub figure: Figure,
+    pub figure: Option<Figure>,
 }
 
 impl Aim {
     fn new(inputs: &Inputs, data: &Data) -> Aim {
+        let Some(id) = &inputs.target_id else {
+            return Aim {
+                target: None,
+                vital_diameter_cm: None,
+                min_energy_j: None,
+                min_velocity_mps: None,
+                figure: None,
+            };
+        };
         let target = data
-            .target(&inputs.target_id)
+            .target(id)
             .or_else(|| Catalog::builtin().target(DEFAULT_TARGET).cloned())
             .expect("the default target is in the catalog");
         let vital_diameter_cm = inputs.vital_override_cm.unwrap_or(target.vital_diameter_cm);
@@ -146,20 +167,31 @@ impl Aim {
             .map(|velocity| inputs.min_velocity_override_mps.unwrap_or(velocity));
         let figure = Figure::new(&target, vital_diameter_cm);
         Aim {
-            target,
-            vital_diameter_cm,
+            target: Some(target),
+            vital_diameter_cm: Some(vital_diameter_cm),
             min_energy_j,
             min_velocity_mps,
-            figure,
+            figure: Some(figure),
         }
+    }
+
+    pub fn is_game(&self) -> bool {
+        self.target.as_ref().is_some_and(Target::is_game)
+    }
+
+    /// The target's name, or "No target".
+    pub fn name(&self) -> &str {
+        self.target
+            .as_ref()
+            .map_or("No target", |target| target.name.as_str())
     }
 
     /// "vital zone" on game, "hit zone" on sport targets.
     pub fn zone_name(&self) -> &'static str {
-        if self.target.is_game() {
-            "vital zone"
-        } else {
+        if self.target.as_ref().is_some_and(|target| !target.is_game()) {
             "hit zone"
+        } else {
+            "vital zone"
         }
     }
 }
@@ -167,7 +199,7 @@ impl Aim {
 #[derive(Clone, PartialEq)]
 struct CacheKey {
     scenario: Scenario,
-    vital_diameter: f64,
+    vital_diameter: Option<f64>,
     max_range: f64,
 }
 
@@ -181,6 +213,12 @@ pub struct CalculatorPage {
     /// The rifle-load being edited: the saved one, or a new empty one.
     load_draft: Option<RifleLoad>,
     cache: Option<(CacheKey, Computed)>,
+    /// On a phone: the results or the inputs page.
+    phone_view: phone::PhoneView,
+    /// On a phone: the picker sheet that is open.
+    picker: Option<phone::Picker>,
+    /// The target picker's search text.
+    target_search: String,
 }
 
 impl CalculatorPage {
@@ -189,6 +227,9 @@ impl CalculatorPage {
             inputs,
             load_draft: None,
             cache: None,
+            phone_view: phone::PhoneView::default(),
+            picker: None,
+            target_search: String::new(),
         }
     }
 
@@ -251,6 +292,26 @@ impl CalculatorPage {
             .clone()
             .filter(|draft| draft.validate().is_ok() && !draft.is_empty())
             .or(load.clone());
+        self.remember_target();
+
+        if mobile::is_narrow(context) {
+            self.show_phone(
+                context,
+                data,
+                phone::PhoneFrame {
+                    rifle: rifle.as_ref(),
+                    bullets: &bullets,
+                    bullet: bullet.as_ref(),
+                    load: load.as_ref(),
+                    optics: optics.as_ref(),
+                    aim: &aim,
+                    effective_load: effective_load.as_ref(),
+                },
+                &mut actions,
+            );
+            return actions;
+        }
+        self.picker = None;
 
         egui::SidePanel::left("calculator-inputs")
             .resizable(true)
@@ -284,9 +345,20 @@ impl CalculatorPage {
             (None, _) => {
                 ui.heading("Add a rifle to start");
                 ui.label("Rifles and the bullets you shoot in them are kept in your own database.");
-                if ui.button("Go to Rifles").clicked() {
-                    actions.push(Action::Goto(Page::Rifles));
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("Go to Rifles").clicked() {
+                        actions.push(Action::Goto(Page::Rifles));
+                    }
+                    if ui
+                        .button("Load demo data")
+                        .on_hover_text(
+                            "Three rifles with bullets, a scope and a target, to try the app",
+                        )
+                        .clicked()
+                    {
+                        actions.push(Action::LoadDemo);
+                    }
+                });
             }
             (Some(rifle), None) => {
                 ui.heading(format!(
@@ -339,6 +411,19 @@ impl CalculatorPage {
         actions
     }
 
+    /// Keeps the target at the front of the recent ones.
+    fn remember_target(&mut self) {
+        let Some(id) = &self.inputs.target_id else {
+            return;
+        };
+        let recent = &mut self.inputs.recent_targets;
+        if recent.first() != Some(id) {
+            recent.retain(|other| other != id);
+            recent.insert(0, id.clone());
+            recent.truncate(3);
+        }
+    }
+
     fn selected_rifle<'a>(&mut self, data: &'a Data) -> Option<&'a Rifle> {
         let rifle = self
             .inputs
@@ -350,16 +435,18 @@ impl CalculatorPage {
         rifle
     }
 
-    fn refresh(&mut self, scenario: Scenario, vital_diameter_cm: f64, max_range: f64) {
+    fn refresh(&mut self, scenario: Scenario, vital_diameter_cm: Option<f64>, max_range: f64) {
         let key = CacheKey {
             scenario,
-            vital_diameter: vital_diameter_cm / 100.0,
+            vital_diameter: vital_diameter_cm.map(|cm| cm / 100.0),
             max_range,
         };
         if self.cache.as_ref().is_none_or(|(cached, _)| *cached != key) {
             let computed = Computed {
                 solution: solver::solve(&key.scenario, key.max_range),
-                optimal: analysis::optimal_point_blank(&key.scenario, key.vital_diameter),
+                optimal: key
+                    .vital_diameter
+                    .and_then(|diameter| analysis::optimal_point_blank(&key.scenario, diameter)),
             };
             self.cache = Some((key, computed));
         }
@@ -884,7 +971,17 @@ impl CalculatorPage {
                 inputs.min_energy_override_j = None;
                 inputs.min_velocity_override_mps = None;
             }
-            let target = &aim.target;
+            let Some(target) = &aim.target else {
+                ui.small("No target: just the reticle and where the bullet lands, without a vital zone or energy limits.");
+                if ui
+                    .button("Targets…")
+                    .on_hover_text("See the targets or make your own")
+                    .clicked()
+                {
+                    actions.push(Action::Goto(Page::Targets));
+                }
+                return;
+            };
             grid(ui, "ethics", |ui| {
                 let zone_label = if target.is_game() {
                     "Vital zone diameter"
@@ -1062,6 +1159,28 @@ struct ResultsView<'a> {
 }
 
 impl ResultsView<'_> {
+    /// The ethical range (none for sport targets and no target) and the
+    /// point-blank range with the current zero (none without a zone).
+    fn limits_of(&self, solution: &Solution) -> (Option<f64>, Option<PointBlank>) {
+        let aim = self.aim;
+        let ethical = aim
+            .min_energy_j
+            .and_then(|energy| analysis::ethical_limit(solution, energy, self.min_velocity));
+        let point_blank = aim
+            .vital_diameter_cm
+            .and_then(|cm| analysis::point_blank_with_zero(solution, cm / 100.0));
+        (ethical, point_blank)
+    }
+
+    /// "Moose at 150 m", or "Shot at 150 m" without a target.
+    fn title(&self, ui: &egui::Ui) -> String {
+        let range = units::prefs(ui.ctx()).format(Quantity::Distance, self.inputs.target_range_m);
+        match &self.aim.target {
+            Some(target) => format!("{} at {range}", target.name),
+            None => format!("Shot at {range}"),
+        }
+    }
+
     /// Returns the view settings the hunter changed.
     fn show(
         &self,
@@ -1071,23 +1190,15 @@ impl ResultsView<'_> {
     ) -> ViewRequests {
         let inputs = self.inputs;
         let aim = self.aim;
-        let vital_radius = aim.vital_diameter_cm / 200.0;
-        // Sport targets have no ethical limit.
-        let ethical = aim
-            .min_energy_j
-            .and_then(|energy| analysis::ethical_limit(solution, energy, self.min_velocity));
-        let point_blank = analysis::point_blank_with_zero(solution, aim.vital_diameter_cm / 100.0);
+        let vital_radius = aim.vital_diameter_cm.map(|cm| cm / 200.0);
+        let (ethical, point_blank) = self.limits_of(solution);
 
         const PICTURE: f32 = 300.0;
         let mut requested = ViewRequests::default();
         ui.horizontal_top(|ui| {
             ui.vertical(|ui| {
                 ui.set_max_width((ui.available_width() - PICTURE - 40.0).max(420.0));
-                ui.heading(format!(
-                    "{} at {}",
-                    aim.target.name,
-                    units::prefs(ui.ctx()).format(Quantity::Distance, inputs.target_range_m)
-                ));
+                ui.heading(self.title(ui));
                 match solution.at(inputs.target_range_m) {
                     Some(row) => self.shot_card(ui, &row, ethical),
                     None => {
@@ -1126,7 +1237,7 @@ impl ResultsView<'_> {
                 samples: &solution.samples,
                 target_range: inputs.target_range_m,
                 inclination_degrees: inputs.inclination_degrees,
-                figure: &aim.figure,
+                figure: aim.figure.as_ref(),
                 wind_speed: inputs.wind_speed,
                 wind_from_degrees: inputs.wind_clock * 30.0,
             };
@@ -1150,7 +1261,7 @@ impl ResultsView<'_> {
         point_blank: Option<PointBlank>,
     ) {
         let u = units::prefs(ui.ctx());
-        ui.heading(if self.aim.target.is_game() {
+        ui.heading(if self.aim.is_game() {
             "Hunting limits"
         } else {
             "Limits"
@@ -1183,23 +1294,25 @@ impl ResultsView<'_> {
                     });
                     ui.end_row();
                 }
-                ui.label(format!(
-                    "Dead-on hold, {} zero",
-                    u.format(Quantity::Distance, self.rifle.zero_range_m)
-                ));
-                ui.label(point_blank_text(&u, point_blank, self.aim));
-                ui.end_row();
-                ui.label("Best point-blank zero");
-                ui.label(match optimal {
-                    Some(best) => format!(
-                        "zero at {}: {}; highest at {}",
-                        u.format(Quantity::Distance, best.zero_range),
-                        point_blank_text(&u, Some(best.point_blank), self.aim),
-                        u.format(Quantity::Distance, best.peak_range)
-                    ),
-                    None => "not found".to_owned(),
-                });
-                ui.end_row();
+                if self.aim.vital_diameter_cm.is_some() {
+                    ui.label(format!(
+                        "Dead-on hold, {} zero",
+                        u.format(Quantity::Distance, self.rifle.zero_range_m)
+                    ));
+                    ui.label(point_blank_text(&u, point_blank, self.aim));
+                    ui.end_row();
+                    ui.label("Best point-blank zero");
+                    ui.label(match optimal {
+                        Some(best) => format!(
+                            "zero at {}: {}; highest at {}",
+                            u.format(Quantity::Distance, best.zero_range),
+                            point_blank_text(&u, Some(best.point_blank), self.aim),
+                            u.format(Quantity::Distance, best.peak_range)
+                        ),
+                        None => "not found".to_owned(),
+                    });
+                    ui.end_row();
+                }
                 ui.label("Muzzle velocity today");
                 ui.label(u.format(Quantity::Speed, solution.muzzle_velocity));
                 ui.end_row();
@@ -1236,7 +1349,7 @@ impl ResultsView<'_> {
             reticle,
             magnification,
             impact_mrad,
-            figure: &self.aim.figure,
+            figure: self.aim.figure.as_ref(),
             range_m: row.range,
             illumination: self.inputs.illumination,
         };
@@ -1264,13 +1377,15 @@ impl ResultsView<'_> {
             ui.small("Hold the orange dot on the target: the crosshair then sits where the picture shows it.");
         }
         let u = units::prefs(ui.ctx());
-        ui.small(format!(
-            "{} at {}, true size; green circle: the {} {}.",
-            self.aim.target.name,
-            u.format(Quantity::Distance, row.range),
-            u.format(Quantity::ShortLength, self.aim.vital_diameter_cm),
-            self.aim.zone_name()
-        ));
+        if let (Some(target), Some(zone)) = (&self.aim.target, self.aim.vital_diameter_cm) {
+            ui.small(format!(
+                "{} at {}, true size; green circle: the {} {}.",
+                target.name,
+                u.format(Quantity::Distance, row.range),
+                u.format(Quantity::ShortLength, zone),
+                self.aim.zone_name()
+            ));
+        }
         if !drawn.impact_in_view {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
@@ -1395,7 +1510,7 @@ impl ResultsView<'_> {
         &self,
         ui: &mut egui::Ui,
         solution: &Solution,
-        vital_radius: f64,
+        vital_radius: Option<f64>,
         ethical: Option<f64>,
     ) {
         let u = units::prefs(ui.ctx());
@@ -1408,7 +1523,9 @@ impl ResultsView<'_> {
             .filter(|sample| sample.range <= max_range)
             .map(|sample| [x(sample.range), y(sample.drop)])
             .collect();
-        let zone_cm = y(vital_radius);
+        // Without a zone the view is framed as for a 20 cm one.
+        let zone = vital_radius.map(y);
+        let zone_cm = zone.unwrap_or_else(|| y(0.1));
         let world = plot_world(&path, x(max_range), zone_cm);
         let target = x(self.inputs.target_range_m);
         let target_drop_cm = solution
@@ -1485,9 +1602,11 @@ impl ResultsView<'_> {
                     }
                 }
 
-                let zone_name = capitalised(self.aim.zone_name());
-                plot_ui.hline(HLine::new(zone_cm).color(theme::MEADOW).name(&zone_name));
-                plot_ui.hline(HLine::new(-zone_cm).color(theme::MEADOW).name(&zone_name));
+                if let Some(zone) = zone {
+                    let zone_name = capitalised(self.aim.zone_name());
+                    plot_ui.hline(HLine::new(zone).color(theme::MEADOW).name(&zone_name));
+                    plot_ui.hline(HLine::new(-zone).color(theme::MEADOW).name(&zone_name));
+                }
                 plot_ui.hline(
                     HLine::new(0.0)
                         .color(theme::BONE_MUTED)
@@ -1742,7 +1861,10 @@ fn capitalised(text: &str) -> String {
 
 fn point_blank_text(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) -> String {
     let distance = |metres: f64| u.format(Quantity::Distance, metres);
-    let zone = u.format(Quantity::ShortLength, aim.vital_diameter_cm / 2.0);
+    let zone = u.format(
+        Quantity::ShortLength,
+        aim.vital_diameter_cm.unwrap_or_default() / 2.0,
+    );
     match point_blank {
         Some(PointBlank {
             near_limit,

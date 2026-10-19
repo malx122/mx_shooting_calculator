@@ -84,6 +84,7 @@ async fn open_store() -> Result<Store, String> {
 /// `<canvas id="mxsc">`.
 pub fn start(make_app: fn(Result<Store, String>) -> eframe::AppCreator<'static>) {
     console_error_panic_hook::set_once();
+    keep_storage();
     wasm_bindgen_futures::spawn_local(async move {
         let make_app = make_app(open_store().await);
         let document = web_sys::window()
@@ -106,4 +107,153 @@ pub fn start(make_app: fn(Result<Store, String>) -> eframe::AppCreator<'static>)
             }
         }
     });
+}
+
+thread_local! {
+    /// The phone's latest front-to-back tilt (degrees), once measuring.
+    static TILT: std::cell::Cell<Option<f64>> = const { std::cell::Cell::new(None) };
+    static MEASURING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether this browser can report the phone's tilt.
+pub fn tilt_supported() -> bool {
+    web_sys::window().is_some_and(|window| {
+        js_sys::Reflect::has(&window, &"DeviceOrientationEvent".into()).unwrap_or(false)
+            && js_sys::Reflect::has(&window, &"ontouchstart".into()).unwrap_or(false)
+    })
+}
+
+/// The phone's tilt: 0 lying flat, positive with the top edge raised.
+pub fn tilt() -> Option<f64> {
+    TILT.get()
+}
+
+/// Starts reading the tilt sensor. iPhones ask the hunter's permission
+/// first; the answer comes later.
+pub fn start_tilt(context: egui::Context) {
+    if MEASURING.get() {
+        return;
+    }
+    MEASURING.set(true);
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let listen = {
+        let window = window.clone();
+        move || {
+            let closure = wasm_bindgen::closure::Closure::<
+                dyn FnMut(web_sys::DeviceOrientationEvent),
+            >::new(move |event: web_sys::DeviceOrientationEvent| {
+                TILT.set(event.beta());
+                context.request_repaint();
+            });
+            let _ = window.add_event_listener_with_callback(
+                "deviceorientation",
+                closure.as_ref().unchecked_ref(),
+            );
+            closure.forget();
+        }
+    };
+    let request = js_sys::Reflect::get(&window, &"DeviceOrientationEvent".into())
+        .ok()
+        .and_then(|class| {
+            let request = js_sys::Reflect::get(&class, &"requestPermission".into()).ok()?;
+            let request: js_sys::Function = request.dyn_into().ok()?;
+            request
+                .call0(&class)
+                .ok()?
+                .dyn_into::<js_sys::Promise>()
+                .ok()
+        });
+    match request {
+        Some(permission) => wasm_bindgen_futures::spawn_local(async move {
+            let answer = wasm_bindgen_futures::JsFuture::from(permission).await;
+            if answer.ok().and_then(|answer| answer.as_string()).as_deref() == Some("granted") {
+                listen();
+            } else {
+                MEASURING.set(false);
+            }
+        }),
+        None => listen(),
+    }
+}
+
+/// Calls `object.name()` in JavaScript, if it exists.
+fn call(
+    object: &wasm_bindgen::JsValue,
+    name: &str,
+    argument: Option<&wasm_bindgen::JsValue>,
+) -> Option<wasm_bindgen::JsValue> {
+    let function: js_sys::Function = js_sys::Reflect::get(object, &name.into())
+        .ok()?
+        .dyn_into()
+        .ok()?;
+    match argument {
+        Some(argument) => function.call1(object, argument).ok(),
+        None => function.call0(object).ok(),
+    }
+}
+
+/// Asks the browser to keep the app's data instead of clearing it when
+/// space runs low or the site isn't visited for a while.
+pub fn keep_storage() {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    if let Ok(storage) = js_sys::Reflect::get(&window.navigator(), &"storage".into()) {
+        let _ = call(&storage, "persist", None);
+    }
+}
+
+/// How the app can be put on the home screen.
+#[derive(Clone, Copy, PartialEq)]
+pub enum Install {
+    /// Running as an installed app already.
+    Installed,
+    /// The browser offers an install prompt (Chrome, Android).
+    Prompt,
+    /// Only by hand, from the browser's menu (Safari on iPhone).
+    ByHand,
+}
+
+pub fn install_state() -> Install {
+    let Some(window) = web_sys::window() else {
+        return Install::ByHand;
+    };
+    let standalone = call(
+        &window,
+        "matchMedia",
+        Some(&"(display-mode: standalone)".into()),
+    )
+    .and_then(|query| js_sys::Reflect::get(&query, &"matches".into()).ok())
+    .and_then(|matches| matches.as_bool())
+    .unwrap_or(false)
+        || js_sys::Reflect::get(&window.navigator(), &"standalone".into())
+            .ok()
+            .and_then(|standalone| standalone.as_bool())
+            .unwrap_or(false);
+    if standalone {
+        Install::Installed
+    } else if js_sys::Reflect::get(&window, &"mxscInstallPrompt".into())
+        .is_ok_and(|prompt| prompt.is_object())
+    {
+        Install::Prompt
+    } else {
+        Install::ByHand
+    }
+}
+
+/// Shows the browser's install prompt kept by the page.
+pub fn prompt_install() {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    if let Ok(prompt) = js_sys::Reflect::get(&window, &"mxscInstallPrompt".into()) {
+        let _ = call(&prompt, "prompt", None);
+        let _ = js_sys::Reflect::set(
+            &window,
+            &"mxscInstallPrompt".into(),
+            &wasm_bindgen::JsValue::UNDEFINED,
+        );
+    }
 }

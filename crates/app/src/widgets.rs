@@ -131,17 +131,21 @@ pub fn target_picker(
     ui: &mut egui::Ui,
     id_salt: &str,
     data: &crate::app::Data,
-    selected: &mut String,
+    selected: &mut Option<String>,
 ) -> bool {
-    let current = data
-        .target(selected)
-        .map_or_else(|| "Choose a target".to_owned(), |target| target.name);
+    let current = match selected {
+        None => "No target".to_owned(),
+        Some(id) => data
+            .target(id)
+            .map_or_else(|| "Choose a target".to_owned(), |target| target.name),
+    };
     let before = selected.clone();
     egui::ComboBox::from_id_salt(id_salt)
         .selected_text(current)
         .width(260.0)
         .height(420.0)
         .show_ui(ui, |ui| {
+            ui.selectable_value(selected, None, "No target");
             let mut group =
                 |ui: &mut egui::Ui, title: &str, targets: &mut dyn Iterator<Item = &Target>| {
                     let mut first = true;
@@ -150,7 +154,7 @@ pub fn target_picker(
                             ui.label(RichText::new(title).small().strong());
                             first = false;
                         }
-                        ui.selectable_value(selected, target.id.clone(), &target.name);
+                        ui.selectable_value(selected, Some(target.id.clone()), &target.name);
                     }
                 };
             let catalog = &Catalog::builtin().targets;

@@ -22,6 +22,8 @@ use crate::optics::UserScope;
 use crate::targets::Target;
 
 pub const FORMAT: &str = "mxsc/personal-data";
+/// The demo data, also the development sample.
+const DEMO_DATA: &str = include_str!("../../../dev-data/sample.json");
 /// Backups made under the app's earlier names: Malx Hunting Calculator and,
 /// before that, Ballistic Calculator. They still import.
 const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/personal-data"];
@@ -97,6 +99,13 @@ impl Store {
             targets: self.targets()?,
         };
         Ok(serde_json::to_string_pretty(&data)?)
+    }
+
+    /// Loads the demo data: a few rifles with bullets, loads, a scope and a
+    /// target, for trying the app. Like any import, loading it again adds
+    /// nothing and keeps demo records the hunter has changed.
+    pub fn load_demo(&mut self) -> Result<ImportReport, StoreError> {
+        self.import_json(DEMO_DATA)
     }
 
     /// Merges an export into this database. Either the whole file is

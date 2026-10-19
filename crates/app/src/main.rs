@@ -3,6 +3,7 @@ mod bullets;
 mod calculator;
 mod figure;
 mod import;
+mod mobile;
 mod rifles;
 mod sight_picture;
 mod targets;

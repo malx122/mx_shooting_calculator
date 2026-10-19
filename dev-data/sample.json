@@ -84,7 +84,7 @@
       "name": "Browning X-Bolt",
       "caliber": "308-win",
       "barrel_length_mm": 560.0,
-      "twist_in": 12.0,
+      "twist_in": 10.0,
       "right_hand_twist": true,
       "sight_height_cm": 4.5,
       "zero_range_m": 100.0,
@@ -435,7 +435,7 @@
       ],
       "illuminated": false,
       "reticle_id": null,
-      "notes": "Development sample: a scope entered by hand (plain crosshair).",
+      "notes": "Demo data: a scope entered by hand (plain crosshair).",
       "updated_at": 1760832000000
     }
   ],
@@ -451,7 +451,7 @@
       "antlers": true,
       "vital_diameter_cm": 7.0,
       "min_energy_j": 150.0,
-      "notes": "Development sample: a custom target copied from the red fox and made smaller.",
+      "notes": "Demo data: a custom target copied from the red fox and made smaller.",
       "catalog_id": "red-fox",
       "updated_at": 1760832000000
     }

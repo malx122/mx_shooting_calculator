@@ -9,6 +9,7 @@ use eframe::egui::{self, RichText};
 use egui_plot::{Line, Plot, PlotPoints};
 
 use crate::app::{Action, Data};
+use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{caliber_name, caliber_picker, confirm_button, grid, optional_number, text};
@@ -78,7 +79,7 @@ impl BulletsPage {
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
         let mut actions = Vec::new();
         egui::TopBottomPanel::top("bullets-toolbar").show(context, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.selectable_value(&mut self.view, View::Collection, "My bullets");
                 ui.selectable_value(&mut self.view, View::Catalog, "Catalog");
                 ui.separator();
@@ -104,125 +105,149 @@ impl BulletsPage {
     }
 
     fn collection(&mut self, context: &egui::Context, data: &Data, actions: &mut Vec<Action>) {
+        if mobile::is_narrow(context) {
+            // On a phone: the list, or one bullet with a way back.
+            egui::CentralPanel::default().show(context, |ui| {
+                if self.editing.is_none() {
+                    self.collection_list(ui, data, true);
+                } else if mobile::back_button(ui, "My bullets") {
+                    self.editing = None;
+                } else {
+                    self.collection_editor(ui, data, actions);
+                }
+            });
+            return;
+        }
         egui::SidePanel::left("bullet-list")
             .resizable(true)
             .default_width(320.0)
-            .show(context, |ui| {
-                ui.horizontal(|ui| {
-                    if ui.button("➕ Add manually").clicked() {
-                        let caliber = Catalog::builtin().caliber(&self.caliber);
-                        self.editing = Some(match caliber {
-                            Some(caliber) => {
-                                Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm)
-                            }
-                            None => Bullet::new_manual("", 0.0),
-                        });
-                    }
-                    if ui.button("📖 Add from catalog").clicked() {
-                        self.view = View::Catalog;
-                    }
-                });
-                ui.separator();
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let mut shown = 0;
-                    let mut heading = String::new();
-                    let mut bullets: Vec<&Bullet> = data
-                        .bullets
-                        .iter()
-                        .filter(|bullet| self.caliber.is_empty() || bullet.caliber == self.caliber)
-                        .collect();
-                    bullets.sort_by_key(|bullet| caliber_name(&bullet.caliber));
-                    for bullet in bullets {
-                        let caliber = caliber_name(&bullet.caliber);
-                        if caliber != heading {
-                            ui.add_space(4.0);
-                            ui.strong(&caliber);
-                            heading = caliber;
-                        }
-                        let selected = self
-                            .editing
-                            .as_ref()
-                            .is_some_and(|editing| editing.id == bullet.id);
-                        if ui
-                            .selectable_label(selected, bullet.display_name())
-                            .clicked()
-                        {
-                            self.editing = Some(bullet.clone());
-                        }
-                        shown += 1;
-                    }
-                    if shown == 0 {
-                        ui.weak("No bullets here yet. Add one from the catalog or by hand.");
-                    }
-                });
-            });
+            .show(context, |ui| self.collection_list(ui, data, false));
+        egui::CentralPanel::default().show(context, |ui| self.collection_editor(ui, data, actions));
+    }
 
-        egui::CentralPanel::default().show(context, |ui| {
-            let Some(bullet) = &mut self.editing else {
-                ui.weak("Choose a bullet, or add one.");
-                return;
-            };
-            let stored = data.bullets.iter().find(|stored| stored.id == bullet.id);
-            let mut cancel = false;
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading(match (stored, &bullet.catalog_id) {
-                    (Some(_), _) => "Edit bullet",
-                    (None, Some(_)) => "New from catalog: check the data and save",
-                    (None, None) => "New bullet",
+    /// The hunter's bullets by caliber, with ways to add more. On a phone
+    /// each is a big row.
+    fn collection_list(&mut self, ui: &mut egui::Ui, data: &Data, phone: bool) {
+        ui.horizontal_wrapped(|ui| {
+            if ui.button("➕ Add manually").clicked() {
+                let caliber = Catalog::builtin().caliber(&self.caliber);
+                self.editing = Some(match caliber {
+                    Some(caliber) => Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm),
+                    None => Bullet::new_manual("", 0.0),
                 });
-                ui.add_space(4.0);
-                editor(
-                    ui,
-                    bullet,
-                    &mut self.editor_caliber_search,
-                    &mut self.curve_paste,
-                );
-                ui.add_space(8.0);
-
-                let problem = bullet.validate().err();
-                let changed = stored != Some(&*bullet);
-                ui.horizontal(|ui| {
-                    let save =
-                        ui.add_enabled(problem.is_none() && changed, egui::Button::new("💾 Save"));
-                    if save.clicked() {
-                        actions.push(Action::SaveBullet(bullet.clone()));
-                    }
-                    if let Some(stored) = stored {
-                        if changed && ui.button("Undo changes").clicked() {
-                            *bullet = stored.clone();
-                        }
-                        if confirm_button(ui, "delete-bullet", "Delete") {
-                            actions.push(Action::DeleteBullet(stored.id.clone()));
-                        }
-                    } else if ui.button("Cancel").clicked() {
-                        cancel = true;
-                    }
-                });
-                if let Some(problem) = problem {
-                    ui.colored_label(ui.visuals().warn_fg_color, problem);
-                } else if changed {
-                    ui.weak("Unsaved changes");
-                }
-                if let Some(source) = bullet
-                    .catalog_id
-                    .as_deref()
-                    .and_then(|id| Catalog::builtin().bullet(id))
-                {
-                    ui.separator();
-                    ui.horizontal(|ui| {
-                        ui.weak(format!(
-                            "Copied from the catalog (data checked {}).",
-                            source.verified_on
-                        ));
-                        ui.hyperlink_to("Source", &source.source_url)
-                            .on_hover_text(&source.source_url);
-                    });
-                }
-            });
-            if cancel {
-                self.editing = None;
+            }
+            if ui.button("📖 Add from catalog").clicked() {
+                self.view = View::Catalog;
             }
         });
+        ui.separator();
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            let mut shown = 0;
+            let mut heading = String::new();
+            let mut bullets: Vec<&Bullet> = data
+                .bullets
+                .iter()
+                .filter(|bullet| self.caliber.is_empty() || bullet.caliber == self.caliber)
+                .collect();
+            bullets.sort_by_key(|bullet| caliber_name(&bullet.caliber));
+            for bullet in bullets {
+                let caliber = caliber_name(&bullet.caliber);
+                if caliber != heading {
+                    ui.add_space(4.0);
+                    ui.strong(&caliber);
+                    heading = caliber;
+                }
+                let selected = self
+                    .editing
+                    .as_ref()
+                    .is_some_and(|editing| editing.id == bullet.id);
+                let clicked = if phone {
+                    let detail = match bullet.kind {
+                        BulletKind::Factory => "Factory ammunition",
+                        BulletKind::Handload => "Handload",
+                    };
+                    mobile::list_row(ui, &bullet.display_name(), detail, selected).clicked()
+                } else {
+                    ui.selectable_label(selected, bullet.display_name())
+                        .clicked()
+                };
+                if clicked {
+                    self.editing = Some(bullet.clone());
+                }
+                shown += 1;
+            }
+            if shown == 0 {
+                ui.weak("No bullets here yet. Add one from the catalog or by hand.");
+            }
+        });
+    }
+
+    /// The open bullet's editor, with save, undo and delete.
+    fn collection_editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        let Some(bullet) = &mut self.editing else {
+            ui.weak("Choose a bullet, or add one.");
+            return;
+        };
+        let stored = data.bullets.iter().find(|stored| stored.id == bullet.id);
+        let mut cancel = false;
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.heading(match (stored, &bullet.catalog_id) {
+                (Some(_), _) => "Edit bullet",
+                (None, Some(_)) => "New from catalog: check the data and save",
+                (None, None) => "New bullet",
+            });
+            ui.add_space(4.0);
+            editor(
+                ui,
+                bullet,
+                &mut self.editor_caliber_search,
+                &mut self.curve_paste,
+            );
+            ui.add_space(8.0);
+
+            let problem = bullet.validate().err();
+            let changed = stored != Some(&*bullet);
+            ui.horizontal_wrapped(|ui| {
+                let save =
+                    ui.add_enabled(problem.is_none() && changed, egui::Button::new("💾 Save"));
+                if save.clicked() {
+                    actions.push(Action::SaveBullet(bullet.clone()));
+                }
+                if let Some(stored) = stored {
+                    if changed && ui.button("Undo changes").clicked() {
+                        *bullet = stored.clone();
+                    }
+                    if confirm_button(ui, "delete-bullet", "Delete") {
+                        actions.push(Action::DeleteBullet(stored.id.clone()));
+                    }
+                } else if ui.button("Cancel").clicked() {
+                    cancel = true;
+                }
+            });
+            if let Some(problem) = problem {
+                ui.colored_label(ui.visuals().warn_fg_color, problem);
+            } else if changed {
+                ui.weak("Unsaved changes");
+            }
+            if let Some(source) = bullet
+                .catalog_id
+                .as_deref()
+                .and_then(|id| Catalog::builtin().bullet(id))
+            {
+                ui.separator();
+                ui.horizontal_wrapped(|ui| {
+                    ui.weak(format!(
+                        "Copied from the catalog (data checked {}).",
+                        source.verified_on
+                    ));
+                    ui.hyperlink_to("Source", &source.source_url)
+                        .on_hover_text(&source.source_url);
+                });
+            }
+        });
+        if cancel {
+            self.editing = None;
+        }
     }
 
     fn catalog(&mut self, context: &egui::Context, data: &Data) {
@@ -247,7 +272,7 @@ impl BulletsPage {
                 return;
             };
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.catalog_text).hint_text("Search maker or product"));
                 ui.selectable_value(&mut self.catalog_kind, None, "All");
                 ui.selectable_value(&mut self.catalog_kind, Some(CatalogKind::Ammunition), "Factory ammunition");
