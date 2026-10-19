@@ -343,6 +343,15 @@ Then tell your assistant to start it (use the full path):
 Add `"args": ["--db", "/path/to/file.sqlite"]` to use another database, for
 example `target/dev.sqlite` for the development data.
 
+**While developing,** register `scripts/mxsc-mcp.sh` instead of the installed
+copy. It rebuilds the server when the code has changed and then starts it,
+so the assistant always gets the current version (from its next session, or
+after it restarts the server):
+
+```sh
+claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target/dev.sqlite"
+```
+
 ## Code layout
 
 | Crate | What it does |

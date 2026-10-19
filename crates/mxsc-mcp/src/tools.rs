@@ -597,6 +597,14 @@ fn direction(value: f64, positive: &'static str, negative: &'static str) -> &'st
     if value >= 0.0 { positive } else { negative }
 }
 
+/// "1 click", "12 clicks".
+fn clicks(count: i64) -> String {
+    match count.abs() {
+        1 => "1 click".into(),
+        count => format!("{count} clicks"),
+    }
+}
+
 fn holdover(store: &Store, arguments: &Value) -> Result<Answer, String> {
     let range = arguments["range_m"]
         .as_f64()
@@ -618,7 +626,7 @@ fn holdover(store: &Store, arguments: &Value) -> Result<Answer, String> {
     let unit = unit_label(hold.unit);
     let mut text = format!(
         "{} ({}) with {} at {range} m; {weather}.\n\
-         Dial or hold {} {:.2} {unit} ({} clicks of {} {unit}) and {} {:.2} {unit} ({} clicks).\n\
+         Dial or hold {} {:.2} {unit} ({} of {} {unit}) and {} {:.2} {unit} ({}).\n\
          Holding dead on, the bullet hits {:.0} cm {} and {:.0} cm {}.\n\
          At the target: {:.0} m/s, {:.0} J, {:.2} s flight.",
         rifle.name,
@@ -626,11 +634,11 @@ fn holdover(store: &Store, arguments: &Value) -> Result<Answer, String> {
         bullet.display_name(),
         direction(hold.elevation, "up", "down"),
         hold.elevation.abs(),
-        hold.elevation_clicks.abs(),
+        clicks(hold.elevation_clicks),
         rifle.click_value,
         direction(hold.windage, "right", "left"),
         hold.windage.abs(),
-        hold.windage_clicks.abs(),
+        clicks(hold.windage_clicks),
         hold.drop_m.abs() * 100.0,
         direction(hold.drop_m, "high", "low"),
         hold.drift_m.abs() * 100.0,
