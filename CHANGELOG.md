@@ -18,6 +18,11 @@ any release may still change things noticeably.
   Finnish name and what else Finnish law says. Sweden's rules moved to a
   file of their own; more countries can follow. The app starts from the
   device's language and region.
+- **Game of Finland:** wild forest reindeer, sika deer, wolf, lynx,
+  wolverine, raccoon dog, otter, stoat, grey, ringed and harbour seal, red
+  squirrel and muskrat, each with its own drawing (the ringed and harbour
+  seal share one) and Sweden's and Finland's rules. Seals have a group of
+  their own; wolf, lynx and wolverine join the bear.
 - **What's new:** this changelog in the app. Click the version number by the
   logo, or open What's new in the phone's menu. After an update the app
   says so once.

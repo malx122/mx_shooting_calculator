@@ -248,10 +248,11 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    in the wide views.
 4. **Targets:** the catalog's game animals and sport targets, and **My
    targets**. The catalog has every species on Svenska Jägareförbundet's
-   list of Swedish hunting seasons, in folding groups (deer; wild boar and
-   mouflon; bear; fox, badger and martens; hares, rabbits and beaver;
-   grouse, ptarmigan and pheasant; ducks, geese and swans; other birds;
-   sport). Search finds them by English, Swedish or Finnish name. Each species has
+   list of Swedish hunting seasons and Finland's game species (Metsästyslaki
+   § 5), in folding groups (deer; wild boar and mouflon; bear, wolf, lynx and
+   wolverine; fox, badger, martens and otter; hares, beaver and rodents;
+   seals; grouse, ptarmigan and pheasant; ducks, geese and swans; other
+   birds; sport). Search finds them by English, Swedish or Finnish name. Each species has
    its own drawing of the male (birds in the plumage they have in the
    hunting season); species that look alike share one, such as the grey
    geese or the gulls. Sizes and vital zones are estimates. Each species

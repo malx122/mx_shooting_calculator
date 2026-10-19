@@ -1412,6 +1412,346 @@
     }
   },
   {
+    "id": "forest-reindeer",
+    "name": "Wild forest reindeer",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "forest-reindeer",
+    "shoulder_height_cm": 115.0,
+    "body_length_cm": 207.0,
+    "antlers": true,
+    "vital_diameter_cm": 30,
+    "min_energy_j": 2000,
+    "notes": "Male broadside. Sizes and the zone are estimates.",
+    "group": "deer",
+    "other_names": [
+      "Skogsvildren",
+      "Metsäpeura"
+    ],
+    "ammunition": {
+      "finland": 2
+    },
+    "rules_notes": {
+      "sweden": "Not game in Sweden.",
+      "finland": "Licence (pyyntilupa) needed. Shot is not allowed."
+    }
+  },
+  {
+    "id": "sika-deer",
+    "name": "Sika deer",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "sika-deer",
+    "shoulder_height_cm": 85.0,
+    "body_length_cm": 131.0,
+    "antlers": true,
+    "vital_diameter_cm": 20,
+    "min_energy_j": 2000,
+    "notes": "Male broadside. Sizes and the zone are estimates.",
+    "group": "deer",
+    "other_names": [
+      "Sikahjort",
+      "Japaninpeura"
+    ],
+    "ammunition": {
+      "sweden": 1,
+      "finland": 2
+    },
+    "rules_notes": {
+      "finland": "Licence needed. Shot is not allowed."
+    }
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "wolf",
+    "shoulder_height_cm": 80.0,
+    "body_length_cm": 128.0,
+    "antlers": true,
+    "vital_diameter_cm": 20,
+    "min_energy_j": 2000,
+    "notes": "Male broadside. Sizes and the zone are estimates.",
+    "group": "bear",
+    "other_names": [
+      "Varg",
+      "Susi"
+    ],
+    "ammunition": {
+      "sweden": 1,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Only licensed or protective hunting; check the current rules.",
+      "finland": "Quota hunting only (1 December – 10 February)."
+    }
+  },
+  {
+    "id": "lynx",
+    "name": "Lynx",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "lynx",
+    "shoulder_height_cm": 65.0,
+    "body_length_cm": 106.0,
+    "antlers": true,
+    "vital_diameter_cm": 15,
+    "min_energy_j": 800,
+    "notes": "Male broadside. Sizes and the zone are estimates.",
+    "group": "bear",
+    "other_names": [
+      "Lo",
+      "Ilves"
+    ],
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Only licensed or protective hunting; check the current rules.",
+      "finland": "Protected: only under a derogation."
+    }
+  },
+  {
+    "id": "wolverine",
+    "name": "Wolverine",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "wolverine",
+    "shoulder_height_cm": 41.0,
+    "body_length_cm": 86.0,
+    "antlers": true,
+    "vital_diameter_cm": 15,
+    "min_energy_j": 800,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates.",
+    "group": "bear",
+    "other_names": [
+      "Järv",
+      "Ahma"
+    ],
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Protected: only protective hunting; check the current rules.",
+      "finland": "Protected: only under a derogation."
+    }
+  },
+  {
+    "id": "raccoon-dog",
+    "name": "Raccoon dog",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "raccoon-dog",
+    "shoulder_height_cm": 32.0,
+    "body_length_cm": 63.0,
+    "antlers": true,
+    "vital_diameter_cm": 9,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. No expansion velocity is asked for.",
+    "group": "small_predators",
+    "other_names": [
+      "Mårdhund",
+      "Supikoira"
+    ],
+    "ammunition": {
+      "sweden": 3,
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "Invasive. Class 4 is allowed at the den or under ground, and with a baying dog. A shotgun is allowed too.",
+      "finland": "Not game but an invasive species (704/2019), shot to the fox class rule."
+    }
+  },
+  {
+    "id": "otter",
+    "name": "Otter",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "otter",
+    "shoulder_height_cm": 26.0,
+    "body_length_cm": 76.0,
+    "antlers": true,
+    "vital_diameter_cm": 8,
+    "min_energy_j": 200,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. No expansion velocity is asked for.",
+    "group": "small_predators",
+    "other_names": [
+      "Utter",
+      "Saukko"
+    ],
+    "ammunition": {
+      "finland": 4
+    },
+    "rules_notes": {
+      "sweden": "Protected in Sweden.",
+      "finland": "Protected: only under a derogation."
+    }
+  },
+  {
+    "id": "stoat",
+    "name": "Stoat",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "stoat",
+    "shoulder_height_cm": 7.0,
+    "body_length_cm": 27.0,
+    "antlers": true,
+    "vital_diameter_cm": 3,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. No expansion velocity is asked for.",
+    "group": "small_predators",
+    "other_names": [
+      "Hermelin",
+      "Kärppä"
+    ],
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too."
+    }
+  },
+  {
+    "id": "grey-seal",
+    "name": "Grey seal",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "grey-seal",
+    "shoulder_height_cm": 50.0,
+    "body_length_cm": 230.0,
+    "antlers": true,
+    "vital_diameter_cm": 20,
+    "min_energy_j": 800,
+    "notes": "Lying broadside on ice or rock; height of the back. Sizes and the zone are estimates.",
+    "group": "seals",
+    "other_names": [
+      "Gråsäl",
+      "Halli"
+    ],
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Only licensed or protective hunting; check the current rules.",
+      "finland": "Quota hunting. Shot is not allowed."
+    }
+  },
+  {
+    "id": "ringed-seal",
+    "name": "Ringed seal",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "seal",
+    "shoulder_height_cm": 35.0,
+    "body_length_cm": 140,
+    "antlers": true,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 800,
+    "notes": "Lying broadside on ice or rock; height of the back. Sizes and the zone are estimates.",
+    "group": "seals",
+    "other_names": [
+      "Vikare",
+      "Norppa",
+      "Itämeren norppa"
+    ],
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Only protective hunting; check the current rules.",
+      "finland": "Quota hunting; the Saimaa ringed seal is protected. Shot is not allowed."
+    }
+  },
+  {
+    "id": "harbour-seal",
+    "name": "Harbour seal",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "seal",
+    "shoulder_height_cm": 40.0,
+    "body_length_cm": 160,
+    "antlers": true,
+    "vital_diameter_cm": 12,
+    "min_energy_j": 800,
+    "notes": "Lying broadside on ice or rock; height of the back. Sizes and the zone are estimates.",
+    "group": "seals",
+    "other_names": [
+      "Knubbsäl",
+      "Kirjohylje"
+    ],
+    "ammunition": {
+      "sweden": 2,
+      "finland": 3
+    },
+    "rules_notes": {
+      "sweden": "Only licensed or protective hunting; check the current rules.",
+      "finland": "Protected: only under a derogation. Shot is not allowed."
+    }
+  },
+  {
+    "id": "red-squirrel",
+    "name": "Red squirrel",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "red-squirrel",
+    "shoulder_height_cm": 15.0,
+    "body_length_cm": 20.0,
+    "antlers": true,
+    "vital_diameter_cm": 3,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Sitting broadside; height to the back. Sizes and the zone are estimates. No expansion velocity is asked for.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Ekorre",
+      "Orava"
+    ],
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Shotguns smaller than gauge 20 are allowed."
+    }
+  },
+  {
+    "id": "muskrat",
+    "name": "Muskrat",
+    "kind": "game",
+    "shape": "animal",
+    "silhouette": "muskrat",
+    "shoulder_height_cm": 14.0,
+    "body_length_cm": 30.0,
+    "antlers": true,
+    "vital_diameter_cm": 4,
+    "min_energy_j": 50,
+    "min_velocity_mps": 0,
+    "notes": "Broadside; height to the back. Sizes and the zone are estimates. No expansion velocity is asked for.",
+    "group": "hares_and_rodents",
+    "other_names": [
+      "Bisam",
+      "Piisami"
+    ],
+    "ammunition": {
+      "sweden": 4,
+      "finland": 5
+    },
+    "rules_notes": {
+      "sweden": "A shotgun is allowed too.",
+      "finland": "Not game but an invasive species (704/2019); 100 J, and shotguns down to gauge 36."
+    }
+  },
+  {
     "id": "issf-300m-rifle",
     "name": "ISSF 300 m rifle target",
     "kind": "sport",

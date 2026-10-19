@@ -27,6 +27,7 @@ pub enum TargetGroup {
     Bear,
     SmallPredators,
     HaresAndRodents,
+    Seals,
     ForestBirds,
     Waterfowl,
     OtherBirds,
@@ -35,12 +36,13 @@ pub enum TargetGroup {
 }
 
 impl TargetGroup {
-    pub const ALL: [TargetGroup; 10] = [
+    pub const ALL: [TargetGroup; 11] = [
         TargetGroup::Deer,
         TargetGroup::BoarAndMouflon,
         TargetGroup::Bear,
         TargetGroup::SmallPredators,
         TargetGroup::HaresAndRodents,
+        TargetGroup::Seals,
         TargetGroup::ForestBirds,
         TargetGroup::Waterfowl,
         TargetGroup::OtherBirds,
@@ -52,9 +54,10 @@ impl TargetGroup {
         match self {
             TargetGroup::Deer => "Deer",
             TargetGroup::BoarAndMouflon => "Wild boar and mouflon",
-            TargetGroup::Bear => "Bear",
-            TargetGroup::SmallPredators => "Fox, badger and martens",
-            TargetGroup::HaresAndRodents => "Hares, rabbits and beaver",
+            TargetGroup::Bear => "Bear, wolf, lynx and wolverine",
+            TargetGroup::SmallPredators => "Fox, badger, martens and otter",
+            TargetGroup::HaresAndRodents => "Hares, beaver and rodents",
+            TargetGroup::Seals => "Seals",
             TargetGroup::ForestBirds => "Grouse, ptarmigan and pheasant",
             TargetGroup::Waterfowl => "Ducks, geese and swans",
             TargetGroup::OtherBirds => "Other birds",
