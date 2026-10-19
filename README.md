@@ -297,6 +297,52 @@ later edit work the same way. **Stop syncing here** leaves the device's data
 as it is; **Delete the synced copy** turns sync off on every device. Units
 and calculator inputs stay per device.
 
+## AI assistants
+
+`mxsc-mcp` lets an AI assistant answer questions with the app's own engine
+and your own rifles: "what's the holdover for my Tikka at 280 m, 4 m/s from
+the right?", "make me a dope card for the X-Bolt", "is my .243 load legal for
+roe deer?". It is an [MCP](https://modelcontextprotocol.io) server, so it
+works with any assistant that supports MCP: LM Studio or Jan with a local
+model, Claude Desktop, Claude Code and others.
+
+The assistant gets these tools (read-only for now):
+
+| Tool | What it does |
+|---|---|
+| `list_rifles`, `list_bullets`, `list_targets` | Your rifles (with scope, zero, clicks and measured bullets), your bullets, and the game and sport targets (search by English or Swedish name) |
+| `holdover` | Elevation and windage to dial or hold at a range, in the scope's units and clicks, with drop, drift, velocity and energy; with a target, whether the shot is inside the ethical range and meets Swedish ammunition rules |
+| `dope_table` | The same over a span of ranges |
+| `search_catalog` | The bullet catalog |
+
+Names can be loose ("tikka", ".308", "rådjur"); when a name fits several
+records the tool says so instead of guessing. Without a bullet it takes the
+one last used with the rifle. The weather is the one last entered in the
+app's calculator unless the assistant gives its own, wind and angle are none
+unless given, and every answer says which conditions it used.
+
+It reads the desktop app's database. With sync on in the desktop app, what
+you add on your phone reaches it whenever the desktop app runs.
+
+**Set up.** Build and install it once:
+
+```sh
+cargo install --path crates/mxsc-mcp      # installs ~/.cargo/bin/mxsc-mcp
+```
+
+Then tell your assistant to start it (use the full path):
+
+- **LM Studio:** Program → Install → *Edit mcp.json*, then add
+  `{"mcpServers": {"mxsc": {"command": "/Users/you/.cargo/bin/mxsc-mcp"}}}`.
+  Pick a model that is good at tool calls (Qwen 3, Llama 3.1 or newer, 7B
+  or larger).
+- **Claude Desktop:** Settings → Developer → *Edit config*, and add the same
+  `mcpServers` entry to `claude_desktop_config.json`.
+- **Claude Code:** `claude mcp add mxsc -- ~/.cargo/bin/mxsc-mcp`.
+
+Add `"args": ["--db", "/path/to/file.sqlite"]` to use another database, for
+example `target/dev.sqlite` for the development data.
+
 ## Code layout
 
 | Crate | What it does |
@@ -304,6 +350,8 @@ and calculator inputs stay per device.
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, spin drift, Coriolis and the hunting analyses. No dependencies, no I/O. |
 | `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
 | `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. |
+| `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the Swedish ammunition class. Shared by the app and `mxsc-mcp`, so both give the same answers. |
+| `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
 | `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |
 
 `ballistics-core` and `ballistics-store` build on desktop and mobile targets

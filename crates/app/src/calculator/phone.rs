@@ -12,9 +12,11 @@ use eframe::egui::{
     vec2,
 };
 
+use ballistics_shot::{from_radians, load_class, unit_label};
+
 use super::{
     Aim, CalculatorPage, PressureSource, RAD_PER_MOA, ResultsView, SOLVE_RANGE_M, ViewRequests,
-    effective_min_velocity, from_radians, sight_impact, unit_label, wind_description,
+    sight_impact, wind_description,
 };
 use crate::app::{Action, Data, Page};
 use crate::mobile::{self, TOUCH};
@@ -197,11 +199,10 @@ impl CalculatorPage {
                         rifle,
                         optics: frame.optics,
                         aim: frame.aim,
-                        min_velocity: frame
-                            .aim
-                            .min_velocity_mps
-                            .unwrap_or_else(|| effective_min_velocity(&self.inputs, bullet)),
-                        load_class: super::load_class(bullet, solution),
+                        min_velocity: frame.aim.min_velocity_mps.unwrap_or_else(|| {
+                            ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)
+                        }),
+                        load_class: load_class(bullet, solution),
                     };
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }

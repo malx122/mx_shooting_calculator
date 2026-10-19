@@ -1,0 +1,12 @@
+[package]
+name = "ballistics-shot"
+description = "A shot from the hunter's records: the engine's scenario from a rifle, bullet and conditions, and holds in the rifle's clicks."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+ballistics-core.workspace = true
+ballistics-store.workspace = true
+serde = { version = "1", features = ["derive"] }

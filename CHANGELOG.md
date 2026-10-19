@@ -8,9 +8,19 @@ any release may still change things noticeably.
 
 ### Added
 
+- **AI assistants:** ask an AI assistant (a local one in LM Studio or Jan,
+  or Claude) for holdovers, dope tables and whether a shot is ethical and
+  legal, computed by the app's own engine with your rifles and bullets. See
+  "AI assistants" in the README for setting it up.
 - **What's new:** this changelog in the app. Click the version number by the
   logo, or open What's new in the phone's menu. After an update the app
   says so once.
+
+### Fixed
+
+- **Swedish ammunition class for bullets of unknown construction** (from a
+  Strelok import, for instance): they were called not allowed. They now get
+  the class they meet if they expand, with a note to set the construction.
 
 ## [0.4.0] - 2026-10-20
 

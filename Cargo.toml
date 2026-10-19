@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["crates/ballistics-core", "crates/ballistics-store", "crates/app"]
+members = [
+    "crates/ballistics-core",
+    "crates/ballistics-store",
+    "crates/ballistics-shot",
+    "crates/app",
+    "crates/mxsc-mcp",
+]
 default-members = ["crates/app"]
 
 [workspace.package]
@@ -12,3 +18,4 @@ authors = ["David Rosendahl"]
 [workspace.dependencies]
 ballistics-core = { path = "crates/ballistics-core" }
 ballistics-store = { path = "crates/ballistics-store" }
+ballistics-shot = { path = "crates/ballistics-shot" }

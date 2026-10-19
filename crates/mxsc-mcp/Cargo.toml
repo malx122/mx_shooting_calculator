@@ -1,0 +1,14 @@
+[package]
+name = "mxsc-mcp"
+description = "MCP server for MX Shooting Calculator: lets an AI assistant read the hunter's rifles and bullets and compute holdovers with the app's own engine."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+ballistics-core.workspace = true
+ballistics-store.workspace = true
+ballistics-shot.workspace = true
+serde_json = "1"
+directories = "6"

@@ -3,19 +3,17 @@
 
 use ballistics_core::analysis::{self, OptimalZero, PointBlank};
 use ballistics_core::atmosphere::STANDARD_SEA_LEVEL_PRESSURE_HPA;
-use ballistics_core::{
-    Atmosphere, BcBands, Conditions, Coriolis, DragCurve, DragModel, Load, RangeRow, Scenario,
-    Solution, SolveError, Wind, solver,
-};
+use ballistics_core::{Coriolis, RangeRow, Scenario, Solution, SolveError, solver};
 use ballistics_store::{
     BcModel, Bullet, BulletKind, Catalog, ClickUnit, LoadZero, PLAIN_CROSSHAIR, Reticle, Rifle,
-    RifleLoad, Scope, Target, VelocityPoint, ZeroWeather,
+    RifleLoad, Scope, Target, VelocityPoint,
 };
-use std::sync::Arc;
 
 use eframe::egui::{self, RichText};
 use egui_plot::{HLine, Legend, Line, Plot, PlotBounds, PlotPoints, VLine};
 use serde::{Deserialize, Serialize};
+
+use ballistics_shot::{from_radians, load_class, to_radians, unit_label};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
@@ -28,7 +26,6 @@ use crate::widgets::{caliber_name, confirm_button, grid, number, section, target
 
 mod phone;
 
-const METRES_PER_INCH: f64 = 0.0254;
 const RAD_PER_MOA: f64 = std::f64::consts::PI / (180.0 * 60.0);
 /// Shortest range the engine flies, so the ethical limit can be found even
 /// when it lies past the table.
@@ -123,6 +120,34 @@ impl Default for Inputs {
             dial_elevation: false,
             illumination: false,
             trajectory_3d: false,
+        }
+    }
+}
+
+impl Inputs {
+    /// The weather and the shot, for the engine.
+    pub fn conditions(&self) -> ballistics_shot::Conditions {
+        ballistics_shot::Conditions {
+            temperature_c: self.temperature_c,
+            pressure: match self.pressure_source {
+                PressureSource::Station => {
+                    ballistics_shot::Pressure::Station(self.station_pressure_hpa)
+                }
+                PressureSource::SeaLevelAndAltitude => ballistics_shot::Pressure::SeaLevel {
+                    hpa: self.sea_level_pressure_hpa,
+                    altitude_m: self.altitude_m,
+                },
+            },
+            humidity_percent: self.humidity_percent,
+            powder_temperature_c: (!self.powder_follows_air).then_some(self.powder_temperature_c),
+            wind_speed_mps: self.wind_speed,
+            wind_clock: self.wind_clock,
+            inclination_degrees: self.inclination_degrees,
+            coriolis: self.coriolis.then_some(Coriolis {
+                latitude_degrees: self.latitude_degrees,
+                azimuth_degrees: self.azimuth_degrees,
+            }),
+            spin_drift: self.spin_drift,
         }
     }
 }
@@ -387,9 +412,9 @@ impl CalculatorPage {
                             rifle,
                             optics: optics.as_ref(),
                             aim: &aim,
-                            min_velocity: aim
-                                .min_velocity_mps
-                                .unwrap_or_else(|| effective_min_velocity(&self.inputs, bullet)),
+                            min_velocity: aim.min_velocity_mps.unwrap_or_else(|| {
+                                ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)
+                            }),
                             load_class: load_class(bullet, solution),
                         };
                         let requested = egui::ScrollArea::vertical()
@@ -454,99 +479,7 @@ impl CalculatorPage {
     }
 
     fn scenario(&self, rifle: &Rifle, bullet: &Bullet, load: Option<&RifleLoad>) -> Scenario {
-        let inputs = &self.inputs;
-        let pressure_hpa = match inputs.pressure_source {
-            PressureSource::Station => inputs.station_pressure_hpa,
-            PressureSource::SeaLevelAndAltitude => {
-                Atmosphere::station_pressure(inputs.sea_level_pressure_hpa, inputs.altitude_m)
-            }
-        };
-        let atmosphere = Atmosphere {
-            temperature_c: inputs.temperature_c,
-            pressure_hpa,
-            humidity: inputs.humidity_percent / 100.0,
-        };
-        let powder_temperature_c = self.powder_temperature_c();
-        let velocity = match load {
-            Some(load) => load.velocity_model(bullet),
-            None => RifleLoad::new(&rifle.id, &bullet.id).velocity_model(bullet),
-        };
-        let recorded = |weather: ZeroWeather| {
-            let atmosphere = Atmosphere {
-                temperature_c: weather.temperature_c,
-                pressure_hpa: weather.pressure_hpa,
-                humidity: weather.humidity_percent / 100.0,
-            };
-            (atmosphere, weather.powder_temperature_c)
-        };
-        let (zero_atmosphere, zero_powder_temperature_c) =
-            match load.map_or(LoadZero::Rifle, |load| load.zero) {
-                LoadZero::Rifle => recorded(rifle.zero_weather()),
-                LoadZero::SameAsShot => (atmosphere, powder_temperature_c),
-                LoadZero::Recorded(weather) => recorded(weather),
-            };
-        let bands: Vec<(f64, f64)> = bullet
-            .bc_bands
-            .iter()
-            .map(|band| (band.velocity_mps, band.bc))
-            .collect();
-        let offset = load.map_or([0.0, 0.0], |load| load.impact_offset_mrad);
-        Scenario {
-            bullet: ballistics_core::Bullet {
-                mass_kg: bullet.mass_g / 1000.0,
-                diameter_m: bullet.diameter_mm / 1000.0,
-                length_m: bullet.length_mm.map(|mm| mm / 1000.0),
-                ballistic_coefficient: bullet.ballistic_coefficient().unwrap_or(0.0),
-                drag_model: match bullet.drag_model {
-                    BcModel::G7 => DragModel::G7,
-                    BcModel::G1 | BcModel::Custom => DragModel::G1,
-                },
-                // The store validates bands and curves, so these only fall
-                // back on bad data.
-                bc_bands: BcBands::new(&bands).unwrap_or(BcBands::NONE),
-                drag_curve: (bullet.drag_model == BcModel::Custom)
-                    .then(|| {
-                        DragCurve::new(
-                            bullet
-                                .drag_curve
-                                .iter()
-                                .map(|point| (point.mach, point.cd))
-                                .collect(),
-                        )
-                        .ok()
-                    })
-                    .flatten()
-                    .map(Arc::new),
-            },
-            rifle: ballistics_core::Rifle {
-                sight_height_m: rifle.sight_height_cm / 100.0,
-                zero_range_m: rifle.zero_range_m,
-                twist_m: rifle.twist_in * METRES_PER_INCH,
-                right_hand_twist: rifle.right_hand_twist,
-            },
-            load: Load {
-                muzzle_velocity: velocity.velocity_mps,
-                reference_temperature_c: velocity.reference_temperature_c,
-                temperature_sensitivity: velocity.per_degree,
-            },
-            zero_atmosphere,
-            zero_powder_temperature_c,
-            impact_offset: [offset[0] / 1000.0, offset[1] / 1000.0],
-            shot: Conditions {
-                atmosphere,
-                powder_temperature_c,
-                wind: Wind {
-                    speed: inputs.wind_speed,
-                    from_degrees: inputs.wind_clock * 30.0,
-                },
-                inclination_degrees: inputs.inclination_degrees,
-                coriolis: inputs.coriolis.then_some(Coriolis {
-                    latitude_degrees: inputs.latitude_degrees,
-                    azimuth_degrees: inputs.azimuth_degrees,
-                }),
-            },
-            spin_drift: inputs.spin_drift,
-        }
+        ballistics_shot::scenario(rifle, bullet, load, &self.inputs.conditions())
     }
 
     fn powder_temperature_c(&self) -> f64 {
@@ -1110,51 +1043,12 @@ fn overridable(
     ui.end_row();
 }
 
-/// The bullet maker's expansion velocity when known, else the hunter's.
-fn effective_min_velocity(inputs: &Inputs, bullet: &Bullet) -> f64 {
-    bullet.min_expansion_mps.unwrap_or(inputs.min_velocity)
-}
-
-fn unit_label(unit: ClickUnit) -> &'static str {
-    match unit {
-        ClickUnit::Mil => "mil",
-        ClickUnit::Moa => "MOA",
-    }
-}
-
-fn to_radians(unit: ClickUnit, value: f64) -> f64 {
-    match unit {
-        ClickUnit::Mil => value / 1000.0,
-        ClickUnit::Moa => value * RAD_PER_MOA,
-    }
-}
-
 /// Whether two rifle loads hold the same data, ignoring when they were saved.
 fn same_content(a: &RifleLoad, b: &RifleLoad) -> bool {
     a.velocities == b.velocities
         && a.impact_offset_mrad == b.impact_offset_mrad
         && a.zero == b.zero
         && a.notes == b.notes
-}
-
-fn from_radians(unit: ClickUnit, radians: f64) -> f64 {
-    match unit {
-        ClickUnit::Mil => radians * 1000.0,
-        ClickUnit::Moa => radians / RAD_PER_MOA,
-    }
-}
-
-/// The Swedish ammunition class of the load: its weight, its energy at the
-/// muzzle and at 100 m, and whether it expands.
-fn load_class(bullet: &Bullet, solution: &Solution) -> Option<u8> {
-    let energy_at = |range: f64| solution.at(range).map_or(0.0, |row| row.energy_j);
-    ballistics_store::swedish_class(
-        bullet.mass_g,
-        energy_at(100.0),
-        energy_at(0.0),
-        bullet.construction.expanding(),
-        bullet.lead_free,
-    )
 }
 
 /// View settings changed in the results, applied by the page.
@@ -1171,7 +1065,7 @@ struct ResultsView<'a> {
     aim: &'a Aim,
     min_velocity: f64,
     /// The Swedish ammunition class the load meets, if any.
-    load_class: Option<u8>,
+    load_class: ballistics_shot::LoadClass,
 }
 
 impl ResultsView<'_> {
@@ -1497,26 +1391,18 @@ impl ResultsView<'_> {
     fn warnings(&self, ui: &mut egui::Ui, solution: &Solution) {
         if let Some(needed) = self.aim.target.as_ref().and_then(|t| t.swedish_class) {
             let name = self.aim.name();
-            match self.load_class {
-                Some(class) if class <= needed => {
-                    ui.label(format!(
-                        "✔ Swedish class {class}: allowed for {name} with a rifle."
-                    ))
-                    .on_hover_text(crate::targets::CLASS_HELP);
-                }
-                class => {
-                    let load = class.map_or("meets no class".to_owned(), |class| {
-                        format!("is class {class}")
-                    });
-                    ui.colored_label(
-                        ui.visuals().error_fg_color,
-                        format!(
-                            "⚠ Not allowed in Sweden: {name} needs class {needed} or stricter, this load {load}."
-                        ),
-                    )
-                    .on_hover_text(crate::targets::CLASS_HELP);
-                }
-            }
+            let (allowed, text) = self.load_class.verdict(needed, name);
+            let text = match allowed {
+                ballistics_shot::Allowed::Yes => format!("✔ {text}"),
+                _ => format!("⚠ {text}"),
+            };
+            let colour = match allowed {
+                ballistics_shot::Allowed::Yes => ui.visuals().text_color(),
+                ballistics_shot::Allowed::IfExpanding => ui.visuals().warn_fg_color,
+                ballistics_shot::Allowed::No => ui.visuals().error_fg_color,
+            };
+            ui.colored_label(colour, text)
+                .on_hover_text(crate::targets::CLASS_HELP);
         }
         match solution.stability {
             Some(sg) if sg < 1.0 => {
@@ -1939,6 +1825,8 @@ fn wind_description(clock: f64) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ballistics_core::DragModel;
+    use ballistics_store::ZeroWeather;
 
     #[test]
     fn velocity_measured_in_the_rifle_overrides_the_box() {

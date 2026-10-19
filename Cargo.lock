@@ -150,6 +150,15 @@ name = "ballistics-core"
 version = "0.4.0"
 
 [[package]]
+name = "ballistics-shot"
+version = "0.4.0"
+dependencies = [
+ "ballistics-core",
+ "ballistics-store",
+ "serde",
+]
+
+[[package]]
 name = "ballistics-store"
 version = "0.4.0"
 dependencies = [
@@ -1713,6 +1722,7 @@ name = "mxsc"
 version = "0.4.0"
 dependencies = [
  "ballistics-core",
+ "ballistics-shot",
  "ballistics-store",
  "console_error_panic_hook",
  "directories",
@@ -1731,6 +1741,17 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "wgpu",
+]
+
+[[package]]
+name = "mxsc-mcp"
+version = "0.4.0"
+dependencies = [
+ "ballistics-core",
+ "ballistics-shot",
+ "ballistics-store",
+ "directories",
+ "serde_json",
 ]
 
 [[package]]
