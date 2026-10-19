@@ -19,8 +19,10 @@ export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-stable}"
 # SQLite is C code compiled for the browser; macOS's ar can't index those
 # objects, so use LLVM's.
 if [ -z "${AR_wasm32_unknown_unknown:-}" ]; then
+  # On PATH, from Homebrew's LLVM, or from rustup's llvm-tools component.
   for candidate in "$(command -v llvm-ar 2>/dev/null || true)" \
-                   "$(brew --prefix llvm 2>/dev/null)/bin/llvm-ar"; do
+                   "$(brew --prefix llvm 2>/dev/null)/bin/llvm-ar" \
+                   "$(rustc --print sysroot 2>/dev/null)"/lib/rustlib/*/bin/llvm-ar; do
     if [ -n "$candidate" ] && [ -x "$candidate" ]; then
       export AR_wasm32_unknown_unknown="$candidate"
       break
@@ -28,7 +30,8 @@ if [ -z "${AR_wasm32_unknown_unknown:-}" ]; then
   done
 fi
 if [ -z "${AR_wasm32_unknown_unknown:-}" ]; then
-  echo "llvm-ar not found: install LLVM (macOS: brew install llvm)" >&2
+  echo "llvm-ar not found: install LLVM (macOS: brew install llvm) or run" >&2
+  echo "  rustup component add llvm-tools" >&2
   exit 1
 fi
 

@@ -34,7 +34,9 @@ exported under the earlier names still import.
 
 ### Web version
 
-The same app runs in a browser (WebAssembly):
+The same app runs in a browser (WebAssembly). It is published at
+**https://malx122.github.io/mx_shooting_calculator/**, built and deployed by
+`.github/workflows/pages.yml` on every push to `main`. To build it yourself:
 
 ```sh
 scripts/web.sh           # serve on http://127.0.0.1:8080, rebuilding on changes
