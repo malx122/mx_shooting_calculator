@@ -20,6 +20,9 @@ use ballistics_store::Store;
 use eframe::egui;
 
 pub const APP_NAME: &str = "MX Shooting Calculator";
+/// The app's version (from Cargo.toml) and the git commit it was built from.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const COMMIT: &str = env!("MXSC_COMMIT");
 
 /// The database lives in the platform's app-data folder, unless `--db <file>`
 /// or `MXSC_DB` points elsewhere (for development data or a portable install).

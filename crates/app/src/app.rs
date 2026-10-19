@@ -420,7 +420,21 @@ fn brand(ui: &mut egui::Ui) {
     ui.add(egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(36.0, 36.0)));
     ui.vertical(|ui| {
         ui.spacing_mut().item_spacing.y = 3.0;
-        ui.add(egui::Image::new(theme::wordmark()).fit_to_exact_size(egui::vec2(34.0, 19.0)));
+        ui.horizontal(|ui| {
+            ui.add(egui::Image::new(theme::wordmark()).fit_to_exact_size(egui::vec2(34.0, 19.0)));
+            let version = ui.label(
+                RichText::new(format!("v{}", crate::VERSION))
+                    .size(10.0)
+                    .color(theme::BONE_MUTED),
+            );
+            if !crate::COMMIT.is_empty() {
+                version.on_hover_text(format!(
+                    "Version {}, built from commit {}",
+                    crate::VERSION,
+                    crate::COMMIT
+                ));
+            }
+        });
         ui.label(
             RichText::new("SHOOTING CALCULATOR")
                 .size(9.5)

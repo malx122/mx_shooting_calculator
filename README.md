@@ -34,9 +34,9 @@ exported under the earlier names still import.
 
 ### Web version
 
-The same app runs in a browser (WebAssembly). It is published at
-**https://malx122.github.io/mx_shooting_calculator/**, built and deployed by
-`.github/workflows/pages.yml` on every push to `main`. To build it yourself:
+The same app runs in a browser (WebAssembly). Each release is published at
+**https://malx122.github.io/mx_shooting_calculator/** by
+`.github/workflows/pages.yml`. To build it yourself:
 
 ```sh
 scripts/web.sh           # serve on http://127.0.0.1:8080, rebuilding on changes
@@ -66,6 +66,27 @@ How the web version differs from the desktop one:
   browser's file picker (JSON exports and Strelok `.srl` backups).
 - **Drawing:** WebGPU where the browser has it, otherwise WebGL.
 - **Size:** about 9 MB of WebAssembly, 3.6 MB gzipped or 2.6 MB with brotli.
+
+### Versions and releases
+
+Versions follow [Semantic Versioning](https://semver.org), MAJOR.MINOR.PATCH:
+fixes raise the patch number, new features the minor number. While the
+version starts with 0, any release may still change things noticeably. The
+version is set once, in the workspace `Cargo.toml`, and shared by all
+crates. The app shows it next to the logo; hover for the commit it was built
+from.
+
+To make a release:
+
+1. Move the notes under "Unreleased" in [CHANGELOG.md](CHANGELOG.md) to a new
+   version heading, and set the same version in `Cargo.toml`.
+2. Commit, then tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
+3. The tag builds and publishes the web version. The workflow refuses a tag
+   that doesn't match `Cargo.toml`.
+
+The backup format (`transfer::VERSION`) and the database schema (the
+migrations in `db.rs`) have their own numbers. Only a change that stops old
+backups or databases from loading needs a new major version.
 
 ### Development data
 

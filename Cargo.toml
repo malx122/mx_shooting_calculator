@@ -4,7 +4,7 @@ members = ["crates/ballistics-core", "crates/ballistics-store", "crates/app"]
 default-members = ["crates/app"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["David Rosendahl"]
