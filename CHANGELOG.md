@@ -6,6 +6,11 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Changed
+
+- The vital zone's size is no longer changed on the Calculate page; copy
+  the target on the Targets page to use another size.
+
 ## [0.7.2] - 2026-10-20
 
 ### Fixed

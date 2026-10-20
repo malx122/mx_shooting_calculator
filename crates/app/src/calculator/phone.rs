@@ -579,7 +579,6 @@ impl CalculatorPage {
             if target != self.inputs.target_id {
                 self.inputs.target_id = target;
                 // A new target brings its own zone and energy.
-                self.inputs.vital_override_cm = None;
                 self.inputs.min_energy_override_j = None;
                 self.inputs.min_velocity_override_mps = None;
             }

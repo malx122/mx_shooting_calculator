@@ -76,8 +76,6 @@ pub struct Inputs {
     pub recent_targets: Vec<String>,
     /// Ranges picked lately (metres), newest first.
     pub recent_ranges: Vec<f64>,
-    /// The hunter's own vital (or hit) zone instead of the target's.
-    pub vital_override_cm: Option<f64>,
     /// The hunter's own minimum energy instead of the target's.
     pub min_energy_override_j: Option<f64>,
     /// The hunter's own minimum velocity for a target that sets one.
@@ -123,7 +121,6 @@ impl Default for Inputs {
             target_id: Some(DEFAULT_TARGET.to_owned()),
             recent_targets: Vec::new(),
             recent_ranges: Vec::new(),
-            vital_override_cm: None,
             min_energy_override_j: None,
             min_velocity_override_mps: None,
             target_speed: 0.0,
@@ -197,7 +194,7 @@ impl Aim {
             .target(id)
             .or_else(|| Catalog::builtin().target(DEFAULT_TARGET).cloned())
             .expect("the default target is in the catalog");
-        let vital_diameter_cm = inputs.vital_override_cm.unwrap_or(target.vital_diameter_cm);
+        let vital_diameter_cm = target.vital_diameter_cm;
         // Target shooting has no ethical limits, whatever the target.
         let min_energy_j = (data.hunting && target.is_game()).then(|| {
             inputs
@@ -1030,8 +1027,7 @@ impl CalculatorPage {
                 )
             ));
         }
-        let changed = inputs.vital_override_cm.is_some()
-            || inputs.min_energy_override_j.is_some()
+        let changed = inputs.min_energy_override_j.is_some()
             || inputs.min_velocity_override_mps.is_some();
         if changed {
             summary.push_str(" · changed");
@@ -1043,20 +1039,6 @@ impl CalculatorPage {
         };
         fold(ui, "fold-target", title, &summary, |ui| {
             grid(ui, "ethics", |ui| {
-                let zone_label = if aim.is_game() {
-                    "Vital zone diameter"
-                } else {
-                    "Hit zone diameter"
-                };
-                overridable(
-                    ui,
-                    zone_label,
-                    &mut inputs.vital_override_cm,
-                    target.vital_diameter_cm,
-                    Quantity::ShortLength,
-                    1.0..=200.0,
-                    0.5,
-                );
                 if aim.is_game() {
                     overridable(
                         ui,

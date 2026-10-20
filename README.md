@@ -306,8 +306,9 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
 
    **Target and ethics:** choose what you shoot at, either game or a sport
    target. The target sets the vital zone (or, on a sport target, the hit
-   zone) and, for game, the minimum energy. You can change either for this
-   calculation; ↺ goes back to the target's value. Sport targets have no
+   zone) and, for game, the minimum energy. You can change the energy for
+   this calculation; ↺ goes back to the target's value. To use another zone
+   size, copy the target on the Targets page. Sport targets have no
    ethical limits. The target is drawn at true size through the scope and in
    3D. When the target is game in your country, the results say whether
    your load meets the **legal rifle ammunition level** for it, worked out
