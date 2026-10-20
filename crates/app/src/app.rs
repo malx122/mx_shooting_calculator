@@ -67,6 +67,8 @@ pub struct Data {
     pub targets: Vec<Target>,
     /// Whose hunting rules to check, if any.
     pub country: Option<Country>,
+    /// The hunter's county or region (chosen in Calculate), for seasons.
+    pub region: Option<String>,
 }
 
 impl Data {
@@ -243,6 +245,7 @@ impl App {
                 scopes: self.store.scopes()?,
                 targets: self.store.targets()?,
                 country: self.country,
+                region: None,
             })
         })();
         match loaded {
@@ -473,6 +476,7 @@ impl eframe::App for App {
             }
         }
 
+        self.data.region = self.calculator.inputs.region.clone();
         let actions = match self.page {
             Page::Calculate => self.calculator.show(context, &self.data),
             Page::Rifles => self.rifles.show(context, &self.data),
@@ -942,7 +946,7 @@ fn country_choice(country: Option<Country>) -> (&'static str, &'static str) {
 /// The countries to choose from; returns the choice.
 fn country_menu(ui: &mut egui::Ui, current: Option<Country>) -> Option<Option<Country>> {
     let mut chosen = None;
-    ui.label(RichText::new("Check ammunition against the hunting rules of").small());
+    ui.label(RichText::new("Hunting rules (ammunition, seasons, hours) of").small());
     for country in Country::ALL.map(Some).into_iter().chain([None]) {
         let (title, detail) = country_choice(country);
         let clicked = ui

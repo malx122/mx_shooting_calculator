@@ -9,7 +9,12 @@
 use serde::{Deserialize, Serialize};
 
 mod finland;
+pub mod hunting;
 mod sweden;
+
+use std::sync::OnceLock;
+
+pub use hunting::HuntingLaw;
 
 /// A country whose rules the app knows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -42,6 +47,17 @@ impl Country {
             Country::Sweden => &sweden::RULES,
             Country::Finland => &finland::RULES,
         }
+    }
+
+    /// The country's hunting seasons and times of day.
+    pub fn hunting(self) -> &'static HuntingLaw {
+        static SWEDEN: OnceLock<HuntingLaw> = OnceLock::new();
+        static FINLAND: OnceLock<HuntingLaw> = OnceLock::new();
+        let (cell, json) = match self {
+            Country::Sweden => (&SWEDEN, include_str!("../../catalog/hunting/sweden.json")),
+            Country::Finland => (&FINLAND, include_str!("../../catalog/hunting/finland.json")),
+        };
+        cell.get_or_init(|| serde_json::from_str(json).expect("the hunting data parses"))
     }
 
     /// The country a language tag points to: its region ("sv-FI" is

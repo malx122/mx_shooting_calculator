@@ -87,7 +87,7 @@ impl TargetsPage {
             }
             Showing::Catalog(id) => {
                 if let Some(target) = Catalog::builtin().target(id)
-                    && catalog_view(ui, target, data.country)
+                    && catalog_view(ui, target, data.country, data.region.as_deref())
                 {
                     self.showing = Showing::Custom(Box::new(target.to_custom()));
                 }
@@ -235,7 +235,12 @@ fn preview_size(ui: &egui::Ui) -> egui::Vec2 {
 
 /// A catalog target, read-only. Returns true when the hunter asks for
 /// their own copy.
-fn catalog_view(ui: &mut egui::Ui, target: &Target, country: Option<Country>) -> bool {
+fn catalog_view(
+    ui: &mut egui::Ui,
+    target: &Target,
+    country: Option<Country>,
+    region: Option<&str>,
+) -> bool {
     ui.heading(&target.name);
     ui.weak(match target.kind {
         TargetKind::Game => "Game, from the catalog",
@@ -248,6 +253,12 @@ fn catalog_view(ui: &mut egui::Ui, target: &Target, country: Option<Country>) ->
         ui.add_space(6.0);
         if !target.notes.is_empty() {
             ui.label(&target.notes);
+            ui.add_space(6.0);
+        }
+        if target.is_game()
+            && let Some(country) = country
+        {
+            crate::hunting::species_section(ui, country, &target.id, region);
             ui.add_space(6.0);
         }
         ui.button("Make my own copy")

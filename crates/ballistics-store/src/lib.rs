@@ -12,6 +12,7 @@ pub mod model;
 pub mod optics;
 pub mod rules;
 pub mod strelok;
+pub mod sun;
 pub mod sync;
 pub mod targets;
 pub mod transfer;

@@ -27,6 +27,12 @@ pub struct Place {
     pub name: String,
     pub latitude: f64,
     pub longitude: f64,
+    /// The county or region, as the place search names it ("Dalarna").
+    #[serde(default)]
+    pub region: Option<String>,
+    /// "SE", "FI"…, when known.
+    #[serde(default)]
+    pub country_code: Option<String>,
 }
 
 /// The current weather at a place.
@@ -179,7 +185,7 @@ async fn search(name: String, home: Option<&'static str>) -> Result<Vec<Place>, 
         .into_iter()
         .map(|place| {
             let mut name = place.name;
-            for extra in [place.admin1, place.country].into_iter().flatten() {
+            for extra in [place.admin1.clone(), place.country].into_iter().flatten() {
                 if !name.contains(&extra) {
                     name.push_str(", ");
                     name.push_str(&extra);
@@ -189,6 +195,8 @@ async fn search(name: String, home: Option<&'static str>) -> Result<Vec<Place>, 
                 name,
                 latitude: place.latitude,
                 longitude: place.longitude,
+                region: place.admin1,
+                country_code: place.country_code,
             }
         })
         .collect())
@@ -411,6 +419,7 @@ pub fn apply(report: &Report, inputs: &mut Inputs) {
     inputs.altitude_m = report.elevation_m;
     inputs.humidity_percent = report.humidity_percent;
     inputs.latitude_degrees = report.place.latitude;
+    inputs.place = Some(report.place.clone());
 }
 
 /// Where a wind from `from` degrees comes from on the clock, for a shot

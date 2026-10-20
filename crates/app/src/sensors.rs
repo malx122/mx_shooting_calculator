@@ -22,6 +22,8 @@ pub fn locate(done: impl Fn(Result<Place, String>) + 'static) {
             name: format!("Your position ({latitude:.2}° N, {longitude:.2}° E)"),
             latitude,
             longitude,
+            region: None,
+            country_code: None,
         }))
     });
     #[cfg(not(target_arch = "wasm32"))]

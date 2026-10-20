@@ -7,6 +7,7 @@ mod figure;
 mod flags;
 mod google;
 mod http;
+mod hunting;
 mod import;
 mod mobile;
 mod rifles;

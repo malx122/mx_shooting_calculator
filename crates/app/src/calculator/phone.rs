@@ -235,6 +235,23 @@ impl CalculatorPage {
         if let Some(rifle) = requests.view.use_zero(rifle, &zeros) {
             actions.push(Action::SaveRifle(rifle));
         }
+        if let (Some(country), Some(target)) = (frame.country, frame.aim.target.as_ref())
+            && target.is_game()
+        {
+            egui::CollapsingHeader::new(RichText::new("Hunting today").strong())
+                .id_salt("phone-hunting")
+                .default_open(true)
+                .show(ui, |ui| {
+                    crate::hunting::today_block(
+                        ui,
+                        country,
+                        target.catalog_id.as_deref().unwrap_or(&target.id),
+                        &target.name,
+                        &mut self.inputs.region,
+                        self.inputs.place.as_ref(),
+                    );
+                });
+        }
         requests.range_note
     }
 

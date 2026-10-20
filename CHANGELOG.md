@@ -8,6 +8,12 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Hunting today:** the season for the chosen game in your county or
+  region, and today's legal shooting light where you are, from Swedish and
+  Finnish law (Jaktförordningen, Metsästysasetus and the ministry's
+  decrees). Sunrise and sunset are worked out offline, midnight sun and
+  polar night included. The Targets page shows each species' season table
+  with the law's words and sources.
 - **Zero as a height:** a rifle can be zeroed "4 cm high at 100 m". The
   calculator tells every zero that way, with where the bullet comes back to
   the line of sight: your own, and the best point-blank zero ("13 cm high

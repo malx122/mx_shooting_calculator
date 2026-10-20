@@ -1,0 +1,1763 @@
+{
+ "country": "FI",
+ "as_of": "2026-10-20",
+ "hunting_year": "1.8.-31.7. (Metsästyslaki 4 §: 'Metsästysvuosi alkaa 1 päivänä elokuuta ja päättyy 31 päivänä heinäkuuta.')",
+ "date_rule_syntax": "MM-DD; 'first-saturday-of-10', 'second-saturday-of-10', 'last-saturday-of-09', 'day-before-<rule>', 'end-of-02' (28/29 Feb). Rows with from/to null mean no hunting in that area. from_time/to_time are local clock times.",
+ "sources": [
+  {
+   "name": "Metsästysasetus / Jaktförordning 666/1993 (consolidated)",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666",
+   "sv_url": "https://www.finlex.fi/sv/lagstiftning/1993/666",
+   "amended": "30.12.2025/1432, in force 1.1.2026 (changed 23 § 4 mom and 24 § 1 mom 24-26 kohta: pheasant, wood pigeon, new wolf close season)"
+  },
+  {
+   "name": "Metsästyslaki / Jaktlag 615/1993 (consolidated)",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615",
+   "sv_url": "https://www.finlex.fi/sv/lagstiftning/1993/615",
+   "amended": "9.7.2026/693, in force 1.9.2026 (barnacle goose and cormorant added to 5 §, always protected in 37 § 3 mom, general derogation 41 f §)"
+  },
+  {
+   "name": "VN-asetus metsästyslaissa säädetyistä poikkeusluvista 452/2013 (consolidated)",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2013/452",
+   "amended": "15.9.2026/851, in force 21.9.2026 (3 § 2 mom and 8 §: bear regional quota 20.8.-31.10.)"
+  },
+  {
+   "name": "MMM-asetus vesilintujen hämärämetsästyksen kieltämisestä metsästysvuosina 2026-2029, 740/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/740",
+   "amended": "original, given 15.7.2026; valid 1.8.2026-31.7.2029"
+  },
+  {
+   "name": "MMM-asetus merihanhen metsästyksen kieltämisestä metsästysvuonna 2026-2027, 741/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/741",
+   "amended": "original, given 15.7.2026; valid 10.8.2026-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus metsähanhen metsästyksen kieltämisestä metsästysvuonna 2026-2027, 742/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/742",
+   "amended": "original, given 15.7.2026; valid 20.8.2026-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus nokikanan metsästyksen kieltämisestä metsästysvuosina 2026-2029, 743/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/743",
+   "amended": "original, given 15.7.2026; valid 20.8.2026-31.7.2029 (coot; not in the app's species list)"
+  },
+  {
+   "name": "MMM-asetus metson, teeren, pyyn ja riekon metsästyksen kieltämisestä metsästysvuonna 2026-2027, 763/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/763",
+   "amended": "original, given 26.8.2026; valid 10.9.2026-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus allin metsästyksen rajoittamisesta metsästysvuosina 2024-2027, 496/2024",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2024/496",
+   "amended": "original, given 12.8.2024; valid 20.8.2024-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus punasotkan metsästyksen kieltämisestä metsästysvuosina 2024-2027, 498/2024",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2024/498",
+   "amended": "original, given 12.8.2024; valid 20.8.2024-31.7.2027 (pochard; not in the app's species list)"
+  },
+  {
+   "name": "MMM-asetus haahkan metsästyksen rajoittamisesta, 263/2025",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2025/263",
+   "amended": "original, given 27.5.2025; valid 29.5.2025-31.12.2027"
+  },
+  {
+   "name": "MMM-asetus alueellisen kiintiön nojalla sallittavasta karhun metsästyksestä metsästysvuonna 2026-2027, 666/2026",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/666",
+   "amended": "original, given 3.7.2026; valid 7.7.2026-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus hallin metsästyksestä alueellisen kiintiön nojalla metsästysvuosina 2024-2027, 459/2024",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2024/459",
+   "amended": "original; valid 5.7.2024-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus itämeren norpan metsästyksestä alueellisen kiintiön nojalla metsästysvuosina 2025-2026 ja 2026-2027, 847/2025",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2025/847",
+   "amended": "original; valid 22.7.2025-31.7.2027"
+  },
+  {
+   "name": "MMM-asetus alueellisen kiintiön nojalla sallittavasta suden metsästyksestä metsästysvuonna 2025-2026, 1434/2025 (EXPIRED)",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2025/1434",
+   "amended": "original, given 30.12.2025; valid 1.1.2026-31.7.2026. No 2026-2027 wolf quota decree found; riista.fi said on 20.10.2026: 'Uusia kiintiöitä ei ole vielä määritetty.'"
+  },
+  {
+   "name": "Luonnonsuojelulaki 9/2023 (consolidated), 68 § and 70 §",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9",
+   "amended": "latest listed amendment 737/2026"
+  },
+  {
+   "name": "Suomen riistakeskus: Metsästys- ja pyyntiajat (cross-check)",
+   "url": "https://riista.fi/tietoa-metsastyksesta/metsastys-ja-pyyntiajat/",
+   "amended": "page has no date; read 20.10.2026; rows shown for hunting year 2026-2027"
+  },
+  {
+   "name": "Suomen riistakeskus: quota pages (karhu, susi, halli/norppa)",
+   "url": "https://riista.fi/tietoa-metsastyksesta/kiintiometsastys/",
+   "amended": "updated 20.10.2026 05:04"
+  }
+ ],
+ "daily_rules": [
+  {
+   "id": "fi-waterfowl-twilight-ban",
+   "species": [
+    "mallard",
+    "teal",
+    "wigeon",
+    "goldeneye",
+    "tufted-duck",
+    "long-tailed-duck",
+    "eider",
+    "goosander",
+    "red-breasted-merganser",
+    "greylag-goose",
+    "bean-goose",
+    "canada-goose",
+    "barnacle-goose"
+   ],
+   "rule": "Waterfowl may not be hunted from one hour after sunset until one hour before sunrise. A wounded animal may still be searched for, killed and taken. Valid 1.8.2026-31.7.2029.",
+   "start": {
+    "relative_to": "sunrise",
+    "minutes": -60
+   },
+   "end": {
+    "relative_to": "sunset",
+    "minutes": 60
+   },
+   "valid_from": "2026-08-01",
+   "valid_until": "2029-07-31",
+   "law": "MMM-asetus vesilintujen hämärämetsästyksen kieltämisestä metsästysvuosina 2026–2029 (740/2026) 1 §",
+   "quote": "Sen lisäksi, mitä muualla säädetään, vesilintujen metsästys on kielletty auringonlaskua seuraavan tunnin päättymisestä auringonnousua edeltävän tunnin alkuun asti. Haavoittuneen eläimen saa kuitenkin etsiä, lopettaa ja ottaa metsästäjän haltuun.",
+   "quote_sv": "Utöver vad som annars föreskrivs är jakt på sjöfågel förbjuden från och med en timme efter solens nedgång till och med en timme före solens uppgång. Ett skadat djur får dock eftersökas och avlivas samt omhändertas av jägaren.",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/740",
+   "note": "The decree does not define 'vesilinnut' (sjöfågel). The species list here is our mapping (ducks, geese, eider, long-tailed duck, mergansers; coot also, not in the app list). Whether it applies to barnacle goose shot under the 41 f § derogation is not stated."
+  },
+  {
+   "id": "fi-duck-season-opens-noon-0820",
+   "species": [
+    "mallard",
+    "teal",
+    "wigeon",
+    "goldeneye",
+    "tufted-duck",
+    "woodcock",
+    "canada-goose",
+    "greylag-goose",
+    "bean-goose"
+   ],
+   "rule": "The close season ends at 12:00 on 20 August, so on 20 August hunting may start only at 12:00 (noon, local time).",
+   "start": {
+    "relative_to": "clock",
+    "time": "12:00",
+    "on": "08-20"
+   },
+   "end": null,
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 kohta",
+   "quote": "kanadanhanhi, merihanhi, metsähanhi, heinäsorsa, tavi, haapana, jouhisorsa, heinätavi, lapasorsa, punasotka, tukkasotka, telkkä, nokikana, lehtokurppa sekä naarashaahka ja sen saman vuoden poikanen tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka;",
+   "quote_sv": "kanadagås, grågås, sädgås, gräsand, kricka, bläsand, stjärtand, årta, skedand, brunand, vigg, knipa, sothöna, morkulla samt åda och dess årsunge från och med den 1 januari till den 20 augusti fram till klockan 12.00,",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666",
+   "note": "Bean goose: 742/2026 also uses 'elokuun 20 päivän kello 12.00' as the start of its restriction windows. Female eider is fully closed by 263/2025 ('elokuun 20 päivän kello 12:sta joulukuun 31 päivään')."
+  },
+  {
+   "id": "fi-goose-field-hunting-until-noon-0820",
+   "species": [
+    "canada-goose",
+    "greylag-goose"
+   ],
+   "rule": "Canada goose and greylag goose may be hunted from fields from 10 August until 12:00 on 20 August (before the general season opens). For greylag goose, food bait is banned in this window (741/2026 3 §), there is a 2 per hunter per day limit, and the whole season is closed in the inland areas listed in 741/2026 1 §.",
+   "start": {
+    "relative_to": "clock",
+    "time": "00:00",
+    "on": "08-10"
+   },
+   "end": {
+    "relative_to": "clock",
+    "time": "12:00",
+    "on": "08-20"
+   },
+   "law": "Metsästysasetus 666/1993 24 § 2 mom 3 kohta; MMM-asetus 741/2026 3 §",
+   "quote": "Sen estämättä mitä 1 momentin 10, 11 ja 16 kohdassa säädetään, saa: ... 3) kanadanhanhea ja merihanhea metsästää pellolta elokuun 10 päivästä elokuun 20 päivään kello 12.00 asti. | 741/2026 3 §: Ravintohoukuttimen käyttö merihanhen metsästyksessä on kielletty elokuun 10 päivästä elokuun 20 päivään kello 12.00 asti.",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "id": "fi-no-night-sights-or-lights-except-wild-boar",
+   "species": [
+    "ALL"
+   ],
+   "rule": "Not a clock rule, but it limits night hunting: night-vision sights that electronically enlarge or change the image, and artificial light sources that light up the target, are banned for all hunting. Exception: wild boar. Artificial light is allowed when tracking and killing a wounded animal (decree 14 §).",
+   "start": null,
+   "end": null,
+   "exceptions": [
+    "wild-boar"
+   ],
+   "law": "Metsästyslaki 615/1993 33 § 1 mom 4-5 kohta and 3 mom; Metsästysasetus 666/1993 14 §",
+   "quote": "Metsästyksessä on yleisesti kielletty seuraavien pyyntivälineiden ja pyyntimenetelmien käyttö: ... 4) yöammuntaa varten tarkoitetut tähtäyslaitteet, jotka elektronisesti suurentavat tai muuttavat kuvaa; 5) keinotekoiset valonlähteet ja kohteita valaisevat laitteet sekä peilit ja muut häikäisevät laitteet; ... Edellä 1 momentin 4 kohdassa tarkoitetusta kiellosta ja 1 momentin 5 kohdassa tarkoitetusta keinotekoisen valonlähteen käytön kiellosta voidaan kuitenkin poiketa villisian metsästyksessä.",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615"
+  }
+ ],
+ "no_daily_time_limit": {
+  "species": [
+   "moose",
+   "white-tailed-deer",
+   "fallow-deer",
+   "red-deer",
+   "sika-deer",
+   "forest-reindeer",
+   "roe-deer",
+   "wild-boar",
+   "mouflon",
+   "brown-bear",
+   "wolf",
+   "lynx",
+   "red-fox",
+   "badger",
+   "raccoon-dog",
+   "pine-marten",
+   "polecat",
+   "stoat",
+   "mink",
+   "brown-hare",
+   "mountain-hare",
+   "european-rabbit",
+   "beaver",
+   "red-squirrel",
+   "muskrat",
+   "grey-seal",
+   "ringed-seal",
+   "capercaillie",
+   "black-grouse",
+   "hazel-grouse",
+   "willow-ptarmigan",
+   "rock-ptarmigan",
+   "pheasant",
+   "grey-partridge",
+   "woodcock",
+   "wood-pigeon",
+   "herring-gull",
+   "great-black-backed-gull",
+   "hooded-crow",
+   "jackdaw",
+   "magpie",
+   "raven",
+   "fieldfare",
+   "cormorant"
+  ],
+  "note": "Finnish law sets no hours of the day (no sunrise/sunset or clock limits) for these species. The whole consolidated Metsästyslaki and Metsästysasetus were searched for 'aurin*', 'kello', 'klo', 'tuntia', 'pimeä', 'yö'. Moose, deer and bear have no rule like Sweden's 'one hour before sunrise'. The only limits are dates, the noon start on 20.8 and the waterfowl twilight ban. Woodcock is not a waterfowl, so only the 20.8 noon start applies to it."
+ },
+ "seasons": [
+  {
+   "species": "moose",
+   "rows": [
+    {
+     "area": "Kuusamon ja Taivalkosken kunnat sekä Lapin maakunta",
+     "from": "09-01",
+     "to": "09-20",
+     "applies_to": "all"
+    },
+    {
+     "area": "Kuusamon ja Taivalkosken kunnat sekä Lapin maakunta",
+     "from": "first-saturday-of-10",
+     "to": "01-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "muu Pohjois-Pohjanmaan maakunta sekä Kainuun maakunta",
+     "from": "first-saturday-of-10",
+     "to": "01-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Kainuun ja Pohjois-Pohjanmaan maakuntien alue lukuun ottamatta Kuusamon ja Taivalkosken kuntia",
+     "from": "09-01",
+     "to": "day-before-first-saturday-of-10",
+     "applies_to": "stand hunting from a field only (vahtimalla pellolta)"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "second-saturday-of-10",
+     "to": "01-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa lukuun ottamatta Lapin maakuntaa",
+     "from": "09-01",
+     "to": "day-before-second-saturday-of-10",
+     "applies_to": "stand hunting from a field only (vahtimalla pellolta)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season (24 § 1 mom 10 k): 'hirvi Kuusamon ja Taivalkosken kunnissa sekä Lapin maakunnassa tammikuun 16 päivästä elokuun 31 päivään ja syyskuun 21 päivästä lokakuun ensimmäistä lauantaita edeltävään päivään ja muualla Pohjois-Pohjanmaan maakunnassa sekä Kainuun maakunnassa tammikuun 16 päivästä lokakuun ensimmäistä lauantaita edeltävään päivään sekä muualla maassa tammikuun 16 päivästä lokakuun toista lauantaita edeltävään päivään'. A cow followed by a calf of the year is protected 'Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnissa syyskuun 1 päivästä lokakuun ensimmäistä lauantaita edeltävään päivään sekä muualla maassa syyskuun 1 päivästä lokakuun toista lauantaita edeltävään päivään' (25 § 3 mom). Dog ban: 'Hirven metsästyksessä koiran käyttäminen on kiellettyä poronhoitoalueella tammikuun 1 päivästä 15 päivään tammikuuta' (12 § 3 mom; tracking a wounded animal allowed). A free-running driving dog taller than 39 cm at the withers is banned for all cervids (12 § 1 mom). A pyyntilupa (hirvieläimen pyyntilupa) is needed (laki 26 §). Suomen riistakeskus may deviate from the close season for islands and similar (laki 27 § 4 mom). The 2026 dates on riista.fi are 1.9.-20.9.2026 and 3.10.2026-15.1.2027 (north), and 1.9.-9.10.2026 (field stand) and 10.10.2026-15.1.2027 (south).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 10 k, 24 § 2 mom 1 k, 25 § 3 mom, 12 §; Metsästyslaki 26 §",
+   "quote": "hirveä metsästää vahtimalla pellolta Kainuun ja Pohjois-Pohjanmaan maakuntien alueella lukuun ottamatta Kuusamon ja Taivalkosken kuntia syyskuun 1 päivästä lokakuun ensimmäistä lauantaita edeltävään päivään ja muualla maassa lukuun ottamatta Lapin maakuntaa syyskuun 1 päivästä lokakuun toista lauantaita edeltävään päivään;",
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "white-tailed-deer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "last-saturday-of-09",
+     "to": "02-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla kuin Lapin maakunnassa",
+     "from": "09-01",
+     "to": "day-before-last-saturday-of-09",
+     "applies_to": "stand hunting only (vahtimalla)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season: 'valkohäntäpeura 16 päivästä helmikuuta syyskuun viimeistä lauantaita edeltävään päivään' (24 § 1 mom 11 k). Stand-hunting exception: 'muualla kuin Lapin maakunnassa kuusipeuraa, saksanhirveä, japaninpeuraa ja valkohäntäpeuraa metsästää vahtimalla syyskuun 1 päivästä syyskuun viimeistä lauantaita edeltävään päivään' (24 § 2 mom 2 k). A doe followed by a fawn of the year is protected 'syyskuun 1 päivästä syyskuun viimeistä lauantaita edeltävään päivään' (25 § 4 mom). Licence (pyyntilupa) needed (laki 26 §). The 2026 dates on riista.fi are 1.9.-25.9.2026 (stand) and 26.9.2026-15.2.2027.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 11 k, 24 § 2 mom 2 k, 25 § 4 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "fallow-deer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "last-saturday-of-09",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla kuin Lapin maakunnassa",
+     "from": "09-01",
+     "to": "day-before-last-saturday-of-09",
+     "applies_to": "stand hunting only (vahtimalla)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "kuusipeura. Close season: 'kuusipeura, saksanhirvi, japaninpeura ja metsäpeura 1 päivästä helmikuuta syyskuun viimeistä lauantaita edeltävään päivään' (24 § 1 mom 11 k). Stand hunting from 1.9. outside Lappi (24 § 2 mom 2 k). A female followed by young of the year is protected 1.9. until the day before the last Saturday of September (25 § 4 mom). Licence (pyyntilupa) needed (laki 26 §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 11 k, 24 § 2 mom 2 k, 25 § 4 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "red-deer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "last-saturday-of-09",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla kuin Lapin maakunnassa",
+     "from": "09-01",
+     "to": "day-before-last-saturday-of-09",
+     "applies_to": "stand hunting only (vahtimalla)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "saksanhirvi. Close season: 'kuusipeura, saksanhirvi, japaninpeura ja metsäpeura 1 päivästä helmikuuta syyskuun viimeistä lauantaita edeltävään päivään' (24 § 1 mom 11 k). Stand hunting from 1.9. outside Lappi (24 § 2 mom 2 k). A female followed by young of the year is protected 1.9. until the day before the last Saturday of September (25 § 4 mom). Licence (pyyntilupa) needed (laki 26 §). Red deer is very rare in mainland Finland.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 11 k, 24 § 2 mom 2 k, 25 § 4 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "sika-deer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "last-saturday-of-09",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla kuin Lapin maakunnassa",
+     "from": "09-01",
+     "to": "day-before-last-saturday-of-09",
+     "applies_to": "stand hunting only (vahtimalla)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "japaninpeura. Close season: 'kuusipeura, saksanhirvi, japaninpeura ja metsäpeura 1 päivästä helmikuuta syyskuun viimeistä lauantaita edeltävään päivään' (24 § 1 mom 11 k). Stand hunting from 1.9. outside Lappi (24 § 2 mom 2 k). A female followed by young of the year is protected 1.9. until the day before the last Saturday of September (25 § 4 mom). Licence (pyyntilupa) needed (laki 26 §). Sika deer is not known to live wild in Finland, but the law gives it a season.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 11 k, 24 § 2 mom 2 k, 25 § 4 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "forest-reindeer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "last-saturday-of-09",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "metsäpeura. Close season 1.2. until the day before the last Saturday of September (24 § 1 mom 11 k). Not included in the 1.9. stand-hunting exception. Licence (hirvieläimen pyyntilupa, laki 26 §) needed; riista.fi lists 26.9.2026-31.1.2027 'Suomen riistakeskuksen myöntämällä MetsL 26 §:n mukaisella hirvieläimen pyyntiluvalla'. Licences are very few and local. Hunting wild forest reindeer is not possible inside the reindeer herding area in practice (domestic reindeer).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 11 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "roe-deer",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "02-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "koko maa",
+     "from": "05-16",
+     "to": "06-15",
+     "applies_to": "males only (metsäkaurisuros)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season: 'metsäkaurisuros kesäkuun 16 päivästä elokuun 31 päivään ja helmikuun 16 päivästä toukokuun 15 päivään sekä metsäkaurisnaaras ja saman vuoden vasa helmikuun 16 päivästä elokuun 31 päivään' (24 § 1 mom 12 k). A doe followed by a fawn of the year is protected 1.9. until the day before the last Saturday of September (25 § 4 mom). A driving dog over 39 cm only 'syyskuun viimeisestä lauantaista 15 päivään helmikuuta' (12 § 2 mom). Harvest report required (5 a §). No licence.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 12 k, 25 § 4 mom, 12 § 2 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "wild-boar",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "all except a sow followed by piglets of the year 03-01..07-31"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "No close season in 24 §. 'Villisian naaras, jota saman vuoden jälkeläinen seuraa, on rauhoitettu maaliskuun 1 päivästä heinäkuun 31 päivään' (25 § 2 mom). Night sights and artificial light are allowed for wild boar (laki 33 § 3 mom). Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 25 § 2 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "mouflon",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'mufloni helmikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 13 k). A ewe followed by young of the year is protected 1.9. until the day before the last Saturday of September (25 § 4 mom). Practically only in fenced or estate areas.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 13 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "brown-bear",
+   "rows": [
+    {
+     "area": "poronhoitoalue (itäinen ja läntinen)",
+     "from": "08-20",
+     "to": "10-31",
+     "applies_to": "regional quota (alueellinen kiintiö), not cubs under 1 year or a female followed by one",
+     "note": "Quota 2026-2027: at most 70 east and 15 west (666/2026 2 §). riista.fi 20.10.2026: both quotas filled, 'Kiintiömetsästys alueella on päättynyt'."
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-20",
+     "to": "10-31",
+     "applies_to": "poikkeuslupa under laki 41 a § 3 mom, not cubs under 1 year or a female followed by one"
+    }
+   ],
+   "licence": true,
+   "protected": true,
+   "temporary_decree": {
+    "name": "MMM-asetus 666/2026 (karhun alueellinen kiintiö 2026-2027)",
+    "valid_until": "2027-07-31"
+   },
+   "note": "'Karhu, saukko, ahma, ilves, kirjohylje, valkoposkihanhi ja merimetso ovat aina rauhoitettuja' (laki 37 § 3 mom). Hunting is a derogation: 452/2013 3 § 1 mom 2 k: 'karhun, lukuun ottamatta vuotta nuorempaa pentua sekä naarasta, jota tällainen pentu seuraa, pyydystämiseksi tai tappamiseksi elokuun 20 päivästä lokakuun 31 päivään'. 452/2013 8 § (as amended 851/2026): 'rauhoituksesta voidaan poiketa metsästyslain 41 a §:n 4 momentissa tarkoitetun alueellisen kiintiön nojalla 20 päivästä elokuuta 31 päivään lokakuuta'. Damage licences (41 a § 1 mom) last at most 31 days, with times set in the decision. Hunting rules (laki 33 § 2 mom 3 k): no bait, no shooting from an unharvested field (except grass ley), no driving or shooting from the den.",
+   "law": "Metsästyslaki 37 § 3 mom, 41 a §; VN-asetus 452/2013 3 § ja 8 §; MMM-asetus 666/2026",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2013/452"
+  },
+  {
+   "species": "wolf",
+   "rows": [
+    {
+     "area": "kiintiöalueet poronhoitoalueen ulkopuolella",
+     "from": "12-01",
+     "to": "02-10",
+     "applies_to": "regional quota (alueellinen kiintiö, laki 10 §) or pyyntilupa",
+     "note": "Requires a yearly MMM quota decree. The 2025-2026 decree 1434/2025 (max 100 wolves outside the reindeer herding area) expired 31.7.2026. On 20.10.2026 no 2026-2027 quota had been set ('Uusia kiintiöitä ei ole vielä määritetty', riista.fi)."
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus alueellisen kiintiön nojalla sallittavasta suden metsästyksestä (2025-2026: 1434/2025; 2026-2027 not yet issued)",
+    "valid_until": "2026-07-31 (expired)"
+   },
+   "note": "Close season 'susi helmikuun 11 päivästä marraskuun 30 päivään' (24 § 1 mom 26 k, added by 1432/2025 from 1.1.2026). Wolf is no longer in laki 37 § 3 mom (always protected). Damage-based poikkeuslupa (laki 41 a § 1 mom) is still possible at any time. 452/2013 3 § 1 mom 1 k also allows 41 a § 3 mom licences 'poronhoitoalueella lokakuun 1 päivästä maaliskuun 31 päivään ja muualla maassa marraskuun 1 päivästä maaliskuun 31 päivään'. DNA samples are mandatory (laki 10 § 4 mom).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 26 k; Metsästyslaki 10 §; MMM-asetus 1434/2025",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "lynx",
+   "rows": [
+    {
+     "area": "poronhoitoalue",
+     "from": "10-01",
+     "to": "end-of-02",
+     "applies_to": "poikkeuslupa (laki 41 a § 3 mom), not a female followed by a cub under 1 year"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "12-01",
+     "to": "end-of-02",
+     "applies_to": "poikkeuslupa (laki 41 a § 3 mom), not a female followed by a cub under 1 year"
+    }
+   ],
+   "licence": true,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "Always protected (laki 37 § 3 mom). 452/2013 3 § 1 mom 3 k: 'ilveksen, lukuun ottamatta naarasta, jota vuotta nuorempi pentu seuraa, pyydystämiseksi tai tappamiseksi poronhoitoalueella lokakuun 1 päivästä helmikuun 28 päivään, karkausvuonna helmikuun 29 päivään ja muualla maassa joulukuun 1 päivästä helmikuun 28 päivään, karkausvuonna helmikuun 29 päivään'. Damage licences (41 a § 1 mom) have times set in the decision.",
+   "law": "Metsästyslaki 37 § 3 mom; VN-asetus 452/2013 3 § 1 mom 3 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2013/452"
+  },
+  {
+   "species": "wolverine",
+   "rows": [],
+   "licence": true,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "Always protected (laki 37 § 3 mom). Only damage or other poikkeuslupa under 41 a § 1 mom; no season in 452/2013 3 §. Times are in each licence decision.",
+   "law": "Metsästyslaki 37 § 3 mom, 41 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615"
+  },
+  {
+   "species": "otter",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "11-01",
+     "to": "04-30",
+     "applies_to": "poikkeuslupa (laki 41 a § 3 mom)"
+    }
+   ],
+   "licence": true,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "Always protected (laki 37 § 3 mom). 452/2013 3 § 1 mom 4 k: 'saukon pyydystämiseksi tai tappamiseksi marraskuun 1 päivästä huhtikuun 30 päivään'. riista.fi says times are set in each licence decision.",
+   "law": "VN-asetus 452/2013 3 § 1 mom 4 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2013/452"
+  },
+  {
+   "species": "red-fox",
+   "rows": [
+    {
+     "area": "Lapin maakunta",
+     "from": "08-01",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "04-14",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'kettu Lapin maakunnassa toukokuun 1 päivästä heinäkuun 31 päivään ja muualla maassa huhtikuun 15 päivästä heinäkuun 31 päivään' (24 § 1 mom 14 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 14 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "badger",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'mäyrä huhtikuun 1 päivästä heinäkuun 31 päivään' (24 § 1 mom 15 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 15 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "pine-marten",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'näätä huhtikuun 1 päivästä heinäkuun 31 päivään' (24 § 1 mom 7 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 7 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "stoat",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'kärppä huhtikuun 1 päivästä heinäkuun 31 päivään' (24 § 1 mom 6 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 6 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "polecat",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "all except a female followed by young of the year 05-01..07-31"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "No close season in 24 §. 'Tarhatun naalin ja hillerin naaras, jota saman vuoden jälkeläinen seuraa, on rauhoitettu toukokuun 1 päivästä heinäkuun 31 päivään' (25 § 1 mom). Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 25 § 1 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "raccoon-dog",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "supikoira is not a game species or an unprotected animal in Metsästyslaki 5 §. It is a harmful invasive alien species ('Haitallinen vieraslaji', riista.fi: 01.08.2026-31.07.2027 'Koko maassa'). It is not protected by Luonnonsuojelulaki 9/2023, which covers only native species (68 § 'luontaisella levinneisyysalueellaan luonnonvaraisina esiintyviin'). No close season. Hunting rights still follow the landowner rules; weapon rules are in VNa 704/2019.",
+   "law": "Metsästyslaki 5 § (not listed); Luonnonsuojelulaki 9/2023 68 §; riista.fi",
+   "quote": null,
+   "url": "https://riista.fi/tietoa-metsastyksesta/metsastys-ja-pyyntiajat/"
+  },
+  {
+   "species": "mink",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "minkki is not a game species or an unprotected animal in Metsästyslaki 5 §. It is a harmful invasive alien species ('Haitallinen vieraslaji', riista.fi: 01.08.2026-31.07.2027 'Koko maassa'). It is not protected by Luonnonsuojelulaki 9/2023, which covers only native species (68 § 'luontaisella levinneisyysalueellaan luonnonvaraisina esiintyviin'). No close season. Hunting rights still follow the landowner rules; weapon rules are in VNa 704/2019.",
+   "law": "Metsästyslaki 5 § (not listed); Luonnonsuojelulaki 9/2023 68 §; riista.fi",
+   "quote": null,
+   "url": "https://riista.fi/tietoa-metsastyksesta/metsastys-ja-pyyntiajat/"
+  },
+  {
+   "species": "muskrat",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "piisami is not a game species or an unprotected animal in Metsästyslaki 5 §. It is a harmful invasive alien species ('Haitallinen vieraslaji', riista.fi: 01.08.2026-31.07.2027 'Koko maassa'). It is not protected by Luonnonsuojelulaki 9/2023, which covers only native species (68 § 'luontaisella levinneisyysalueellaan luonnonvaraisina esiintyviin'). No close season. Hunting rights still follow the landowner rules; weapon rules are in VNa 704/2019.",
+   "law": "Metsästyslaki 5 § (not listed); Luonnonsuojelulaki 9/2023 68 §; riista.fi",
+   "quote": null,
+   "url": "https://riista.fi/tietoa-metsastyksesta/metsastys-ja-pyyntiajat/"
+  },
+  {
+   "species": "weasel",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "lumikko is not in Metsästyslaki 5 §, so it is protected under Luonnonsuojelulaki 9/2023 70 §: 'Tämän luvun soveltamisalaan kuuluvat nisäkkäät, linnut, matelijat ja sammakkoeläimet ovat rauhoitettuja.'",
+   "law": "Luonnonsuojelulaki 9/2023 68 §, 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "mountain-hare",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'metsäjänis ja rusakko maaliskuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 2 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 2 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "brown-hare",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'metsäjänis ja rusakko maaliskuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 2 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 2 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "european-rabbit",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'villikani huhtikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 1 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 1 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "red-squirrel",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "11-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'orava maaliskuun 1 päivästä lokakuun 31 päivään' (24 § 1 mom 3 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 3 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "beaver",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "04-30",
+     "applies_to": "European beaver (euroopanmajava): pyyntilupa required (decree 1 § 1 k, laki 10 §)"
+    },
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "04-30",
+     "applies_to": "Canadian beaver (kanadanmajava): no licence"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'euroopanmajava toukokuun 1 päivästä elokuun 19 päivään' and 'kanadanmajava toukokuun 1 päivästä elokuun 19 päivään' (24 § 1 mom 4-5 k). A licence is needed for euroopanmajava only ('Metsästyslain (615/1993) 10 §:n 1 momentissa tarkoitettu pyyntilupa on saatava: 1) euroopanmajavan metsästykseen'). Lodge rules: 26 §.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 4-5 k, 1 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "grey-seal",
+   "rows": [
+    {
+     "area": "Perämeren–Merenkurkun, Lounais-Suomen ja Suomenlahden kannanhoitoalueet (merialueet)",
+     "from": "04-16",
+     "to": "12-31",
+     "applies_to": "within the regional quota (alueellinen kiintiö)",
+     "note": "Quotas (459/2024): 'Perämeren-Merenkurkun kannanhoitoalueella yhteensä enintään 350 yksilöä; Lounais-Suomen kannanhoitoalueella yhteensä enintään 400 yksilöä; sekä Suomenlahden kannanhoitoalueella yhteensä enintään 300 yksilöä.' Hunting stops when the area quota is full (decree 5 §)."
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 459/2024 hallin metsästyksestä alueellisen kiintiön nojalla metsästysvuosina 2024–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Close season 'halli tammikuun 1 päivästä huhtikuun 15 päivään' (24 § 1 mom 9 k). No individual licence; you hunt within the area quota and must report the catch by the third working day (5 §). riista.fi: 'Hylkeiden metsästysaika on 16.4.-31.12., mutta kiintiöasetukset ovat voimassa metsästysvuosittain 1.8.-31.7.'",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 9 k, 5 §; MMM-asetus 459/2024",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "ringed-seal",
+   "rows": [
+    {
+     "area": "Perämeren–Merenkurkun kannanhoitoalue (Pohjanmaan, Keski-Pohjanmaan, Pohjois-Pohjanmaan ja Lapin maakuntaan kuuluvat merialueet)",
+     "from": "04-16",
+     "to": "12-31",
+     "applies_to": "within the regional quota, at most 425"
+    },
+    {
+     "area": "Lounais-Suomen ja Suomenlahden kannanhoitoalueet",
+     "from": null,
+     "to": null,
+     "applies_to": "quota 0, so no hunting"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 847/2025 itämeren norpan metsästyksestä alueellisen kiintiön nojalla metsästysvuosina 2025–2026 ja 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "itämeren norppa (Baltic ringed seal). Close season 'itämerennorppa tammikuun 1 päivästä huhtikuun 15 päivään' (24 § 1 mom 8 k). The Saimaa ringed seal is a different subspecies and strictly protected (not a game animal).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 8 k, 5 §; MMM-asetus 847/2025",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "harbour-seal",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "kirjohylje: 'aina rauhoitettuja' (laki 37 § 3 mom). Poikkeuslupa only.",
+   "law": "Metsästyslaki 37 § 3 mom",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615"
+  },
+  {
+   "species": "capercaillie",
+   "rows": [
+    {
+     "area": "Varsinais-Suomen maakunta",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 2026-2027 (763/2026 1 § 1 mom)"
+    },
+    {
+     "area": "Uudenmaan maakunta",
+     "from": "09-10",
+     "to": "09-30",
+     "applies_to": "males and females"
+    },
+    {
+     "area": "Etelä-Savon, Pohjois-Savon ja Pohjois-Karjalan maakunnat; Puolanka, Suomussalmi, Inari, Kittilä, Kolari, Muonio, Sodankylä, Kuusamo, Pudasjärvi, Taivalkoski",
+     "from": "09-10",
+     "to": "12-10",
+     "applies_to": "males and females"
+    },
+    {
+     "area": "Etelä-Karjala, Etelä-Pohjanmaa, Kanta-Häme, Keski-Pohjanmaa, Keski-Suomi, Kymenlaakso, Pirkanmaa, Pohjanmaa, Päijät-Häme, Satakunta; Kainuu lukuun ottamatta Puolankaa ja Suomussalmea; Lappi lukuun ottamatta Inaria, Kittilää, Kolaria, Muoniota ja Sodankylää; Pohjois-Pohjanmaa lukuun ottamatta Kuusamoa, Pudasjärveä ja Taivalkoskea",
+     "from": "09-10",
+     "to": "11-10",
+     "applies_to": "males and females"
+    },
+    {
+     "area": "Pohjois-Karjala lukuun ottamatta Lieksaa, Nurmesta ja Juukaa; Puolanka, Suomussalmi, Inari, Kittilä, Kolari, Muonio, Sodankylä, Kuusamo, Pudasjärvi, Taivalkoski",
+     "from": "01-10",
+     "to": "01-31",
+     "applies_to": "males only (urosmetso)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 763/2026 metson, teeren, pyyn ja riekon metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Base decree 24 § 1 mom 22 k: 'naarasmetso Uudenmaan ja Varsinais-Suomen maakunnissa lokakuun 1 päivästä syyskuun 9 päivään ja muualla maassa joulukuun 11 päivästä syyskuun 9 päivään ja urosmetso Etelä-Pohjanmaan, Kainuun, Keski-Pohjanmaan, Keski-Suomen, Pohjanmaan, Pohjois-Karjalan, Pohjois-Pohjanmaan, Pohjois-Savon ja Lapin maakunnissa joulukuun 11 päivästä tammikuun 9 päivään ja helmikuun 1 päivästä syyskuun 9 päivään ja Uudenmaan ja Varsinais-Suomen maakunnissa lokakuun 1 päivästä syyskuun 9 päivään sekä muualla maassa joulukuun 11 päivästä syyskuun 9 päivään'. Without a yearly decree the base seasons are: females 10.9.-30.9. (Uusimaa, Varsinais-Suomi) or 10.9.-10.12. (elsewhere); males the same, plus 10.1.-31.1. in the northern provinces listed. The rows above are for 2026-2027 after 763/2026; they match riista.fi.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 22 k; MMM-asetus 763/2026 1 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "black-grouse",
+   "rows": [
+    {
+     "area": "Varsinais-Suomen maakunta",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 2026-2027"
+    },
+    {
+     "area": "Keski-Suomen ja Uudenmaan maakunnat",
+     "from": "09-10",
+     "to": "10-10",
+     "applies_to": "all"
+    },
+    {
+     "area": "Etelä-Karjala, Etelä-Pohjanmaa, Etelä-Savo, Kainuu, Kanta-Häme, Keski-Pohjanmaa, Kymenlaakso, Pirkanmaa, Pohjanmaa, Pohjois-Karjala, Pohjois-Pohjanmaa, Pohjois-Savo, Päijät-Häme, Satakunta; Lappi lukuun ottamatta Inaria, Kittilää, Kolaria, Muoniota, Pelloa, Sodankylää ja Ylitorniota",
+     "from": "09-10",
+     "to": "11-10",
+     "applies_to": "all"
+    },
+    {
+     "area": "Inari, Kittilä, Kolari, Muonio, Pello, Sodankylä, Ylitornio",
+     "from": "09-10",
+     "to": "12-10",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 763/2026 metson, teeren, pyyn ja riekon metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Base decree 24 § 1 mom 21 k: 'naarasteeri joulukuun 11 päivästä syyskuun 9 päivään ja urosteeri Etelä-Pohjanmaan, Kainuun, Keski-Pohjanmaan, Keski-Suomen, Pohjanmaan, Pohjois-Karjalan, Pohjois-Pohjan-maan, Pohjois-Savon ja Lapin maakunnissa joulukuun 11 päivästä tammikuun 9 päivään ja helmikuun 1 päivästä syyskuun 9 päivään sekä muualla maassa joulukuun 11 päivästä syyskuun 9 päivään'. Without a yearly decree: 10.9.-10.12., plus males 10.1.-31.1. in the northern provinces. For 2026-2027, 763/2026 2 § 4 mom bans 10.1.-31.1. in all those provinces, so there is no January season.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 21 k; MMM-asetus 763/2026 2 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "hazel-grouse",
+   "rows": [
+    {
+     "area": "Kymenlaakson maakunta",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 2026-2027"
+    },
+    {
+     "area": "Etelä-Karjala, Keski-Suomi, Uusimaa, Varsinais-Suomi; Enontekiö, Inari, Kemijärvi, Kittilä, Kolari, Muonio, Pelkosenniemi, Posio, Salla, Savukoski, Sodankylä, Utsjoki",
+     "from": "09-10",
+     "to": "10-10",
+     "applies_to": "all"
+    },
+    {
+     "area": "Etelä-Pohjanmaa, Etelä-Savo, Kainuu, Kanta-Häme, Keski-Pohjanmaa, Pirkanmaa, Pohjanmaa, Pohjois-Karjala, Pohjois-Pohjanmaa, Pohjois-Savo, Päijät-Häme, Satakunta; Kemi, Keminmaa, Pello, Ranua, Rovaniemi, Simo, Tervola, Tornio, Ylitornio",
+     "from": "09-10",
+     "to": "11-10",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 763/2026 metson, teeren, pyyn ja riekon metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Base decree 24 § 1 mom 22 k: 'pyy joulukuun 11 päivästä syyskuun 9 päivään' (base season 10.9.-10.12. everywhere). For 2026-2027, 763/2026 3 § shortens it in every region, so no area keeps 11.11.-10.12.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 22 k; MMM-asetus 763/2026 3 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "willow-ptarmigan",
+   "rows": [
+    {
+     "area": "Enontekiön, Inarin ja Utsjoen kunnat",
+     "from": "09-10",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Pohjois-Savo, Pohjois-Karjala, Etelä-Pohjanmaa, Keski-Pohjanmaa, Pohjanmaa, Keski-Suomi, Pohjois-Pohjanmaa, Kainuu ja Lappi lukuun ottamatta Enontekiötä, Inaria ja Utsjokea",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 2026-2027 (763/2026 4 §); base season 09-10..10-31"
+    },
+    {
+     "area": "muualla maassa",
+     "from": null,
+     "to": null,
+     "applies_to": "protected all year (base decree)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 763/2026 metson, teeren, pyyn ja riekon metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Base decree 24 § 1 mom 19 k: 'riekko Pohjois-Savon, Pohjois-Karjalan, Etelä-Pohjanmaan, Keski-Pohjanmaan, Pohjanmaan, Keski-Suomen, Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella lukuun ottamatta Enontekiön, Inarin ja Utsjoen kuntia marraskuun 1 päivästä syyskuun 9 päivään sekä Enontekiön, Inarin ja Utsjoen kunnissa huhtikuun 1 päivästä syyskuun 9 päivään ja muualla maassa koko vuoden'.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 19 k; MMM-asetus 763/2026 4 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "rock-ptarmigan",
+   "rows": [
+    {
+     "area": "Enontekiön, Inarin ja Utsjoen kunnat",
+     "from": "09-10",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": null,
+     "to": null,
+     "applies_to": "protected all year"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Base decree 24 § 1 mom 20 k: 'kiiruna Enontekiön, Inarin ja Utsjoen kunnissa huhtikuun 1 päivästä syyskuun 9 päivään ja muualla maassa koko vuoden'. Not covered by 763/2026.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 20 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "pheasant",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'fasaani maaliskuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 24 k, wording from 1432/2025).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 24 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "grey-partridge",
+   "rows": [
+    {
+     "area": "Pohjanmaan, Etelä-Pohjanmaan, Keski-Pohjanmaan ja Pohjois-Pohjanmaan maakunnat",
+     "from": "09-01",
+     "to": "12-31",
+     "applies_to": "no licence"
+    },
+    {
+     "area": "muualla",
+     "from": "09-01",
+     "to": "12-31",
+     "applies_to": "pyyntilupa required (decree 1 § 2 k)"
+    }
+   ],
+   "licence": true,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'peltopyy tammikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 23 k). Licence: 'peltopyyn metsästykseen muualla kuin Pohjanmaan, Etelä-Pohjanmaan, Keski-Pohjanmaan ja Pohjois-Pohjanmaan maakunnissa' (1 § 2 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 23 k, 1 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "mallard",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "heinäsorsa. Close season 'tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka' (24 § 1 mom 16 k), so the season opens at 12:00 on 20.8. The waterfowl twilight ban (740/2026) applies.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "teal",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "tavi. Close season 'tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka' (24 § 1 mom 16 k), so the season opens at 12:00 on 20.8. The waterfowl twilight ban (740/2026) applies.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "wigeon",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "haapana. Close season 'tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka' (24 § 1 mom 16 k), so the season opens at 12:00 on 20.8. The waterfowl twilight ban (740/2026) applies. Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "goldeneye",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "telkkä. Close season 'tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka' (24 § 1 mom 16 k), so the season opens at 12:00 on 20.8. The waterfowl twilight ban (740/2026) applies.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "tufted-duck",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "tukkasotka. Close season 'tammikuun 1 päivästä elokuun 20 päivän kello 12.00 saakka' (24 § 1 mom 16 k), so the season opens at 12:00 on 20.8. The waterfowl twilight ban (740/2026) applies. Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "woodcock",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "lehtokurppa, in the same close-season item as the ducks (24 § 1 mom 16 k), so it opens 20.8. at 12:00. It is not a waterfowl, so 740/2026 does not apply.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "long-tailed-duck",
+   "rows": [
+    {
+     "area": "merialue sekä merialueella sijaitsevat saaret ja luodot",
+     "from": "09-01",
+     "to": "12-31",
+     "applies_to": "bag limit 5 per hunter per day"
+    },
+    {
+     "area": "muu maa (inland)",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 496/2024 allin metsästyksen rajoittamisesta metsästysvuosina 2024–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "Close season 'alli, tukkakoskelo ja isokoskelo tammikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 18 k). 496/2024: 'allin metsästys on kielletty koko maassa lukuun ottamatta merialuetta sekä merialueella sijaitsevia saaria ja luotoja' and 'enintään 5 allia vuorokaudessa'. Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 18 k; MMM-asetus 496/2024",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "eider",
+   "rows": [
+    {
+     "area": "liitteenä olevaan karttaan erikseen merkitty alue (outer archipelago, boundary islands listed in the annex)",
+     "from": "06-01",
+     "to": "06-15",
+     "applies_to": "males only (uroshaahka), not on islands and skerries with females with young or guillemot, black guillemot or razorbill colonies"
+    },
+    {
+     "area": "koko maa",
+     "from": null,
+     "to": null,
+     "applies_to": "females and young of the year: no hunting (263/2025)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 263/2025 haahkan metsästyksen rajoittamisesta",
+    "valid_until": "2027-12-31"
+   },
+   "note": "Base decree: 'uroshaahka tammikuun 1 päivästä toukokuun 31 päivään' (24 § 1 mom 17 k), and the female in 16 k. 263/2025: 'Uroshaahkan metsästys on kielletty kesäkuun 1 päivästä kesäkuun 15 päivään muualla kuin liitteenä olevaan karttaan erikseen merkityllä alueella ... Uroshaahkan metsästys on kielletty lisäksi koko maassa kesäkuun 16 päivästä joulukuun 31 päivään. Naarashaahkan ja sen saman vuoden poikasen metsästys on kielletty koko maassa elokuun 20 päivän kello 12:sta joulukuun 31 päivään.' Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16-17 k; MMM-asetus 263/2025",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "goosander",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "12-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "isokoskelo. Close season 'alli, tukkakoskelo ja isokoskelo tammikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 18 k). Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 18 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "red-breasted-merganser",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "09-01",
+     "to": "12-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "tukkakoskelo. Close season 'alli, tukkakoskelo ja isokoskelo tammikuun 1 päivästä elokuun 31 päivään' (24 § 1 mom 18 k). Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 18 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "common-scoter",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "mustalintu is not a game species (laki 5 §), so it is protected (Luonnonsuojelulaki 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "canada-goose",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-10",
+     "to": "08-20",
+     "applies_to": "from fields only, until 12:00 on 08-20",
+     "to_time": "12:00"
+    },
+    {
+     "area": "koko maa",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "all",
+     "from_time": "12:00"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 1.1. until 20.8. at 12:00 (24 § 1 mom 16 k). Field hunting 'elokuun 10 päivästä elokuun 20 päivään kello 12.00 asti' (24 § 2 mom 3 k).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k, 2 mom 3 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "greylag-goose",
+   "rows": [
+    {
+     "area": "muualla kuin 741/2026 1 §:ssä luetellulla alueella",
+     "from": "08-10",
+     "to": "08-20",
+     "applies_to": "from fields only, until 12:00 on 08-20; food bait banned; 2 per hunter per day",
+     "to_time": "12:00"
+    },
+    {
+     "area": "muualla kuin 741/2026 1 §:ssä luetellulla alueella",
+     "from": "08-20",
+     "to": "12-31",
+     "applies_to": "2 per hunter per day",
+     "from_time": "12:00"
+    },
+    {
+     "area": "Etelä-Karjalan, Etelä-Savon, Kainuun, Kanta-Hämeen, Keski-Suomen, Pirkanmaan, Pohjois-Karjalan, Pohjois-Savon ja Päijät-Hämeen maakunnat; Etelä-Pohjanmaalla Alajärvi, Alavus, Evijärvi, Kuortane, Lappajärvi, Soini, Vimpeli ja Ähtäri; Keski-Pohjanmaalla Halsua, Lestijärvi, Perho ja Veteli; Lapin maakunta lukuun ottamatta Kemiä, Keminmaata, Torniota ja Simoa; Kymenlaaksossa Kouvola; Pohjois-Pohjanmaalla Haapajärvi, Haapavesi, Kuusamo, Kärsämäki, Nivala, Pudasjärvi, Pyhäjärvi, Pyhäntä, Reisjärvi, Siikalatva, Taivalkoski, Utajärvi ja Vaala",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 10.8.-31.12.2026 (741/2026 1 §)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 741/2026 merihanhen metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "merihanhi. Base: close season 1.1. until 20.8. at 12:00 (24 § 1 mom 16 k); field hunting 10.8. until 20.8. at 12:00 (24 § 2 mom 3 k). 741/2026 2 §: 'enintään kaksi merihanhea vuorokaudessa'. Harvest report required (5 a §).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k, 2 mom 3 k; MMM-asetus 741/2026",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "bean-goose",
+   "rows": [
+    {
+     "area": "Kainuun, Lapin ja Pohjois-Pohjanmaan maakunnat; Juuka, Lieksa, Nurmes, Rautavaara, Sonkajärvi; ei kuitenkaan Enontekiö, Inari, Utsjoki eikä valtatien E8 merenpuoleinen alue (paitsi seututien 813 ja valtatien E8 välinen alue)",
+     "from": "08-20",
+     "to": "08-27",
+     "applies_to": "not on fields; no food bait; max 1 bean goose per hunter for 20.8. 12:00-27.8.",
+     "from_time": "12:00"
+    },
+    {
+     "area": "Ilomantsi",
+     "from": "08-20",
+     "to": "08-27",
+     "applies_to": "not on fields; no food bait; max 1 per hunter",
+     "from_time": "12:00"
+    },
+    {
+     "area": "Ilomantsi",
+     "from": "10-01",
+     "to": "11-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Etelä-Karjala, Kymenlaakso; Enonkoski, Hirvensalmi, Juva, Mikkeli, Mäntyharju, Puumala, Rantasalmi, Savonlinna, Sulkava; Heinävesi, Joensuu, Kitee, Kontiolahti, Liperi, Rääkkylä, Tohmajärvi; Joroinen, Varkaus; Iitti, Orimattila; Askola, Lapinjärvi, Loviisa, Myrskylä, Porvoo, Pukkila",
+     "from": "10-01",
+     "to": "11-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": null,
+     "to": null,
+     "applies_to": "no hunting 2026-2027 (742/2026 1 § 4 mom)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": {
+    "name": "MMM-asetus 742/2026 metsähanhen metsästyksen kieltämisestä metsästysvuonna 2026–2027",
+    "valid_until": "2027-07-31"
+   },
+   "note": "metsähanhi (taiga bean goose; the decree does not separate tundra bean goose). Base season 20.8. at 12:00 to 31.12. (24 § 1 mom 16 k); 742/2026 cuts it back as shown. Harvest report required (5 a §). Key text: 'metsähanhen metsästys on kielletty muualla maassa elokuun 20 päivän kello 12.00:sta joulukuun 31 päivään'.",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 16 k; MMM-asetus 742/2026",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "barnacle-goose",
+   "rows": [
+    {
+     "area": "ilmailulain 75 §:n 1 kohdassa tarkoitetut lentoasemat",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "general derogation, flight safety"
+    },
+    {
+     "area": "pelto, jonka sato on korjaamatta",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "general derogation, only birds in a flock of at least 5"
+    }
+   ],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "Game bird since 693/2026 but 'aina rauhoitettuja' (laki 37 § 3 mom). Derogation (41 f §): '1) valkoposkihanhea ja merimetsoa metsästää lentoturvallisuuden takaamiseksi ilmailulain 75 §:n 1 kohdassa tarkoitetuilta lentoasemilta ympärivuotisesti; 2) vähintään viiden yksilön parvessa esiintyvää valkoposkihanhea metsästää ympärivuotisesti pellolta, jonka sato on korjaamatta'. No hunting within 300 m of a white-tailed eagle nest 1.2.-15.8. or an osprey nest 1.4.-15.9. Report within 7 days. Selling is banned.",
+   "law": "Metsästyslaki 37 § 3 mom, 41 f §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615"
+  },
+  {
+   "species": "white-fronted-goose",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "tundrahanhi is not a game species (laki 5 §): protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "whooper-swan",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "laulujoutsen is not a game species: protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "cormorant",
+   "rows": [
+    {
+     "area": "enintään 300 metrin etäisyydellä kalastuslain 4 §:n 15 ja 16 kohdassa tarkoitetuista pyydyksistä",
+     "from": "08-01",
+     "to": "02-28",
+     "applies_to": "general derogation (fixed or standing fishing gear)"
+    },
+    {
+     "area": "ilmailulain 75 §:n 1 kohdassa tarkoitetut lentoasemat",
+     "from": "08-01",
+     "to": "07-31",
+     "applies_to": "general derogation, flight safety"
+    }
+   ],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "merimetso: game bird since 693/2026 but always protected (laki 37 § 3 mom). 41 f § 1 mom 3 k: 'merimetsoa metsästää enintään 300 metrin etäisyydellä kalastuslain (379/2015) 4 §:n 15 ja 16 kohdassa tarkoitetuista pyydyksistä 1 päivästä elokuuta 28 päivään helmikuuta'. The text says '28 päivään helmikuuta' even in leap years. Eagle and osprey nest limits and the report duty apply as for barnacle goose.",
+   "law": "Metsästyslaki 37 § 3 mom, 41 f §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/615"
+  },
+  {
+   "species": "crane",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "kurki is not a game species: protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "wood-pigeon",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-10",
+     "to": "10-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "Close season 'sepelkyyhky marraskuun 1 päivästä elokuun 9 päivään' (24 § 1 mom 25 k, wording from 1432/2025).",
+   "law": "Metsästysasetus 666/1993 24 § 1 mom 25 k",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "hooded-crow",
+   "rows": [
+    {
+     "area": "Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnat",
+     "from": "08-01",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Pohjois-Savon ja Pohjois-Karjalan maakunnat",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "03-09",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "varis. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 1 k: 'varis, harmaalokki, merilokki, kesykyyhky ja räkättirastas Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella 1.5.–31.7, Pohjois-Savon ja Pohjois-Karjalan maakuntien alueella 1.4.–31.7. ja muualla maassa 10.3.–31.7'.",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "herring-gull",
+   "rows": [
+    {
+     "area": "Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnat",
+     "from": "08-01",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Pohjois-Savon ja Pohjois-Karjalan maakunnat",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "03-09",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "harmaalokki. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 1 k: 'varis, harmaalokki, merilokki, kesykyyhky ja räkättirastas Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella 1.5.–31.7, Pohjois-Savon ja Pohjois-Karjalan maakuntien alueella 1.4.–31.7. ja muualla maassa 10.3.–31.7'. Also 'harmaalokkikoloniat koko vuoden' (25 a § 5 k).",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "great-black-backed-gull",
+   "rows": [
+    {
+     "area": "Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnat",
+     "from": "08-01",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Pohjois-Savon ja Pohjois-Karjalan maakunnat",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "03-09",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "merilokki. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 1 k: 'varis, harmaalokki, merilokki, kesykyyhky ja räkättirastas Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella 1.5.–31.7, Pohjois-Savon ja Pohjois-Karjalan maakuntien alueella 1.4.–31.7. ja muualla maassa 10.3.–31.7'. Careful: in Finnish 'merilokki' is the great black-backed gull, not the common gull (kalalokki).",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "fieldfare",
+   "rows": [
+    {
+     "area": "Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnat",
+     "from": "08-01",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Pohjois-Savon ja Pohjois-Karjalan maakunnat",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "03-09",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "räkättirastas. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 1 k: 'varis, harmaalokki, merilokki, kesykyyhky ja räkättirastas Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella 1.5.–31.7, Pohjois-Savon ja Pohjois-Karjalan maakuntien alueella 1.4.–31.7. ja muualla maassa 10.3.–31.7'.",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "magpie",
+   "rows": [
+    {
+     "area": "Pohjois-Savon, Pohjois-Karjalan, Pohjois-Pohjanmaan, Kainuun ja Lapin maakunnat",
+     "from": "08-01",
+     "to": "04-09",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "harakka. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 2 k: 'harakka Pohjois-Savon, Pohjois-Karjalan, Pohjois-Pohjanmaan, Kainuun ja Lapin maakuntien alueella 10.4.–31.7. ja muualla maassa 1.4.–31.7'.",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "jackdaw",
+   "rows": [
+    {
+     "area": "koko maa",
+     "from": "08-01",
+     "to": "03-09",
+     "applies_to": "all"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "naakka. Rauhoittamaton lintu (laki 5 § 2 mom 2 k). Close season from Metsästysasetus 25 a §. Landowner and holder rights: laki 48 §. 25 a § 3 k: 'naakka 10.3.–31.7'.",
+   "law": "Metsästysasetus 666/1993 25 a §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "raven",
+   "rows": [
+    {
+     "area": "poronhoitoalue",
+     "from": "08-01",
+     "to": "04-09",
+     "applies_to": "all"
+    },
+    {
+     "area": "muualla maassa",
+     "from": null,
+     "to": null,
+     "applies_to": "protected (not unprotected outside the reindeer herding area)"
+    }
+   ],
+   "licence": false,
+   "protected": false,
+   "temporary_decree": null,
+   "note": "korppi is unprotected only 'korppi (poronhoitoalueella)' (laki 5 § 2 mom 2 k). 25 a § 4 k: 'korppi poronhoitoalueella 10.4.–31.7'. Outside the reindeer herding area it is protected under LSL 9/2023.",
+   "law": "Metsästysasetus 666/1993 25 a §; Metsästyslaki 5 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/1993/666"
+  },
+  {
+   "species": "rook",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "mustavaris is not in laki 5 § (neither game nor unprotected): protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "jay",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "närhi is not in laki 5 § (neither game nor unprotected): protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  },
+  {
+   "species": "common-gull",
+   "rows": [],
+   "licence": false,
+   "protected": true,
+   "temporary_decree": null,
+   "note": "kalalokki is not in laki 5 § (neither game nor unprotected): protected (LSL 9/2023 70 §).",
+   "law": "Luonnonsuojelulaki 9/2023 70 §",
+   "quote": null,
+   "url": "https://www.finlex.fi/fi/lainsaadanto/2023/9"
+  }
+ ],
+ "unclear": [
+  "Daily shooting times: Metsästyslaki and Metsästysasetus contain NO sunrise/sunset or clock limits for moose, deer, bear or any other game. The only time-of-day rules found are the waterfowl twilight ban (MMM 740/2026, 1.8.2026-31.7.2029), the 12:00 opening on 20 August (asetus 24 § 1 mom 16 k) and the goose field window until 20.8. at 12:00 (24 § 2 mom 3 k). The prompt's examples (moose hours relative to sunrise, bear hours) do not exist in Finnish law. They exist in Swedish law.",
+  "'Vesilinnut' in 740/2026 is not defined in the decree. The mapping to ducks, geese, eider, long-tailed duck and mergansers is ours. It is unclear whether it applies to barnacle goose or cormorant shot under the 41 f § general derogation.",
+  "Wolf 2026-2027: no MMM quota decree was found. The 2025-2026 decree 1434/2025 expired 31.7.2026, and riista.fi said on 20.10.2026 'Uusia kiintiöitä ei ole vielä määritetty'. The decree close season (1.12.-10.2. open) only matters once a quota decree or pyyntilupa exists. Recheck in November/December 2026.",
+  "Bear: 851/2026 (in force 21.9.2026) made 452/2013 8 § a general regional-quota rule, no longer limited to the reindeer herding area. riista.fi still describes the quota as reindeer-herding-area only and outside it as 41 a § 3 mom licences. The only quota decree in force (666/2026) covers the reindeer herding area (70 east, 15 west), and both quotas were filled on 20.10.2026.",
+  "Grey seal quota 459/2024 says 'yhteensä enintään' per area for 'metsästysvuosina 2024–2027'. riista.fi treats it as a yearly quota that restarts on 1.8. I did not confirm the yearly reading from the decree text.",
+  "The Finlex consolidated text of Metsästysasetus 666/1993 (with 1432/2025) and Metsästyslaki 615/1993 (with 693/2026) were downloaded from finlex.fi today (20.10.2026). Newer amendments could still be waiting to be consolidated.",
+  "Åland (Ahvenanmaa) has its own hunting law (landskapslag); none of these rules apply there. Not researched.",
+  "Ringed seal: the Saimaa ringed seal (saimaannorppa) is strictly protected; only the Baltic ringed seal (itämeren norppa) is a game animal.",
+  "Mink, raccoon dog, muskrat: 'no close season' is based on their absence from laki 5 § and LSL 68 § (non-native) plus riista.fi. I did not read the Vieraslajilaki 1709/2015 / VNa 704/2019 texts for any time limits.",
+  "riista.fi shows 'Tukkasotka ... 20.08.2026-31.12.2027', which looks like a typo for 31.12.2026. The decree gives 20.8.-31.12. It also lists peltopyy licence-area dates as 2025, which looks stale.",
+  "Wapiti is not present or regulated in Finland, so it is omitted. Sika deer and red deer have seasons in law but are absent or very rare in the wild.",
+  "Forest reindeer (metsäpeura): the decree gives a season and riista.fi lists 26.9.-31.1. with a hirvieläimen pyyntilupa. I could not confirm whether any licences are actually granted for 2026-2027.",
+  "'end-of-02' means 28 February, or 29 February in leap years, because the close season starts on 1 March. Cormorant 41 f § says '28 päivään helmikuuta' literally."
+ ]
+}

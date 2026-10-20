@@ -65,6 +65,10 @@ pub struct Inputs {
     /// The rifle tilted, degrees: positive with the scope's top to the right.
     pub cant_degrees: f64,
     pub target_range_m: f64,
+    /// Where the hunter is, from the weather lookup: for the daylight.
+    pub place: Option<crate::weather::Place>,
+    /// The hunter's county or region in their country's law, for seasons.
+    pub region: Option<String>,
     /// The target: one of the hunter's own or the catalog's; `None` for
     /// no target (just the reticle and the shot).
     pub target_id: Option<String>,
@@ -114,6 +118,8 @@ impl Default for Inputs {
             aerodynamic_jump: true,
             cant_degrees: 0.0,
             target_range_m: 150.0,
+            place: None,
+            region: None,
             target_id: Some(DEFAULT_TARGET.to_owned()),
             recent_targets: Vec::new(),
             recent_ranges: Vec::new(),
@@ -1257,6 +1263,17 @@ impl CalculatorPage {
                 ui.small(
                     "Check your bullet maker's expansion data and your country's legal energy rules.",
                 );
+                if let Some(country) = data.country {
+                    ui.add_space(4.0);
+                    crate::hunting::today_block(
+                        ui,
+                        country,
+                        target.catalog_id.as_deref().unwrap_or(&target.id),
+                        &target.name,
+                        &mut inputs.region,
+                        inputs.place.as_ref(),
+                    );
+                }
             } else {
                 ui.small("A sport target: no energy or velocity limits apply.");
             }

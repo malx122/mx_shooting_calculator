@@ -1,0 +1,3290 @@
+{
+ "as_of": "2026-10-20",
+ "version": "riksdagen.se shows 'Ändrad: t.o.m. SFS 2026:1693' (utfärdad 2026-08-20). SFS 2026:1693 changes 16 § and bilagor 1, 2 and 4 only from 2027-07-01. The seasons in force for jaktåret 2026/27 are bilaga 1 as worded by SFS 2021:651, bilaga 2 by 2021:334, bilaga 3 by 2021:334, bilaga 4 by 2026:79. 9 § (daily times) last changed by SFS 2021:334. Jaktlag (1987:259) amended t.o.m. SFS 2026:832.",
+ "regions": [
+  "Stockholms län",
+  "Uppsala län",
+  "Södermanlands län",
+  "Östergötlands län",
+  "Jönköpings län",
+  "Kronobergs län",
+  "Kalmar län",
+  "Gotlands län",
+  "Blekinge län",
+  "Skåne län",
+  "Hallands län",
+  "Västra Götalands län",
+  "Värmlands län",
+  "Örebro län",
+  "Västmanlands län",
+  "Dalarnas län",
+  "Gävleborgs län",
+  "Västernorrlands län",
+  "Jämtlands län",
+  "Västerbottens län",
+  "Norrbottens län"
+ ],
+ "utc_offset_hours": 1.0,
+ "sources": [
+  {
+   "name": "Jaktförordning (1987:905), riksdagen.se",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "name": "Jaktlag (1987:259), riksdagen.se",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktlag-1987259_sfs-1987-259/"
+  },
+  {
+   "name": "SFS 2026:1693 (new seasons from 1 July 2027)",
+   "url": "https://svenskforfattningssamling.se/doc/20261693.html"
+  },
+  {
+   "name": "SFS 2026:1693, official PDF",
+   "url": "https://svenskforfattningssamling.se/sites/default/files/sfs/2026-08/SFS2026-1693.pdf"
+  },
+  {
+   "name": "NFS 2022:4, Naturvårdsverket (licence hunting)",
+   "url": "https://www.naturvardsverket.se/4acbc4/globalassets/nfs/2022/nfs-2022-4.pdf"
+  },
+  {
+   "name": "Naturvårdsverket: the 2026 seal hunts",
+   "url": "https://www.naturvardsverket.se/om-oss/aktuellt/nyheter-och-pressmeddelanden/2026/april/nu-startar-saljakten/"
+  },
+  {
+   "name": "Naturvårdsverket: the 2026 bear hunt",
+   "url": "https://www.naturvardsverket.se/om-oss/aktuellt/nyheter-och-pressmeddelanden/2026/augusti/gemensamt-ansvar-nar-bjornjakten-startar/"
+  },
+  {
+   "name": "Naturvårdsverket: proposed changes to the seasons",
+   "url": "https://www.naturvardsverket.se/49cd47/contentassets/c517d15f74f94086b6981aa5f0f7f6c3/naturvardsverkets-forslag-pa-andringar-av-jakttider.pdf"
+  },
+  {
+   "name": "Naturvårdsverket: proposed seasons",
+   "url": "https://www.naturvardsverket.se/4ac1d9/contentassets/c517d15f74f94086b6981aa5f0f7f6c3/naturvardsverkets-forslag-pa-jakttider.pdf"
+  },
+  {
+   "name": "Svenska Jägareförbundet: 9 § (time of day)",
+   "url": "https://jagareforbundet.se/installningar/paragrafer/jakttid-paragraf9/"
+  },
+  {
+   "name": "Regeringen: new hunting seasons decided (2026)",
+   "url": "https://www.regeringen.se/pressmeddelanden/2026/08/regeringen-har-beslutat-om-nya-jakttider/"
+  }
+ ],
+ "daily": [
+  {
+   "species": [
+    "wigeon",
+    "mallard",
+    "eider",
+    "goldeneye",
+    "teal",
+    "common-scoter",
+    "goosander",
+    "tufted-duck",
+    "white-fronted-goose",
+    "greylag-goose",
+    "canada-goose",
+    "bean-goose",
+    "barnacle-goose"
+   ],
+   "rule": "Ducks and geese listed in 9 § 1: from 1 h before sunrise to 1 h after sunset (firearms).",
+   "start": {
+    "relative_to": "sunrise",
+    "minutes": -60
+   },
+   "end": {
+    "relative_to": "sunset",
+    "minutes": 60
+   },
+   "law": "Jaktförordning (1987:905) 9 § första stycket 1",
+   "quote": "För jakt med skjutvapen på änder, gäss, björn, varg, järv, lo, älg, dovhjort, kronhjort och rådjur gäller följande begränsningar. 1. Bläsand, gräsand, ejder, knipa, kricka, sjöorre, storskrake, vigg, bläsgås, grågås, kanadagås, sädgås och vitkindad gås får jagas bara från och med en timme före solens uppgång till och med en timme efter solens nedgång.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "brown-bear"
+   ],
+   "rule": "Bear: from 1 h before sunrise to 2 h BEFORE sunset (firearms).",
+   "start": {
+    "relative_to": "sunrise",
+    "minutes": -60
+   },
+   "end": {
+    "relative_to": "sunset",
+    "minutes": -120
+   },
+   "law": "Jaktförordning (1987:905) 9 § första stycket 2",
+   "quote": "För jakt med skjutvapen på änder, gäss, björn, varg, järv, lo, älg, dovhjort, kronhjort och rådjur gäller följande begränsningar. 2. Björn får jagas bara under tiden från och med en timme före solens uppgång till och med två timmar före solens nedgång.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "wolf",
+    "wolverine",
+    "lynx",
+    "moose",
+    "fallow-deer",
+    "red-deer",
+    "roe-deer"
+   ],
+   "rule": "From 1 h before sunrise to 1 h after sunset; during the hour after sunset only stalking or stand hunting (smyg- eller vaktjakt).",
+   "start": {
+    "relative_to": "sunrise",
+    "minutes": -60
+   },
+   "end": {
+    "relative_to": "sunset",
+    "minutes": 60
+   },
+   "law": "Jaktförordning (1987:905) 9 § första stycket 3",
+   "quote": "För jakt med skjutvapen på änder, gäss, björn, varg, järv, lo, älg, dovhjort, kronhjort och rådjur gäller följande begränsningar. 3. Varg, järv, lo, älg, dovhjort, kronhjort och rådjur får jagas bara från och med en timme före solens uppgång till och med en timme efter solens nedgång. Under timmen efter solens nedgång får jakten endast bedrivas som smyg- eller vaktjakt.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/",
+   "restricted": {
+    "from": {
+     "relative_to": "sunset",
+     "minutes": 0
+    },
+    "to": {
+     "relative_to": "sunset",
+     "minutes": 60
+    },
+    "text": "only stalking or watching (smyg- eller vaktjakt)"
+   }
+  }
+ ],
+ "notes": [
+  {
+   "species": [
+    "wigeon",
+    "mallard",
+    "eider",
+    "goldeneye",
+    "teal",
+    "common-scoter",
+    "goosander",
+    "tufted-duck",
+    "white-fronted-goose",
+    "greylag-goose",
+    "canada-goose",
+    "bean-goose",
+    "barnacle-goose",
+    "brown-bear",
+    "wolf",
+    "wolverine",
+    "lynx",
+    "moose",
+    "fallow-deer",
+    "red-deer",
+    "roe-deer"
+   ],
+   "text": "Länsstyrelsen may grant exceptions in individual cases or by föreskrifter; for skyddsjakt/research decisions the deciding authority. Defence of domestic animals (28-28 a §§) is allowed regardless of 9 §.",
+   "law": "Jaktförordning (1987:905) 9 § andra-fjärde styckena; 28 b §",
+   "quote": "Länsstyrelsen får i enskilda fall besluta om undantag från första stycket. Om flera län är berörda prövas frågan av länsstyrelsen i det län där huvuddelen av marken är belägen. Om tillstånd till jakt ges enligt 23 b §, 24 § eller 31 § första stycket, prövas dock frågan om undantag från första stycket av den myndighet som beslutar om jakten. Länsstyrelsen får meddela föreskrifter om undantag från första stycket. Förordning (2021:334). 28 b § Åtgärder enligt 28 och 28 a §§ får vidtas på någon annans jaktområde och trots bestämmelserna i 9 §.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "wild-boar",
+    "mouflon",
+    "sika-deer",
+    "white-tailed-deer",
+    "wapiti",
+    "red-fox",
+    "badger",
+    "pine-marten",
+    "polecat",
+    "mink",
+    "raccoon-dog",
+    "brown-hare",
+    "mountain-hare",
+    "european-rabbit",
+    "beaver",
+    "muskrat",
+    "weasel",
+    "stoat",
+    "red-squirrel",
+    "grey-seal",
+    "harbour-seal",
+    "ringed-seal",
+    "otter",
+    "capercaillie",
+    "black-grouse",
+    "hazel-grouse",
+    "willow-ptarmigan",
+    "rock-ptarmigan",
+    "pheasant",
+    "grey-partridge",
+    "woodcock",
+    "wood-pigeon",
+    "common-gull",
+    "herring-gull",
+    "great-black-backed-gull",
+    "raven",
+    "hooded-crow",
+    "rook",
+    "jackdaw",
+    "magpie",
+    "jay",
+    "fieldfare",
+    "cormorant",
+    "crane",
+    "whooper-swan",
+    "long-tailed-duck",
+    "red-breasted-merganser"
+   ],
+   "text": "No time-of-day limit in the Jaktförordning: 9 § only restricts the species it names. All other game (incl. wild boar, sika, white-tailed deer, wapiti, mouflon, fox, hares, grouse, pheasant, woodcock, pigeons, gulls, corvids) may be hunted day and night during its season.",
+   "law": "Jaktförordning (1987:905) 9 § första stycket (scope); jaktlagen (1987:259) 3 §",
+   "quote": "För jakt med skjutvapen på änder, gäss, björn, varg, järv, lo, älg, dovhjort, kronhjort och rådjur gäller följande begränsningar.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "wild-boar"
+   ],
+   "text": "Wild boar may be hunted at night with fixed lighting at a bait site and with image intensifiers, image converters, thermal cameras or moving lights near the weapon; thermal sights only in open terrain or at bait sites.",
+   "law": "Jaktförordning (1987:905) 13 a §, 14 § andra stycket, 14 a §",
+   "quote": "13 a § Åtel får användas vid jakt. Förordning (2024:64). Fast belysning som har satts upp vid en åtel i syfte att underlätta jakten får användas vid jakt efter vildsvin. 14 a § Elektronisk bildförstärkare, elektronisk bildomvandlare, värmekamera eller rörlig belysning får användas i nära anslutning till jaktvapnet vid jakt efter vildsvin. Termiska sikten får dock endast användas vid jakt i öppen terräng eller vid åtelplatser. Förordning (2019:174).",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "capercaillie",
+    "black-grouse",
+    "hazel-grouse",
+    "willow-ptarmigan",
+    "rock-ptarmigan",
+    "pheasant",
+    "grey-partridge",
+    "woodcock",
+    "common-gull",
+    "herring-gull",
+    "hooded-crow",
+    "rook",
+    "jackdaw",
+    "magpie",
+    "jay"
+   ],
+   "text": "Not a time limit: other birds (not ringduva, gäss, änder) may be hunted at night, but between sunset and 1 h before sunrise a retrieving/marking dog must be brought (not on snow-covered ground, from a boat in open water, or at the coast with decoys). For wood pigeon, geese and ducks a dog is always required.",
+   "law": "Jaktförordning (1987:905) 17 § tredje stycket",
+   "quote": "Vid jakt efter ringduva, gäss eller änder ska en hund som kan apportera eller markera nedskjuten fågel medföras. Vid jakt efter övrig fågel ska en hund som kan apportera eller markera nedskjuten fågel medföras under tiden mellan solens nedgång och en timme före solens uppgång. Skyldigheten att medföra hund gäller inte om jakten sker på snötäckt mark eller från båt i öppet vatten eller vid havskust med hjälp av vettar.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  },
+  {
+   "species": [
+    "greylag-goose",
+    "canada-goose",
+    "wigeon",
+    "mallard",
+    "teal",
+    "goldeneye",
+    "goosander",
+    "tufted-duck"
+   ],
+   "text": "In gränsälvsområdet (Norrbottens län, Torne/Muonio/Könkämä border rivers + 200 m) the season opens 20 Aug at 11:00, not at midnight.",
+   "law": "Jaktförordning (1987:905) bilaga 1 punkterna 13, 14, 15 och 17",
+   "quote": "Norrbottens län: gränsälvsområdet den 20 aug. kl. 11:00-31 jan.",
+   "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/jaktforordning-1987905_sfs-1987-905/"
+  }
+ ],
+ "seasons": [
+  {
+   "species": "moose",
+   "rows": [
+    {
+     "area": "Värmlands län: Torsby kommun",
+     "regions": [],
+     "part_of": [
+      "Värmlands län"
+     ],
+     "from": "09-01",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Dalarnas län: Malung-Sälens kommun, Orsa kommun, Rättviks kommun, Älvdalens kommun och de delar av Mora kommun som ligger norr om sjön Siljan och de delar av kommunen som ligger norr om väg 45 väster om tätorten Mora",
+     "regions": [],
+     "part_of": [
+      "Dalarnas län"
+     ],
+     "from": "09-01",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Gävleborgs län: Ljusdals kommun, Ovanåkers kommun, Hudiksvalls kommun och Nordanstigs kommun",
+     "regions": [],
+     "part_of": [
+      "Gävleborgs län"
+     ],
+     "from": "09-01",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Västernorrlands län, Jämtlands län, Västerbottens län, Norrbottens län",
+     "regions": [
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [
+      "Värmlands län",
+      "Dalarnas län",
+      "Gävleborgs län"
+     ],
+     "from": "10-08",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Includes the parts of Värmlands, Dalarnas and Gävleborgs län not listed above; those länsstyrelser may decide a 1 Sept start in more parts of the county. counties_resolved lists only the counties wholly in 'övriga delar'; Värmland, Dalarna and Gävleborg are split by kommun."
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 2 (3 a §). Moose is hunted on registered licence areas / älgskötselområden with an allocation (33 § jaktlagen, 3 §, 7 §). Outside licence and älgskötselområden, hunting that only concerns calves ('älgkalv') has a 5-day season starting on the same day as in the älgförvaltningsområde. Länsstyrelsen sets one common start day within an älgförvaltningsområde spanning different start dates, and in 1-Sept counties may decide a pause of max 14 days during the rut; reindeer-area pauses possible. Skyddsjakt: bilaga 4 punkt 10 (årskalv at unharvested crops, 1 Aug to the start of the special season). The county rows for 09-01 are partial counties: use counties_resolved only for whole counties."
+  },
+  {
+   "species": "red-deer",
+   "rows": [
+    {
+     "area": "Skåne län (utanför kronhjortsområden)",
+     "regions": [],
+     "part_of": [
+      "Skåne län"
+     ],
+     "from": "10-08",
+     "to": "01-31",
+     "applies_to": "all red deer"
+    },
+    {
+     "area": "Hela landet utom Skåne län (utanför kronhjortsskötselområden)",
+     "regions": [],
+     "part_of": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-16",
+     "to": "01-31",
+     "applies_to": "årskalv (calf of the year)",
+     "note": "08-16 to 09-30 endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "periods": [
+      {
+       "from": "08-16",
+       "to": "09-30",
+       "method": "smyg- eller vaktjakt"
+      }
+     ]
+    },
+    {
+     "area": "Skåne län, inom kronhjortsområden",
+     "regions": [],
+     "part_of": [
+      "Skåne län"
+     ],
+     "from": "10-08",
+     "to": "01-31",
+     "applies_to": "as decided by länsstyrelsen (licence)",
+     "note": "Bilaga 3: 'Inom kronhjortsområdena ska länsstyrelsen besluta jakttiden till en eller flera perioder under tiden den 8 okt.-31 jan.' Licence from länsstyrelsen required (4 §)."
+    },
+    {
+     "area": "Övriga delar av landet, inom kronhjortsskötselområden",
+     "regions": [],
+     "part_of": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "10-08",
+     "to": "01-31",
+     "applies_to": "hjort (stag)"
+    },
+    {
+     "area": "Övriga delar av landet, inom kronhjortsskötselområden",
+     "regions": [],
+     "part_of": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-16",
+     "to": "end-of-02",
+     "applies_to": "hind och årskalv (hind and calf)",
+     "note": "'Under perioden den 16 aug.-30 sept. och 1-28 (29) feb. endast smyg- eller vaktjakt.'",
+     "periods": [
+      {
+       "from": "08-16",
+       "to": "09-30",
+       "method": "smyg- eller vaktjakt"
+      },
+      {
+       "from": "02-01",
+       "to": "02-28",
+       "method": "smyg- eller vaktjakt"
+      }
+     ]
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 10 and bilaga 3 (5 §). Outside Skåne, adult red deer have no general season outside a registered kronhjortsskötselområde. Skyddsjakt: bilaga 4 punkterna 17 (årskalv at unharvested crops, 1 juli-15 april) and 18 (årskalv where red deer cause stem damage on conifers, 1 juli-15 april)."
+  },
+  {
+   "species": "fallow-deer",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "10-20",
+     "applies_to": "alla djur (all)"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "11-16",
+     "to": "end-of-02",
+     "applies_to": "alla djur (all)"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "09-30",
+     "applies_to": "hornbärande djur och kalv (antlered animals and calves)",
+     "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "method": "smyg- eller vaktjakt"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "10-21",
+     "to": "11-15",
+     "applies_to": "hind och kalv (does and calves)"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "03-01",
+     "to": "03-31",
+     "applies_to": "hind och kalv (does and calves)",
+     "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "method": "smyg- eller vaktjakt"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 9. Table text for hind/kalv: 'den 21 okt.-15 nov. och under perioden den 1-31 mars endast smyg- eller vaktjakt' (the method limit is read as applying to March only). Skyddsjakt: bilaga 4 punkt 17."
+  },
+  {
+   "species": "roe-deer",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "05-01",
+     "to": "06-15",
+     "applies_to": "hornbärande (antlered bucks)",
+     "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "method": "smyg- eller vaktjakt"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-16",
+     "to": "09-30",
+     "applies_to": "hornbärande (antlered bucks)",
+     "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "method": "smyg- eller vaktjakt"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "09-30",
+     "applies_to": "kid",
+     "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+     "method": "smyg- eller vaktjakt"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "01-31",
+     "applies_to": "all roe deer"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 11. Table: 'Rådjur - hornbärande | Hela landet | den 16 aug.-30 sept. och den 1 maj-15 juni endast smyg- eller vaktjakt'; 'Rådjur - kid | Hela landet | den 1-30 sept. endast smyg- eller vaktjakt'; 'Rådjur | Hela landet | den 1 okt.-31 jan.'",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Hela landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "05-01",
+      "to": "06-15",
+      "applies_to": "hornbärande (antlered bucks)",
+      "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+      "method": "smyg- eller vaktjakt"
+     },
+     {
+      "area": "Hela landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-16",
+      "to": "09-30",
+      "applies_to": "hornbärande (antlered bucks)",
+      "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+      "method": "smyg- eller vaktjakt"
+     },
+     {
+      "area": "Hela landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "09-01",
+      "to": "09-30",
+      "applies_to": "kid",
+      "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+      "method": "smyg- eller vaktjakt"
+     },
+     {
+      "area": "Hela landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "10-01",
+      "to": "01-31",
+      "applies_to": "all roe deer"
+     },
+     {
+      "area": "Hela landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "02-01",
+      "to": "end-of-02",
+      "applies_to": "kid",
+      "note": "endast smyg- eller vaktjakt (stalking or stand hunting only)",
+      "method": "smyg- eller vaktjakt"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: kid also 1 feb.-28 (29) feb., smyg- eller vaktjakt only."
+   }
+  },
+  {
+   "species": "wild-boar",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "04-01",
+     "to": "01-31",
+     "applies_to": "Vildsvin, utom sugga som följs av randiga eller bruna små kultingar (all except a sow followed by striped or brown small piglets)"
+    },
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "årsunge (young of the year)",
+     "note": "Year-round."
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 8. Skyddsjakt bilaga 4 punkt 2: wild boar that come into the farmyard/garden, on land with crops or professional horticulture where they cause damage, on municipal assignment, and within 200 m of land with crops where boar damage has occurred and further damage must be prevented: 1 juli-30 juni."
+  },
+  {
+   "species": "wapiti",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'wapitihjort' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1."
+  },
+  {
+   "species": "white-tailed-deer",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'vitsvanshjort' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1."
+  },
+  {
+   "species": "sika-deer",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'sikahjort' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1."
+  },
+  {
+   "species": "mouflon",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'mufflonfår' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1."
+  },
+  {
+   "species": "mink",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'mink' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1. Also bilaga 4 punkt 2 (farmyard/garden)."
+  },
+  {
+   "species": "raccoon-dog",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'mårdhund' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1. Also bilaga 4 punkt 2."
+  },
+  {
+   "species": "european-rabbit",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'vildkanin' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1. Also bilaga 4 punkterna 2 and 3."
+  },
+  {
+   "species": "muskrat",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "06-30",
+     "applies_to": "all",
+     "note": "'bisam' listed in bilaga 4 punkt 1: 'får jagas för att förhindra skador orsakade av främmande viltarter den 1 juli-30 juni.'"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 4 punkt 1 (jakt för att förebygga skador, främmande viltarter): may be hunted by the jakträttshavare 1 juli-30 juni 'för att förhindra skador orsakade av främmande viltarter'. Legally skyddsjakt på enskilds initiativ (26 §), not an allmän jakttid, but in practice year-round. Reporting duty to länsstyrelsen per 26 § third paragraph / Naturvårdsverket's rules. Not in bilaga 1."
+  },
+  {
+   "species": "red-fox",
+   "rows": [
+    {
+     "area": "Blekinge län, Skåne län, Hallands län",
+     "regions": [
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    },
+    {
+     "area": "Värmlands län, Örebro län, Dalarnas län utom Älvdalens kommun, Gävleborgs län",
+     "regions": [
+      "Värmlands län",
+      "Örebro län",
+      "Gävleborgs län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all",
+     "note": "Dalarnas län excluding Älvdalens kommun"
+    },
+    {
+     "area": "Dalarnas län: Älvdalens kommun",
+     "regions": [],
+     "part_of": [
+      "Dalarnas län"
+     ],
+     "from": "08-01",
+     "to": "04-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Västernorrlands län, Jämtlands län, Västerbottens län, Norrbottens län",
+     "regions": [
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "04-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Västra Götalands län",
+      "Västmanlands län"
+     ],
+     "part_of": [
+      "Dalarnas län"
+     ],
+     "from": "08-01",
+     "to": "03-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 4. Skyddsjakt se bilaga 4, punkterna 2, 6, 7, 8 och 13 (e.g. årsunge of fox year-round for viltvård, punkt 8)."
+  },
+  {
+   "species": "badger",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 7. Skyddsjakt se bilaga 4, punkterna 2, 6, 9 och 13."
+  },
+  {
+   "species": "pine-marten",
+   "rows": [
+    {
+     "area": "Värmlands, Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Värmlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "03-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 6 (skogsmård). Skyddsjakt se bilaga 4, punkterna 2, 6 och 13."
+  },
+  {
+   "species": "polecat",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 5 (iller). Skyddsjakt se bilaga 4, punkterna 2 och 13."
+  },
+  {
+   "species": "brown-hare",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 1 (fälthare). Skyddsjakt, se bilaga 4, punkterna 2 och 3.",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+      "regions": [
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "09-01",
+      "to": "end-of-02",
+      "applies_to": "all"
+     },
+     {
+      "area": "Övriga delar av landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län"
+      ],
+      "part_of": [],
+      "from": "08-21",
+      "to": "end-of-02",
+      "applies_to": "all"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: earlier start 21 aug. outside the four northern counties."
+   }
+  },
+  {
+   "species": "mountain-hare",
+   "rows": [
+    {
+     "area": "Gotlands, Hallands, Jönköpings, Kalmar, Kronobergs, Skåne, Södermanlands, Västra Götalands och Östergötlands län",
+     "regions": [
+      "Gotlands län",
+      "Hallands län",
+      "Jönköpings län",
+      "Kalmar län",
+      "Kronobergs län",
+      "Skåne län",
+      "Södermanlands län",
+      "Västra Götalands län",
+      "Östergötlands län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "02-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Blekinge län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 2 (skogshare)."
+  },
+  {
+   "species": "beaver",
+   "rows": [
+    {
+     "area": "Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "05-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "05-10",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 3 (bäver)."
+  },
+  {
+   "species": "brown-bear",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Only licensjakt decided by länsstyrelsen (delegated by Naturvårdsverket, 23 c-23 d, 24 a §§) or skyddsjakt (23 b §). NFS 2022:4 5 kap. 1 §: a licence decision must apply at least 30 days within 21 aug.-15 okt. (in Norrbottens län west of odlingsgränsen at least 20 days within 21 aug.-30 sept.). 2026: licence hunt for 394 bears in Norrbottens, Västerbottens, Jämtlands, Västernorrlands, Dalarnas, Gävleborgs och Värmlands län from 21 aug., at most until 15 okt. (Naturvårdsverket news 2026-08). Daily time limit: 9 § 2 (1 h before sunrise to 2 h before sunset)."
+  },
+  {
+   "species": "wolf",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Licensjakt (länsstyrelsen decision) or skyddsjakt only. NFS 2022:4 5 kap. 2 §: a licence decision must cover the whole period 2 jan.-15 feb. Daily limit: 9 § 3."
+  },
+  {
+   "species": "lynx",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Licensjakt or skyddsjakt only. NFS 2022:4 5 kap. 4 §: licence decision covers 1 mars-15 april in the northern rovdjursförvaltningsområde, 1 mars-31 mars elsewhere. Daily limit: 9 § 3."
+  },
+  {
+   "species": "wolverine",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Skyddsjakt (23 b §); licensjakt is legally possible (23 c §, NFS 2022:4 5 kap. 3 §: 1 okt.-31 dec.) but no licence hunt decision was found. Daily limit: 9 § 3."
+  },
+  {
+   "species": "otter",
+   "rows": [],
+   "licence_only": true,
+   "note": "Fredad (jaktlagen 3 §); no allmän jakttid. Only skyddsjakt by decision (21, 23 a §§); statens vilt (33 §)."
+  },
+  {
+   "species": "weasel",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Only skyddsjakt på enskilds initiativ, bilaga 4 punkt 2 (farmyard/garden etc.) and punkt 13 (game-rearing/poultry sites + 200 m), 1 juli-30 juni."
+  },
+  {
+   "species": "stoat",
+   "rows": [],
+   "licence_only": true,
+   "note": "Hermelin: no allmän jakttid. Only skyddsjakt på enskilds initiativ, bilaga 4 punkt 2 and punkt 13, 1 juli-30 juni."
+  },
+  {
+   "species": "red-squirrel",
+   "rows": [],
+   "licence_only": true,
+   "note": "Ekorre: no allmän jakttid. Only bilaga 4 punkt 2 (that come into the farmyard or garden and may cause damage there), 1 juli-30 juni."
+  },
+  {
+   "species": "grey-seal",
+   "rows": [],
+   "licence_only": true,
+   "note": "No allmän jakttid. Licensjakt decided by Naturvårdsverket (23 g §) and skyddsjakt (23 b §). 2026-2027: licensjakt på gråsäl in 'Alla län längs Östersjön', started 20 april 2026 (Naturvårdsverket). From 2027-07-01 (SFS 2026:1693) bilaga 4 punkt 24: 'Säl får jagas i sötvattensområde 1 juli-30 juni.'"
+  },
+  {
+   "species": "harbour-seal",
+   "rows": [],
+   "licence_only": true,
+   "note": "Knubbsäl: no allmän jakttid. Licensjakt possible (23 g §); for 2026-2027 Naturvårdsverket decided skyddsjakt on its own initiative (200 animals) in Västra Götalands län, Hallands län and the Skåne kommuner Båstad, Ängelholm and Höganäs, only at professional fishing sites (+200 m) and fish protection areas (+200 m); periods 20 april-20 maj 2026 and 1 sept. 2026-31 jan. 2027, then 1 feb.-19 april 2027 (beslut NV-25-040298, 2026-02-23). No seal hunt in the Baltic for knubbsäl. From 2027-07-01 also bilaga 4 punkt 24 (freshwater)."
+  },
+  {
+   "species": "ringed-seal",
+   "rows": [],
+   "licence_only": true,
+   "note": "Vikare: no allmän jakttid; skyddsjakt only (23 b §). 2026-2027 skyddsjakt in Norrbottens, Västerbottens, Västernorrlands and Gävleborgs län from 1 maj 2026 (Naturvårdsverket). From 2027-07-01 also bilaga 4 punkt 24 (freshwater)."
+  },
+  {
+   "species": "capercaillie",
+   "rows": [
+    {
+     "area": "Östergötlands, Jönköpings, Kronobergs, Kalmar, Blekinge, Hallands och Västra Götalands län",
+     "regions": [
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "09-30",
+     "applies_to": "tjäder (both sexes)"
+    },
+    {
+     "area": "Övriga delar av landet utom Gotlands län och Skåne län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-15",
+     "applies_to": "tjäder (both sexes)"
+    },
+    {
+     "area": "Östergötlands, Jönköpings, Kronobergs, Kalmar, Blekinge, Hallands och Västra Götalands län",
+     "regions": [
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län"
+     ],
+     "part_of": [],
+     "from": "01-01",
+     "to": "01-31",
+     "applies_to": "tjädertupp (cock only)"
+    },
+    {
+     "area": "Skåne län",
+     "regions": [
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "09-15",
+     "applies_to": "tjädertupp (cock only)"
+    },
+    {
+     "area": "Skåne län",
+     "regions": [
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "01-01",
+     "to": "01-31",
+     "applies_to": "tjädertupp (cock only)"
+    },
+    {
+     "area": "Övriga delar av landet utom Gotlands län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "11-16",
+     "to": "02-15",
+     "applies_to": "tjädertupp (cock only)"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 20 (orre och tjäder) and punkt 21 (orrtupp och tjädertupp). No season in Gotlands län."
+  },
+  {
+   "species": "black-grouse",
+   "rows": [
+    {
+     "area": "Östergötlands, Jönköpings, Kronobergs, Kalmar, Blekinge, Hallands och Västra Götalands län",
+     "regions": [
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "09-30",
+     "applies_to": "orre (both sexes)"
+    },
+    {
+     "area": "Övriga delar av landet utom Gotlands län och Skåne län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-15",
+     "applies_to": "orre (both sexes)"
+    },
+    {
+     "area": "Östergötlands, Jönköpings, Kronobergs, Kalmar, Blekinge, Hallands och Västra Götalands län",
+     "regions": [
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Blekinge län",
+      "Hallands län",
+      "Västra Götalands län"
+     ],
+     "part_of": [],
+     "from": "01-01",
+     "to": "01-31",
+     "applies_to": "orrtupp (cock only)"
+    },
+    {
+     "area": "Skåne län",
+     "regions": [
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "09-01",
+     "to": "09-15",
+     "applies_to": "orrtupp (cock only)"
+    },
+    {
+     "area": "Skåne län",
+     "regions": [
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "01-01",
+     "to": "01-31",
+     "applies_to": "orrtupp (cock only)"
+    },
+    {
+     "area": "Övriga delar av landet utom Gotlands län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "11-16",
+     "to": "02-15",
+     "applies_to": "orrtupp (cock only)"
+    }
+   ],
+   "licence_only": false,
+   "note": "Same rows as tjäder: bilaga 1 punkt 20 (orre och tjäder) and punkt 21 (orrtupp och tjädertupp). No season in Gotlands län."
+  },
+  {
+   "species": "hazel-grouse",
+   "rows": [
+    {
+     "area": "Norrbottens, Västerbottens, Jämtlands, Västernorrlands, Gävleborgs, Dalarnas och Värmlands län",
+     "regions": [
+      "Värmlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 19 (järpe). No season elsewhere."
+  },
+  {
+   "species": "willow-ptarmigan",
+   "rows": [
+    {
+     "area": "Dalarnas län: Älvdalens kommun; Jämtlands län",
+     "regions": [],
+     "part_of": [
+      "Jämtlands län"
+     ],
+     "from": "08-25",
+     "to": "end-of-02",
+     "applies_to": "all",
+     "note": "Dalarnas län only Älvdalens kommun"
+    },
+    {
+     "area": "Dalarnas län: övriga delar av länet; Västerbottens och Norrbottens län: nedanför lappmarksgränsen",
+     "regions": [],
+     "part_of": [
+      "Dalarnas län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-25",
+     "to": "02-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Västerbottens och Norrbottens län: ovanför lappmarksgränsen",
+     "regions": [],
+     "part_of": [
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-25",
+     "to": "03-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Värmlands län, Gävleborgs län, Västernorrlands län",
+     "regions": [
+      "Värmlands län",
+      "Gävleborgs län",
+      "Västernorrlands län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 18 (dalripa och fjällripa). Snaror (snares) allowed for ripa north of 58° N (10 a §).",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Norrbottens, Västerbottens, Jämtlands, Västernorrlands, Gävleborgs, Dalarnas och Värmlands län",
+      "regions": [
+       "Värmlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-25",
+      "to": "03-15",
+      "applies_to": "all"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: one season 25 aug.-15 mars in all seven counties. NB: the official SFS 2026:1693 PDF lists Västernorrlands län, but the consolidated riksdagen.se text of the future bilaga 1 omits Västernorrlands län (apparent consolidation error)."
+   }
+  },
+  {
+   "species": "rock-ptarmigan",
+   "rows": [
+    {
+     "area": "Dalarnas län: Älvdalens kommun; Jämtlands län",
+     "regions": [],
+     "part_of": [
+      "Jämtlands län"
+     ],
+     "from": "08-25",
+     "to": "end-of-02",
+     "applies_to": "all",
+     "note": "Dalarnas län only Älvdalens kommun"
+    },
+    {
+     "area": "Dalarnas län: övriga delar av länet; Västerbottens och Norrbottens län: nedanför lappmarksgränsen",
+     "regions": [],
+     "part_of": [
+      "Dalarnas län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-25",
+     "to": "02-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Västerbottens och Norrbottens län: ovanför lappmarksgränsen",
+     "regions": [],
+     "part_of": [
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "from": "08-25",
+     "to": "03-15",
+     "applies_to": "all"
+    },
+    {
+     "area": "Värmlands län, Gävleborgs län, Västernorrlands län",
+     "regions": [
+      "Värmlands län",
+      "Gävleborgs län",
+      "Västernorrlands län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 18 (dalripa och fjällripa). Snaror (snares) allowed for ripa north of 58° N (10 a §).",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Norrbottens, Västerbottens, Jämtlands, Västernorrlands, Gävleborgs, Dalarnas och Värmlands län",
+      "regions": [
+       "Värmlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-25",
+      "to": "03-15",
+      "applies_to": "all"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: one season 25 aug.-15 mars in all seven counties. NB: the official SFS 2026:1693 PDF lists Västernorrlands län, but the consolidated riksdagen.se text of the future bilaga 1 omits Västernorrlands län (apparent consolidation error)."
+   }
+  },
+  {
+   "species": "pheasant",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 23 (fasan)."
+  },
+  {
+   "species": "grey-partridge",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-16",
+     "to": "11-30",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 22 (rapphöna)."
+  },
+  {
+   "species": "wigeon",
+   "rows": [
+    {
+     "area": "Gotlands län, Blekinge län, Skåne län",
+     "regions": [
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "12-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens län; Norrbottens län: länet utom gränsälvsområdet",
+     "regions": [
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Norrbottens län excluding gränsälvsområdet"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11.00",
+     "from_time": "11:00"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-21",
+     "to": "11-30",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 14 (bläsand, gräsand och kricka)."
+  },
+  {
+   "species": "teal",
+   "rows": [
+    {
+     "area": "Gotlands län, Blekinge län, Skåne län",
+     "regions": [
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "12-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens län; Norrbottens län: länet utom gränsälvsområdet",
+     "regions": [
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Norrbottens län excluding gränsälvsområdet"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11.00",
+     "from_time": "11:00"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-21",
+     "to": "11-30",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 14 (bläsand, gräsand och kricka)."
+  },
+  {
+   "species": "mallard",
+   "rows": [
+    {
+     "area": "Gotlands län, Blekinge län, Skåne län",
+     "regions": [
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "12-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens län; Norrbottens län: länet utom gränsälvsområdet",
+     "regions": [
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-25",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Norrbottens län excluding gränsälvsområdet"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "11-30",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11.00",
+     "from_time": "11:00"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-21",
+     "to": "12-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 14 (bläsand, gräsand och kricka).",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Norrbottens län: gränsälvsområdet",
+      "regions": [],
+      "part_of": [
+       "Norrbottens län"
+      ],
+      "from": "08-20",
+      "to": "11-30",
+      "applies_to": "all",
+      "from_time": "11:00"
+     },
+     {
+      "area": "Övriga delar av landet",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-21",
+      "to": "01-31",
+      "applies_to": "all",
+      "note": "From 2027-07-01 gräsand is no longer named in the Gotland/Blekinge/Skåne or northern rows, so 'övriga delar av landet' = whole country except gränsälvsområdet (Norrbotten minus that zone is included)."
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: 'Gräsand | Övriga delar av landet | den 21 aug.-31 jan.'"
+   }
+  },
+  {
+   "species": "goldeneye",
+   "rows": [
+    {
+     "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Norrbotten excluding gränsälvsområdet"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11.00",
+     "from_time": "11:00"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 15 (knipa och storskrake).",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-21",
+      "to": "02-20",
+      "applies_to": "all"
+     },
+     {
+      "area": "Norrbottens län: gränsälvsområdet",
+      "regions": [],
+      "part_of": [
+       "Norrbottens län"
+      ],
+      "from": "08-20",
+      "to": "01-31",
+      "applies_to": "all",
+      "from_time": "11:00"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: end 20 feb. outside gränsälvsområdet."
+   }
+  },
+  {
+   "species": "goosander",
+   "rows": [
+    {
+     "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Norrbotten excluding gränsälvsområdet"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11.00",
+     "from_time": "11:00"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 15 (knipa och storskrake).",
+   "change": {
+    "from": "2027-07-01",
+    "rows": [
+     {
+      "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+      "regions": [
+       "Stockholms län",
+       "Uppsala län",
+       "Södermanlands län",
+       "Östergötlands län",
+       "Jönköpings län",
+       "Kronobergs län",
+       "Kalmar län",
+       "Gotlands län",
+       "Blekinge län",
+       "Skåne län",
+       "Hallands län",
+       "Västra Götalands län",
+       "Värmlands län",
+       "Örebro län",
+       "Västmanlands län",
+       "Dalarnas län",
+       "Gävleborgs län",
+       "Västernorrlands län",
+       "Jämtlands län",
+       "Västerbottens län",
+       "Norrbottens län"
+      ],
+      "part_of": [],
+      "from": "08-21",
+      "to": "02-20",
+      "applies_to": "all"
+     },
+     {
+      "area": "Norrbottens län: gränsälvsområdet",
+      "regions": [],
+      "part_of": [
+       "Norrbottens län"
+      ],
+      "from": "08-20",
+      "to": "01-31",
+      "applies_to": "all",
+      "from_time": "11:00"
+     }
+    ],
+    "note": "SFS 2026:1693, from 2027-07-01: end 20 feb. outside gränsälvsområdet."
+   }
+  },
+  {
+   "species": "tufted-duck",
+   "rows": [
+    {
+     "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11:00",
+     "from_time": "11:00"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 17 (vigg)."
+  },
+  {
+   "species": "common-scoter",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-21",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 16 (sjöorre)."
+  },
+  {
+   "species": "greylag-goose",
+   "rows": [
+    {
+     "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-11",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11:00",
+     "from_time": "11:00"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 13 (grågås och kanadagås). Skyddsjakt se bilaga 4, punkterna 5 (airports) och 12 (in flocks of at least five at unharvested crops or health nuisance, 1 juli-30 juni)."
+  },
+  {
+   "species": "canada-goose",
+   "rows": [
+    {
+     "area": "Hela landet utom gränsälvsområdet i Norrbottens län",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-11",
+     "to": "01-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Norrbottens län: gränsälvsområdet",
+     "regions": [],
+     "part_of": [
+      "Norrbottens län"
+     ],
+     "from": "08-20",
+     "to": "01-31",
+     "applies_to": "all",
+     "note": "Starts 20 aug. kl. 11:00",
+     "from_time": "11:00"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 13 (grågås och kanadagås). Skyddsjakt se bilaga 4, punkterna 5 (airports) och 12 (in flocks of at least five at unharvested crops or health nuisance, 1 juli-30 juni)."
+  },
+  {
+   "species": "white-fronted-goose",
+   "rows": [
+    {
+     "area": "Skåne län",
+     "regions": [
+      "Skåne län"
+     ],
+     "part_of": [],
+     "from": "10-01",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 12 (bläsgås). Skyddsjakt se bilaga 4, punkt 5."
+  },
+  {
+   "species": "woodcock",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "09-11",
+     "to": "12-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 24 (morkulla)."
+  },
+  {
+   "species": "wood-pigeon",
+   "rows": [
+    {
+     "area": "Dalarnas, Gävleborgs, Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "12-31",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län"
+     ],
+     "part_of": [],
+     "from": "08-16",
+     "to": "12-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 27 (ringduva). Skyddsjakt se bilaga 4, punkterna 5 och 15 (flocks of at least five damaging professional crops: 1 jan.-31 juli in the six northern counties, 1 jan.-15 aug. elsewhere)."
+  },
+  {
+   "species": "common-gull",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-11",
+     "to": "end-of-02",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 25 (fiskmås). Skyddsjakt se bilaga 4, punkterna 2 och 5."
+  },
+  {
+   "species": "herring-gull",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-01",
+     "to": "03-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 26 (gråtrut). Skyddsjakt se bilaga 4, punkterna 2 och 5."
+  },
+  {
+   "species": "jay",
+   "rows": [
+    {
+     "area": "Hela landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län",
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "08-21",
+     "to": "03-10",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 28 (nötskrika)."
+  },
+  {
+   "species": "hooded-crow",
+   "rows": [
+    {
+     "area": "Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-16",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "04-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 29 (kaja, kråka och skata). Skyddsjakt se bilaga 4, punkterna 2 och 5."
+  },
+  {
+   "species": "jackdaw",
+   "rows": [
+    {
+     "area": "Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-16",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "04-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 29 (kaja, kråka och skata). Skyddsjakt se bilaga 4, punkterna 2 och 5."
+  },
+  {
+   "species": "magpie",
+   "rows": [
+    {
+     "area": "Västernorrlands, Jämtlands, Västerbottens och Norrbottens län",
+     "regions": [
+      "Västernorrlands län",
+      "Jämtlands län",
+      "Västerbottens län",
+      "Norrbottens län"
+     ],
+     "part_of": [],
+     "from": "07-16",
+     "to": "04-30",
+     "applies_to": "all"
+    },
+    {
+     "area": "Övriga delar av landet",
+     "regions": [
+      "Stockholms län",
+      "Uppsala län",
+      "Södermanlands län",
+      "Östergötlands län",
+      "Jönköpings län",
+      "Kronobergs län",
+      "Kalmar län",
+      "Gotlands län",
+      "Blekinge län",
+      "Skåne län",
+      "Hallands län",
+      "Västra Götalands län",
+      "Värmlands län",
+      "Örebro län",
+      "Västmanlands län",
+      "Dalarnas län",
+      "Gävleborgs län"
+     ],
+     "part_of": [],
+     "from": "07-01",
+     "to": "04-15",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 29 (kaja, kråka och skata). Skyddsjakt se bilaga 4, punkterna 2 och 5."
+  },
+  {
+   "species": "rook",
+   "rows": [
+    {
+     "area": "Skåne län, Hallands län",
+     "regions": [
+      "Skåne län",
+      "Hallands län"
+     ],
+     "part_of": [],
+     "from": "07-21",
+     "to": "01-31",
+     "applies_to": "all"
+    }
+   ],
+   "licence_only": false,
+   "note": "Bilaga 1 punkt 30 (råka). Skyddsjakt se bilaga 4, punkt 2."
+  },
+  {
+   "species": "eider",
+   "rows": [],
+   "licence_only": true,
+   "note": "Ejder: not in bilaga 1, so fredad (jaktlagen 3 §). Still named in 9 § 1 but has no season. Naturvårdsverket (NV-06912-24) says eider was lifted out of the review pending an international management plan."
+  },
+  {
+   "species": "long-tailed-duck",
+   "rows": [],
+   "licence_only": true,
+   "note": "Alfågel: not in bilaga 1 (general hunting abolished after Naturvårdsverket's 2020 proposal); fredad."
+  },
+  {
+   "species": "red-breasted-merganser",
+   "rows": [],
+   "licence_only": true,
+   "note": "Småskrake: not in bilaga 1; fredad. Only skyddsjakt by länsstyrelse decision (29 §)."
+  },
+  {
+   "species": "bean-goose",
+   "rows": [],
+   "licence_only": true,
+   "note": "Sädgås: no allmän jakttid. Skyddsjakt bilaga 4 punkt 11: in flocks of at least five at unharvested crops, in Blekinge län och Skåne län, 21 april-20 feb. From 2027-07-01: 'Skogsgås och tundragås (sädgås)' in Blekinge och Skåne 1 okt.-28 (29) feb. at crops or pasture."
+  },
+  {
+   "species": "barnacle-goose",
+   "rows": [],
+   "licence_only": true,
+   "note": "Vitkindad gås: no allmän jakttid. Skyddsjakt bilaga 4 punkt 5 (airports) och 12 (flocks of at least five at unharvested crops / health nuisance, 1 juli-30 juni). From 2027-07-01 also punkt 22: Skåne, Blekinge, Kalmar och Gotlands län 1 nov.-28 (29) feb. to prevent damage."
+  },
+  {
+   "species": "whooper-swan",
+   "rows": [],
+   "licence_only": true,
+   "note": "Sångsvan: no allmän jakttid. Skyddsjakt bilaga 4 punkt 21: flocks of at least five at unharvested crops, 1 okt.-31 mars (from 2027-07-01 without the flock requirement)."
+  },
+  {
+   "species": "crane",
+   "rows": [],
+   "licence_only": true,
+   "note": "Trana: no allmän jakttid. Skyddsjakt bilaga 4 punkt 20: flocks of at least five at unharvested crops, 1 aug.-30 sept. och 1 april-30 maj (from 2027-07-01: 1 aug.-15 okt. och 1 april-15 juni)."
+  },
+  {
+   "species": "cormorant",
+   "rows": [],
+   "licence_only": true,
+   "note": "Storskarv: no allmän jakttid. Skyddsjakt bilaga 4 punkt 19 (at fishing gear 1 aug.-28 (29) feb.; fish farms/stocking sites 1 juli-30 juni; fish protection areas 1 aug.-28 (29) feb.; never closer than 300 m to cormorant, white-tailed eagle or osprey nests) and punkt 5 (airports). Wider coastal rules from 2027-07-01."
+  },
+  {
+   "species": "great-black-backed-gull",
+   "rows": [],
+   "licence_only": true,
+   "note": "Havstrut: no allmän jakttid. Skyddsjakt only, bilaga 4 punkterna 2 och 5."
+  },
+  {
+   "species": "raven",
+   "rows": [],
+   "licence_only": true,
+   "note": "Korp: no allmän jakttid. Skyddsjakt only, bilaga 4 punkterna 2, 5, 7 och 13."
+  },
+  {
+   "species": "fieldfare",
+   "rows": [],
+   "licence_only": true,
+   "note": "Björktrast: no allmän jakttid. Skyddsjakt only, bilaga 4 punkt 2 (installations, crops/horticulture, municipal assignment)."
+  }
+ ]
+}

@@ -249,6 +249,20 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    energy at the muzzle and at 100 m. A bullet whose construction isn't set
    (a Strelok import, say) is assumed to expand, and the result says so.
 
+   **Hunting today:** for game, with your country set, the target section
+   shows the season in your county (Sweden's län, Finland's maakunnat), from
+   the weather place search or picked from the list: open until when, or when
+   it opens, for which animals and with which method limits. It also shows
+   today's legal shooting light where you are (sunrise and sunset worked out
+   offline for your position), and whether it is allowed right now. In
+   Sweden that is from an hour before sunrise to an hour after sunset for
+   moose, deer, wolf, lynx and wolverine (the last hour only stalking or
+   watching), and to two hours before sunset for bear, by Jaktförordningen
+   9 §. In Finland only ducks and geese have such hours. The Targets page
+   shows each species' whole season table, the law's own words with links,
+   and the sources. The data is the law as of its date: check before you
+   hunt. How it is made and updated: [tools/hunting](tools/hunting/README.md).
+
    **Hunting rules** (the flag in the header; on a phone, in the menu)
    chooses the country: **Sweden** (Naturvårdsverket, NFS 2023:8, classes
    1–4), **Finland** (Metsästysasetus 666/1993 § 16 a: moose, deer, roe
