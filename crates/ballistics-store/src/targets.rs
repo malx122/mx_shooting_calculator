@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::rules::Country;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// Game, with ethical limits, or a sport target.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TargetKind {
     Game,
@@ -19,7 +20,7 @@ pub enum TargetKind {
 }
 
 /// How targets are grouped in lists, the way hunters think of the game.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TargetGroup {
     Deer,
@@ -67,7 +68,7 @@ impl TargetGroup {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "shape", rename_all = "snake_case")]
 pub enum TargetShape {
     /// An animal standing broadside.
@@ -117,10 +118,16 @@ impl TargetShape {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+/// What is shot at: a game animal, whose vital zone and least energy set
+/// the ethical range, or a sport target and its hit zone. Drawn at true
+/// size by its `shape`.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Target {
+    /// The target's id, unique among targets.
     pub id: String,
+    /// Its name.
     pub name: String,
+    /// Game, with ethical limits, or a sport target.
     pub kind: TargetKind,
     #[serde(flatten)]
     pub shape: TargetShape,
@@ -133,6 +140,7 @@ pub struct Target {
     /// general one (zero: no expansion needed, as for small game).
     #[serde(default)]
     pub min_velocity_mps: Option<f64>,
+    /// Notes about it.
     #[serde(default)]
     pub notes: String,
     /// Where it is listed; `None` for the hunter's own until they choose.
@@ -141,8 +149,8 @@ pub struct Target {
     /// Other names to find it by, such as the Swedish and Finnish ones.
     #[serde(default)]
     pub other_names: Vec<String>,
-    /// The rifle ammunition level each country's rules ask for (see
-    /// `crate::rules`), where it is game there.
+    /// The least rifle ammunition level (class) each country's rules ask
+    /// for, where it is game there; 1 is the strictest.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub ammunition: BTreeMap<Country, u8>,
     /// What else each country's rules say about it ("a shotgun is allowed
@@ -155,7 +163,8 @@ pub struct Target {
     /// The catalog target a custom one was copied from.
     #[serde(default)]
     pub catalog_id: Option<String>,
-    /// Zero for catalog targets.
+    /// When the record was last changed, in milliseconds since 1970 (UTC);
+    /// zero for catalog targets.
     #[serde(default)]
     pub updated_at: i64,
 }

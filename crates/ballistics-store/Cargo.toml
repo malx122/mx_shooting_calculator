@@ -9,14 +9,20 @@ authors.workspace = true
 [dependencies]
 rusqlite = { version = "0.40", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
 uuid = { version = "1", features = ["v4", "v5"] }
 roxmltree = "0.21"
 # The clock (std's panics in the browser; this is std's on desktop).
 web-time = "1"
 sha2 = "0.10"
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
+# The export file's JSON Schema, generated from these types (docs/export-format.*).
+schemars = "1"
 
 # In the browser: ids take their randomness from the browser.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 uuid = { version = "1", features = ["v4", "v5", "js"] }
+
+[dev-dependencies]
+# Checks that an export matches the published schema.
+jsonschema = { version = "0.59", default-features = false }

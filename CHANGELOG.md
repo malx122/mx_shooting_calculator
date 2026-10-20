@@ -11,6 +11,11 @@ any release may still change things noticeably.
 - **Desktop apps** for macOS (Apple silicon and Intel), Windows and Linux,
   attached to each release on GitHub, and a **download page** with a
   **privacy policy** beside the web version.
+- **An open backup format:** an exported backup now also writes out the
+  calibers, scopes and reticles its rifles name from the app's catalog, so
+  other programs can read it without the app. The format is described in
+  [docs/export-format.md](docs/export-format.md), with a JSON Schema
+  published beside the download page.
 
 ### Fixed
 

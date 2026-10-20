@@ -41,20 +41,207 @@ const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/pe
 /// 5: deleted records.
 pub const VERSION: u32 = 5;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+// This and the types in it are the documented export format: changing
+// them changes docs/export-format.schema.json and the field reference in
+// docs/export-format.md, which a test then asks to regenerate
+// (`MXSC_UPDATE_DOCS=1 cargo test -p ballistics-store export_format`).
+// Their doc comments are the published descriptions. Check the page's
+// hand-written parts too, and raise `VERSION` when older apps couldn't read
+// the new files.
+
+/// A file of the hunter's own records: an export, a backup or a sync copy.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct PersonalData {
+    /// Always `mxsc/personal-data`. Files from the app's earlier names say
+    /// `mhc/personal-data` or `ballistic-calculator/personal-data`.
     pub format: String,
+    /// The format's version; this description is of version 5. A reader
+    /// should refuse versions newer than it knows.
     pub version: u32,
+    /// When the file was written, in milliseconds since 1970 (UTC).
     pub exported_at: i64,
+    /// The hunter's rifles.
     pub rifles: Vec<Rifle>,
+    /// The hunter's bullets: factory ammunition and handloads.
     pub bullets: Vec<Bullet>,
+    /// What is particular to a bullet in a rifle: measured velocities,
+    /// point of impact, zero weather and truing.
     pub rifle_loads: Vec<RifleLoad>,
+    /// Scopes the hunter entered (catalog scopes are only named by id).
     #[serde(default)]
     pub scopes: Vec<UserScope>,
+    /// Targets the hunter made or copied (catalog targets aren't included).
     #[serde(default)]
     pub targets: Vec<Target>,
+    /// Records deleted, so merging the file deletes them elsewhere too.
     #[serde(default)]
     pub deleted: Vec<Deletion>,
+    /// The catalog entries the records refer to by id, written out so the
+    /// file can be read without the app. Only in exported files; importing
+    /// ignores it.
+    #[serde(default, skip_serializing_if = "CatalogDetails::is_empty")]
+    pub catalog: CatalogDetails,
+}
+
+/// What the records name from the app's built-in catalog.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CatalogDetails {
+    /// The calibers named by rifles and bullets (their `caliber`).
+    #[serde(default)]
+    pub calibers: Vec<CaliberDetails>,
+    /// The catalog scopes named by rifles (their `scope_id`).
+    #[serde(default)]
+    pub scopes: Vec<ScopeDetails>,
+    /// The catalog reticles named by rifles and scopes (their `reticle_id`).
+    #[serde(default)]
+    pub reticles: Vec<ReticleDetails>,
+}
+
+impl CatalogDetails {
+    pub fn is_empty(&self) -> bool {
+        self.calibers.is_empty() && self.scopes.is_empty() && self.reticles.is_empty()
+    }
+
+    /// The catalog entries `data` refers to.
+    pub fn for_data(data: &PersonalData) -> CatalogDetails {
+        let catalog = crate::Catalog::builtin();
+        let mut calibers: Vec<&str> = data
+            .rifles
+            .iter()
+            .map(|rifle| rifle.caliber.as_str())
+            .chain(data.bullets.iter().map(|bullet| bullet.caliber.as_str()))
+            .collect();
+        calibers.sort_unstable();
+        calibers.dedup();
+        let mut scopes: Vec<&str> = data
+            .rifles
+            .iter()
+            .filter_map(|rifle| rifle.scope_id.as_deref())
+            .collect();
+        scopes.sort_unstable();
+        scopes.dedup();
+        let mut reticles: Vec<&str> = data
+            .rifles
+            .iter()
+            .filter_map(|rifle| rifle.reticle_id.as_deref())
+            .chain(
+                data.scopes
+                    .iter()
+                    .filter_map(|scope| scope.reticle_id.as_deref()),
+            )
+            .collect();
+        reticles.sort_unstable();
+        reticles.dedup();
+        CatalogDetails {
+            calibers: calibers
+                .into_iter()
+                .filter_map(|key| catalog.caliber(key))
+                .map(|caliber| CaliberDetails {
+                    key: caliber.key.clone(),
+                    name: caliber.name.clone(),
+                    bullet_diameter_mm: caliber.bullet_diameter_mm,
+                })
+                .collect(),
+            scopes: scopes
+                .into_iter()
+                .filter_map(|id| catalog.scope(id))
+                .map(|scope| ScopeDetails {
+                    id: scope.id.clone(),
+                    manufacturer: scope.manufacturer.clone(),
+                    model: scope.model.clone(),
+                    magnification_min: scope.magnification_min,
+                    magnification_max: scope.magnification_max,
+                    objective_mm: scope.objective_mm,
+                    tube_mm: scope.tube_mm,
+                    focal_plane: scope.focal_plane,
+                    reticle_reference_magnification: scope.reticle_reference_magnification,
+                    click_unit: scope.click_unit,
+                    click_value: scope.click_value,
+                    elevation_travel: scope.elevation_travel,
+                    fov_m_at_100m: scope.fov_m_at_100m,
+                    illuminated: scope.illuminated,
+                    source_url: scope.source_url.clone(),
+                })
+                .collect(),
+            reticles: reticles
+                .into_iter()
+                .filter_map(|id| Some((id, catalog.reticle(id)?)))
+                .map(|(id, reticle)| ReticleDetails {
+                    id: id.to_owned(),
+                    manufacturer: reticle.manufacturer.clone(),
+                    name: reticle.name.clone(),
+                    maker_reticle_name: reticle.maker_reticle_name.clone(),
+                    unit: reticle.unit,
+                    source_url: reticle.source_url.clone(),
+                })
+                .collect(),
+        }
+    }
+}
+
+/// A caliber, as a rifle's or bullet's `caliber` names it.
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CaliberDetails {
+    /// The key records use, e.g. `308-win`.
+    pub key: String,
+    /// Its name, e.g. `.308 Win`.
+    pub name: String,
+    /// The bullet diameter the caliber takes, mm.
+    pub bullet_diameter_mm: f64,
+}
+
+/// A catalog scope, as a rifle's `scope_id` names it.
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ScopeDetails {
+    /// The id a rifle's `scope_id` uses.
+    pub id: String,
+    /// The maker.
+    pub manufacturer: String,
+    /// The model.
+    pub model: String,
+    /// Lowest magnification.
+    pub magnification_min: f64,
+    /// Highest magnification.
+    pub magnification_max: f64,
+    /// Objective lens diameter, mm.
+    pub objective_mm: f64,
+    /// Tube diameter, mm.
+    pub tube_mm: Option<f64>,
+    /// Where the reticle sits.
+    pub focal_plane: crate::optics::FocalPlane,
+    /// For second-focal-plane scopes: the magnification at which the
+    /// reticle's published dimensions are true.
+    pub reticle_reference_magnification: Option<f64>,
+    /// The unit of its clicks.
+    pub click_unit: crate::optics::AngleUnit,
+    /// Per click, in `click_unit`; `null` when the maker doesn't publish it.
+    pub click_value: Option<f64>,
+    /// Total elevation adjustment, in `click_unit`.
+    pub elevation_travel: Option<f64>,
+    /// Field of view in metres at 100 m, at the lowest and the highest
+    /// magnification.
+    pub fov_m_at_100m: Option<[f64; 2]>,
+    /// Whether the reticle can be lit.
+    pub illuminated: bool,
+    /// Where the data was taken from.
+    pub source_url: String,
+}
+
+/// A catalog reticle, as a `reticle_id` names it.
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ReticleDetails {
+    /// The id the record uses.
+    pub id: String,
+    /// The maker.
+    pub manufacturer: String,
+    /// The app's name for it, with scope and unit.
+    pub name: String,
+    /// The maker's own name for the reticle.
+    pub maker_reticle_name: String,
+    /// The unit its marks are drawn in.
+    pub unit: crate::optics::AngleUnit,
+    /// Where its dimensions were taken from.
+    pub source_url: String,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -156,11 +343,17 @@ impl Store {
             scopes: self.scopes()?,
             targets: self.targets()?,
             deleted: self.deletions()?,
+            // Sync copies stay small: only exported files carry it.
+            catalog: CatalogDetails::default(),
         })
     }
 
+    /// The export file: the records, with the catalog entries they name
+    /// written out so other programs can read it (see docs/export-format.md).
     pub fn export_json(&self) -> Result<String, StoreError> {
-        Ok(serde_json::to_string_pretty(&self.export_data()?)?)
+        let mut data = self.export_data()?;
+        data.catalog = CatalogDetails::for_data(&data);
+        Ok(serde_json::to_string_pretty(&data)?)
     }
 
     /// Loads the demo data: a few rifles with bullets, loads, a scope and a

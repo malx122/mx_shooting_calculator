@@ -12,6 +12,7 @@ pub mod drawings;
 pub mod model;
 pub mod optics;
 pub mod rules;
+pub mod schema;
 pub mod strelok;
 pub mod sun;
 pub mod sync;

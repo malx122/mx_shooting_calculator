@@ -153,7 +153,11 @@ identity and the Windows program not at all; signing and notarizing need an
 Apple Developer ID and a code-signing certificate.
 
 The backup format (`transfer::VERSION`) and the database schema (the
-migrations in `db.rs`) have their own numbers. Only a change that stops old
+migrations in `db.rs`) have their own numbers. The backup format is
+documented for other programs in [docs/export-format.md](docs/export-format.md)
+with a JSON Schema; both are generated from the code, and a test fails until
+they are regenerated after a change
+(`MXSC_UPDATE_DOCS=1 cargo test -p ballistics-store export_format`). Only a change that stops old
 backups or databases from loading needs a new major version.
 
 ### Development data

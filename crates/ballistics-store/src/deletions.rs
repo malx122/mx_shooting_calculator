@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// The kinds of the hunter's records.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RecordKind {
     Rifle,
@@ -50,10 +50,13 @@ impl RecordKind {
     }
 }
 
-/// A record deleted at a time (ms since the epoch, on the store's clock).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// A record that was deleted.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Deletion {
+    /// What kind of record it was.
     pub kind: RecordKind,
+    /// The deleted record's id.
     pub id: String,
+    /// When it was deleted, in milliseconds since 1970 (UTC).
     pub deleted_at: i64,
 }

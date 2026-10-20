@@ -1,0 +1,1518 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MX Shooting Calculator export",
+  "description": "A file of the hunter's own records: an export, a backup or a sync copy.",
+  "type": "object",
+  "properties": {
+    "format": {
+      "description": "Always `mxsc/personal-data`. Files from the app's earlier names say\n`mhc/personal-data` or `ballistic-calculator/personal-data`.",
+      "type": "string"
+    },
+    "version": {
+      "description": "The format's version; this description is of version 5. A reader\nshould refuse versions newer than it knows.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "exported_at": {
+      "description": "When the file was written, in milliseconds since 1970 (UTC).",
+      "type": "integer",
+      "format": "int64"
+    },
+    "rifles": {
+      "description": "The hunter's rifles.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Rifle"
+      }
+    },
+    "bullets": {
+      "description": "The hunter's bullets: factory ammunition and handloads.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Bullet"
+      }
+    },
+    "rifle_loads": {
+      "description": "What is particular to a bullet in a rifle: measured velocities,\npoint of impact, zero weather and truing.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RifleLoad"
+      }
+    },
+    "scopes": {
+      "description": "Scopes the hunter entered (catalog scopes are only named by id).",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/UserScope"
+      },
+      "default": []
+    },
+    "targets": {
+      "description": "Targets the hunter made or copied (catalog targets aren't included).",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Target"
+      },
+      "default": []
+    },
+    "deleted": {
+      "description": "Records deleted, so merging the file deletes them elsewhere too.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Deletion"
+      },
+      "default": []
+    },
+    "catalog": {
+      "description": "The catalog entries the records refer to by id, written out so the\nfile can be read without the app. Only in exported files; importing\nignores it.",
+      "$ref": "#/$defs/CatalogDetails"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "exported_at",
+    "rifles",
+    "bullets",
+    "rifle_loads",
+    "scopes",
+    "targets",
+    "deleted"
+  ],
+  "$defs": {
+    "Rifle": {
+      "description": "A rifle: its caliber, barrel, scope and zero.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The rifle's id, unique among rifles.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The hunter's name for the rifle.",
+          "type": "string"
+        },
+        "caliber": {
+          "description": "The caliber's key in the app's catalog, e.g. `6-5x55-se` (see\n`catalog`).",
+          "type": "string"
+        },
+        "barrel_length_mm": {
+          "description": "Barrel length; `null` when not known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "twist_in": {
+          "description": "Barrel length for one turn of the rifling, in inches.",
+          "type": "number",
+          "format": "double"
+        },
+        "right_hand_twist": {
+          "description": "Whether the rifling turns to the right (clockwise seen from behind), as\nmost do.",
+          "type": "boolean"
+        },
+        "sight_height_cm": {
+          "description": "Height of the scope's axis above the bore's axis.",
+          "type": "number",
+          "format": "double"
+        },
+        "zero_range_m": {
+          "description": "The range the rifle is zeroed at.",
+          "type": "number",
+          "format": "double"
+        },
+        "zero_height_cm": {
+          "description": "Where the zero puts the bullet at the zero range: above (positive)\nor below the line of sight, cm. Hunters often zero \"4 cm high at\n100 m\"; zero for a plain zero.",
+          "type": "number",
+          "format": "double",
+          "default": 0.0
+        },
+        "zero_temperature_c": {
+          "description": "Air temperature when the rifle was zeroed.",
+          "type": "number",
+          "format": "double"
+        },
+        "zero_pressure_hpa": {
+          "description": "Air pressure when the rifle was zeroed, as a barometer at the range\nreads it (not reduced to sea level).",
+          "type": "number",
+          "format": "double"
+        },
+        "zero_powder_temperature_c": {
+          "description": "Powder temperature at the zero; `None` means the air temperature.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "zero_humidity_percent": {
+          "description": "Relative humidity when the rifle was zeroed.",
+          "type": "number",
+          "format": "double",
+          "default": 50.0
+        },
+        "table": {
+          "description": "The range table's ranges and columns.",
+          "$ref": "#/$defs/TableSettings",
+          "default": {
+            "start_m": 0.0,
+            "end_m": 400.0,
+            "step_m": 50.0,
+            "columns": {
+              "drop_length": false,
+              "drop_mil": true,
+              "drop_moa": false,
+              "drop_clicks": true,
+              "wind_length": false,
+              "wind_mil": true,
+              "wind_moa": false,
+              "wind_clicks": false,
+              "velocity": false,
+              "energy": true,
+              "time": false
+            }
+          }
+        },
+        "click_unit": {
+          "description": "The unit of the scope's clicks.",
+          "$ref": "#/$defs/ClickUnit"
+        },
+        "click_value": {
+          "description": "One click of the turrets, in `click_unit`: 0.1 for 0.1 mil, 0.25 for 1/4\nMOA.",
+          "type": "number",
+          "format": "double"
+        },
+        "scope_id": {
+          "description": "The mounted scope: the id of one of the file's `scopes`, or of a\nscope in the app's catalog (see `catalog`); `null` for none.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "reticle_id": {
+          "description": "The scope's reticle: the id of a reticle in the app's catalog.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).\nMerging keeps the copy changed last.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "caliber",
+        "barrel_length_mm",
+        "twist_in",
+        "right_hand_twist",
+        "sight_height_cm",
+        "zero_range_m",
+        "zero_height_cm",
+        "zero_temperature_c",
+        "zero_pressure_hpa",
+        "zero_powder_temperature_c",
+        "zero_humidity_percent",
+        "table",
+        "click_unit",
+        "click_value",
+        "scope_id",
+        "reticle_id",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "TableSettings": {
+      "description": "The rifle's range table: which ranges and which columns.",
+      "type": "object",
+      "properties": {
+        "start_m": {
+          "description": "The first range.",
+          "type": "number",
+          "format": "double",
+          "default": 0.0
+        },
+        "end_m": {
+          "description": "The last range.",
+          "type": "number",
+          "format": "double",
+          "default": 400.0
+        },
+        "step_m": {
+          "description": "The distance between ranges.",
+          "type": "number",
+          "format": "double",
+          "default": 50.0
+        },
+        "columns": {
+          "description": "Which columns to show.",
+          "$ref": "#/$defs/TableColumns",
+          "default": {
+            "drop_length": false,
+            "drop_mil": true,
+            "drop_moa": false,
+            "drop_clicks": true,
+            "wind_length": false,
+            "wind_mil": true,
+            "wind_moa": false,
+            "wind_clicks": false,
+            "velocity": false,
+            "energy": true,
+            "time": false
+          }
+        }
+      },
+      "required": [
+        "start_m",
+        "end_m",
+        "step_m",
+        "columns"
+      ]
+    },
+    "TableColumns": {
+      "description": "Which range table columns to show besides the range. Elevation and\nwind are corrections: what to dial or hold, up and right positive.",
+      "type": "object",
+      "properties": {
+        "drop_length": {
+          "description": "Where a dead-on hold hits, above (+) or below the aim, as a length.",
+          "type": "boolean",
+          "default": false
+        },
+        "drop_mil": {
+          "description": "Elevation in mil.",
+          "type": "boolean",
+          "default": true
+        },
+        "drop_moa": {
+          "description": "Elevation in MOA.",
+          "type": "boolean",
+          "default": false
+        },
+        "drop_clicks": {
+          "description": "Elevation in the rifle's clicks.",
+          "type": "boolean",
+          "default": true
+        },
+        "wind_length": {
+          "description": "Wind drift as a length.",
+          "type": "boolean",
+          "default": false
+        },
+        "wind_mil": {
+          "description": "Wind correction in mil.",
+          "type": "boolean",
+          "default": true
+        },
+        "wind_moa": {
+          "description": "Wind correction in MOA.",
+          "type": "boolean",
+          "default": false
+        },
+        "wind_clicks": {
+          "description": "Wind correction in clicks.",
+          "type": "boolean",
+          "default": false
+        },
+        "velocity": {
+          "description": "The bullet's speed.",
+          "type": "boolean",
+          "default": false
+        },
+        "energy": {
+          "description": "The bullet's energy.",
+          "type": "boolean",
+          "default": true
+        },
+        "time": {
+          "description": "Time of flight.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "drop_length",
+        "drop_mil",
+        "drop_moa",
+        "drop_clicks",
+        "wind_length",
+        "wind_mil",
+        "wind_moa",
+        "wind_clicks",
+        "velocity",
+        "energy",
+        "time"
+      ]
+    },
+    "ClickUnit": {
+      "description": "The unit of a scope's clicks as the rifle stores it.",
+      "type": "string",
+      "enum": [
+        "mil",
+        "moa"
+      ]
+    },
+    "Bullet": {
+      "description": "A bullet in the hunter's own collection: either factory ammunition or a\nhandload. Only these can be chosen when calculating.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The bullet's id, unique among bullets.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Factory ammunition or a handload.",
+          "$ref": "#/$defs/BulletKind"
+        },
+        "manufacturer": {
+          "description": "The maker, e.g. `Federal`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The product, e.g. `Terminal Ascent`.",
+          "type": "string"
+        },
+        "caliber": {
+          "description": "Caliber key of the cartridge this is loaded in.",
+          "type": "string"
+        },
+        "diameter_mm": {
+          "description": "Bullet diameter.",
+          "type": "number",
+          "format": "double"
+        },
+        "mass_g": {
+          "description": "Bullet weight in grams (7000 grains a pound: 1 gr = 0.0648 g).",
+          "type": "number",
+          "format": "double"
+        },
+        "length_mm": {
+          "description": "Bullet length, for stability, spin drift and aerodynamic jump; `null`\nwhen not known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "bc_g1": {
+          "description": "G1 ballistic coefficient (lb/in²), if known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "bc_g7": {
+          "description": "G7 ballistic coefficient (lb/in²), if known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "drag_model": {
+          "description": "Which of the two BCs the calculation uses.",
+          "$ref": "#/$defs/BcModel"
+        },
+        "bc_bands": {
+          "description": "BCs for velocity bands under `drag_model`; when present they replace\nthe single BC in the calculation.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BcBand"
+          },
+          "default": []
+        },
+        "drag_curve": {
+          "description": "Drag coefficient by Mach number, used when `drag_model` is `Custom`.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DragPoint"
+          },
+          "default": []
+        },
+        "muzzle_velocity_mps": {
+          "description": "Muzzle velocity: the maker's for factory ammunition, the hunter's for a\nhandload.",
+          "type": "number",
+          "format": "double"
+        },
+        "velocity_temperature_c": {
+          "description": "Temperature the muzzle velocity was measured at.",
+          "type": "number",
+          "format": "double"
+        },
+        "velocity_per_degree": {
+          "description": "Change in muzzle velocity per °C of powder temperature, in m/s.",
+          "type": "number",
+          "format": "double"
+        },
+        "test_barrel_mm": {
+          "description": "Length of the barrel the maker's velocity was measured in, if known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "construction": {
+          "description": "How the bullet is made.",
+          "$ref": "#/$defs/Construction"
+        },
+        "lead_free": {
+          "description": "Whether the bullet is lead-free.",
+          "type": "boolean"
+        },
+        "min_expansion_mps": {
+          "description": "The least impact speed at which it expands, as the maker gives it.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "catalog_id": {
+          "description": "The catalog entry this was copied from, if any.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).\nMerging keeps the copy changed last.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "manufacturer",
+        "name",
+        "caliber",
+        "diameter_mm",
+        "mass_g",
+        "length_mm",
+        "bc_g1",
+        "bc_g7",
+        "drag_model",
+        "bc_bands",
+        "drag_curve",
+        "muzzle_velocity_mps",
+        "velocity_temperature_c",
+        "velocity_per_degree",
+        "test_barrel_mm",
+        "construction",
+        "lead_free",
+        "min_expansion_mps",
+        "catalog_id",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "BulletKind": {
+      "description": "Factory ammunition or the hunter's own load.",
+      "oneOf": [
+        {
+          "description": "Factory-loaded cartridge: the velocity comes from the box.",
+          "type": "string",
+          "const": "factory"
+        },
+        {
+          "description": "A component bullet loaded by the hunter: the velocity is their own.",
+          "type": "string",
+          "const": "handload"
+        }
+      ]
+    },
+    "BcModel": {
+      "description": "How the bullet's drag is described.",
+      "oneOf": [
+        {
+          "description": "A G1 ballistic coefficient (`bc_g1`).",
+          "type": "string",
+          "const": "G1"
+        },
+        {
+          "description": "A G7 ballistic coefficient (`bc_g7`).",
+          "type": "string",
+          "const": "G7"
+        },
+        {
+          "description": "The bullet's own drag curve (`drag_curve`) instead of a BC.",
+          "type": "string",
+          "const": "Custom"
+        }
+      ]
+    },
+    "BcBand": {
+      "description": "One BC band: the BC that applies at a velocity.",
+      "type": "object",
+      "properties": {
+        "velocity_mps": {
+          "description": "From this speed down to the next band's.",
+          "type": "number",
+          "format": "double"
+        },
+        "bc": {
+          "description": "The BC (of the bullet's `drag_model`) at that speed.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "velocity_mps",
+        "bc"
+      ]
+    },
+    "DragPoint": {
+      "description": "One point of a bullet's own drag curve.",
+      "type": "object",
+      "properties": {
+        "mach": {
+          "description": "Speed as a Mach number.",
+          "type": "number",
+          "format": "double"
+        },
+        "cd": {
+          "description": "Drag coefficient at that speed.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "mach",
+        "cd"
+      ]
+    },
+    "Construction": {
+      "description": "How the bullet is made, which decides whether it expands (and so its\nlegal class for game): `fmj` and `match` don't, `other` is unknown, and\nthe rest do.",
+      "type": "string",
+      "enum": [
+        "cup_and_core",
+        "bonded",
+        "partition",
+        "monolithic",
+        "polymer_tip",
+        "polymer_tip_bonded",
+        "polymer_tip_monolithic",
+        "fmj",
+        "match",
+        "other"
+      ]
+    },
+    "RifleLoad": {
+      "description": "A bullet as shot from one particular rifle: chronographed velocities,\nwhere it hits relative to the rifle's zero, and the weather it was zeroed\nin. Everything here overrides the bullet's general data for this rifle.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The load's id, unique among loads.",
+          "type": "string"
+        },
+        "rifle_id": {
+          "description": "The rifle (one of the file's `rifles`).",
+          "type": "string"
+        },
+        "bullet_id": {
+          "description": "The bullet (one of the file's `bullets`).",
+          "type": "string"
+        },
+        "velocities": {
+          "description": "Measured velocities; empty means the bullet's own velocity is used.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VelocityPoint"
+          },
+          "default": []
+        },
+        "impact_offset_mrad": {
+          "description": "Where this load hits relative to the rifle's zero, as an angle in\nmrad: [right, up].",
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [
+            0.0,
+            0.0
+          ]
+        },
+        "zero": {
+          "description": "Which weather this load's zero was made in.",
+          "$ref": "#/$defs/LoadZero",
+          "default": {
+            "mode": "rifle"
+          }
+        },
+        "truing": {
+          "description": "A long shot the calculation was trued to, if any.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Truing"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).\nMerging keeps the copy changed last.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "rifle_id",
+        "bullet_id",
+        "velocities",
+        "impact_offset_mrad",
+        "zero",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "VelocityPoint": {
+      "description": "One chronograph result: the average muzzle velocity at a temperature.",
+      "type": "object",
+      "properties": {
+        "temperature_c": {
+          "description": "The cartridges' (powder's) temperature when they were shot.",
+          "type": "number",
+          "format": "double"
+        },
+        "velocity_mps": {
+          "description": "The average muzzle velocity.",
+          "type": "number",
+          "format": "double"
+        },
+        "shots": {
+          "description": "The string it averages, when imported from a chronograph.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShotStats"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "temperature_c",
+        "velocity_mps"
+      ]
+    },
+    "ShotStats": {
+      "description": "How a string of shots spread.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "How many shots the average is of.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "sd_mps": {
+          "description": "Standard deviation (of a sample: n − 1), m/s.",
+          "type": "number",
+          "format": "double"
+        },
+        "es_mps": {
+          "description": "Extreme spread, fastest less slowest, m/s.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "count",
+        "sd_mps",
+        "es_mps"
+      ]
+    },
+    "LoadZero": {
+      "description": "Which weather a load's zero was made in.",
+      "oneOf": [
+        {
+          "description": "The rifle's zero weather.",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "const": "rifle"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        },
+        {
+          "description": "The same weather as the shot, so the weather needs no correction.",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "const": "same_as_shot"
+            }
+          },
+          "required": [
+            "mode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "const": "recorded"
+            }
+          },
+          "$ref": "#/$defs/ZeroWeather",
+          "required": [
+            "mode"
+          ]
+        }
+      ]
+    },
+    "ZeroWeather": {
+      "description": "Weather when a rifle was zeroed.",
+      "type": "object",
+      "properties": {
+        "temperature_c": {
+          "description": "Air temperature.",
+          "type": "number",
+          "format": "double"
+        },
+        "powder_temperature_c": {
+          "description": "The cartridges' (powder's) temperature.",
+          "type": "number",
+          "format": "double"
+        },
+        "pressure_hpa": {
+          "description": "Air pressure as a barometer there reads it (not reduced to sea level).",
+          "type": "number",
+          "format": "double"
+        },
+        "humidity_percent": {
+          "description": "Relative humidity.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "temperature_c",
+        "powder_temperature_c",
+        "pressure_hpa",
+        "humidity_percent"
+      ]
+    },
+    "Truing": {
+      "description": "A long shot that showed where the calculation was off, and the factor\nfound to make it match.",
+      "type": "object",
+      "properties": {
+        "method": {
+          "description": "What was adjusted.",
+          "$ref": "#/$defs/TruingMethod"
+        },
+        "range_m": {
+          "description": "The range of the shot.",
+          "type": "number",
+          "format": "double"
+        },
+        "elevation_mrad": {
+          "description": "What it took to hit centre: elevation in mrad, up positive.",
+          "type": "number",
+          "format": "double"
+        },
+        "inclination_degrees": {
+          "description": "Shot angle then, degrees.",
+          "type": "number",
+          "format": "double",
+          "default": 0.0
+        },
+        "weather": {
+          "description": "The weather then.",
+          "$ref": "#/$defs/ZeroWeather"
+        },
+        "factor": {
+          "description": "The velocity or drag multiplier that makes the calculation match.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "method",
+        "range_m",
+        "elevation_mrad",
+        "inclination_degrees",
+        "weather",
+        "factor"
+      ]
+    },
+    "TruingMethod": {
+      "description": "What truing adjusts to make the calculation match a real shot.",
+      "oneOf": [
+        {
+          "description": "Scale the muzzle velocity: for loads without a chronograph.",
+          "type": "string",
+          "const": "velocity"
+        },
+        {
+          "description": "Scale the bullet's drag (its BC the other way): for loads whose\nvelocity was measured.",
+          "type": "string",
+          "const": "drag"
+        }
+      ]
+    },
+    "UserScope": {
+      "description": "A scope the hunter entered: one that isn't in the catalog, or one set up\ndifferently. Part of the personal data, exported and imported with it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The scope's id, unique among scopes; rifles name it in `scope_id`.",
+          "type": "string"
+        },
+        "manufacturer": {
+          "description": "The maker.",
+          "type": "string"
+        },
+        "model": {
+          "description": "The model.",
+          "type": "string"
+        },
+        "magnification_min": {
+          "description": "Lowest magnification.",
+          "type": "number",
+          "format": "double"
+        },
+        "magnification_max": {
+          "description": "Highest magnification.",
+          "type": "number",
+          "format": "double"
+        },
+        "objective_mm": {
+          "description": "Objective lens diameter, if known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "focal_plane": {
+          "description": "Where the reticle sits.",
+          "$ref": "#/$defs/FocalPlane"
+        },
+        "reticle_reference_magnification": {
+          "description": "For second-focal-plane scopes: the magnification at which the reticle's\nmarks are true.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "click_unit": {
+          "description": "The unit of its clicks.",
+          "$ref": "#/$defs/AngleUnit"
+        },
+        "click_value": {
+          "description": "One click, in `click_unit`.",
+          "type": "number",
+          "format": "double"
+        },
+        "elevation_travel": {
+          "description": "Total elevation adjustment, in `click_unit`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fov_m_at_100m": {
+          "description": "Field of view in metres at 100 m, at the lowest and the highest\nmagnification.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "illuminated": {
+          "description": "Whether the reticle can be lit.",
+          "type": "boolean"
+        },
+        "reticle_id": {
+          "description": "A catalog reticle to draw; `None` draws a plain crosshair.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).\nMerging keeps the copy changed last.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "manufacturer",
+        "model",
+        "magnification_min",
+        "magnification_max",
+        "objective_mm",
+        "focal_plane",
+        "reticle_reference_magnification",
+        "click_unit",
+        "click_value",
+        "elevation_travel",
+        "fov_m_at_100m",
+        "illuminated",
+        "reticle_id",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "FocalPlane": {
+      "oneOf": [
+        {
+          "description": "First focal plane: the reticle grows with the image, so its marks are\ntrue at every magnification.",
+          "type": "string",
+          "const": "ffp"
+        },
+        {
+          "description": "Second focal plane: the reticle stays the same size, so its marks are\ntrue only at one magnification.",
+          "type": "string",
+          "const": "sfp"
+        }
+      ]
+    },
+    "AngleUnit": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "mrad",
+            "moa"
+          ]
+        },
+        {
+          "description": "Centimetres at 100 metres, common on European hunting scopes; 1 cm at\n100 m is 0.1 mrad.",
+          "type": "string",
+          "const": "cm_at_100m"
+        }
+      ]
+    },
+    "Target": {
+      "description": "What is shot at: a game animal, whose vital zone and least energy set\nthe ethical range, or a sport target and its hit zone. Drawn at true\nsize by its `shape`.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The target's id, unique among targets.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Game, with ethical limits, or a sport target.",
+          "$ref": "#/$defs/TargetKind"
+        },
+        "vital_diameter_cm": {
+          "description": "The zone a shot must land in: the heart–lung area of an animal, or\nthe part of a sport target that counts as a hit.",
+          "type": "number",
+          "format": "double"
+        },
+        "min_energy_j": {
+          "description": "Least energy the bullet must carry at the target. Only for game.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "min_velocity_mps": {
+          "description": "Least impact velocity this game asks for, instead of the hunter's\ngeneral one (zero: no expansion needed, as for small game).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "notes": {
+          "description": "Notes about it.",
+          "type": "string",
+          "default": ""
+        },
+        "group": {
+          "description": "Where it is listed; `None` for the hunter's own until they choose.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetGroup"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "other_names": {
+          "description": "Other names to find it by, such as the Swedish and Finnish ones.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "ammunition": {
+          "description": "The least rifle ammunition level (class) each country's rules ask\nfor, where it is game there; 1 is the strictest.",
+          "type": "object",
+          "properties": {
+            "finland": {
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "sweden": {
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "additionalProperties": false
+        },
+        "rules_notes": {
+          "description": "What else each country's rules say about it (\"a shotgun is allowed\ntoo\").",
+          "type": "object",
+          "properties": {
+            "finland": {
+              "type": "string"
+            },
+            "sweden": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "catalog_id": {
+          "description": "The catalog target a custom one was copied from.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC);\nzero for catalog targets.",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "vital_diameter_cm",
+        "min_energy_j",
+        "min_velocity_mps",
+        "notes",
+        "group",
+        "other_names",
+        "catalog_id",
+        "updated_at"
+      ],
+      "oneOf": [
+        {
+          "description": "An animal standing broadside.",
+          "type": "object",
+          "properties": {
+            "shape": {
+              "type": "string",
+              "const": "animal"
+            },
+            "silhouette": {
+              "description": "The drawing used, by name (the app's animal drawings, e.g.\n\"moose\" or \"black-grouse\"), scaled to the sizes below.",
+              "type": "string"
+            },
+            "shoulder_height_cm": {
+              "type": "number",
+              "format": "double"
+            },
+            "body_length_cm": {
+              "description": "Rump to nose, without the tail.",
+              "type": "number",
+              "format": "double"
+            },
+            "antlers": {
+              "description": "Draw antlers (when the silhouette has them).",
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "shape",
+            "silhouette",
+            "shoulder_height_cm",
+            "body_length_cm",
+            "antlers"
+          ]
+        },
+        {
+          "description": "A paper target with evenly spaced scoring rings and a black aiming\narea.",
+          "type": "object",
+          "properties": {
+            "shape": {
+              "type": "string",
+              "const": "rings"
+            },
+            "inner_mm": {
+              "description": "Diameter of the innermost ring.",
+              "type": "number",
+              "format": "double"
+            },
+            "step_mm": {
+              "description": "How much each ring is wider than the one inside it.",
+              "type": "number",
+              "format": "double"
+            },
+            "count": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "black_mm": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "shape",
+            "inner_mm",
+            "step_mm",
+            "count",
+            "black_mm"
+          ]
+        },
+        {
+          "description": "A round steel plate.",
+          "type": "object",
+          "properties": {
+            "shape": {
+              "type": "string",
+              "const": "plate"
+            },
+            "diameter_mm": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "shape",
+            "diameter_mm"
+          ]
+        }
+      ]
+    },
+    "TargetKind": {
+      "description": "Game, with ethical limits, or a sport target.",
+      "type": "string",
+      "enum": [
+        "game",
+        "sport"
+      ]
+    },
+    "TargetGroup": {
+      "description": "How targets are grouped in lists, the way hunters think of the game.",
+      "type": "string",
+      "enum": [
+        "deer",
+        "boar_and_mouflon",
+        "bear",
+        "small_predators",
+        "hares_and_rodents",
+        "seals",
+        "forest_birds",
+        "waterfowl",
+        "other_birds",
+        "sport",
+        "other"
+      ]
+    },
+    "Deletion": {
+      "description": "A record that was deleted.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "description": "What kind of record it was.",
+          "$ref": "#/$defs/RecordKind"
+        },
+        "id": {
+          "description": "The deleted record's id.",
+          "type": "string"
+        },
+        "deleted_at": {
+          "description": "When it was deleted, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "deleted_at"
+      ]
+    },
+    "RecordKind": {
+      "description": "The kinds of the hunter's records.",
+      "type": "string",
+      "enum": [
+        "rifle",
+        "bullet",
+        "rifle_load",
+        "scope",
+        "target"
+      ]
+    },
+    "CatalogDetails": {
+      "description": "What the records name from the app's built-in catalog.",
+      "type": "object",
+      "properties": {
+        "calibers": {
+          "description": "The calibers named by rifles and bullets (their `caliber`).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaliberDetails"
+          },
+          "default": []
+        },
+        "scopes": {
+          "description": "The catalog scopes named by rifles (their `scope_id`).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ScopeDetails"
+          },
+          "default": []
+        },
+        "reticles": {
+          "description": "The catalog reticles named by rifles and scopes (their `reticle_id`).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ReticleDetails"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "calibers",
+        "scopes",
+        "reticles"
+      ]
+    },
+    "CaliberDetails": {
+      "description": "A caliber, as a rifle's or bullet's `caliber` names it.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "description": "The key records use, e.g. `308-win`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name, e.g. `.308 Win`.",
+          "type": "string"
+        },
+        "bullet_diameter_mm": {
+          "description": "The bullet diameter the caliber takes, mm.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "bullet_diameter_mm"
+      ]
+    },
+    "ScopeDetails": {
+      "description": "A catalog scope, as a rifle's `scope_id` names it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The id a rifle's `scope_id` uses.",
+          "type": "string"
+        },
+        "manufacturer": {
+          "description": "The maker.",
+          "type": "string"
+        },
+        "model": {
+          "description": "The model.",
+          "type": "string"
+        },
+        "magnification_min": {
+          "description": "Lowest magnification.",
+          "type": "number",
+          "format": "double"
+        },
+        "magnification_max": {
+          "description": "Highest magnification.",
+          "type": "number",
+          "format": "double"
+        },
+        "objective_mm": {
+          "description": "Objective lens diameter, mm.",
+          "type": "number",
+          "format": "double"
+        },
+        "tube_mm": {
+          "description": "Tube diameter, mm.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "focal_plane": {
+          "description": "Where the reticle sits.",
+          "$ref": "#/$defs/FocalPlane"
+        },
+        "reticle_reference_magnification": {
+          "description": "For second-focal-plane scopes: the magnification at which the\nreticle's published dimensions are true.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "click_unit": {
+          "description": "The unit of its clicks.",
+          "$ref": "#/$defs/AngleUnit"
+        },
+        "click_value": {
+          "description": "Per click, in `click_unit`; `null` when the maker doesn't publish it.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "elevation_travel": {
+          "description": "Total elevation adjustment, in `click_unit`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fov_m_at_100m": {
+          "description": "Field of view in metres at 100 m, at the lowest and the highest\nmagnification.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "illuminated": {
+          "description": "Whether the reticle can be lit.",
+          "type": "boolean"
+        },
+        "source_url": {
+          "description": "Where the data was taken from.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "manufacturer",
+        "model",
+        "magnification_min",
+        "magnification_max",
+        "objective_mm",
+        "tube_mm",
+        "focal_plane",
+        "reticle_reference_magnification",
+        "click_unit",
+        "click_value",
+        "elevation_travel",
+        "fov_m_at_100m",
+        "illuminated",
+        "source_url"
+      ]
+    },
+    "ReticleDetails": {
+      "description": "A catalog reticle, as a `reticle_id` names it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The id the record uses.",
+          "type": "string"
+        },
+        "manufacturer": {
+          "description": "The maker.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The app's name for it, with scope and unit.",
+          "type": "string"
+        },
+        "maker_reticle_name": {
+          "description": "The maker's own name for the reticle.",
+          "type": "string"
+        },
+        "unit": {
+          "description": "The unit its marks are drawn in.",
+          "$ref": "#/$defs/AngleUnit"
+        },
+        "source_url": {
+          "description": "Where its dimensions were taken from.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "manufacturer",
+        "name",
+        "maker_reticle_name",
+        "unit",
+        "source_url"
+      ]
+    }
+  },
+  "$id": "https://malx122.github.io/mx_shooting_calculator/download/export-format.schema.json"
+}

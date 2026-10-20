@@ -17,7 +17,8 @@ pub fn now_ms() -> i64 {
         .map_or(0, |elapsed| elapsed.as_millis() as i64)
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// The unit of a scope's clicks as the rifle stores it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ClickUnit {
     Mil,
@@ -41,41 +42,62 @@ impl ClickUnit {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+/// A rifle: its caliber, barrel, scope and zero.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Rifle {
+    /// The rifle's id, unique among rifles.
     pub id: String,
+    /// The hunter's name for the rifle.
     pub name: String,
-    /// Key into the caliber catalog, e.g. `6-5x55-se`.
+    /// The caliber's key in the app's catalog, e.g. `6-5x55-se` (see
+    /// `catalog`).
     pub caliber: String,
+    /// Barrel length; `null` when not known.
     pub barrel_length_mm: Option<f64>,
     /// Barrel length for one turn of the rifling, in inches.
     pub twist_in: f64,
+    /// Whether the rifling turns to the right (clockwise seen from behind), as
+    /// most do.
     pub right_hand_twist: bool,
+    /// Height of the scope's axis above the bore's axis.
     pub sight_height_cm: f64,
+    /// The range the rifle is zeroed at.
     pub zero_range_m: f64,
     /// Where the zero puts the bullet at the zero range: above (positive)
     /// or below the line of sight, cm. Hunters often zero "4 cm high at
     /// 100 m"; zero for a plain zero.
     #[serde(default)]
     pub zero_height_cm: f64,
+    /// Air temperature when the rifle was zeroed.
     pub zero_temperature_c: f64,
+    /// Air pressure when the rifle was zeroed, as a barometer at the range
+    /// reads it (not reduced to sea level).
     pub zero_pressure_hpa: f64,
     /// Powder temperature at the zero; `None` means the air temperature.
     #[serde(default)]
     pub zero_powder_temperature_c: Option<f64>,
+    /// Relative humidity when the rifle was zeroed.
     #[serde(default = "default_zero_humidity")]
     pub zero_humidity_percent: f64,
+    /// The range table's ranges and columns.
     #[serde(default)]
     pub table: TableSettings,
+    /// The unit of the scope's clicks.
     pub click_unit: ClickUnit,
+    /// One click of the turrets, in `click_unit`: 0.1 for 0.1 mil, 0.25 for 1/4
+    /// MOA.
     pub click_value: f64,
-    /// Catalog id of the mounted scope, if any.
+    /// The mounted scope: the id of one of the file's `scopes`, or of a
+    /// scope in the app's catalog (see `catalog`); `null` for none.
     #[serde(default)]
     pub scope_id: Option<String>,
-    /// Catalog id of the scope's reticle.
+    /// The scope's reticle: the id of a reticle in the app's catalog.
     #[serde(default)]
     pub reticle_id: Option<String>,
+    /// The hunter's notes.
     pub notes: String,
+    /// When the record was last changed, in milliseconds since 1970 (UTC).
+    /// Merging keeps the copy changed last.
     pub updated_at: i64,
 }
 
@@ -166,13 +188,17 @@ impl Rifle {
     }
 }
 
-/// The rifle's dope table: which ranges and which columns.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// The rifle's range table: which ranges and which columns.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(default)]
 pub struct TableSettings {
+    /// The first range.
     pub start_m: f64,
+    /// The last range.
     pub end_m: f64,
+    /// The distance between ranges.
     pub step_m: f64,
+    /// Which columns to show.
     pub columns: TableColumns,
 }
 
@@ -213,20 +239,32 @@ impl TableSettings {
     }
 }
 
-/// Which dope table columns to show besides the range.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// Which range table columns to show besides the range. Elevation and
+/// wind are corrections: what to dial or hold, up and right positive.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(default)]
 pub struct TableColumns {
+    /// Where a dead-on hold hits, above (+) or below the aim, as a length.
     pub drop_length: bool,
+    /// Elevation in mil.
     pub drop_mil: bool,
+    /// Elevation in MOA.
     pub drop_moa: bool,
+    /// Elevation in the rifle's clicks.
     pub drop_clicks: bool,
+    /// Wind drift as a length.
     pub wind_length: bool,
+    /// Wind correction in mil.
     pub wind_mil: bool,
+    /// Wind correction in MOA.
     pub wind_moa: bool,
+    /// Wind correction in clicks.
     pub wind_clicks: bool,
+    /// The bullet's speed.
     pub velocity: bool,
+    /// The bullet's energy.
     pub energy: bool,
+    /// Time of flight.
     pub time: bool,
 }
 
@@ -250,7 +288,8 @@ impl Default for TableColumns {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// Factory ammunition or the hunter's own load.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum BulletKind {
     /// Factory-loaded cartridge: the velocity comes from the box.
@@ -259,22 +298,30 @@ pub enum BulletKind {
     Handload,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// How the bullet's drag is described.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub enum BcModel {
+    /// A G1 ballistic coefficient (`bc_g1`).
     G1,
+    /// A G7 ballistic coefficient (`bc_g7`).
     G7,
-    /// The bullet's own drag curve (`Bullet::drag_curve`) instead of a BC.
+    /// The bullet's own drag curve (`drag_curve`) instead of a BC.
     Custom,
 }
 
 /// One point of a bullet's own drag curve.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct DragPoint {
+    /// Speed as a Mach number.
     pub mach: f64,
+    /// Drag coefficient at that speed.
     pub cd: f64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// How the bullet is made, which decides whether it expands (and so its
+/// legal class for game): `fmj` and `match` don't, `other` is unknown, and
+/// the rest do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Construction {
     CupAndCore,
@@ -350,26 +397,38 @@ impl Construction {
 }
 
 /// One BC band: the BC that applies at a velocity.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct BcBand {
+    /// From this speed down to the next band's.
     pub velocity_mps: f64,
+    /// The BC (of the bullet's `drag_model`) at that speed.
     pub bc: f64,
 }
 
 /// A bullet in the hunter's own collection: either factory ammunition or a
 /// handload. Only these can be chosen when calculating.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Bullet {
+    /// The bullet's id, unique among bullets.
     pub id: String,
+    /// Factory ammunition or a handload.
     pub kind: BulletKind,
+    /// The maker, e.g. `Federal`.
     pub manufacturer: String,
+    /// The product, e.g. `Terminal Ascent`.
     pub name: String,
     /// Caliber key of the cartridge this is loaded in.
     pub caliber: String,
+    /// Bullet diameter.
     pub diameter_mm: f64,
+    /// Bullet weight in grams (7000 grains a pound: 1 gr = 0.0648 g).
     pub mass_g: f64,
+    /// Bullet length, for stability, spin drift and aerodynamic jump; `null`
+    /// when not known.
     pub length_mm: Option<f64>,
+    /// G1 ballistic coefficient (lb/in²), if known.
     pub bc_g1: Option<f64>,
+    /// G7 ballistic coefficient (lb/in²), if known.
     pub bc_g7: Option<f64>,
     /// Which of the two BCs the calculation uses.
     pub drag_model: BcModel,
@@ -380,18 +439,27 @@ pub struct Bullet {
     /// Drag coefficient by Mach number, used when `drag_model` is `Custom`.
     #[serde(default)]
     pub drag_curve: Vec<DragPoint>,
+    /// Muzzle velocity: the maker's for factory ammunition, the hunter's for a
+    /// handload.
     pub muzzle_velocity_mps: f64,
     /// Temperature the muzzle velocity was measured at.
     pub velocity_temperature_c: f64,
     /// Change in muzzle velocity per °C of powder temperature, in m/s.
     pub velocity_per_degree: f64,
+    /// Length of the barrel the maker's velocity was measured in, if known.
     pub test_barrel_mm: Option<f64>,
+    /// How the bullet is made.
     pub construction: Construction,
+    /// Whether the bullet is lead-free.
     pub lead_free: bool,
+    /// The least impact speed at which it expands, as the maker gives it.
     pub min_expansion_mps: Option<f64>,
     /// The catalog entry this was copied from, if any.
     pub catalog_id: Option<String>,
+    /// The hunter's notes.
     pub notes: String,
+    /// When the record was last changed, in milliseconds since 1970 (UTC).
+    /// Merging keeps the copy changed last.
     pub updated_at: i64,
 }
 
@@ -531,9 +599,11 @@ impl Bullet {
 }
 
 /// One chronograph result: the average muzzle velocity at a temperature.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct VelocityPoint {
+    /// The cartridges' (powder's) temperature when they were shot.
     pub temperature_c: f64,
+    /// The average muzzle velocity.
     pub velocity_mps: f64,
     /// The string it averages, when imported from a chronograph.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -541,8 +611,9 @@ pub struct VelocityPoint {
 }
 
 /// How a string of shots spread.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ShotStats {
+    /// How many shots the average is of.
     pub count: u32,
     /// Standard deviation (of a sample: n − 1), m/s.
     pub sd_mps: f64,
@@ -575,11 +646,15 @@ impl VelocityModel {
 }
 
 /// Weather when a rifle was zeroed.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ZeroWeather {
+    /// Air temperature.
     pub temperature_c: f64,
+    /// The cartridges' (powder's) temperature.
     pub powder_temperature_c: f64,
+    /// Air pressure as a barometer there reads it (not reduced to sea level).
     pub pressure_hpa: f64,
+    /// Relative humidity.
     pub humidity_percent: f64,
 }
 
@@ -600,7 +675,7 @@ impl ZeroWeather {
 }
 
 /// Which weather a load's zero was made in.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum LoadZero {
     /// The rifle's zero weather.
@@ -612,7 +687,7 @@ pub enum LoadZero {
 }
 
 /// What truing adjusts to make the calculation match a real shot.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TruingMethod {
     /// Scale the muzzle velocity: for loads without a chronograph.
@@ -624,9 +699,11 @@ pub enum TruingMethod {
 
 /// A long shot that showed where the calculation was off, and the factor
 /// found to make it match.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Truing {
+    /// What was adjusted.
     pub method: TruingMethod,
+    /// The range of the shot.
     pub range_m: f64,
     /// What it took to hit centre: elevation in mrad, up positive.
     pub elevation_mrad: f64,
@@ -654,10 +731,13 @@ impl Truing {
 /// A bullet as shot from one particular rifle: chronographed velocities,
 /// where it hits relative to the rifle's zero, and the weather it was zeroed
 /// in. Everything here overrides the bullet's general data for this rifle.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct RifleLoad {
+    /// The load's id, unique among loads.
     pub id: String,
+    /// The rifle (one of the file's `rifles`).
     pub rifle_id: String,
+    /// The bullet (one of the file's `bullets`).
     pub bullet_id: String,
     /// Measured velocities; empty means the bullet's own velocity is used.
     #[serde(default)]
@@ -666,12 +746,16 @@ pub struct RifleLoad {
     /// mrad: [right, up].
     #[serde(default)]
     pub impact_offset_mrad: [f64; 2],
+    /// Which weather this load's zero was made in.
     #[serde(default)]
     pub zero: LoadZero,
     /// A long shot the calculation was trued to, if any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub truing: Option<Truing>,
+    /// The hunter's notes.
     pub notes: String,
+    /// When the record was last changed, in milliseconds since 1970 (UTC).
+    /// Merging keeps the copy changed last.
     pub updated_at: i64,
     // A single measured velocity, as exports before format 2 stored it.
     #[serde(default, skip_serializing)]

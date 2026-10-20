@@ -12,7 +12,7 @@ use crate::model::ClickUnit;
 /// One minute of angle in milliradians.
 const MRAD_PER_MOA: f64 = 0.290_888_2;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AngleUnit {
     Mrad,
@@ -41,7 +41,7 @@ impl AngleUnit {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FocalPlane {
     /// First focal plane: the reticle grows with the image, so its marks are
@@ -368,25 +368,42 @@ impl Reticle {
 
 /// A scope the hunter entered: one that isn't in the catalog, or one set up
 /// differently. Part of the personal data, exported and imported with it.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct UserScope {
+    /// The scope's id, unique among scopes; rifles name it in `scope_id`.
     pub id: String,
+    /// The maker.
     pub manufacturer: String,
+    /// The model.
     pub model: String,
+    /// Lowest magnification.
     pub magnification_min: f64,
+    /// Highest magnification.
     pub magnification_max: f64,
     /// Objective lens diameter, if known.
     pub objective_mm: Option<f64>,
+    /// Where the reticle sits.
     pub focal_plane: FocalPlane,
+    /// For second-focal-plane scopes: the magnification at which the reticle's
+    /// marks are true.
     pub reticle_reference_magnification: Option<f64>,
+    /// The unit of its clicks.
     pub click_unit: AngleUnit,
+    /// One click, in `click_unit`.
     pub click_value: f64,
+    /// Total elevation adjustment, in `click_unit`.
     pub elevation_travel: Option<f64>,
+    /// Field of view in metres at 100 m, at the lowest and the highest
+    /// magnification.
     pub fov_m_at_100m: Option<[f64; 2]>,
+    /// Whether the reticle can be lit.
     pub illuminated: bool,
     /// A catalog reticle to draw; `None` draws a plain crosshair.
     pub reticle_id: Option<String>,
+    /// The hunter's notes.
     pub notes: String,
+    /// When the record was last changed, in milliseconds since 1970 (UTC).
+    /// Merging keeps the copy changed last.
     pub updated_at: i64,
 }
 

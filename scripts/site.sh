@@ -15,4 +15,6 @@ for page in site/*.html; do
 done
 cp site/images/* "$out/images/"
 cp crates/app/assets/mxsc-icon.svg crates/app/assets/mxsc-wordmark.svg "$out/"
+# The export file's schema, at the address the schema gives as its $id.
+cp docs/export-format.schema.json "$out/"
 echo "Download page for $version in $out"

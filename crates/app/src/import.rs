@@ -13,7 +13,7 @@ use crate::widgets::caliber_picker;
 
 pub enum Source {
     /// One of this app's own exports.
-    Export(PersonalData),
+    Export(Box<PersonalData>),
     Strelok(Box<StrelokImport>),
 }
 
@@ -82,7 +82,7 @@ impl ImportPreview {
                 caliber_searches: HashMap::new(),
             }))
         } else {
-            Source::Export(read_export(&text)?)
+            Source::Export(Box::new(read_export(&text)?))
         };
         let mut preview = ImportPreview {
             file_name,
