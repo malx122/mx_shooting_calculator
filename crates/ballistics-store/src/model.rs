@@ -497,6 +497,19 @@ impl Bullet {
 pub struct VelocityPoint {
     pub temperature_c: f64,
     pub velocity_mps: f64,
+    /// The string it averages, when imported from a chronograph.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shots: Option<ShotStats>,
+}
+
+/// How a string of shots spread.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShotStats {
+    pub count: u32,
+    /// Standard deviation (of a sample: n − 1), m/s.
+    pub sd_mps: f64,
+    /// Extreme spread, fastest less slowest, m/s.
+    pub es_mps: f64,
 }
 
 /// Muzzle velocity as a straight line in powder temperature.
@@ -651,6 +664,7 @@ impl RifleLoad {
                 self.velocities.push(VelocityPoint {
                     temperature_c,
                     velocity_mps,
+                    shots: None,
                 });
             }
         }

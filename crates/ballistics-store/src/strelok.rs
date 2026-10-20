@@ -812,12 +812,14 @@ fn bullet_and_load(
         .map(|&(temperature_c, velocity_mps)| VelocityPoint {
             temperature_c,
             velocity_mps,
+            shots: None,
         })
         .collect();
     if load.velocities.is_empty() {
         load.velocities.push(VelocityPoint {
             temperature_c: cartridge.velocity_temperature_c,
             velocity_mps: cartridge.velocity,
+            shots: None,
         });
     }
     // Strelok stores the shift in MOA; positive is taken as up and right.

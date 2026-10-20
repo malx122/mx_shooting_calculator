@@ -277,6 +277,18 @@ pub struct CalculatorPage {
     pub weather: crate::weather::Weather,
     /// The truing shot being entered.
     truing_form: TruingForm,
+    /// A chronograph file being picked, and one being looked at.
+    chrono_file: crate::files::Picked,
+    chrono: Option<ChronoImport>,
+}
+
+/// A chronograph file read, before its string is added to the load.
+struct ChronoImport {
+    file: String,
+    sessions: Vec<ballistics_store::chrono::Session>,
+    chosen: usize,
+    /// The cartridges' temperature when they were shot.
+    temperature_c: f64,
 }
 
 /// A long shot to true the calculation to, as entered.
@@ -310,6 +322,8 @@ impl CalculatorPage {
             target_search: String::new(),
             weather: crate::weather::Weather::default(),
             truing_form: TruingForm::default(),
+            chrono_file: crate::files::Picked::default(),
+            chrono: None,
         }
     }
 
@@ -736,6 +750,22 @@ impl CalculatorPage {
             ..self.inputs.conditions()
         };
         let form = &mut self.truing_form;
+        let chrono_file = self.chrono_file.clone();
+        let mut chrono_error = None;
+        if let Some((file, bytes)) = chrono_file.take() {
+            match ballistics_store::chrono::parse(&bytes) {
+                Ok(sessions) => {
+                    self.chrono = Some(ChronoImport {
+                        file,
+                        sessions,
+                        chosen: 0,
+                        temperature_c: today.round(),
+                    })
+                }
+                Err(error) => chrono_error = Some(format!("{file}: {error}")),
+            }
+        }
+        let chrono = &mut self.chrono;
         let Some(draft) = self.load_draft.as_mut() else {
             return;
         };
@@ -774,18 +804,105 @@ impl CalculatorPage {
                 for (index, point) in draft.velocities.iter_mut().enumerate() {
                     units::drag(ui, &mut point.temperature_c, Quantity::Temperature, -60.0..=70.0, 0.5);
                     units::drag(ui, &mut point.velocity_mps, Quantity::Speed, 50.0..=1500.0, 1.0);
-                    if ui.small_button("✖").on_hover_text("Remove").clicked() {
-                        remove = Some(index);
-                    }
+                    ui.horizontal(|ui| {
+                        if let Some(shots) = point.shots {
+                            ui.weak(format!(
+                                "{} shots, SD {}, ES {}",
+                                shots.count,
+                                spread_text(&u, shots.sd_mps),
+                                spread_text(&u, shots.es_mps)
+                            ));
+                        }
+                        if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                            remove = Some(index);
+                        }
+                    });
                     ui.end_row();
                 }
             });
             if let Some(index) = remove {
                 draft.velocities.remove(index);
             }
-            if draft.velocities.len() < 10 && ui.button("➕ Add measurement").clicked() {
-                let velocity_mps = model.velocity_at(today).round();
-                draft.velocities.push(VelocityPoint { temperature_c: today.round(), velocity_mps });
+            ui.horizontal_wrapped(|ui| {
+                if draft.velocities.len() < 10 && ui.button("➕ Add measurement").clicked() {
+                    let velocity_mps = model.velocity_at(today).round();
+                    draft.velocities.push(VelocityPoint { temperature_c: today.round(), velocity_mps, shots: None });
+                }
+                if draft.velocities.len() < 10
+                    && ui
+                        .button("From a chronograph file…")
+                        .on_hover_text("Garmin Xero (ShotView CSV), LabRadar (SR…Report.csv) or MagnetoSpeed (LOG.CSV)")
+                        .clicked()
+                {
+                    chrono_file.pick(ui.ctx(), "Chronograph files", &["csv", "CSV"]);
+                }
+            });
+            if let Some(error) = &chrono_error {
+                ui.colored_label(ui.visuals().error_fg_color, error);
+            }
+            let mut close = false;
+            if let Some(import) = chrono.as_mut() {
+                egui::Frame::group(ui.style()).show(ui, |ui| {
+                    let session = &import.sessions[import.chosen.min(import.sessions.len() - 1)];
+                    ui.strong(format!("{} · {}", session.device.name(), import.file));
+                    if import.sessions.len() > 1 {
+                        egui::ComboBox::from_id_salt("chrono-session")
+                            .selected_text(import.sessions[import.chosen].name.clone().unwrap_or_default())
+                            .show_ui(ui, |ui| {
+                                for (index, session) in import.sessions.iter().enumerate() {
+                                    let label = format!(
+                                        "{} ({} shots)",
+                                        session.name.clone().unwrap_or_default(),
+                                        session.velocities_mps.len()
+                                    );
+                                    ui.selectable_value(&mut import.chosen, index, label);
+                                }
+                            });
+                    } else if let Some(name) = &session.name {
+                        ui.weak(name);
+                    }
+                    let session = &import.sessions[import.chosen];
+                    let stats = session.stats();
+                    ui.label(format!(
+                        "{} shots{}: average {}, SD {}, ES {}",
+                        stats.count,
+                        if session.missed > 0 { format!(" ({} not read, left out)", session.missed) } else { String::new() },
+                        u.format(Quantity::Speed, session.average_mps()),
+                        spread_text(&u, stats.sd_mps),
+                        spread_text(&u, stats.es_mps),
+                    ))
+                    .on_hover_text("Worked out from the shots; the SD is a sample's (n − 1), a little larger than some chronograph apps show.");
+                    let expected = model.velocity_at(import.temperature_c);
+                    if (session.average_mps() / expected - 1.0).abs() > 0.15 {
+                        ui.colored_label(
+                            ui.visuals().warn_fg_color,
+                            format!(
+                                "That is far from the {} expected for this bullet: is it the right file?",
+                                u.format(Quantity::Speed, expected)
+                            ),
+                        );
+                    }
+                    ui.horizontal(|ui| {
+                        ui.label("The cartridges were at");
+                        units::drag(ui, &mut import.temperature_c, Quantity::Temperature, -60.0..=70.0, 0.5);
+                    });
+                    ui.horizontal(|ui| {
+                        if ui.button("Add the average").clicked() {
+                            draft.velocities.push(VelocityPoint {
+                                temperature_c: import.temperature_c,
+                                velocity_mps: session.average_mps(),
+                                shots: Some(stats),
+                            });
+                            close = true;
+                        }
+                        if ui.button("Cancel").clicked() {
+                            close = true;
+                        }
+                    });
+                });
+            }
+            if close {
+                *chrono = None;
             }
             ui.weak(format!(
                 "Temperature sensitivity {} ({:+.1} % per 15 °C), {}.",
@@ -1302,6 +1419,15 @@ impl CalculatorPage {
             });
         }
     }
+}
+
+/// A velocity spread (SD, ES) with a decimal: they are small numbers.
+fn spread_text(u: &units::UnitPrefs, mps: f64) -> String {
+    format!(
+        "{:.1} {}",
+        u.show(Quantity::Speed, mps),
+        u.label(Quantity::Speed)
+    )
 }
 
 /// "100 m" for a plain zero, "100 m, 4.0 cm high" for one above it.
@@ -2290,6 +2416,7 @@ mod tests {
         measured.velocities.push(VelocityPoint {
             temperature_c: -5.0,
             velocity_mps: 781.0,
+            shots: None,
         });
         let scenario = page.scenario(&rifle, &bullet, Some(&measured));
         assert_eq!(scenario.load.muzzle_velocity, 781.0);

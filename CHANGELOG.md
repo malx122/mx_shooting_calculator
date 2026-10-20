@@ -8,6 +8,10 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Chronograph import:** measured velocities from a Garmin Xero
+  (ShotView CSV), LabRadar or MagnetoSpeed file, with the string's shot
+  count, SD and ES kept and shown. A warning if the average is far from what
+  the bullet should do.
 - **Hunting today:** the season for the chosen game in your county or
   region, and today's legal shooting light where you are, from Swedish and
   Finnish law (Jaktförordningen, Metsästysasetus and the ministry's

@@ -4,6 +4,7 @@ mod calculator;
 mod cards;
 mod changelog;
 mod figure;
+mod files;
 mod flags;
 mod google;
 mod http;

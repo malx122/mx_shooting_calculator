@@ -5,6 +5,7 @@ fn measured(rifle: &str, bullet: &str, velocity_mps: f64, temperature_c: f64) ->
     load.velocities.push(VelocityPoint {
         temperature_c,
         velocity_mps,
+        shots: None,
     });
     load
 }
@@ -122,7 +123,8 @@ fn measured_velocity_replaces_the_previous_one_and_follows_deletes() {
         loads[0].velocities,
         [VelocityPoint {
             temperature_c: 8.0,
-            velocity_mps: 776.0
+            velocity_mps: 776.0,
+            shots: None
         }]
     );
 
@@ -378,6 +380,7 @@ fn new_fields_round_trip_through_the_database() {
     load.velocities.push(VelocityPoint {
         temperature_c: -10.0,
         velocity_mps: 768.0,
+        shots: None,
     });
     load.impact_offset_mrad = [0.1, -0.2];
     load.zero = LoadZero::Recorded(ZeroWeather {
@@ -437,6 +440,7 @@ fn velocity_model_uses_the_bullet_one_measurement_or_a_fitted_line() {
     load.velocities.push(VelocityPoint {
         temperature_c: 20.0,
         velocity_mps: 800.0,
+        shots: None,
     });
     let one = load.velocity_model(&oryx);
     assert_eq!(
@@ -447,10 +451,12 @@ fn velocity_model_uses_the_bullet_one_measurement_or_a_fitted_line() {
     load.velocities.push(VelocityPoint {
         temperature_c: 0.0,
         velocity_mps: 780.0,
+        shots: None,
     });
     load.velocities.push(VelocityPoint {
         temperature_c: -20.0,
         velocity_mps: 760.0,
+        shots: None,
     });
     let line = load.velocity_model(&oryx);
     assert!((line.per_degree - 1.0).abs() < 1e-12);
@@ -481,7 +487,8 @@ fn measured_velocities_from_the_previous_schema_move_into_the_list() {
         load.velocities,
         [VelocityPoint {
             temperature_c: 12.0,
-            velocity_mps: 781.0
+            velocity_mps: 781.0,
+            shots: None
         }]
     );
     assert_eq!(load.zero, LoadZero::Rifle);
@@ -518,7 +525,8 @@ fn exports_in_the_first_format_still_import() {
         load.velocities,
         [VelocityPoint {
             temperature_c: 12.0,
-            velocity_mps: 781.0
+            velocity_mps: 781.0,
+            shots: None
         }]
     );
     let exported = store.export_json().unwrap();

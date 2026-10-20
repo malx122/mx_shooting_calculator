@@ -5,6 +5,7 @@
 //! Nothing here depends on the UI, so a mobile front end can reuse it.
 
 pub mod catalog;
+pub mod chrono;
 pub mod db;
 pub mod deletions;
 pub mod drawings;
@@ -28,8 +29,8 @@ pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
-    RifleLoad, TableColumns, TableSettings, Truing, TruingMethod, VelocityModel, VelocityPoint,
-    ZeroWeather,
+    RifleLoad, ShotStats, TableColumns, TableSettings, Truing, TruingMethod, VelocityModel,
+    VelocityPoint, ZeroWeather,
 };
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,

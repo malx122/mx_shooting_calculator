@@ -214,7 +214,11 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    what is specific to that combination:
    - **Measured velocities:** chronograph averages at different temperatures.
      Two or more give the rifle's own temperature sensitivity, fitted as a
-     line.
+     line. **From a chronograph file…** reads a Garmin Xero (the ShotView
+     app's CSV, any language), LabRadar (`SR…Report.csv` from its card) or
+     MagnetoSpeed (`LOG.CSV`, one series chosen) file: misreads are left
+     out, and the average, SD and ES are worked out from the shots and kept
+     with the measurement. Enter the cartridges' temperature that day.
    - **Point of impact:** where this load hits relative to the load the rifle
      was zeroed with, at the zero range. The engine tilts the bore by that
      angle.
@@ -678,6 +682,9 @@ at your option. This is the usual dual licence for Rust projects.
   deploy it and doesn't ship. Regenerate the file after changing dependencies:
   `cargo about generate about.hbs -o THIRD-PARTY-LICENSES.txt` (install
   with `cargo install cargo-about --locked --features cli`).
+- **Chronograph test data:** the parser's tests quote a few lines of real
+  files from MIT-licensed projects (useyournose/xeroconv and
+  ammolytics/experiments), credited in `crates/ballistics-store/src/chrono.rs`.
 - **The card fonts** in `crates/app/assets/fonts` (Barlow Condensed, Bebas
   Neue, Share Tech Mono, Black Ops One, from Google Fonts) are under the SIL
   Open Font License 1.1; each font's licence and copyright is next to it.
