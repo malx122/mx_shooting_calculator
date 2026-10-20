@@ -345,6 +345,17 @@ fn rifle_fields(
         );
         quantity(
             ui,
+            "  hitting there",
+            &mut rifle.zero_height_cm,
+            Quantity::ShortLength,
+            -50.0..=50.0,
+            0.1,
+        );
+        ui.label("");
+        ui.weak("0 on the crosshair; + high, − low (\"4 cm high at 100 m\")");
+        ui.end_row();
+        quantity(
+            ui,
             "Zeroed at",
             &mut rifle.zero_temperature_c,
             Quantity::Temperature,

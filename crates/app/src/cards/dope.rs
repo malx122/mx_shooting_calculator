@@ -341,7 +341,7 @@ pub fn layout(
         "{} · {} · zero {}",
         subject.bullet.display_name(),
         u.format(Quantity::Speed, table.muzzle_velocity),
-        u.format(Quantity::Distance, rifle.zero_range_m),
+        crate::calculator::zero_text(u, rifle),
     )];
     let conditions = &subject.conditions;
     let mut weather = match conditions.pressure {

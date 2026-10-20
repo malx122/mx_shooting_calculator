@@ -338,7 +338,7 @@ pub fn layout(
             compass_point(stand.facing_degrees),
             stand.facing_degrees.rem_euclid(360.0),
             u.format(Quantity::Temperature, today),
-            u.format(Quantity::Distance, rifle.zero_range_m)
+            crate::calculator::zero_text(u, rifle)
         ),
         s * 0.9,
         false,

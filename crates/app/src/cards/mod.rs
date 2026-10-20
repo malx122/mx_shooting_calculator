@@ -715,10 +715,14 @@ impl CardsPage {
         ui.strong("Ranges");
         grid(ui, "turret-ranges", |ui| {
             ui.label("From");
-            ui.weak(format!(
-                "the zero, {}",
-                u.format(Quantity::Distance, rifle.zero_range_m)
-            ));
+            ui.weak(if rifle.zero_height_cm.abs() < 0.05 {
+                format!(
+                    "the zero, {}",
+                    u.format(Quantity::Distance, rifle.zero_range_m)
+                )
+            } else {
+                "where the bullet comes down to the line of sight (the turret's 0)".to_owned()
+            });
             ui.end_row();
             units::quantity(
                 ui,

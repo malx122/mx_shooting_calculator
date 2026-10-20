@@ -170,10 +170,15 @@ fn list_rifles(store: &Store) -> Result<Answer, String> {
             .collect();
         let scope = scope_name(store, rifle);
         lines.push(format!(
-            "- {} ({}): zero {} m, sight height {} cm, {:.2}\" twist, clicks {} {}{}{}",
+            "- {} ({}): zero {} m{}, sight height {} cm, {:.2}\" twist, clicks {} {}{}{}",
             rifle.name,
             caliber_name(&rifle.caliber),
             rifle.zero_range_m,
+            match rifle.zero_height_cm {
+                height if height > 0.0 => format!(" ({height} cm high)"),
+                height if height < 0.0 => format!(" ({} cm low)", -height),
+                _ => String::new(),
+            },
             rifle.sight_height_cm,
             rifle.twist_in,
             rifle.click_value,
@@ -191,6 +196,7 @@ fn list_rifles(store: &Store) -> Result<Answer, String> {
             "name": rifle.name,
             "caliber": caliber_name(&rifle.caliber),
             "zero_range_m": rifle.zero_range_m,
+            "zero_height_cm": rifle.zero_height_cm,
             "sight_height_cm": rifle.sight_height_cm,
             "twist_in": rifle.twist_in,
             "click_unit": unit_label(rifle.click_unit),

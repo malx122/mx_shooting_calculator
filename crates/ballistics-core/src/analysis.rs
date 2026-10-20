@@ -18,6 +18,8 @@ pub struct OptimalZero {
     pub zero_range: f64,
     pub peak_range: f64,
     pub point_blank: PointBlank,
+    /// The bore's angle above the line of sight for this zero.
+    pub elevation: f64,
 }
 
 /// How far the current zero lets you hold dead-on at a vital zone of the
@@ -66,6 +68,52 @@ pub fn optimal_point_blank(scenario: &Scenario, vital_diameter: f64) -> Option<O
         zero_range,
         peak_range: top.range,
         point_blank: point_blank_range(&samples, radius)?,
+        elevation: low,
+    })
+}
+
+/// Where a level, calm shot with the bore `elevation` above the line of
+/// sight is at `range`: above (positive) or below the line of sight. With
+/// an `OptimalZero`'s elevation, that zero told at a reference range.
+pub fn height_at(scenario: &Scenario, elevation: f64, range: f64) -> Option<f64> {
+    let samples = solver::fly_level(scenario, elevation, |sample| sample.range < range);
+    solver::interpolate(&samples, range).map(|sample| sample.drop)
+}
+
+/// A zero told the way it is shot in: how high the bullet is at a
+/// reference range (say 100 m), and where it comes back down through the
+/// line of sight.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ZeroFigure {
+    pub reference_range: f64,
+    /// Above (positive) or below the line of sight at the reference range.
+    pub height: f64,
+    /// Where the falling bullet crosses the line of sight, if it does
+    /// before `max_range`.
+    pub far_zero: Option<f64>,
+}
+
+/// The rifle's zero told at `reference_range`, on the zero day.
+pub fn zero_figure(
+    scenario: &Scenario,
+    reference_range: f64,
+    max_range: f64,
+) -> Result<ZeroFigure, solver::SolveError> {
+    let samples = solver::zero_day_path(scenario, |sample| {
+        sample.range < reference_range.max(max_range)
+    })?;
+    let height = solver::interpolate(&samples, reference_range)
+        .ok_or(solver::SolveError::ZeroOutOfReach)?
+        .drop;
+    let peak = samples
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.drop.total_cmp(&b.1.drop))
+        .map_or(0, |(index, _)| index);
+    Ok(ZeroFigure {
+        reference_range,
+        height,
+        far_zero: falling_crossing(&samples[peak..], 0.0),
     })
 }
 

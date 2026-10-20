@@ -17,6 +17,7 @@ fn scenario() -> Scenario {
         rifle: Rifle {
             sight_height_m: 0.045,
             zero_range_m: 100.0,
+            zero_height_m: 0.0,
             twist_m: 11.0 * 0.0254,
             right_hand_twist: true,
         },
@@ -439,4 +440,37 @@ fn a_cant_to_the_right_lands_low_and_right() {
     // fall × sin(cant), and up by only the fall × cos(cant).
     assert!(tilted.windage_correction < flat.windage_correction);
     assert!(tilted.elevation_correction < flat.elevation_correction);
+}
+
+#[test]
+fn a_zero_high_at_100_m_is_told_both_ways() {
+    // Zeroed 4 cm high at 100 m.
+    let mut high = scenario();
+    high.rifle.zero_height_m = 0.04;
+    let at_100 = row(&high, 100.0);
+    assert!((at_100.drop - 0.04).abs() < 1e-4, "{}", at_100.drop);
+    let figure = analysis::zero_figure(&high, 100.0, 600.0).unwrap();
+    assert!((figure.height - 0.04).abs() < 1e-4);
+    // It comes back down through the line of sight further out, where a
+    // rifle zeroed there plainly hits the same.
+    let far = figure.far_zero.unwrap();
+    assert!(far > 150.0 && far < 300.0, "{far}");
+    let mut plain = scenario();
+    plain.rifle.zero_range_m = far;
+    assert!((row(&plain, 100.0).drop - 0.04).abs() < 2e-3);
+    // A plain zero is level with the line of sight at its range.
+    let figure = analysis::zero_figure(&scenario(), 100.0, 600.0).unwrap();
+    assert!(figure.height.abs() < 1e-4);
+}
+
+#[test]
+fn the_best_point_blank_zero_is_told_at_100_m() {
+    let s = scenario();
+    let best = analysis::optimal_point_blank(&s, 0.15).unwrap();
+    let height = analysis::height_at(&s, best.elevation, 100.0).unwrap();
+    // High at 100 m, but below the zone's top (7.5 cm) which it reaches at
+    // its peak further out.
+    assert!(height > 0.03 && height < 0.075, "{height}");
+    let at_zero = analysis::height_at(&s, best.elevation, best.zero_range).unwrap();
+    assert!(at_zero.abs() < 1e-3);
 }

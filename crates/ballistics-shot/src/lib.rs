@@ -175,6 +175,7 @@ pub fn scenario(
         rifle: ballistics_core::Rifle {
             sight_height_m: rifle.sight_height_cm / 100.0,
             zero_range_m: rifle.zero_range_m,
+            zero_height_m: rifle.zero_height_cm / 100.0,
             twist_m: rifle.twist_in * METRES_PER_INCH,
             right_hand_twist: rifle.right_hand_twist,
         },

@@ -53,6 +53,11 @@ pub struct Rifle {
     pub right_hand_twist: bool,
     pub sight_height_cm: f64,
     pub zero_range_m: f64,
+    /// Where the zero puts the bullet at the zero range: above (positive)
+    /// or below the line of sight, cm. Hunters often zero "4 cm high at
+    /// 100 m"; zero for a plain zero.
+    #[serde(default)]
+    pub zero_height_cm: f64,
     pub zero_temperature_c: f64,
     pub zero_pressure_hpa: f64,
     /// Powder temperature at the zero; `None` means the air temperature.
@@ -100,6 +105,7 @@ impl Rifle {
             right_hand_twist: true,
             sight_height_cm: 4.5,
             zero_range_m: 100.0,
+            zero_height_cm: 0.0,
             zero_temperature_c: 15.0,
             zero_pressure_hpa: 1013.25,
             zero_powder_temperature_c: None,
@@ -124,6 +130,10 @@ impl Rifle {
                 "sight height cannot be negative",
             ),
             (self.zero_range_m > 0.0, "zero range must be positive"),
+            (
+                self.zero_height_cm.abs() <= 50.0,
+                "the zero can be at most 50 cm high or low",
+            ),
             (
                 self.zero_weather().problem().is_none(),
                 self.zero_weather().problem().unwrap_or_default(),

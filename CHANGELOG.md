@@ -6,6 +6,15 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Zero as a height:** a rifle can be zeroed "4 cm high at 100 m". The
+  calculator tells every zero that way, with where the bullet comes back to
+  the line of sight: your own, and the best point-blank zero ("13 cm high
+  at 100 m"), which **Make it my zero** saves as the rifle's (allowing for
+  a bullet that hits higher or lower than the rifle's zero load). Turret
+  labels start where the bullet comes down to the line of sight.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added

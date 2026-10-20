@@ -117,6 +117,9 @@ pub(crate) const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE rifle_loads ADD COLUMN truing TEXT;
 "#,
+    r#"
+    ALTER TABLE rifles ADD COLUMN zero_height_cm REAL NOT NULL DEFAULT 0;
+"#,
 ];
 
 /// The setting holding the store's clock: the latest time it has stamped
@@ -480,8 +483,9 @@ pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), St
         "INSERT INTO rifles (id, name, caliber, barrel_length_mm, twist_in, right_hand_twist,
              sight_height_cm, zero_range_m, zero_temperature_c, zero_pressure_hpa, click_unit,
              click_value, notes, updated_at, scope_id, reticle_id, zero_powder_temperature_c,
-             zero_humidity_percent, table_settings)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+             zero_humidity_percent, table_settings, zero_height_cm)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19,
+                 ?20)
          ON CONFLICT (id) DO UPDATE SET
              name = excluded.name, caliber = excluded.caliber,
              barrel_length_mm = excluded.barrel_length_mm, twist_in = excluded.twist_in,
@@ -493,7 +497,8 @@ pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), St
              reticle_id = excluded.reticle_id,
              zero_powder_temperature_c = excluded.zero_powder_temperature_c,
              zero_humidity_percent = excluded.zero_humidity_percent,
-             table_settings = excluded.table_settings",
+             table_settings = excluded.table_settings,
+             zero_height_cm = excluded.zero_height_cm",
         params![
             rifle.id,
             rifle.name,
@@ -514,6 +519,7 @@ pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), St
             rifle.zero_powder_temperature_c,
             rifle.zero_humidity_percent,
             serde_json::to_string(&rifle.table)?,
+            rifle.zero_height_cm,
         ],
     )?;
     Ok(())
@@ -650,6 +656,7 @@ pub(crate) fn rifle_from_row(row: &Row<'_>) -> rusqlite::Result<Rifle> {
         right_hand_twist: row.get("right_hand_twist")?,
         sight_height_cm: row.get("sight_height_cm")?,
         zero_range_m: row.get("zero_range_m")?,
+        zero_height_cm: row.get("zero_height_cm")?,
         zero_temperature_c: row.get("zero_temperature_c")?,
         zero_pressure_hpa: row.get("zero_pressure_hpa")?,
         click_unit: ClickUnit::parse(&click_unit)

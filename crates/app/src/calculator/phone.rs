@@ -187,6 +187,7 @@ impl CalculatorPage {
 
         let scenario = self.scenario(rifle, bullet, frame.effective_load);
         self.refresh(
+            ui.ctx(),
             scenario,
             frame.aim.vital_diameter_cm,
             rifle.table.end_m.max(SOLVE_RANGE_M),
@@ -206,6 +207,7 @@ impl CalculatorPage {
                         assessment: frame
                             .country
                             .map(|country| ballistics_shot::assess(bullet, solution, country)),
+                        zeros: computed.zeros,
                     };
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }
@@ -224,6 +226,14 @@ impl CalculatorPage {
         }
         if requests.target {
             self.picker = Some(Picker::Target);
+        }
+        let zeros = self
+            .cache
+            .as_ref()
+            .map(|(_, computed)| computed.zeros)
+            .unwrap_or_default();
+        if let Some(rifle) = requests.view.use_zero(rifle, &zeros) {
+            actions.push(Action::SaveRifle(rifle));
         }
         requests.range_note
     }
@@ -704,7 +714,8 @@ impl ResultsView<'_> {
         egui::CollapsingHeader::new(RichText::new(limits_title).strong())
             .id_salt("phone-limits")
             .show(ui, |ui| {
-                self.limits(ui, solution, optimal, ethical, point_blank)
+                requests.view.zero_height =
+                    self.limits(ui, solution, optimal, ethical, point_blank);
             });
         requests
     }

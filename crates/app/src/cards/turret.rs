@@ -310,7 +310,12 @@ impl Plan {
             let Some(row) = solution.at(range_m) else {
                 break;
             };
-            let clicks = Hold::new(rifle, &row).elevation_clicks.max(0);
+            let clicks = Hold::new(rifle, &row).elevation_clicks;
+            // Inside a zero set high, the bullet is above the line of sight:
+            // nothing to dial (the turret's 0 is the far zero).
+            if clicks < 0 {
+                continue;
+            }
             if subject
                 .elevation_travel_clicks
                 .is_some_and(|travel| clicks as f64 > travel)
@@ -420,7 +425,7 @@ pub fn strip(
             subject.bullet.display_name(),
             u.format(Quantity::Speed, plan.muzzle_velocity),
             u.format(Quantity::Temperature, plan.temperature_c),
-            u.format(Quantity::Distance, rifle.zero_range_m),
+            crate::calculator::zero_text(u, rifle),
         );
         sheet.text_font(
             [width / 2.0, description_height * 0.78],
@@ -604,7 +609,7 @@ pub fn page(
             "{} · {} · zero {}",
             subject.bullet.display_name(),
             u.format(Quantity::Temperature, plan.temperature_c),
-            u.format(Quantity::Distance, subject.rifle.zero_range_m),
+            crate::calculator::zero_text(u, &subject.rifle),
         ),
         format!(
             "Turret {:.1} mm across, label {:.2} mm thick, {} clicks a turn, dialled {}",

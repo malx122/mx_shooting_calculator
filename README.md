@@ -10,7 +10,9 @@ gives:
 - a dope table, with holds in mil or MOA and scope clicks;
 - energy and velocity at impact, and an ethical range limit set by the
   game you hunt;
-- point-blank range for your zero, and the zero that maximises it;
+- point-blank range for your zero, and the zero that maximises it, told
+  the way it is shot in ("13 cm high at 100 m") with a button to make it
+  the rifle's zero;
 - lead for moving game;
 - the view through your scope and a 3D view of the shot, with game animals
   and sport targets at true size.
@@ -189,7 +191,9 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      at, clicks, elevation travel, field of view and illumination. A custom
      scope is drawn with a catalog reticle you choose, or a plain crosshair;
    - the zero and the weather it was made in: temperature, powder
-     temperature, pressure and humidity;
+     temperature, pressure and humidity. The zero can be a height at its
+     range, the way many hunters zero ("4 cm high at 100 m"): the bullet
+     then hits that high there instead of on the crosshair;
    - its **dope table**: start, end and step, and which columns to show.
      Drop and wind can each be shown in cm, mil, MOA or clicks, alongside
      velocity, energy and time of flight.

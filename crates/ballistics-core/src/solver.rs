@@ -132,6 +132,9 @@ pub struct Rifle {
     /// Centre of the scope above the centre of the bore.
     pub sight_height_m: f64,
     pub zero_range_m: f64,
+    /// Where the rifle is zeroed to hit at the zero range: above (positive)
+    /// or below the line of sight. Zero for a plain zero.
+    pub zero_height_m: f64,
     /// Barrel length for one full turn of the rifling.
     pub twist_m: f64,
     pub right_hand_twist: bool,
@@ -524,9 +527,9 @@ fn muzzle_stability(scenario: &Scenario, velocity: f64, atmosphere: &Atmosphere)
     ))
 }
 
-/// Finds the bore angles that put the bullet on the crosshair at the zero
-/// range, in the zero-day weather.
-fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
+/// The zero day's flight: its weather, level and calm, and the muzzle
+/// velocity it gives.
+fn zero_day(scenario: &Scenario) -> (Flight, f64) {
     let conditions = Conditions {
         atmosphere: scenario.zero_atmosphere,
         powder_temperature_c: scenario.zero_powder_temperature_c,
@@ -537,8 +540,29 @@ fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
     };
     let velocity = scenario.load.velocity_at(conditions.powder_temperature_c);
     let stability = muzzle_stability(scenario, velocity, &conditions.atmosphere);
-    let flight = Flight::new(scenario, &conditions, stability);
+    (Flight::new(scenario, &conditions, stability), velocity)
+}
+
+/// The path the zero puts this load on (with its impact offset), as on
+/// the zero day (level and in calm air), until `keep_going` rejects a
+/// sample.
+pub fn zero_day_path(
+    scenario: &Scenario,
+    keep_going: impl FnMut(&Sample) -> bool,
+) -> Result<Vec<Sample>, SolveError> {
+    validate(scenario)?;
+    let (elevation, _) = zero_angles(scenario)?;
+    let (flight, velocity) = zero_day(scenario);
+    let launch = launch_velocity(velocity, elevation + scenario.impact_offset[1], 0.0);
+    Ok(flight.fly(launch, keep_going))
+}
+
+/// Finds the bore angles that put the bullet at the zero height (on the
+/// crosshair for a plain zero) at the zero range, in the zero-day weather.
+fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
+    let (flight, velocity) = zero_day(scenario);
     let zero_range = scenario.rifle.zero_range_m;
+    let height = scenario.rifle.zero_height_m;
     let at_zero = |elevation: f64| {
         let samples = flight.fly(launch_velocity(velocity, elevation, 0.0), |s| {
             s.range < zero_range
@@ -549,9 +573,10 @@ fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
     // Drop at the zero range is almost linear in the bore angle, so the
     // secant method converges in a few shots.
     let (mut previous_angle, mut angle) = (0.0, 0.002);
-    let mut previous_drop = at_zero(previous_angle)?.drop;
+    let mut previous_drop = at_zero(previous_angle)?.drop - height;
     for _ in 0..30 {
-        let sample = at_zero(angle)?;
+        let mut sample = at_zero(angle)?;
+        sample.drop -= height;
         if sample.drop.abs() < 1e-6 {
             // In calm air the horizontal path is a straight line, so one
             // angle cancels the spin drift at the zero range.

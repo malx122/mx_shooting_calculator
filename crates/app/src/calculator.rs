@@ -1,7 +1,7 @@
 //! The calculation page: pick a rifle and a bullet from your collection,
 //! enter the weather and the shot, read holds, limits and the dope table.
 
-use ballistics_core::analysis::{self, OptimalZero, PointBlank};
+use ballistics_core::analysis::{self, OptimalZero, PointBlank, ZeroFigure};
 use ballistics_core::atmosphere::STANDARD_SEA_LEVEL_PRESSURE_HPA;
 use ballistics_core::{Coriolis, RangeRow, Scenario, Solution, SolveError, solver};
 use ballistics_store::{
@@ -234,11 +234,26 @@ struct CacheKey {
     scenario: Scenario,
     vital_diameter: Option<f64>,
     max_range: f64,
+    reference: f64,
 }
 
 struct Computed {
     solution: Result<Solution, SolveError>,
     optimal: Option<OptimalZero>,
+    zeros: Zeros,
+}
+
+/// The zeros told the way they are shot in: so high at a reference range.
+#[derive(Clone, Copy, Default)]
+pub struct Zeros {
+    /// 100 m, or 100 yd in yards.
+    reference: f64,
+    /// The rifle's zero.
+    figure: Option<ZeroFigure>,
+    /// The best point-blank zero's height at the reference range.
+    best_height: Option<f64>,
+    /// How much higher this load hits than the rifle's zero load, radians.
+    offset_up: f64,
 }
 
 pub struct CalculatorPage {
@@ -494,6 +509,7 @@ impl CalculatorPage {
             (Some(rifle), Some(bullet)) => {
                 let scenario = self.scenario(rifle, bullet, effective_load.as_ref());
                 self.refresh(
+                    context,
                     scenario,
                     aim.vital_diameter_cm,
                     rifle.table.end_m.max(SOLVE_RANGE_M),
@@ -512,6 +528,7 @@ impl CalculatorPage {
                             assessment: data
                                 .country
                                 .map(|country| ballistics_shot::assess(bullet, solution, country)),
+                            zeros: computed.zeros,
                         };
                         let requested = egui::ScrollArea::vertical()
                             .show(ui, |ui| view.show(ui, solution, computed.optimal.as_ref()))
@@ -521,6 +538,9 @@ impl CalculatorPage {
                         }
                         if let Some(three_d) = requested.trajectory_3d {
                             self.inputs.trajectory_3d = three_d;
+                        }
+                        if let Some(rifle) = requested.use_zero(rifle, &computed.zeros) {
+                            actions.push(Action::SaveRifle(rifle));
                         }
                     }
                     Err(error) => {
@@ -557,18 +577,35 @@ impl CalculatorPage {
         rifle
     }
 
-    fn refresh(&mut self, scenario: Scenario, vital_diameter_cm: Option<f64>, max_range: f64) {
+    fn refresh(
+        &mut self,
+        context: &egui::Context,
+        scenario: Scenario,
+        vital_diameter_cm: Option<f64>,
+        max_range: f64,
+    ) {
+        let reference = units::prefs(context).unit(Quantity::Distance).base(100.0);
         let key = CacheKey {
             scenario,
             vital_diameter: vital_diameter_cm.map(|cm| cm / 100.0),
             max_range,
+            reference,
         };
         if self.cache.as_ref().is_none_or(|(cached, _)| *cached != key) {
+            let optimal = key
+                .vital_diameter
+                .and_then(|diameter| analysis::optimal_point_blank(&key.scenario, diameter));
             let computed = Computed {
                 solution: solver::solve(&key.scenario, key.max_range),
-                optimal: key
-                    .vital_diameter
-                    .and_then(|diameter| analysis::optimal_point_blank(&key.scenario, diameter)),
+                zeros: Zeros {
+                    reference,
+                    figure: analysis::zero_figure(&key.scenario, reference, 1000.0).ok(),
+                    best_height: optimal.and_then(|best| {
+                        analysis::height_at(&key.scenario, best.elevation, reference)
+                    }),
+                    offset_up: key.scenario.impact_offset[1],
+                },
+                optimal,
             };
             self.cache = Some((key, computed));
         }
@@ -646,7 +683,7 @@ impl CalculatorPage {
             ui.weak(format!(
                 "{} · zero {} · sight {} · 1:{} {} twist · clicks {} {}",
                 caliber_name(&rifle.caliber),
-                u.format(Quantity::Distance, rifle.zero_range_m),
+                zero_text(&u, rifle),
                 u.format(Quantity::SightHeight, rifle.sight_height_cm),
                 u.format(Quantity::Twist, rifle.twist_in),
                 if rifle.right_hand_twist {
@@ -1250,6 +1287,48 @@ impl CalculatorPage {
     }
 }
 
+/// "100 m" for a plain zero, "100 m, 4.0 cm high" for one above it.
+pub fn zero_text(u: &units::UnitPrefs, rifle: &Rifle) -> String {
+    let range = u.format(Quantity::Distance, rifle.zero_range_m);
+    if rifle.zero_height_cm.abs() < 0.05 {
+        range
+    } else {
+        format!(
+            "{range}, {} {}",
+            u.format(Quantity::ShortLength, rifle.zero_height_cm.abs()),
+            if rifle.zero_height_cm > 0.0 {
+                "high"
+            } else {
+                "low"
+            }
+        )
+    }
+}
+
+/// "4.0 cm high at 100 m, on the line of sight again at 213 m".
+pub fn zero_figure_text(u: &units::UnitPrefs, figure: &ZeroFigure) -> String {
+    let at = if figure.height.abs() < 0.0005 {
+        format!(
+            "on the line of sight at {}",
+            u.format(Quantity::Distance, figure.reference_range)
+        )
+    } else {
+        format!(
+            "{} {} at {}",
+            u.format(Quantity::ShortLength, figure.height.abs() * 100.0),
+            if figure.height > 0.0 { "high" } else { "low" },
+            u.format(Quantity::Distance, figure.reference_range)
+        )
+    };
+    match figure.far_zero {
+        Some(far) if (far - figure.reference_range).abs() > 1.0 => format!(
+            "{at}, on the line of sight again at {}",
+            u.format(Quantity::Distance, far)
+        ),
+        _ => at,
+    }
+}
+
 /// A value the target sets that the hunter may change. Changing it keeps
 /// the hunter's number; the reset button goes back to the target's.
 fn overridable(
@@ -1297,6 +1376,21 @@ fn same_content(a: &RifleLoad, b: &RifleLoad) -> bool {
 struct ViewRequests {
     magnification: Option<f64>,
     trajectory_3d: Option<bool>,
+    /// Make this height at the reference range the rifle's zero, metres.
+    zero_height: Option<f64>,
+}
+
+impl ViewRequests {
+    /// The rifle zeroed as asked, if it was. `zeros` tell the reference
+    /// range and how much higher this load hits than the rifle's zero load,
+    /// so the rifle's own zero is set that much lower.
+    fn use_zero(&self, rifle: &Rifle, zeros: &Zeros) -> Option<Rifle> {
+        let height = self.zero_height? - zeros.offset_up * zeros.reference;
+        let mut zeroed = rifle.clone();
+        zeroed.zero_range_m = zeros.reference;
+        zeroed.zero_height_cm = (height * 1000.0).round() / 10.0;
+        Some(zeroed)
+    }
 }
 
 struct ResultsView<'a> {
@@ -1307,6 +1401,7 @@ struct ResultsView<'a> {
     min_velocity: f64,
     /// How the load fares under the hunter's country's rules, if one is set.
     assessment: Option<ballistics_shot::Assessment>,
+    zeros: Zeros,
 }
 
 impl ResultsView<'_> {
@@ -1362,7 +1457,7 @@ impl ResultsView<'_> {
                 ui.add_space(6.0);
                 self.warnings(ui, solution);
                 ui.separator();
-                self.limits(ui, solution, optimal, ethical, point_blank);
+                requested.zero_height = self.limits(ui, solution, optimal, ethical, point_blank);
             });
             ui.add_space(24.0);
             ui.vertical(|ui| {
@@ -1410,8 +1505,11 @@ impl ResultsView<'_> {
         optimal: Option<&OptimalZero>,
         ethical: Option<f64>,
         point_blank: Option<PointBlank>,
-    ) {
+    ) -> Option<f64> {
         let u = units::prefs(ui.ctx());
+        let zeros = self.zeros;
+        let reference = zeros.reference;
+        let mut use_zero = None;
         ui.heading(if self.aim.is_game() {
             "Hunting limits"
         } else {
@@ -1445,23 +1543,80 @@ impl ResultsView<'_> {
                     });
                     ui.end_row();
                 }
+                if let Some(figure) = zeros.figure {
+                    ui.label("Your zero");
+                    ui.label(zero_figure_text(&u, &figure));
+                    ui.end_row();
+                }
                 if self.aim.vital_diameter_cm.is_some() {
-                    ui.label(format!(
-                        "Dead-on hold, {} zero",
-                        u.format(Quantity::Distance, self.rifle.zero_range_m)
-                    ));
+                    ui.label("Dead-on hold, your zero");
                     ui.label(point_blank_text(&u, point_blank, self.aim));
                     ui.end_row();
                     ui.label("Best point-blank zero");
-                    ui.label(match optimal {
-                        Some(best) => format!(
-                            "zero at {}: {}; highest at {}",
-                            u.format(Quantity::Distance, best.zero_range),
-                            point_blank_text(&u, Some(best.point_blank), self.aim),
-                            u.format(Quantity::Distance, best.peak_range)
-                        ),
-                        None => "not found".to_owned(),
-                    });
+                    match optimal {
+                        Some(best) => {
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(format!(
+                                    "{}: {}; highest at {}",
+                                    match zeros.best_height {
+                                        Some(height) => format!(
+                                            "{} {} at {} (zero at {})",
+                                            u.format(Quantity::ShortLength, height.abs() * 100.0),
+                                            if height >= 0.0 { "high" } else { "low" },
+                                            u.format(Quantity::Distance, reference),
+                                            u.format(Quantity::Distance, best.zero_range),
+                                        ),
+                                        None => format!(
+                                            "zero at {}",
+                                            u.format(Quantity::Distance, best.zero_range)
+                                        ),
+                                    },
+                                    point_blank_text(&u, Some(best.point_blank), self.aim),
+                                    u.format(Quantity::Distance, best.peak_range)
+                                ));
+                                if let Some(height) = zeros.best_height
+                                    && ui
+                                        .small_button("Make it my zero")
+                                        .on_hover_text({
+                                            let told = |height: f64| {
+                                                format!(
+                                                    "{} {}",
+                                                    u.format(
+                                                        Quantity::ShortLength,
+                                                        height.abs() * 100.0
+                                                    ),
+                                                    if height >= 0.0 { "high" } else { "low" }
+                                                )
+                                            };
+                                            let rifle = height - zeros.offset_up * reference;
+                                            if zeros.offset_up == 0.0 {
+                                                format!(
+                                                    "After you have zeroed the rifle {} at {}: \
+                                                     saves it as the rifle's zero.",
+                                                    told(height),
+                                                    u.format(Quantity::Distance, reference),
+                                                )
+                                            } else {
+                                                format!(
+                                                    "This bullet hits {} at {} with the rifle \
+                                                     zeroed {} with its zero load. After zeroing \
+                                                     like that, saves it as the rifle's zero.",
+                                                    told(height),
+                                                    u.format(Quantity::Distance, reference),
+                                                    told(rifle),
+                                                )
+                                            }
+                                        })
+                                        .clicked()
+                                {
+                                    use_zero = Some(height);
+                                }
+                            });
+                        }
+                        None => {
+                            ui.label("not found");
+                        }
+                    }
                     ui.end_row();
                 }
                 ui.label("Muzzle velocity today");
@@ -1477,6 +1632,7 @@ impl ResultsView<'_> {
                 );
                 ui.end_row();
             });
+        use_zero
     }
 
     /// Returns the magnification the hunter moved to, if any.
