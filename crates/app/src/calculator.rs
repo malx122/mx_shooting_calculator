@@ -324,6 +324,17 @@ impl CalculatorPage {
                 .as_deref()
                 .and_then(|id| data.scope(id))
                 .and_then(|scope| Some(scope.elevation_travel? / scope.click_value?)),
+            zero_weather: match data
+                .loads
+                .iter()
+                .find(|load| load.rifle_id == rifle.id && load.bullet_id == bullet.id)
+                .map_or(LoadZero::Rifle, |load| load.zero)
+            {
+                // Zeroed in the shot's weather: the rifle's zero weather
+                // is still the one the hunter zeroed in.
+                LoadZero::Rifle | LoadZero::SameAsShot => Some(rifle.zero_weather()),
+                LoadZero::Recorded(weather) => Some(weather),
+            },
             rifle: rifle.clone(),
             bullet: bullet.clone(),
         })

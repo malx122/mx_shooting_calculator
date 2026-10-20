@@ -4,6 +4,8 @@
 
 use eframe::egui::{self, Color32, Pos2, Shape, Stroke, pos2};
 
+use super::fonts::Font;
+
 /// Millimetres per typographic point.
 pub const PT: f32 = 25.4 / 72.0;
 
@@ -22,6 +24,8 @@ pub enum Ink {
     Green,
     GreenShade,
     White,
+    /// Any colour.
+    Rgb([u8; 3]),
 }
 
 impl Ink {
@@ -37,6 +41,7 @@ impl Ink {
             Ink::Green => [0x2E, 0x7D, 0x32],
             Ink::GreenShade => [0xDF, 0xF0, 0xDC],
             Ink::White => [0xFF, 0xFF, 0xFF],
+            Ink::Rgb(rgb) => rgb,
         }
     }
 
@@ -69,12 +74,12 @@ pub enum Mark {
         triangles: Vec<[u32; 3]>,
         ink: Ink,
     },
-    /// One line of Helvetica, `size` in points, `at` on its baseline.
+    /// One line of text, `size` in points, `at` on its baseline.
     Text {
         at: [f32; 2],
         text: String,
         size: f32,
-        bold: bool,
+        font: Font,
         align: Align,
         ink: Ink,
     },
@@ -166,11 +171,23 @@ impl Sheet {
         align: Align,
         ink: Ink,
     ) {
+        self.text_font(at, text, size, Font::from_bold(bold), align, ink);
+    }
+
+    pub fn text_font(
+        &mut self,
+        at: [f32; 2],
+        text: impl Into<String>,
+        size: f32,
+        font: Font,
+        align: Align,
+        ink: Ink,
+    ) {
         self.marks.push(Mark::Text {
             at,
             text: printable(&text.into()),
             size,
-            bold,
+            font,
             align,
             ink,
         });
@@ -207,14 +224,14 @@ impl Sheet {
                     at: text_at,
                     text,
                     size,
-                    bold,
+                    font,
                     align,
                     ink,
                 } => Mark::Text {
                     at: shift(*text_at),
                     text: text.clone(),
                     size: *size,
-                    bold: *bold,
+                    font: *font,
                     align: *align,
                     ink: *ink,
                 },
@@ -271,32 +288,41 @@ impl Sheet {
                     at: baseline,
                     text,
                     size,
-                    bold,
+                    font,
                     align,
                     ink,
                 } => {
-                    let height = size * PT * scale;
-                    // egui's font sits a little higher than Helvetica; this
-                    // puts its baseline about where the PDF's is.
-                    let anchor = at(*baseline) + egui::vec2(0.0, height * 0.22);
-                    let align = match align {
-                        Align::Left => egui::Align2::LEFT_BOTTOM,
-                        Align::Center => egui::Align2::CENTER_BOTTOM,
-                        Align::Right => egui::Align2::RIGHT_BOTTOM,
+                    let em = size * PT * scale;
+                    // egui sizes a font by its ascent to descent, the PDF by
+                    // its em. Helvetica is shown in egui's own font.
+                    let metrics = font.metrics();
+                    let height = match font {
+                        Font::Helvetica | Font::HelveticaBold => em * 1.08,
+                        _ => em * (metrics.ascent - metrics.descent) as f32 / 1000.0,
                     };
-                    let font = egui::FontId::proportional(height.max(1.0) * 1.08);
                     let colour = ink.colour();
-                    painter.text(anchor, align, text, font.clone(), colour);
-                    if *bold {
-                        // The default fonts have no bold: overprint a hair to the side.
-                        painter.text(
-                            anchor + egui::vec2(height * 0.04, 0.0),
-                            align,
-                            text,
-                            font,
-                            colour,
-                        );
+                    let galley = painter.layout_no_wrap(
+                        text.clone(),
+                        egui::FontId::new(height.max(1.0), font.family()),
+                        colour,
+                    );
+                    let rise = galley
+                        .rows
+                        .first()
+                        .and_then(|row| row.glyphs.first())
+                        .map_or(galley.size().y * 0.8, |glyph| glyph.pos.y);
+                    let point = at(*baseline);
+                    let left = match align {
+                        Align::Left => point.x,
+                        Align::Center => point.x - galley.size().x / 2.0,
+                        Align::Right => point.x - galley.size().x,
+                    };
+                    let corner = pos2(left, point.y - rise);
+                    if *font == Font::HelveticaBold {
+                        // egui's font has no bold: overprint a hair to the side.
+                        painter.galley(corner + egui::vec2(em * 0.04, 0.0), galley.clone(), colour);
                     }
+                    painter.galley(corner, galley, colour);
                 }
             }
         }
@@ -333,6 +359,34 @@ pub fn printable(text: &str) -> String {
         }
     }
     out
+}
+
+/// The character for a WinAnsiEncoding code, if it has one.
+pub fn win_ansi_char(code: u8) -> Option<char> {
+    match code {
+        b' '..=b'~' | 0xA0..=0xFF => Some(char::from(code)),
+        0x80 => Some('€'),
+        0x85 => Some('…'),
+        0x92 => Some('’'),
+        0x93 => Some('“'),
+        0x94 => Some('”'),
+        0x95 => Some('•'),
+        0x96 => Some('–'),
+        0x97 => Some('—'),
+        _ => None,
+    }
+}
+
+/// The text cut to `width` millimetres with an ellipsis, in a font.
+pub fn fit_font(text: &str, size: f32, font: Font, width: f32) -> String {
+    if font.width(text, size) <= width {
+        return text.to_owned();
+    }
+    let mut cut: String = text.to_owned();
+    while !cut.is_empty() && font.width(&format!("{cut}…"), size) > width {
+        cut.pop();
+    }
+    format!("{}…", cut.trim_end())
 }
 
 /// The character's code in PDF's WinAnsiEncoding, if it has one.

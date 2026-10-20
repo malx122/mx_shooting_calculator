@@ -1737,6 +1737,7 @@ dependencies = [
  "sqlite-wasm-rs",
  "sqlite-wasm-vfs",
  "sys-locale",
+ "ttf-parser",
  "ureq",
  "wasm-bindgen",
  "wasm-bindgen-futures",

@@ -1,64 +1,70 @@
-//! Sheets as a PDF: vector lines, fills and Helvetica text (one of PDF's
-//! standard fonts, so nothing is embedded), each sheet one page at its
-//! exact size, so cards print true to size.
+//! Sheets as a PDF: vector lines, fills and text, each sheet one page at
+//! its exact size, so cards print true to size. Helvetica is one of PDF's
+//! own fonts; the other fonts are embedded whole (they are small).
 
+use std::collections::BTreeMap;
 use std::fmt::Write;
 
-use super::sheet::{Align, Ink, Mark, PT, Sheet, text_width, win_ansi};
+use super::fonts::Font;
+use super::sheet::{Align, Ink, Mark, PT, Sheet, win_ansi};
 
 /// Points per millimetre.
 const MM: f32 = 72.0 / 25.4;
 
 pub fn write(pages: &[Sheet], title: &str) -> Vec<u8> {
-    let mut objects: Vec<Vec<u8>> = Vec::new();
-    // 1 catalog, 2 page tree, 3 and 4 the fonts, 5 the document info; then
-    // a page and its contents for each sheet.
-    let first_page = 6;
+    // The fonts used, each with its resource name.
+    let mut fonts: BTreeMap<Font, usize> = BTreeMap::new();
+    for sheet in pages {
+        for mark in &sheet.marks {
+            if let Mark::Text { font, .. } = mark {
+                let next = fonts.len() + 1;
+                fonts.entry(*font).or_insert(next);
+            }
+        }
+    }
+
+    // 1 catalog, 2 page tree, 3 document info, then the fonts' objects,
+    // then a page and its contents for each sheet.
+    let mut objects: Vec<Vec<u8>> = vec![Vec::new(), Vec::new(), Vec::new()];
+    let mut resources = String::new();
+    for (font, number) in &fonts {
+        let first = objects.len() + 1;
+        let _ = write!(resources, "/F{number} {first} 0 R ");
+        objects.extend(font_objects(*font, first));
+    }
+    let first_page = objects.len() + 1;
     let kids: Vec<String> = (0..pages.len())
         .map(|index| format!("{} 0 R", first_page + 2 * index))
         .collect();
-    objects.push(b"<< /Type /Catalog /Pages 2 0 R >>".to_vec());
-    objects.push(
-        format!(
-            "<< /Type /Pages /Kids [{}] /Count {} >>",
-            kids.join(" "),
-            pages.len()
-        )
-        .into_bytes(),
-    );
-    for font in ["Helvetica", "Helvetica-Bold"] {
-        objects.push(
-            format!(
-                "<< /Type /Font /Subtype /Type1 /BaseFont /{font} /Encoding /WinAnsiEncoding >>"
-            )
-            .into_bytes(),
-        );
-    }
+    objects[0] = b"<< /Type /Catalog /Pages 2 0 R >>".to_vec();
+    objects[1] = format!(
+        "<< /Type /Pages /Kids [{}] /Count {} >>",
+        kids.join(" "),
+        pages.len()
+    )
+    .into_bytes();
     let mut info = b"<< /Title ".to_vec();
     info.extend(string(title));
     info.extend(b" /Producer ");
     info.extend(string(&format!("{} {}", crate::APP_NAME, crate::VERSION)));
     info.extend(b" >>");
-    objects.push(info);
+    objects[2] = info;
     for (index, sheet) in pages.iter().enumerate() {
         let contents = first_page + 2 * index + 1;
         objects.push(
             format!(
                 "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {:.2} {:.2}] \
-                 /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {contents} 0 R >>",
+                 /Resources << /Font << {resources}>> >> /Contents {contents} 0 R >>",
                 sheet.width * MM,
                 sheet.height * MM
             )
             .into_bytes(),
         );
-        let stream = content(sheet);
-        let mut object = format!("<< /Length {} >>\nstream\n", stream.len()).into_bytes();
-        object.extend(stream);
-        object.extend(b"\nendstream");
-        objects.push(object);
+        objects.push(stream("", &content(sheet, &fonts)));
     }
 
-    // Plain ASCII throughout: text outside it is written as octal escapes.
+    // Plain ASCII throughout: text outside it is written as octal escapes,
+    // font files in hex.
     let mut pdf = b"%PDF-1.4\n".to_vec();
     let mut offsets = Vec::with_capacity(objects.len());
     for (index, object) in objects.iter().enumerate() {
@@ -74,15 +80,73 @@ pub fn write(pages: &[Sheet], title: &str) -> Vec<u8> {
     }
     let _ = write!(
         table,
-        "trailer\n<< /Size {} /Root 1 0 R /Info 5 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+        "trailer\n<< /Size {} /Root 1 0 R /Info 3 0 R >>\nstartxref\n{xref}\n%%EOF\n",
         objects.len() + 1
     );
     pdf.extend(table.into_bytes());
     pdf
 }
 
+/// A stream object with extra dictionary entries.
+fn stream(entries: &str, data: &[u8]) -> Vec<u8> {
+    let mut object = format!("<< /Length {} {entries}>>\nstream\n", data.len()).into_bytes();
+    object.extend(data);
+    object.extend(b"\nendstream");
+    object
+}
+
+/// A font's objects, the first numbered `first`: the font alone for PDF's
+/// own, else the font, its descriptor and its file.
+fn font_objects(font: Font, first: usize) -> Vec<Vec<u8>> {
+    let name = font.postscript_name();
+    let Some(file) = font.file() else {
+        return vec![
+            format!(
+                "<< /Type /Font /Subtype /Type1 /BaseFont /{name} /Encoding /WinAnsiEncoding >>"
+            )
+            .into_bytes(),
+        ];
+    };
+    let metrics = font.metrics();
+    let widths: Vec<String> = metrics.widths[32..=255]
+        .iter()
+        .map(u16::to_string)
+        .collect();
+    let [x0, y0, x1, y1] = metrics.bbox;
+    let mut hex = String::with_capacity(file.len() * 2 + file.len() / 32 + 2);
+    for (index, byte) in file.iter().enumerate() {
+        let _ = write!(hex, "{byte:02X}");
+        if index % 40 == 39 {
+            hex.push('\n');
+        }
+    }
+    hex.push('>');
+    vec![
+        format!(
+            "<< /Type /Font /Subtype /TrueType /BaseFont /{name} /FirstChar 32 /LastChar 255 \
+             /Widths [{}] /Encoding /WinAnsiEncoding /FontDescriptor {} 0 R >>",
+            widths.join(" "),
+            first + 1
+        )
+        .into_bytes(),
+        format!(
+            "<< /Type /FontDescriptor /FontName /{name} /Flags 32 /FontBBox [{x0} {y0} {x1} {y1}] \
+             /ItalicAngle 0 /Ascent {} /Descent {} /CapHeight {} /StemV 80 /FontFile2 {} 0 R >>",
+            metrics.ascent,
+            metrics.descent,
+            metrics.cap_height,
+            first + 2
+        )
+        .into_bytes(),
+        stream(
+            &format!("/Length1 {} /Filter /ASCIIHexDecode ", file.len()),
+            hex.as_bytes(),
+        ),
+    ]
+}
+
 /// The page's drawing operators, in millimetres with y down.
-fn content(sheet: &Sheet) -> Vec<u8> {
+fn content(sheet: &Sheet, fonts: &BTreeMap<Font, usize>) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     let put = |out: &mut Vec<u8>, text: String| out.extend(text.into_bytes());
     // Millimetres, y down from the top edge; round joins and caps.
@@ -141,11 +205,11 @@ fn content(sheet: &Sheet) -> Vec<u8> {
                 at,
                 text,
                 size,
-                bold,
+                font,
                 align,
                 ink,
             } => {
-                let width = text_width(text, *size, *bold);
+                let width = font.width(text, *size);
                 let x = match align {
                     Align::Left => at[0],
                     Align::Center => at[0] - width / 2.0,
@@ -153,9 +217,9 @@ fn content(sheet: &Sheet) -> Vec<u8> {
                 };
                 // The text matrix flips y back, so the letters stand upright.
                 let mut op = format!(
-                    "BT {} rg /{} {:.3} Tf 1 0 0 -1 {x:.3} {:.3} Tm ",
+                    "BT {} rg /F{} {:.3} Tf 1 0 0 -1 {x:.3} {:.3} Tm ",
                     colour(*ink),
-                    if *bold { "F2" } else { "F1" },
+                    fonts.get(font).copied().unwrap_or(1),
                     size * PT,
                     at[1]
                 )

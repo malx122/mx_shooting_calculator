@@ -121,6 +121,7 @@ fn main() {
 fn app_creator(store: Result<Store, String>) -> eframe::AppCreator<'static> {
     Box::new(|creation_context| {
         theme::apply(&creation_context.egui_ctx);
+        cards::fonts::install(&creation_context.egui_ctx);
         match store {
             Ok(store) => Ok(Box::new(app::App::new(store)) as Box<dyn eframe::App>),
             Err(message) => Ok(Box::new(StartupError(message))),

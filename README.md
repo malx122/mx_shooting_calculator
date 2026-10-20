@@ -312,13 +312,20 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      the ranges at the clicks they need. Measure the turret once (diameter
      and height with a caliper, clicks a turn, which way it turns when
      dialling up); it is kept for the rifle. The marks come from the
-     calculation at today's or a chosen temperature: a number every 50 or
-     100 m (as "1 2 3" or "100 200 300"), lines and dots between, red
-     beyond the ethical limit, and a band for each turn of the turret.
-     Under them is a ruler with a tick for every click and the mil (or
-     MOA) numbered. Marks that would overlap are left off and listed. The
-     A4 sheet has copies of the strip with cut marks, a 50 mm bar to check
-     the print scale, and the clicks for every range.
+     calculation at today's temperature, the zeroing temperature or a
+     chosen one: a number every 10, 25, 50 or 100 m (as "1 2 3", "10 11 12"
+     or "100 110 120"), lines and dots between, optionally a tick or a
+     triangle under each number at its exact click, and a band for each
+     turn of the turret. Under them is a ruler with a tick for every click
+     and the mil (or MOA) numbered. Lettering: Helvetica or one of four
+     bundled fonts (Barlow Condensed, Bebas Neue, Share Tech Mono, Black
+     Ops One; SIL Open Font License, embedded in the PDF), and the
+     numbers' size. Colours: a scheme to start from, then the background
+     and marks of the label, the description, each turn's band and the
+     ruler, a colour for beyond the ethical limit, and any single range a
+     colour of its own. Marks that would overlap are left off and listed.
+     The A4 sheet has copies of the strip with cut marks, a 50 mm bar to
+     check the print scale, and the clicks for every range.
 
 **Units** (in the header): metric or imperial for each quantity separately.
 Distance, drop, sight height, velocity, wind speed, temperature, sensitivity,
@@ -633,6 +640,10 @@ at your option. This is the usual dual licence for Rust projects.
   deploy it and doesn't ship. Regenerate the file after changing dependencies:
   `cargo about generate about.hbs -o THIRD-PARTY-LICENSES.txt` (install
   with `cargo install cargo-about --locked --features cli`).
+- **The card fonts** in `crates/app/assets/fonts` (Barlow Condensed, Bebas
+  Neue, Share Tech Mono, Black Ops One, from Google Fonts) are under the SIL
+  Open Font License 1.1; each font's licence and copyright is next to it.
+  They are embedded in the PDFs the app makes, which the licence allows.
 - **The built-in catalog** (see [NOTICE](NOTICE)): bullet and scope figures
   are facts compiled from manufacturers' publications, each with its
   source. The reticle and animal drawings are the project's own: the

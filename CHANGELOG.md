@@ -21,7 +21,9 @@ any release may still change things noticeably.
   landmarks). Saved as PDF.
 - **Turret labels:** a strip for the elevation turret with each range at
   the clicks it needs, worked out by the calculation, a band for each turn
-  and a click ruler. Measure the turret once per rifle.
+  and a click ruler. Measure the turret once per rifle. Numbers every 10 to
+  100 m, the zeroing temperature as a choice, a marker under each number,
+  five fonts and colours per band and per range.
 
 ## [0.5.0] - 2026-10-20
 
