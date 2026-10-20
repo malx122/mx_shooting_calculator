@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-20
+
 ### Added
 
 - **Swarovski Optik scopes:** 34 scopes (Z8i, Z8i+, Z6i, Z5i+, Z5+, Z5,
@@ -285,7 +287,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.4.0...v0.5.0
