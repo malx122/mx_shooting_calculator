@@ -454,14 +454,18 @@ pub fn pill(ui: &mut egui::Ui, text: &str, tone: Tone, detail: &str) -> egui::Re
     } else {
         format!("{mark} {text}")
     };
-    let response = egui::Frame::new()
-        .fill(fill)
-        .corner_radius(6)
-        .inner_margin(egui::Margin::symmetric(9, 4))
-        .show(ui, |ui| {
-            ui.add(egui::Label::new(RichText::new(text).color(colour)).extend())
-        })
-        .response;
+    // Sized up front, so a row of pills wraps instead of overflowing.
+    let galley = egui::WidgetText::from(RichText::new(text).color(colour)).into_galley(
+        ui,
+        Some(egui::TextWrapMode::Extend),
+        f32::INFINITY,
+        egui::TextStyle::Body,
+    );
+    let padding = egui::vec2(9.0, 4.0);
+    let (rect, response) =
+        ui.allocate_exact_size(galley.size() + 2.0 * padding, egui::Sense::hover());
+    ui.painter().rect_filled(rect, 6.0, fill);
+    ui.painter().galley(rect.min + padding, galley, colour);
     if detail.is_empty() {
         response
     } else {

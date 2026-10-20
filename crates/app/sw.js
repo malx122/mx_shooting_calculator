@@ -52,7 +52,9 @@ async function remember(request, response) {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
+  const url = new URL(request.url);
+  // The download page beside the app is a plain web page: not the app's to keep.
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.includes('/download/')) {
     return;
   }
   if (request.mode === 'navigate') {

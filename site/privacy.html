@@ -1,0 +1,181 @@
+<!doctype html>
+<!-- The privacy policy, published with the download page at download/privacy.html.
+     It is linked from Google's sign-in screen: keep it true to what the app does. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12261A">
+  <title>MX Shooting Calculator: privacy</title>
+  <meta name="description" content="What MX Shooting Calculator stores, where, and what it sends to others.">
+  <link rel="icon" href="mxsc-icon.svg">
+  <style>
+    :root {
+      --forest-950: #0B1A11;
+      --forest-900: #12261A;
+      --forest-800: #183022;
+      --forest-700: #22402E;
+      --forest-600: #2B5A3E;
+      --bone: #F1EADB;
+      --bone-muted: #B8B2A2;
+      --blaze: #E8702A;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--forest-900);
+      color: var(--bone);
+      font: 16px/1.6 "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    a { color: var(--blaze); }
+    a:hover { color: #FF9455; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+    header { background: var(--forest-950); border-bottom: 1px solid var(--forest-700); }
+    header .wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; max-width: 1120px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand img.icon { width: 40px; height: 40px; }
+    .brand img.word { height: 21px; }
+    .brand span {
+      color: var(--blaze); font-size: 10.5px; font-weight: 700; letter-spacing: 1.8px;
+      display: block; margin-top: 3px;
+    }
+    nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
+    nav a { color: var(--bone); text-decoration: none; }
+    nav a:hover { color: var(--blaze); }
+    main { padding: 40px 0 24px; }
+    h1 { font-size: 34px; line-height: 1.2; margin: 0 0 8px; }
+    .updated { color: var(--bone-muted); margin: 0 0 28px; }
+    h2 { font-size: 21px; margin: 36px 0 10px; }
+    p, li { color: var(--bone); }
+    ul { padding-left: 22px; }
+    li { margin-bottom: 8px; }
+    .summary {
+      background: var(--forest-800); border: 1px solid var(--forest-600); border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .summary p { margin: 0; }
+    code { background: var(--forest-800); padding: 1px 6px; border-radius: 4px; font-size: 14px; }
+    footer { padding: 24px 0 48px; color: var(--bone-muted); font-size: 14px; border-top: 1px solid var(--forest-700); }
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
+      header .wrap { padding-top: 10px; padding-bottom: 10px; }
+      nav { margin-left: 0; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="./">
+        <img class="icon" src="mxsc-icon.svg" alt="">
+        <div>
+          <img class="word" src="mxsc-wordmark.svg" alt="MX">
+          <span>SHOOTING CALCULATOR</span>
+        </div>
+      </a>
+      <nav>
+        <a href="./#download">Download</a>
+        <a href="https://github.com/malx122/mx_shooting_calculator">Source</a>
+        <a href="../">Open the app</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <h1>Privacy</h1>
+      <p class="updated">MX Shooting Calculator · in effect from 20 October 2026</p>
+
+      <div class="summary">
+        <p>Your rifles, bullets, targets and settings are kept on your own devices. The app
+          has no accounts, no analytics and no advertising, and it sells nothing about you.
+          It only sends something elsewhere when you use a feature that needs it: the
+          weather, or sync.</p>
+      </div>
+
+      <h2>What the app keeps on your device</h2>
+      <p>Everything you enter: rifles, bullets, loads and velocity measurements, scopes,
+        targets, stands, and the calculator's settings, including the place you last looked up
+        and your county. On a computer it is a database file in your user's app-data folder;
+        in the browser it is the browser's storage for this site. Deleting the app's data, or
+        the browser's data for the site, deletes it. <strong>Export backup</strong> in the menu
+        saves a copy wherever you choose.</p>
+
+      <h2>Weather and your position</h2>
+      <p>When you ask for the weather, the app sends the place name you typed, or your
+        position, to <a href="https://open-meteo.com/">Open-Meteo</a>, which answers with the
+        forecast. Your position is read from the device only when you press
+        <strong>Weather here</strong> or <strong>Use my position</strong>, and only after you
+        allow it. It is used for the weather and for today's shooting light, and is kept on
+        your device. Open-Meteo's own terms and privacy policy cover what it does with
+        requests.</p>
+
+      <h2>Sync with a sync key</h2>
+      <p>If you turn on sync with a key, your data is encrypted on your device (XChaCha20-Poly1305,
+        with a key made from your sync key) before it is sent to the app's sync server, which
+        runs on Cloudflare. The server stores only that encrypted copy, under a hash of the
+        key; it never sees the key or anything readable, and keeps no accounts or names. A copy
+        nobody has written to for two years is removed. <strong>Delete the synced copy</strong>
+        in the app's Sync window removes the data at once; a note that it was deleted stays
+        for 30 days, so your other devices stop instead of starting it again.</p>
+
+      <h2>Sync with Google Drive</h2>
+      <p>If you choose to sync through Google Drive and sign in with Google, the app asks Google
+        for these permissions, and no others:</p>
+      <ul>
+        <li><strong>Its own folder in your Drive</strong>
+          (<code>drive.appdata</code>): a hidden folder only this app can see. The app keeps
+          one file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads,
+          scopes and targets, so your devices share them. It cannot see or change any other
+          file in your Drive.</li>
+        <li><strong>Your e-mail address</strong> (<code>openid</code>, <code>email</code>):
+          only to show which account is signed in.</li>
+      </ul>
+      <p>The sign-in passes through the app's sync server, because Google requires a secret
+        that can't be kept in the app. The server hands the sign-in to your device within ten
+        minutes and keeps nothing afterwards; later it only passes requests for a fresh access
+        token on to Google, without storing them. The sign-in is kept on your device. Your
+        data goes straight from your device to your Drive, not through the server.</p>
+      <p>The app's use and transfer of information received from Google APIs adheres to the
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API
+        Services User Data Policy</a>, including the Limited Use requirements. The data is used
+        only to sync your own records between your own devices. It is not sold, not used for
+        advertising, not shown to anyone else, and not used to train AI models.</p>
+      <p>To stop: <strong>Stop syncing here</strong> in the app's Sync window, or
+        <strong>Delete the synced copy</strong> to remove the file's contents from Drive too. You can also
+        remove the app's access at
+        <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.</p>
+
+      <h2>AI assistants</h2>
+      <p>The optional tool for AI assistants (MCP) runs on your own computer and reads the
+        desktop app's database there. What you then share with an assistant is between you and
+        its provider.</p>
+
+      <h2>Websites and downloads</h2>
+      <p>The web version and this page are hosted on GitHub Pages, and the downloads on GitHub;
+        GitHub may log requests as described in
+        <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">its
+        privacy statement</a>. The app and these pages use no cookies, trackers or third-party
+        scripts.</p>
+
+      <h2>Children</h2>
+      <p>The app is not directed at children.</p>
+
+      <h2>Changes and contact</h2>
+      <p>If what the app does with data changes, this page changes with it, with a new date at
+        the top. Questions or requests:
+        <a href="https://github.com/malx122/mx_shooting_calculator/issues">open an issue on
+        GitHub</a>. The app is made by David Rosendahl.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      MX Shooting Calculator is free software under the MIT or Apache-2.0 licence.
+      <a href="./">Download</a> · <a href="https://github.com/malx122/mx_shooting_calculator">Source</a>
+    </div>
+  </footer>
+</body>
+</html>

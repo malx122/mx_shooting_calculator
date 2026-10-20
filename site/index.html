@@ -1,0 +1,304 @@
+<!doctype html>
+<!-- The download page, published with the web version at download/.
+     scripts/site.sh copies it into the web build and fills in @VERSION@. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12261A">
+  <title>MX Shooting Calculator: download</title>
+  <meta name="description" content="Rifle ballistics for hunting and target shooting: your own rifles and bullets, holds for today's weather, the ethical range and the hunting rules where you hunt. Free for macOS, Windows, Linux and the browser.">
+  <link rel="icon" href="mxsc-icon.svg">
+  <style>
+    :root {
+      --forest-950: #0B1A11;
+      --forest-900: #12261A;
+      --forest-800: #183022;
+      --forest-700: #22402E;
+      --forest-600: #2B5A3E;
+      --bone: #F1EADB;
+      --bone-muted: #B8B2A2;
+      --blaze: #E8702A;
+      --blaze-deep: #B45018;
+      --meadow: #7FC08C;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--forest-900);
+      color: var(--bone);
+      font: 16px/1.55 "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    a { color: var(--blaze); }
+    a:hover { color: #FF9455; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+    header {
+      background: var(--forest-950);
+      border-bottom: 1px solid var(--forest-700);
+    }
+    header .wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand img.icon { width: 40px; height: 40px; }
+    .brand img.word { height: 21px; }
+    .brand span {
+      color: var(--blaze); font-size: 10.5px; font-weight: 700; letter-spacing: 1.8px;
+      display: block; margin-top: 3px;
+    }
+    nav { margin-left: auto; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    nav a { color: var(--bone); text-decoration: none; }
+    nav a:hover { color: var(--blaze); }
+
+    .button {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 8px; text-decoration: none;
+      font-weight: 600; border: 1px solid transparent;
+    }
+    .button.primary { background: var(--blaze); color: var(--forest-950); }
+    .button.primary:hover { background: #FF8540; color: var(--forest-950); }
+    .button.secondary { border-color: var(--forest-600); color: var(--bone); background: var(--forest-800); }
+    .button.secondary:hover { border-color: var(--blaze); color: var(--bone); }
+    .button.small { padding: 8px 14px; font-size: 15px; }
+
+    .hero { padding: 56px 0 40px; }
+    .hero .wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center; }
+    h1 { font-size: 40px; line-height: 1.15; margin: 0 0 16px; font-weight: 700; }
+    .lead { font-size: 18px; color: var(--bone-muted); margin: 0 0 28px; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .fine { color: var(--bone-muted); font-size: 14px; margin-top: 14px; }
+    .shot {
+      width: 100%; height: auto; display: block; border-radius: 10px;
+      border: 1px solid var(--forest-600); box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+    }
+
+    section { padding: 48px 0; }
+    section.band { background: var(--forest-950); border-top: 1px solid var(--forest-700); border-bottom: 1px solid var(--forest-700); }
+    h2 { font-size: 28px; margin: 0 0 8px; }
+    .sub { color: var(--bone-muted); margin: 0 0 28px; }
+
+    .downloads { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .card {
+      background: var(--forest-800); border: 1px solid var(--forest-600); border-radius: 12px;
+      padding: 20px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .card.mine { border-color: var(--blaze); }
+    .card h3 { margin: 0; font-size: 20px; }
+    .card .needs { color: var(--bone-muted); font-size: 14px; margin: 0; }
+    .card .note { color: var(--bone-muted); font-size: 13.5px; margin: auto 0 0; }
+    @media (min-width: 901px) {
+      /* Two lines for every card's needs, so the buttons line up. */
+      .card .needs { min-height: 3.1em; }
+    }
+    .card .button { align-self: flex-start; }
+    .more { margin-top: 20px; color: var(--bone-muted); }
+
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 32px; }
+    .features h3 { margin: 0 0 6px; font-size: 18px; color: var(--bone); }
+    .features h3::before {
+      content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+      background: var(--blaze); margin-right: 10px; vertical-align: 2px;
+    }
+    .features p { margin: 0; color: var(--bone-muted); }
+
+    .gallery { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); gap: 24px; align-items: start; }
+    figure { margin: 0; }
+    figcaption { color: var(--bone-muted); font-size: 14px; margin-top: 10px; }
+
+    footer { padding: 32px 0 48px; color: var(--bone-muted); font-size: 14px; }
+    footer p { margin: 0 0 8px; }
+
+    @media (max-width: 900px) {
+      .hero .wrap { grid-template-columns: minmax(0, 1fr); }
+      .downloads { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
+      header .wrap { padding-top: 10px; padding-bottom: 10px; }
+      nav { margin-left: 0; gap: 14px; }
+      .hero { padding-top: 32px; }
+      h1 { font-size: 30px; }
+      .downloads, .features { grid-template-columns: minmax(0, 1fr); }
+      .gallery { grid-template-columns: minmax(0, 1fr); }
+      .gallery figure:first-child { max-width: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="./">
+        <img class="icon" src="mxsc-icon.svg" alt="">
+        <div>
+          <img class="word" src="mxsc-wordmark.svg" alt="MX">
+          <span>SHOOTING CALCULATOR</span>
+        </div>
+      </a>
+      <nav>
+        <a href="#download">Download</a>
+        <a href="#features">Features</a>
+        <a href="https://github.com/malx122/mx_shooting_calculator">Source</a>
+        <a class="button small primary" href="../">Open the app</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="wrap">
+        <div>
+          <h1>Rifle ballistics for hunting and target shooting</h1>
+          <p class="lead">Your own rifles and bullets, the holds for today's weather, the
+            ethical range and the hunting rules where you hunt. Free, and your data stays on
+            your devices.</p>
+          <div class="actions">
+            <a class="button primary" id="get" href="#download">Download</a>
+            <a class="button secondary" href="../">Open in the browser</a>
+          </div>
+          <p class="fine" id="get-note">Version @VERSION@ for macOS, Windows and Linux. On a
+            phone it runs in the browser and installs to the home screen.</p>
+        </div>
+        <img class="shot" src="images/calculate.jpg" width="1360" height="880"
+          alt="The calculator: a moose at 150 m, the hold, the legal class, season and shooting light, the ethical range, and the view through the scope">
+      </div>
+    </div>
+
+    <section class="band" id="download">
+      <div class="wrap">
+        <h2>Download</h2>
+        <p class="sub">Version @VERSION@ · <a href="https://github.com/malx122/mx_shooting_calculator/blob/main/CHANGELOG.md">what's new</a></p>
+        <div class="downloads">
+          <div class="card" data-os="mac">
+            <h3>macOS</h3>
+            <p class="needs">Apple silicon and Intel, macOS 11 or later</p>
+            <a class="button primary small" href="https://github.com/malx122/mx_shooting_calculator/releases/download/v@VERSION@/MX-Shooting-Calculator-@VERSION@-macos.dmg">Download .dmg</a>
+            <p class="note">Drag the app to Applications. It isn't notarized yet: the first
+              time, open System Settings → Privacy &amp; Security and choose Open Anyway.</p>
+          </div>
+          <div class="card" data-os="windows">
+            <h3>Windows</h3>
+            <p class="needs">64-bit Windows 10 or 11</p>
+            <a class="button primary small" href="https://github.com/malx122/mx_shooting_calculator/releases/download/v@VERSION@/MX-Shooting-Calculator-@VERSION@-windows-x64.zip">Download .zip</a>
+            <p class="note">Unzip and run MX Shooting Calculator.exe. If SmartScreen warns
+              about an unknown publisher, choose More info → Run anyway.</p>
+          </div>
+          <div class="card" data-os="linux">
+            <h3>Linux</h3>
+            <p class="needs">x86-64, X11 or Wayland</p>
+            <a class="button primary small" href="https://github.com/malx122/mx_shooting_calculator/releases/download/v@VERSION@/MX-Shooting-Calculator-@VERSION@-linux-x64.tar.gz">Download .tar.gz</a>
+            <p class="note">Unpack, then run ./install.sh for a menu entry, or ./mxsc
+              straight from the folder.</p>
+          </div>
+          <div class="card" data-os="phone">
+            <h3>Phone and browser</h3>
+            <p class="needs">iPhone, Android, or any computer</p>
+            <a class="button primary small" href="../">Open the app</a>
+            <p class="note">To keep it on a phone: Share → Add to Home Screen (iPhone), or
+              Install app (Android). It works offline.</p>
+          </div>
+        </div>
+        <p class="more">Earlier versions and release notes are on
+          <a href="https://github.com/malx122/mx_shooting_calculator/releases">GitHub</a>.
+          Sync keeps your rifles and bullets the same on all your devices.</p>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <h2>What it does</h2>
+        <p class="sub">For a hunter at the stand and for a target shooter at the range.</p>
+        <div class="features">
+          <div>
+            <h3>Holds for today</h3>
+            <p>Up and right in mil or MOA and in clicks, for the range, angle, wind and weather,
+              with spin drift and aerodynamic jump. Weather from your position or a place.</p>
+          </div>
+          <div>
+            <h3>Ethical range</h3>
+            <p>Where the bullet still has the energy and speed the game needs, and how far a
+              dead-on hold stays in the vital zone. Target shooters can switch it all off.</p>
+          </div>
+          <div>
+            <h3>The rules where you hunt</h3>
+            <p>Swedish and Finnish legal ammunition classes, the season in your county and
+              today's shooting light, worked out for where you are.</p>
+          </div>
+          <div>
+            <h3>Through your scope</h3>
+            <p>The reticle of your own scope with the animal or target at true size, so you
+              see the hold. Trajectory in 2D and 3D.</p>
+          </div>
+          <div>
+            <h3>Cards and turret labels</h3>
+            <p>Printable dope cards, stand cards with your landmarks, and a label for the
+              elevation turret with the ranges at their clicks.</p>
+          </div>
+          <div>
+            <h3>Your rifles and loads</h3>
+            <p>A catalog of ammunition, bullets and scopes; chronograph files from Garmin,
+              LabRadar and MagnetoSpeed; truing to a long shot; Strelok Pro import.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="gallery">
+          <figure>
+            <img class="shot" src="images/phone.jpg" width="390" height="844"
+              alt="The calculator on a phone: tiles for range, angle, wind and target, the hold and the scope view">
+            <figcaption>On a phone, in the browser.</figcaption>
+          </figure>
+          <figure>
+            <img class="shot" src="images/cards.jpg" width="1360" height="880"
+              alt="A dope card for the rifle with clicks, mil and wind for each range">
+            <figcaption>A dope card, ready to print.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>MX Shooting Calculator is free software under the MIT or Apache-2.0 licence, by David
+        Rosendahl. <a href="https://github.com/malx122/mx_shooting_calculator">Source code on GitHub</a>.</p>
+      <p>Your data stays on your devices. The weather comes from Open-Meteo, and sync, when you
+        turn it on, keeps an encrypted copy (or one in your own Google Drive).
+        <a href="privacy.html">Privacy</a>.</p>
+      <p>Ballistics are estimates: confirm your holds on paper at real distances before you hunt.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Offer the download for the system the visitor is on.
+    (function () {
+      var agent = navigator.userAgent;
+      var os = /iPhone|iPad|iPod|Android/.test(agent) ? 'phone'
+        : /Mac/.test(agent) ? (navigator.maxTouchPoints > 1 ? 'phone' : 'mac')
+        : /Win/.test(agent) ? 'windows'
+        : /Linux|X11/.test(agent) ? 'linux'
+        : null;
+      if (!os) return;
+      var card = document.querySelector('.card[data-os="' + os + '"]');
+      var get = document.getElementById('get');
+      if (!card || !get) return;
+      card.classList.add('mine');
+      card.parentNode.insertBefore(card, card.parentNode.firstChild);
+      var link = card.querySelector('a.button');
+      if (os === 'phone') {
+        get.textContent = 'Open the app';
+        get.href = '../';
+        document.getElementById('get-note').textContent =
+          'It runs in the browser and installs to the home screen. Version @VERSION@; also for macOS, Windows and Linux.';
+      } else {
+        get.textContent = 'Download for ' + card.querySelector('h3').textContent;
+        get.href = link.href;
+      }
+    })();
+  </script>
+</body>
+</html>

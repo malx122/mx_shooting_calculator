@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=MX Shooting Calculator
+Comment=Rifle ballistics for hunting and target shooting
+Exec=mxsc
+Icon=mxsc
+Terminal=false
+Categories=Utility;Sports;
+StartupWMClass=mxsc

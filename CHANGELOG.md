@@ -6,6 +6,17 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Desktop apps** for macOS (Apple silicon and Intel), Windows and Linux,
+  attached to each release on GitHub, and a **download page** with a
+  **privacy policy** beside the web version.
+
+### Fixed
+
+- The legal class, season and light pills wrap instead of pushing the
+  scope view off the edge.
+
 ## [0.7.0] - 2026-10-20
 
 ### Added

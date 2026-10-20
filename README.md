@@ -17,6 +17,22 @@ gives:
 - the view through your scope and a 3D view of the shot, with game animals
   and sport targets at true size.
 
+## Install
+
+Each release on [GitHub](https://github.com/malx122/mx_shooting_calculator/releases)
+has the desktop app for macOS, Windows and Linux. The web version below runs
+on phones and anywhere else.
+
+- **macOS** (Apple silicon and Intel, macOS 11 or later): open the `.dmg`
+  and drag the app to Applications. The app isn't notarized yet, so the
+  first time macOS refuses to open it: open **System Settings → Privacy &
+  Security** and choose **Open Anyway**.
+- **Windows** (64-bit): unzip and run `MX Shooting Calculator.exe`.
+  SmartScreen may warn about an unknown publisher: **More info → Run
+  anyway**.
+- **Linux** (x86-64): unpack, then `./install.sh` puts the program in
+  `~/.local/bin` with a menu entry and icon; or run `./mxsc` from the folder.
+
 ## Run
 
 ```sh
@@ -124,8 +140,17 @@ To make a release:
    version number; on a phone, in the menu), so write it for hunters. A
    test fails if `Cargo.toml`'s version has no heading in it.
 2. Commit, then tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
-3. The tag builds and publishes the web version. The workflow refuses a tag
-   that doesn't match `Cargo.toml`.
+3. The tag builds and publishes the web version, and builds the desktop apps
+   and attaches them to the tag's GitHub release (created from the
+   changelog). The workflows refuse a tag that doesn't match `Cargo.toml`.
+
+The desktop packages are made by `scripts/package.sh` on each system (the
+`Desktop apps` workflow runs it on GitHub's macOS, Windows and Linux
+machines): a universal `.dmg` on macOS, a `.zip` on Windows and a `.tar.gz`
+on Linux, in `dist-desktop/`. The icons are drawn from the SVG by
+`cargo run -p mxsc --example icons`. The macOS app is signed without an
+identity and the Windows program not at all; signing and notarizing need an
+Apple Developer ID and a code-signing certificate.
 
 The backup format (`transfer::VERSION`) and the database schema (the
 migrations in `db.rs`) have their own numbers. Only a change that stops old

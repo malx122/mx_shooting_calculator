@@ -1380,7 +1380,7 @@ impl ResultsView<'_> {
         let mut requested = ViewRequests::default();
         ui.horizontal_top(|ui| {
             ui.vertical(|ui| {
-                ui.set_max_width((ui.available_width() - PICTURE - 40.0).max(420.0));
+                ui.set_max_width((ui.available_width() - PICTURE - 64.0).max(420.0));
                 ui.heading(self.title(ui));
                 match solution.at(inputs.target_range_m) {
                     Some(row) => self.shot_card(ui, &row, ethical),

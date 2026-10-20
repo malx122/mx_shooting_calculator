@@ -2,7 +2,8 @@
 # The web version of MX Shooting Calculator.
 #
 #   scripts/web.sh          serve it on http://127.0.0.1:8080, rebuilding on changes
-#   scripts/web.sh build    release build into crates/app/dist (static files to host)
+#   scripts/web.sh build    release build into crates/app/dist (static files to host),
+#                           with the download page (site/) at download/
 #
 # Needs rustup with the wasm32-unknown-unknown target, trunk, and llvm-ar
 # (macOS: `brew install rustup trunk llvm`, then
@@ -37,6 +38,10 @@ fi
 
 case "${1:-serve}" in
   serve) exec trunk serve ;;
-  build) exec trunk build --release --public-url ./ ;;
+  build)
+    trunk build --release --public-url ./
+    # The download page, at download/ beside the app.
+    exec ../../scripts/site.sh "$PWD/dist"
+    ;;
   *) echo "usage: $0 [serve|build]" >&2; exit 2 ;;
 esac

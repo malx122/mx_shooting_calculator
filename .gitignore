@@ -12,3 +12,6 @@
 
 # Web build output
 /crates/app/dist
+
+# Desktop packages (scripts/package.sh)
+/dist-desktop
