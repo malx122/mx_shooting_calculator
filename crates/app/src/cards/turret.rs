@@ -22,6 +22,9 @@ pub struct Turret {
     /// The height of the band the label covers.
     pub height_mm: f64,
     pub clicks_per_turn: u32,
+    /// The label's thickness: it bends round its middle, so a thicker
+    /// label must be longer to close.
+    pub thickness_mm: f64,
     /// Dialling up turns the turret clockwise, seen from above. Most turn
     /// anticlockwise.
     pub clockwise: bool,
@@ -33,6 +36,7 @@ impl Default for Turret {
             diameter_mm: 30.0,
             height_mm: 12.0,
             clicks_per_turn: 100,
+            thickness_mm: 0.1,
             clockwise: false,
         }
     }
@@ -49,8 +53,9 @@ impl Turret {
         }
     }
 
+    /// The strip's length: round the turret at the label's middle.
     pub fn circumference_mm(&self) -> f32 {
-        PI * self.diameter_mm as f32
+        PI * (self.diameter_mm + self.thickness_mm) as f32
     }
 }
 
@@ -594,14 +599,17 @@ pub fn page(
         Ink::Black,
     );
     y += 9.0;
-    page.text(
-        [margin, y + 3.0],
+    for line in [
         format!(
-            "{} · {} · zero {} · turret {:.1} mm across, {} clicks a turn, dialled {}",
+            "{} · {} · zero {}",
             subject.bullet.display_name(),
             u.format(Quantity::Temperature, plan.temperature_c),
             u.format(Quantity::Distance, subject.rifle.zero_range_m),
+        ),
+        format!(
+            "Turret {:.1} mm across, label {:.2} mm thick, {} clicks a turn, dialled {}",
             turret.diameter_mm,
+            turret.thickness_mm,
             turret.clicks_per_turn,
             if turret.clockwise {
                 "clockwise"
@@ -609,12 +617,11 @@ pub fn page(
                 "anticlockwise"
             }
         ),
-        8.0,
-        false,
-        Align::Left,
-        Ink::Grey,
-    );
-    y += 10.0;
+    ] {
+        page.text([margin, y + 3.0], line, 8.0, false, Align::Left, Ink::Grey);
+        y += 4.2;
+    }
+    y += 5.8;
     // Copies of the strip, each with cut marks at its corners.
     let left = (210.0 - strip.width) / 2.0;
     for _ in 0..options.copies.clamp(1, 8) {
@@ -647,7 +654,8 @@ pub fn page(
     );
     y += 9.0;
     let steps = [
-        "Cut on the corner marks. The strip is as long as the turret is round.",
+        "Cut on the corner marks. The strip is as long as the turret is round, at the label's middle.",
+        "Ends overlapping? Make the label thinner (or the diameter smaller) and print again; a gap: thicker.",
         "Set the turret to zero. Wrap the strip with the ruler's 0 at the index line and the numbers",
         "running the way the turret turns when dialling up. Clear tape over it keeps it dry.",
     ];
@@ -757,6 +765,7 @@ mod tests {
     fn a_turn_starts_from_the_rifles_clicks() {
         assert_eq!(Turret::for_clicks(0.1, true).clicks_per_turn, 100);
         assert_eq!(Turret::for_clicks(0.25, false).clicks_per_turn, 60);
-        assert!((Turret::default().circumference_mm() - 94.25).abs() < 0.01);
+        // 30 mm turret, 0.1 mm paper: π × 30.1.
+        assert!((Turret::default().circumference_mm() - 94.56).abs() < 0.01);
     }
 }

@@ -310,8 +310,11 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      room becomes lines for notes. Stands are kept on the device.
    - **Turret label:** a strip to wrap round the elevation turret, with
      the ranges at the clicks they need. Measure the turret once (diameter
-     and height with a caliper, clicks a turn, which way it turns when
-     dialling up); it is kept for the rifle. The marks come from the
+     over the knurling and height with a caliper, clicks a turn, which way
+     it turns when dialling up) and say what the label is printed on: it
+     bends round its own middle, so the strip is made π × its thickness
+     longer (0.3 mm for paper, nearly 1 mm laminated) and its ends meet. It
+     is kept for the rifle. The marks come from the
      calculation at today's temperature, the zeroing temperature or a
      chosen one: a number every 10, 25, 50 or 100 m (as "1 2 3", "10 11 12"
      or "100 110 120"), lines and dots between, optionally a tick or a

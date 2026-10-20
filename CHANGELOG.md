@@ -23,7 +23,9 @@ any release may still change things noticeably.
   the clicks it needs, worked out by the calculation, a band for each turn
   and a click ruler. Measure the turret once per rifle. Numbers every 10 to
   100 m, the zeroing temperature as a choice, a marker under each number,
-  five fonts and colours per band and per range.
+  five fonts and colours per band and per range. The strip allows for the
+  label's thickness (paper, sticker, photo paper, laminated or your own),
+  so its ends meet round the turret.
 
 ## [0.5.0] - 2026-10-20
 

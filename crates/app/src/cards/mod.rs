@@ -617,8 +617,9 @@ impl CardsPage {
 
         ui.strong("The turret");
         ui.weak(
-            "Measure the elevation turret's cap with a caliper. The height is the band the \
-             label will cover. Kept for this rifle.",
+            "Measure the elevation turret's cap with a caliper where the label goes: over \
+             the ridges if it is knurled, as the label sits on them. The height is the band \
+             the label will cover. Kept for this rifle.",
         );
         grid(ui, "turret-size", |ui| {
             ui.label("Diameter");
@@ -638,6 +639,43 @@ impl CardsPage {
                     .max_decimals(1)
                     .suffix(" mm"),
             );
+            ui.end_row();
+            ui.label("Label");
+            ui.horizontal(|ui| {
+                const MATERIALS: [(&str, f64, &str); 4] = [
+                    ("Paper", 0.1, "Ordinary printer paper, about 0.1 mm"),
+                    (
+                        "Sticker",
+                        0.15,
+                        "Printable vinyl or sticker paper with its glue",
+                    ),
+                    ("Photo paper", 0.25, "Photo paper or thin card"),
+                    ("Laminated", 0.3, "Paper laminated before it is wrapped"),
+                ];
+                let chosen = MATERIALS
+                    .iter()
+                    .find(|(_, thickness, _)| (turret.thickness_mm - thickness).abs() < 1e-6)
+                    .map_or("Your own", |(name, _, _)| name);
+                egui::ComboBox::from_id_salt("turret-material")
+                    .selected_text(chosen)
+                    .show_ui(ui, |ui| {
+                        for (name, thickness, hint) in MATERIALS {
+                            ui.selectable_value(&mut turret.thickness_mm, thickness, name)
+                                .on_hover_text(hint);
+                        }
+                    });
+                ui.add(
+                    egui::DragValue::new(&mut turret.thickness_mm)
+                        .range(0.0..=1.0)
+                        .speed(0.01)
+                        .max_decimals(2)
+                        .suffix(" mm thick"),
+                )
+                .on_hover_text(
+                    "It wraps round its middle, so the strip is made π × thickness longer. \
+                     Tape over it afterwards doesn't count.",
+                );
+            });
             ui.end_row();
             ui.label("Clicks a turn");
             ui.horizontal(|ui| {
@@ -661,9 +699,11 @@ impl CardsPage {
             ui.end_row();
         });
         ui.weak(format!(
-            "The strip: {:.1} × {:.1} mm, {} clicks of {} {unit}.",
+            "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
+             clicks of {} {unit}.",
             turret.circumference_mm(),
             turret.height_mm,
+            std::f64::consts::PI * turret.thickness_mm,
             turret.clicks_per_turn,
             rifle.click_value
         ));
