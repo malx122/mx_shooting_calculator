@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-10-20
+
+### Fixed
+
+- The ••• menu on wide screens: Units, Use for and Hunting rules open a
+  window of their own instead of a submenu that covered the menu.
+- The sync status's dot no longer overlaps its text.
+
 ## [0.7.1] - 2026-10-20
 
 ### Added
@@ -287,7 +295,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.5.0...v0.6.0
