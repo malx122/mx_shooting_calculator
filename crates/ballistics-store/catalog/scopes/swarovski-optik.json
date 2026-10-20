@@ -1,0 +1,889 @@
+[
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z3 3-10x42",
+  "magnification_min": 3.3,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-4a",
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   11.0,
+   3.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z3/z3-3-10x42/z3-3-10x42",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. Swarovski names it 3-10x42 but gives the magnification as 3.3-10x. Elevation range 1.4 m/100 m (50 in/100 yd). Reticles offered: 4A, Plex, BRX, BRH. Swarovski publishes no dimensions for BRX, BRH, so the plain crosshair stands in for them.",
+  "id": "swarovski-z3-3-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z3 4-12x50",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "swarovski-4a",
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 120,
+  "fov_m_at_100m": [
+   9.7,
+   3.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z3/z3-4-12x50/z3-4-12x50",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 12x. Elevation range 1.2 m/100 m (43 in/100 yd). Reticles offered: 4A, Plex, BRX, BRH. Swarovski publishes no dimensions for BRX, BRH, so the plain crosshair stands in for them.",
+  "id": "swarovski-z3-4-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z3 4-12x50 BT",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 120,
+  "fov_m_at_100m": [
+   9.7,
+   3.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z3/z3-4-12x50/z3-4-12x50-bt",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 12x. With the ballistic turret (BT). Elevation range 1.2 m/100 m (43 in/100 yd). Reticles offered: 4W, Plex. Swarovski publishes no dimensions for 4W, so the plain crosshair stands in for it.",
+  "id": "swarovski-z3-4-12x50-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5 2.4-12x50",
+  "magnification_min": 2.4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   15.3,
+   3.0
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i/z5-i-2-4-12x50/z5-2p4-12x50",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5/Z5i/Z3 (12/2023). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 12x. Elevation/windage range 2.5/1.4 m/100 m (90/50 in/100 yd). Reticles offered: BRH, Plex. Swarovski publishes no dimensions for BRH, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5-2-4-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5 2.4-12x50 BT",
+  "magnification_min": 2.4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   15.3,
+   3.0
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i/z5-i-2-4-12x50/z5-2p4-12x50-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5/Z5i/Z3 (12/2023). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 12x. With the ballistic turret (BT). Elevation/windage range 2.5/1.4 m/100 m. Reticles offered: 4W, Plex. Swarovski publishes no dimensions for 4W, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5-2-4-12x50-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5 3.5-18x44 P",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 44,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   10.0,
+   2.0
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i/z5-i-3-5-18x44/z5-3p5-18x44-p",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5/Z5i/Z3 (12/2023). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P). Elevation/windage range 1.6/1.0 m/100 m (58/36 in/100 yd). Reticles offered: BRX, BRX Heavy, Plex. Swarovski publishes no dimensions for BRX, BRX Heavy, so the plain crosshair stands in for them.",
+  "id": "swarovski-z5-3-5-18x44-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5 3.5-18x44 P BT",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 44,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   10.0,
+   2.0
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i/z5-i-3-5-18x44/z5-3p5-18x44-p-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5/Z5i/Z3 (12/2023). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P), ballistic turret (BT). Elevation/windage range 1.6/1.0 m/100 m. Reticles offered: 4W, Plex. Swarovski publishes no dimensions for 4W, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5-3-5-18x44-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 2-10x42",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-brs",
+   "swarovski-plex"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   17.9,
+   3.6
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-2-10x42",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. Elevation range 80 MOA. Reticles offered: BRS, Plex.",
+  "id": "swarovski-z5-plus-2-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 2-10x42 BT",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-brw",
+   "swarovski-plex"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   17.9,
+   3.6
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-2-10x42-bt",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. With the ballistic turret (BT). Elevation range 80 MOA. Reticles offered: BRW, Plex.",
+  "id": "swarovski-z5-plus-2-10x42-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 3.5-18x50 P",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-brs",
+   "swarovski-plex"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   10.1,
+   2.1
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-3p5-18x50",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P). Elevation range 80 MOA. Reticles offered: BRS, Plex.",
+  "id": "swarovski-z5-plus-3-5-18x50-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 3.5-18x50 P BT",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-brw",
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   10.1,
+   2.1
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-3p5-18x50-bt",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P), ballistic turret (BT), MOA version. Elevation range 80 MOA. Reticles offered: 4W, BRW, Plex. Swarovski publishes no dimensions for 4W, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5-plus-3-5-18x50-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 5-25x56 P",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 25,
+  "reticles": [
+   "swarovski-brs",
+   "swarovski-plex"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.9,
+   1.4
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-5-25x56",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 25x. Side parallax (P). Elevation/windage range 80/50 MOA. Reticles offered: BRS, Plex.",
+  "id": "swarovski-z5-plus-5-25x56-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5+ 5-25x56 P BT",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 25,
+  "reticles": [
+   "swarovski-brw",
+   "swarovski-plex",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.9,
+   1.4
+  ],
+  "illuminated": false,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5-plus/z5-plus-5-25x56-bt",
+  "notes": "From Swarovski's product page. Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 25x. Side parallax (P), ballistic turret (BT), MOA version. Elevation/windage range 80/50 MOA. Reticles offered: 4W, BRW, Plex. Swarovski publishes no dimensions for 4W, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5-plus-5-25x56-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 2-10x42",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-brs-i",
+   "swarovski-plex-i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   17.9,
+   3.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-2-10x42",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. Elevation range 80 MOA. Reticles offered: BRS-I, Plex-I.",
+  "id": "swarovski-z5i-plus-2-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 2-10x42 BT",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-brw-i",
+   "swarovski-plex-i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   17.9,
+   3.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-2-10x42-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. With the ballistic turret (BT). Elevation range 80 MOA. Reticles offered: BRW-I, Plex-I.",
+  "id": "swarovski-z5i-plus-2-10x42-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 3.5-18x50 P",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-brs-i",
+   "swarovski-plex-i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   10.1,
+   2.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-3p5-18x50",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P). Elevation range 80 MOA. Reticles offered: BRS-I, Plex-I.",
+  "id": "swarovski-z5i-plus-3-5-18x50-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 3.5-18x50 P BT",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-brw-i",
+   "swarovski-plex-i",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   10.1,
+   2.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-3p5-18x50-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P), ballistic turret (BT), MOA version. Elevation range 80 MOA. Reticles offered: 4W-I, BRW-I, Plex-I. Swarovski publishes no dimensions for 4W-I, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5i-plus-3-5-18x50-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 5-25x56 P",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 25,
+  "reticles": [
+   "swarovski-brs-i",
+   "swarovski-plex-i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.9,
+   1.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-5-25x56",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 25x. Side parallax (P). Elevation/windage range 80/50 MOA. Reticles offered: BRS-I, Plex-I.",
+  "id": "swarovski-z5i-plus-5-25x56-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 5-25x56 P BT",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 25,
+  "reticles": [
+   "swarovski-brw-i",
+   "swarovski-plex-i",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.9,
+   1.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-5-25x56-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 25x. Side parallax (P), ballistic turret (BT), MOA version. Elevation/windage range 80/50 MOA. Reticles offered: 4W-I, BRW-I, Plex-I. Swarovski publishes no dimensions for 4W-I, so the plain crosshair stands in for it.",
+  "id": "swarovski-z5i-plus-5-25x56-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 3.5-18x50 P BT MRAD",
+  "magnification_min": 3.5,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-4a-i",
+   "swarovski-4wm-i",
+   "swarovski-brw2m-i"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 23,
+  "fov_m_at_100m": [
+   10.1,
+   2.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-3p5-18x50-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P), ballistic turret (BT), MRAD version: clicks 10 mm/100 m (0.1 mrad). Elevation/windage range 2.3/2.3 m/100 m. Reticles offered: 4A-I, 4Wm-I, BRW2m-I.",
+  "id": "swarovski-z5i-plus-3-5-18x50-p-bt-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z5i+ 5-25x56 P BT MRAD",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 25,
+  "reticles": [
+   "swarovski-4a-i",
+   "swarovski-4wm-i",
+   "swarovski-brw2m-i"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 23,
+  "fov_m_at_100m": [
+   6.9,
+   1.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z5-i-plus/z5i-plus/z5i-plus-5-25x56-bt",
+  "notes": "From Swarovski's product page; Swarovski technical data Z5i+ MOA/MRAD (BA-696, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 25x. Side parallax (P), ballistic turret (BT), MRAD version: clicks 10 mm/100 m (0.1 mrad). Elevation/windage range 2.3/1.45 m/100 m. Reticles offered: 4A-I, 4Wm-I, BRW2m-I.",
+  "id": "swarovski-z5i-plus-5-25x56-p-bt-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z6i 1-6x24",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 200,
+  "fov_m_at_100m": [
+   42.4,
+   7.0
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/se/en/hunting/products/rifle-scopes/z6-i/z6i-1-6x24/z6i-1-6x24-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z6i (BA-670, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 6x. Elevation/windage range 2.0/2.0 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z6i-1-6x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z6i 1.7-10x42",
+  "magnification_min": 1.7,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   25.3,
+   4.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/se/en/hunting/products/rifle-scopes/z6-i/z6i-1-7-10x42/z6i-1-7-10x42-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z6i (BA-670, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 10x. Elevation/windage range 1.5/1.5 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z6i-1-7-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z6i 2.5-15x50 P",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   16.7,
+   2.8
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/se/en/hunting/products/rifle-scopes/z6-i/z6i-2-5-15x50-p/z6i-2-5-15x50-p",
+  "notes": "From Swarovski's product page; Swarovski technical data Z6i (BA-670, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 15x. Side parallax (P); also sold with the ballistic turret (BT). Elevation/windage range 1.5/1.5 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z6i-2-5-15x50-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z6i 4-24x56 P BT",
+  "magnification_min": 4,
+  "magnification_max": 24,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 24,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   10.5,
+   1.7
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/se/en/hunting/products/rifle-scopes/z6-i/z6i-4-24x56-p-bt/z6i-4-24x56-p",
+  "notes": "From Swarovski's product page; Swarovski technical data Z6i (BA-670, 02/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 24x. Side parallax (P), ballistic turret (BT). Elevation/windage range 1.5/0.7 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z6i-4-24x56-p-bt",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i 1-8x24",
+  "magnification_min": 1,
+  "magnification_max": 8,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 200,
+  "fov_m_at_100m": [
+   42.5,
+   5.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-1-8x24-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 8x. Elevation/windage range 2/2 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z8i-1-8x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i 1.7-13.3x42 P",
+  "magnification_min": 1.7,
+  "magnification_max": 13.3,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 13.3,
+  "reticles": [
+   "swarovski-4a-i",
+   "swarovski-4a-if"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   25.2,
+   3.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-1-7-13-3x42-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 13.3x. Side parallax (P). Elevation/windage range 1.5/1.5 m/100 m. Reticles offered: 4A-I, 4A-IF.",
+  "id": "swarovski-z8i-1-7-13-3x42-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i 2-16x50 P",
+  "magnification_min": 2,
+  "magnification_max": 16,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "swarovski-4a-i",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 150,
+  "fov_m_at_100m": [
+   21.0,
+   2.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-2-16x50-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 16x. Side parallax (P). Elevation/windage range 1.5/1.5 m/100 m. Reticles offered: 4A-I, BRX-I, 4W-I. Swarovski publishes no dimensions for BRX-I, 4W-I, so the plain crosshair stands in for them.",
+  "id": "swarovski-z8i-2-16x50-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i 2.3-18x56 P",
+  "magnification_min": 2.3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "swarovski-4a-i",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 180,
+  "fov_m_at_100m": [
+   18.6,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-2-3-18x56-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 18x. Side parallax (P). Elevation/windage range 1.8/1.0 m/100 m. Reticles offered: 4A-I, BRX-I, 4W-I. Swarovski publishes no dimensions for BRX-I, 4W-I, so the plain crosshair stands in for them.",
+  "id": "swarovski-z8i-2-3-18x56-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i 3.5-28x50 P",
+  "magnification_min": 3.5,
+  "magnification_max": 28,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 28,
+  "reticles": [
+   "swarovski-4a-i",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   12.1,
+   1.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-3-5-28x50-ii",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 28x. Side parallax (P). Elevation/windage range 1.4/0.7 m/100 m. Reticles offered: 4A-I, BRX-I, 4W-I. Swarovski publishes no dimensions for BRX-I, 4W-I, so the plain crosshair stands in for them.",
+  "id": "swarovski-z8i-3-5-28x50-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i+ 0.75-6x20",
+  "magnification_min": 0.75,
+  "magnification_max": 6,
+  "objective_mm": 20,
+  "tube_mm": 34,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "swarovski-4a-if",
+   "swarovski-d-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 200,
+  "fov_m_at_100m": [
+   64.6,
+   8.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-plus-0-75-6x20",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 6x. Elevation/windage range 2/2 m/100 m. SWAROLIGHT switches the illumination on in the shooting position. Reticles offered: 4A-IF, D-I.",
+  "id": "swarovski-z8i-plus-0-75-6x20",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i+ 1-8x24",
+  "magnification_min": 1,
+  "magnification_max": 8,
+  "objective_mm": 24,
+  "tube_mm": 34,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "swarovski-4a-i",
+   "swarovski-ld-i",
+   "swarovski-4a-if",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 200,
+  "fov_m_at_100m": [
+   50.0,
+   6.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-plus-1-8x24",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 8x. Elevation/windage range 2/2 m/100 m. SWAROLIGHT switches the illumination on in the shooting position. Reticles offered: 4A-I, LD-I, BRT-I, 4A-IF. Swarovski publishes no dimensions for BRT-I, so the plain crosshair stands in for it.",
+  "id": "swarovski-z8i-plus-1-8x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "Z8i+ 5-40x56 P",
+  "magnification_min": 5,
+  "magnification_max": 40,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 40,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   9.4,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8-i/z8i-plus/z8i-5-40x56-p",
+  "notes": "From Swarovski's product page; Swarovski technical data Z8i family (BA-709, 07/2025). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 40x. Side parallax (P). Elevation/windage range 1.6/1.0 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-z8i-plus-5-40x56-p",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Swarovski Optik",
+  "model": "dS Gen. III 4-24x50 P",
+  "magnification_min": 4,
+  "magnification_max": 24,
+  "objective_mm": 50,
+  "tube_mm": 40,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 24,
+  "reticles": [
+   "swarovski-4a-i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 120,
+  "fov_m_at_100m": [
+   8.9,
+   1.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/ds/ds-4-24x50/ds-gen-iii-4-24x50-p",
+  "notes": "From Swarovski's product page; Swarovski technical data dS Gen. III (BA-715, 01/2026). Reticle in the second focal plane (Swarovski's Z5 manual: \"the reticle in the second image plane\"; its reticle figures \"only apply to the highest magnification\"), so marks are true at 24x. The smart scope: it shows the hold for the ranged distance in its display. Clicks given as 7 mm/100 m and 1/4 MOA; elevation/windage range 1.2/0.7 m/100 m. Reticles offered: 4A-I.",
+  "id": "swarovski-ds-gen-iii-4-24x50-p",
+  "verified_on": "2026-10-20"
+ }
+]

@@ -1,0 +1,2281 @@
+[
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 1-6x24 SFP RD",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-kdot-2-1-6x24-sfp",
+   "meopta-bdc-3-optika6-1-6x24-sfp-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 349,
+  "fov_m_at_100m": [
+   36.5,
+   6.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click 1.5 cm/100m = 0.5 MOA. Parallax 10 yd-inf only with BDC 3 (catalogue footnote). Reference magnification 6x for 4C/KDot 2; BDC 3 figures hold at 5x.",
+  "id": "meopta-meopro-r6-1-6x24-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 2.5-15x44 SFP",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 204,
+  "fov_m_at_100m": [
+   13.3,
+   2.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click 0.7 cm/100m = 0.25 MOA. Reticle Z-Plex.",
+  "id": "meopta-meopro-r6-2-5-15x44-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 2.5-15x44 SFP RD",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 204,
+  "fov_m_at_100m": [
+   13.3,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click 0.7 cm/100m = 0.25 MOA. Reticle 4C.",
+  "id": "meopta-meopro-r6-2-5-15x44-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 3-18x50 SFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click 0.7 cm/100m = 0.25 MOA. Reticle Z-Plex.",
+  "id": "meopta-meopro-r6-3-18x50-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 3-18x50 SFP RD",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). The 2026 spec table has no separate '3-18x50 SFP RD' row (only SFP and FFP RD); it is listed under 4C in the reticle overview and in the R6 manual, and figures are taken from the 3-18x50 SFP row. Reticle 4C.",
+  "id": "meopta-meopro-r6-3-18x50-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 3-18x50 FFP RD",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-mrad-1-rd-optika6-3-18-ffp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 26.2,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click given as '0.1MIL' (0.34 MOA) in the 2026 catalogue (2025 catalogue: 1 cm/100m; R6 manual table: 0.7 cm / 0.075 MIL, apparently the SFP value). Elevation 262 cm/100m = 26.2 mrad. Reticle MRAD 1 RD.",
+  "id": "meopta-meopro-r6-3-18x50-ffp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 3-18x56 SFP RD",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.1,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Reticles 4C (6x), BDC 3 (figures at 7x).",
+  "id": "meopta-meopro-r6-3-18x56-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 4.5-27x50 SFP RD",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 244,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Parallax 25 yd-inf. Reticle 4C.",
+  "id": "meopta-meopro-r6-4-5-27x50-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 4.5-27x50 FFP RD",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-mrad-1-rd-optika6-4-5-27x50-ffp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 24.4,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click '0.1MIL' (2026 catalogue). Elevation 244 cm/100m = 24.4 mrad. Reticle MRAD 1 RD.",
+  "id": "meopta-meopro-r6-4-5-27x50-ffp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R6 5-30x56 FFP RD",
+  "magnification_min": 5,
+  "magnification_max": 30,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-mildot-3",
+   "meopta-mrad-rd-optika6-5-30x56"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 32.0,
+  "fov_m_at_100m": [
+   8.2,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue technical table (p.34) and reticle overview (p.35); MeoPro R6 manual (MeoPro_R6_EN.pdf) agrees. Elevation = 'Elevation Range (cm/100m)'. The R6 line repeats the MeoPro Optika6 models with identical optical/mechanical data (magnifications, FOV, clicks, adjustment ranges; weights differ slightly); Meopta publishes no R6-specific reticle sheets, so reticle ids are the Optika6 figure sets (assumption). Click printed as 1 cm/100m (0.34 MOA) = 0.1 mrad; R6 manual gives range 32 MIL. 34 mm tube. Reticles MilDot 3, MRAD RD.",
+  "id": "meopta-meopro-r6-5-30x56-ffp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R5 2-10x42 SFP",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5",
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   19.3,
+   3.8
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.12-13, 34-35). 25.4 mm tube, click 0.7 cm/100m = 0.25 MOA, elevation 175 cm/100m (60 MOA). The R5 models match the earlier MeoPro Optika5 sizes; Z-Plus figures are the Optika5 ZPlus sheet (assumed same reticle). Z-Plex has no published figures (ESTIMATE). Two catalogue rows: with Z-Plus (parallax 10 yd-inf, 620 g) and with Z-Plex (no parallax, 590 g).",
+  "id": "meopta-meopro-r5-2-10x42-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R5 3-15x44 SFP",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5",
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   12.4,
+   2.6
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.12-13, 34-35). 25.4 mm tube, click 0.7 cm/100m = 0.25 MOA, elevation 175 cm/100m (60 MOA). The R5 models match the earlier MeoPro Optika5 sizes; Z-Plus figures are the Optika5 ZPlus sheet (assumed same reticle). Z-Plex has no published figures (ESTIMATE). Parallax 10 yd-inf.",
+  "id": "meopta-meopro-r5-3-15x44-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R5 4-20x44 SFP",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 44,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   9.3,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.12-13, 34-35). 25.4 mm tube, click 0.7 cm/100m = 0.25 MOA, elevation 175 cm/100m (60 MOA). The R5 models match the earlier MeoPro Optika5 sizes; Z-Plus figures are the Optika5 ZPlus sheet (assumed same reticle). Z-Plex has no published figures (ESTIMATE). Reticle Z-Plex only; reference magnification not published. The reticle figures hold at 6x, so that is the reference magnification here.",
+  "id": "meopta-meopro-r5-4-20x44-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R5 4-20x50 SFP",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   9.3,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.12-13, 34-35). 25.4 mm tube, click 0.7 cm/100m = 0.25 MOA, elevation 175 cm/100m (60 MOA). The R5 models match the earlier MeoPro Optika5 sizes; Z-Plus figures are the Optika5 ZPlus sheet (assumed same reticle). Z-Plex has no published figures (ESTIMATE). Listed under Z-Plex as '4-20x50 SFP' in the reticle overview; the spec table only has the 4-20x50 SFP RD row, whose figures are used here. The reticle figures hold at 6x, so that is the reference magnification here.",
+  "id": "meopta-meopro-r5-4-20x50-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro R5 4-20x50 SFP RD",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-bdc-3-sfp-7x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   9.3,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.12-13, 34-35). 25.4 mm tube, click 0.7 cm/100m = 0.25 MOA, elevation 175 cm/100m (60 MOA). The R5 models match the earlier MeoPro Optika5 sizes; Z-Plus figures are the Optika5 ZPlus sheet (assumed same reticle). Z-Plex has no published figures (ESTIMATE). Reticle BDC 3; no R5 figures are published, the Optika6/MeoHunter SFP BDC 3 set (7x) is assigned as an assumption.",
+  "id": "meopta-meopro-r5-4-20x50-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoHunter R5 3-15x50 SFP RD",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 26.2,
+  "fov_m_at_100m": [
+   12.4,
+   2.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.10-11, 34) and the MeoHunter R5 manual (MeoHunter_R5_EN.pdf p.11-12), which states the click as 0.1 MIL / 0.34 MOA / 1 cm/100m and the range in MIL. Reticle figures from the manual (4C at 6x, BDC 3 SFP at 7x, BDC 3 FFP at all powers). Parallax 10 m-inf. 4C figures at 6x, BDC 3 at 7x.",
+  "id": "meopta-meohunter-r5-3-15x50-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoHunter R5 3-15x50 FFP RD",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-bdc-3-meohunter-ffp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 26.2,
+  "fov_m_at_100m": [
+   12.2,
+   2.45
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.10-11, 34) and the MeoHunter R5 manual (MeoHunter_R5_EN.pdf p.11-12), which states the click as 0.1 MIL / 0.34 MOA / 1 cm/100m and the range in MIL. Reticle figures from the manual (4C at 6x, BDC 3 SFP at 7x, BDC 3 FFP at all powers).",
+  "id": "meopta-meohunter-r5-3-15x50-ffp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoHunter R5 4-20x50 SFP RD",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 23.3,
+  "fov_m_at_100m": [
+   9.17,
+   1.82
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.10-11, 34) and the MeoHunter R5 manual (MeoHunter_R5_EN.pdf p.11-12), which states the click as 0.1 MIL / 0.34 MOA / 1 cm/100m and the range in MIL. Reticle figures from the manual (4C at 6x, BDC 3 SFP at 7x, BDC 3 FFP at all powers). Parallax 15 m-inf. 4C figures at 6x, BDC 3 at 7x.",
+  "id": "meopta-meohunter-r5-4-20x50-sfp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoHunter R5 5-25x56 FFP RD",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-bdc-3-meohunter-ffp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 18.9,
+  "fov_m_at_100m": [
+   7.28,
+   1.45
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/katalog_2026_EN.pdf",
+  "notes": "Figures from the 2026 catalogue (p.10-11, 34) and the MeoHunter R5 manual (MeoHunter_R5_EN.pdf p.11-12), which states the click as 0.1 MIL / 0.34 MOA / 1 cm/100m and the range in MIL. Reticle figures from the manual (4C at 6x, BDC 3 SFP at 7x, BDC 3 FFP at all powers). Parallax 20 m-inf.",
+  "id": "meopta-meohunter-r5-5-25x56-ffp-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoSport R 3-15x50 RD SFP",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   12.5,
+   2.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/1048405C-MeoSport-R-3-15x50-RD-SFP_MULT.pdf",
+  "notes": "Manual 1048405C (p.16-17). Tube from dimension G = 30.00 mm. The second 'Impact per click (cm / 100 m)' row reads 262: evidently the adjustment range. Reticle drawing (4C-type with open centre) gives A 5, B 0,5, C 140, D 2,3, E 17,5 cm/100 m at 6x, identical to the MeoHunter R5 / Optika6 SFP 4C set. Not in the 2025/2026 catalogues.",
+  "id": "meopta-meosport-r-3-15x50-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 1-6x24 SFP",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-1-6x24-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 349,
+  "fov_m_at_100m": [
+   36.5,
+   6.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Reticle Zplex I (no table; ESTIMATE). The reticle figures hold at 6x, so that is the reference magnification here.",
+  "id": "meopta-meopro-optika6-1-6x24-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 1-6x24 RD SFP",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-kdot-2-1-6x24-sfp",
+   "meopta-bdc-3-optika6-1-6x24-sfp-at-6x",
+   "meopta-kdot-rd-optika6-1-6x24-sfp",
+   "meopta-223-rd-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 349,
+  "fov_m_at_100m": [
+   36.5,
+   6.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Reference 6x (4C, KDot 2, KDot RD, .223 RD); BDC 3 figures at 5x.",
+  "id": "meopta-meopro-optika6-1-6x24-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 2,5-15x44 SFP",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp",
+   "meopta-bdc-optika6-sfp",
+   "meopta-bdc-dichro-optika6-sfp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 204,
+  "fov_m_at_100m": [
+   13.3,
+   2.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Parallax 10 yd-inf. CROSSHAIR reticles (offered, no published figures): .223; .308.",
+  "id": "meopta-meopro-optika6-2-5-15x44-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 2,5-15x44 RD SFP",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-4k-optika6-sfp",
+   "meopta-bdc-3-sfp-7x-at-6x",
+   "meopta-223-rd-optika6-sfp",
+   "meopta-308-rd-optika6-3moa",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 204,
+  "fov_m_at_100m": [
+   13.3,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. BDC 3 figures at 7x. CROSSHAIR reticles (offered, no published figures): KDOT RD; Z-Plus.",
+  "id": "meopta-meopro-optika6-2-5-15x44-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x50 SFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp",
+   "meopta-bdc-optika6-sfp",
+   "meopta-4d-dichro-optika6-sfp",
+   "meopta-bdc-dichro-optika6-sfp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models.  CROSSHAIR reticles (offered, no published figures): .223; 6.5CM; 6.5CM Dichro.",
+  "id": "meopta-meopro-optika6-3-18x50-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x50 RD SFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-4k-optika6-sfp",
+   "meopta-bdc-3-sfp-7x-at-6x",
+   "meopta-zplus-rd-optika6-3-18x50-sfp",
+   "meopta-223-rd-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. BDC 3 figures at 7x.",
+  "id": "meopta-meopro-optika6-3-18x50-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x56 SFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-sfp",
+   "meopta-bdc-optika6-sfp",
+   "meopta-bdc-dichro-optika6-sfp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.1,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models.  CROSSHAIR reticles (offered, no published figures): Z-Plus Dichro.",
+  "id": "meopta-meopro-optika6-3-18x56-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x56 RD SFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-4k-optika6-sfp",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.1,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. BDC 3 figures at 7x.",
+  "id": "meopta-meopro-optika6-3-18x56-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 4,5-27x50 SFP",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplex-optika6-4-5-27x50-sfp",
+   "meopta-bdc-optika6-sfp",
+   "meopta-4d-dichro-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 244,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Parallax 25 yd-inf.",
+  "id": "meopta-meopro-optika6-4-5-27x50-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 4,5-27x50 RD SFP",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-4k-optika6-sfp",
+   "meopta-bdc-3-sfp-7x-at-6x",
+   "meopta-223-rd-optika6-sfp",
+   "meopta-308-rd-optika6-3moa",
+   "meopta-6-5-creedmoor-rd-optika6-sfp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 244,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Parallax 25 yd-inf. BDC 3 figures at 7x.",
+  "id": "meopta-meopro-optika6-4-5-27x50-rd-sfp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 1-6x24 FFP",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-zplex-optika6-1-6x24-ffp",
+   "meopta-kdot-dichro-optika6-1-6x24-ffp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 349,
+  "fov_m_at_100m": [
+   33.5,
+   6.3
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models.  CROSSHAIR reticles (offered, no published figures): .223; KDOT.",
+  "id": "meopta-meopro-optika6-1-6x24-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 1-6x24 RD FFP",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-sfp-6x",
+   "meopta-kdot-2-optika6-1-6x24-ffp",
+   "meopta-223-rd-optika6-1-6x24-ffp",
+   "meopta-mrad-2-rd-optika6-1-6x24-ffp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 349,
+  "fov_m_at_100m": [
+   33.5,
+   6.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models.  CROSSHAIR reticles (offered, no published figures): Z-Plus.",
+  "id": "meopta-meopro-optika6-1-6x24-rd-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x50 FFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-zplex-optika6-3-18x50-ffp",
+   "meopta-bdc-optika6-3-18x50-ffp",
+   "meopta-4d-dichro-optika6-ffp",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models.  CROSSHAIR reticles (offered, no published figures): .223; .308; 6.5CM; 6.5CM Dichro.",
+  "id": "meopta-meopro-optika6-3-18x50-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x50 RD FFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-optika6-3-18-ffp",
+   "meopta-4k-r2",
+   "meopta-zplus-rd-optika6-3-18-ffp",
+   "meopta-bdc-rd-optika6-3-18-ffp",
+   "meopta-223-rd-optika6-3-18x50-ffp",
+   "meopta-308-rd-optika6-3moa",
+   "meopta-mrad-1-rd-optika6-3-18-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.2,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. The MRad 1 RD sheet says it is 'only available in Optika6 FFP riflescopes with MIL adjustments', so MRAD-reticle versions likely have 0.1 mrad clicks; the manual table lists 0.7 cm.",
+  "id": "meopta-meopro-optika6-3-18x50-rd-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x56 FFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-zplex-optika6-3-18x50-ffp",
+   "meopta-4d-dichro-optika6-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.1,
+   1.9
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. ",
+  "id": "meopta-meopro-optika6-3-18x56-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 3-18x56 RD FFP",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-optika6-3-18-ffp",
+   "meopta-4k-r2",
+   "meopta-zplus-rd-optika6-3-18-ffp",
+   "meopta-bdc-rd-optika6-3-18-ffp",
+   "meopta-mrad-1-rd-optika6-3-18-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 262,
+  "fov_m_at_100m": [
+   11.1,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. MRad 1 RD versions: see note on MIL adjustments.",
+  "id": "meopta-meopro-optika6-3-18x56-rd-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 4,5-27x50 FFP",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-zplex-optika6-ffp-4-5-27-5-30"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 244,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Parallax 25 yd-inf.",
+  "id": "meopta-meopro-optika6-4-5-27x50-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 4,5-27x50 RD FFP",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-optika6-4-5-27x50-ffp",
+   "meopta-4k-optika6-4-5-27x50-ffp",
+   "meopta-bdc-rd-optika6-4-5-27x50-ffp",
+   "meopta-223-rd-optika6-4-5-27x50-ffp",
+   "meopta-308-rd-optika6-ffp-2moa",
+   "meopta-6-5-creedmoor-rd-optika6-ffp",
+   "meopta-mrad-1-rd-optika6-4-5-27x50-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 244,
+  "fov_m_at_100m": [
+   7.3,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. Parallax 25 yd-inf. MRad 1 RD versions: see note on MIL adjustments.",
+  "id": "meopta-meopro-optika6-4-5-27x50-rd-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 5-30x56 FFP",
+  "magnification_min": 5,
+  "magnification_max": 30,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-zplex-optika6-ffp-4-5-27-5-30",
+   "meopta-bdc-dichro-optika6-5-30x56-ffp"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   8.2,
+   1.2
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. 34 mm tube (dimension G). Parallax 25 yd-inf.",
+  "id": "meopta-meopro-optika6-5-30x56-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika6 5-30x56 RD FFP",
+  "magnification_min": 5,
+  "magnification_max": 30,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-mildot-3",
+   "meopta-308-rd-optika6-ffp-2moa",
+   "meopta-mrad-rd-optika6-5-30x56",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   8.2,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-optika6.pdf",
+  "notes": "Optika6 manual (manual-optika6.pdf, EN specifications p.18 and reticle matrix p.19); reticle figures from the Meopta reticle sheets. Manual gives one spec column per size for plain and RD versions (weights x/y = plain/RD). Clicks per manual (cm/100m) also for the FFP models. 34 mm tube (dimension G). Parallax 25 yd-inf. MilDot 3 / MRAD RD are mrad reticles; the manual still lists 0.7 cm clicks. CROSSHAIR reticles (offered, no published figures): 6.5CM RD.",
+  "id": "meopta-meopro-optika6-5-30x56-rd-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 1-6x24 RD",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-r2-1-6x24",
+   "meopta-kdot-2-1-6x24-sfp",
+   "meopta-bdc-2-r2-1-6x24-at-6x",
+   "meopta-bdc-3-optika6-1-6x24-sfp-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 401,
+  "fov_m_at_100m": [
+   37.6,
+   6.3
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr2.pdf",
+  "notes": "MeoStar R2 manual (manual-riflescope-meostarr2.pdf, EN specifications p.17-18, reticle table p.19). 30 mm tube (dimension G 30, 'Rail' for the /MR versions = rail mount, otherwise identical, merged here). Adjustment range = 'Adjustment range (cm/100m)'. Reticles 4C, K-Dot 2 (1-6x24 only), 4K (not 1-6x24), BDC 2, BDC 3. Includes 1-6x24 RD/MR. 4C/KDot 2 figures at 6x, BDC 2/3 at 5x.",
+  "id": "meopta-meostar-r2-1-6x24-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 1.7-10x42 RD",
+  "magnification_min": 1.7,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-r2",
+   "meopta-4k-r2",
+   "meopta-bdc-2-7x-at-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 256,
+  "fov_m_at_100m": [
+   21.9,
+   3.7
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr2.pdf",
+  "notes": "MeoStar R2 manual (manual-riflescope-meostarr2.pdf, EN specifications p.17-18, reticle table p.19). 30 mm tube (dimension G 30, 'Rail' for the /MR versions = rail mount, otherwise identical, merged here). Adjustment range = 'Adjustment range (cm/100m)'. Reticles 4C, K-Dot 2 (1-6x24 only), 4K (not 1-6x24), BDC 2, BDC 3. 4C/4K at 6x, BDC 2/3 at 7x.",
+  "id": "meopta-meostar-r2-1-7-10x42-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 2-12x50 RD",
+  "magnification_min": 2,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-r2",
+   "meopta-4k-r2",
+   "meopta-bdc-2-7x-at-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 204,
+  "fov_m_at_100m": [
+   18.6,
+   3.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr2.pdf",
+  "notes": "MeoStar R2 manual (manual-riflescope-meostarr2.pdf, EN specifications p.17-18, reticle table p.19). 30 mm tube (dimension G 30, 'Rail' for the /MR versions = rail mount, otherwise identical, merged here). Adjustment range = 'Adjustment range (cm/100m)'. Reticles 4C, K-Dot 2 (1-6x24 only), 4K (not 1-6x24), BDC 2, BDC 3. 4C/4K at 6x, BDC 2/3 at 7x.",
+  "id": "meopta-meostar-r2-2-12x50-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 2.5-15x56 RD",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-r2",
+   "meopta-4k-r2",
+   "meopta-bdc-2-7x-at-6x",
+   "meopta-bdc-3-sfp-7x-at-6x",
+   "meopta-4c-dichro-2-r2-2-5-15x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 175,
+  "fov_m_at_100m": [
+   14.9,
+   2.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr2.pdf",
+  "notes": "MeoStar R2 manual (manual-riflescope-meostarr2.pdf, EN specifications p.17-18, reticle table p.19). 30 mm tube (dimension G 30, 'Rail' for the /MR versions = rail mount, otherwise identical, merged here). Adjustment range = 'Adjustment range (cm/100m)'. Reticles 4C, K-Dot 2 (1-6x24 only), 4K (not 1-6x24), BDC 2, BDC 3. Includes 2,5-15x56 RD/MR. 4C Dichro 2 sheet also covers this scope. 4C/4K at 6x, BDC 2/3 at 7x.",
+  "id": "meopta-meostar-r2-2-5-15x56-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 2.5-15x56 RD PA",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-4c-r2",
+   "meopta-4k-r2",
+   "meopta-bdc-2-7x-at-6x",
+   "meopta-bdc-3-sfp-7x-at-6x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   14.9,
+   2.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr2.pdf",
+  "notes": "MeoStar R2 manual (manual-riflescope-meostarr2.pdf, EN specifications p.17-18, reticle table p.19). 30 mm tube (dimension G 30, 'Rail' for the /MR versions = rail mount, otherwise identical, merged here). Adjustment range = 'Adjustment range (cm/100m)'. Reticles 4C, K-Dot 2 (1-6x24 only), 4K (not 1-6x24), BDC 2, BDC 3. PA = parallax adjustment 10 m-inf. Includes RD/MR PA. BDC 2/3 sheets list only the plain 2,5-15x56 RD; same figures assumed.",
+  "id": "meopta-meostar-r2-2-5-15x56-rd-pa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R2 8x56 RD",
+  "magnification_min": 8,
+  "magnification_max": 8,
+  "objective_mm": 56,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "meopta-4c-r2-at-8x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-4C.pdf",
+  "notes": "Only documented in the 4C reticle sheet (shares the R2 4C table, Power 6x as printed). No specifications published (tube, clicks, FOV unknown). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meostar-r2-8x56-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 7x56",
+  "magnification_min": 7,
+  "magnification_max": 7,
+  "objective_mm": 56,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-r1-7x56",
+   "meopta-zplex-r1-7x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   5.8,
+   5.8
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Fixed power.",
+  "id": "meopta-meostar-r1-7x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 7x56 RD",
+  "magnification_min": 7,
+  "magnification_max": 7,
+  "objective_mm": 56,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-4c-r1-7x56-rd"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   5.8,
+   5.8
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Fixed power.",
+  "id": "meopta-meostar-r1-7x56-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 1-4x22",
+  "magnification_min": 1,
+  "magnification_max": 4,
+  "objective_mm": 22,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-zplex-ii-r1-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 230,
+  "fov_m_at_100m": [
+   35.9,
+   8.6
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel.",
+  "id": "meopta-meostar-r1-1-4x22",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 1-4x22 RD",
+  "magnification_min": 1,
+  "magnification_max": 4,
+  "objective_mm": 22,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-kdot-r1-1-4x22-rd"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.5,
+  "elevation_travel": 230,
+  "fov_m_at_100m": [
+   35.9,
+   8.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Includes 1-4x22 RD/MR (rail).",
+  "id": "meopta-meostar-r1-1-4x22-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 1.5-6x42 RD",
+  "magnification_min": 1.5,
+  "magnification_max": 6,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 5,
+  "reticles": [
+   "meopta-4c-r1-1-5-6x42-rd-at-5x",
+   "meopta-bdc-2-r1-1-5-6x42-rd",
+   "meopta-bdc-3-r1-1-5-6x42-rd"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 232,
+  "fov_m_at_100m": [
+   22.4,
+   6.8
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. 4C at 4x, BDC 2/3 at 5x. The reticle figures hold at 5x, so that is the reference magnification here.",
+  "id": "meopta-meostar-r1-1-5-6x42-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 3-10x50",
+  "magnification_min": 3,
+  "magnification_max": 10,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-zplex-ii-r1-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   13.3,
+   4.0
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel.",
+  "id": "meopta-meostar-r1-3-10x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 4-12x40",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 40,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-zplex-ii-r1-4x",
+   "meopta-mmd-12x-at-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   10.1,
+   3.4
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. 1/ZPlex II at 4x; MMD at max power (12x).",
+  "id": "meopta-meostar-r1-4-12x40",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 4-16x44",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "meopta-zplex-ii-r1-4-16x44",
+   "meopta-mcwhorter-hv-r1-4-16x44-at-16x",
+   "meopta-mildot-max"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   8.5,
+   2.4
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Parallax 10 m-inf ('4-16x44 Tactic' in the DE list). ZPlex II and MilDot at 16x (max), McWhorter HV at 15x.",
+  "id": "meopta-meostar-r1-4-16x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 3-12x56",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-r1-3-12x56",
+   "meopta-4b-3-12",
+   "meopta-4c-dichro-r1-3-12x56",
+   "meopta-zplex-r1-3-12x56",
+   "meopta-mcwhorter-mv-r1-3-12x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   11.0,
+   3.5
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Reticle in the front focal plane (1).",
+  "id": "meopta-meostar-r1-3-12x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1 3-12x56 RD",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-r1-3-12x56-rd",
+   "meopta-4c-dichro-r1-3-12x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   11.0,
+   3.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. FFP. The 4C Dichro sheet names 'MeoStar R1 3-12x56 RD'.",
+  "id": "meopta-meostar-r1-3-12x56-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1r 3-12x56",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-4d-dichro-r1r-3-12x56",
+   "meopta-zplex-r1r-3-12x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   11.0,
+   3.4
+  ],
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. R1r = SFP version of the 3-12x56. 4D Dichro at 4x; ZPlex power blank.",
+  "id": "meopta-meostar-r1r-3-12x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoStar R1r 3-12x56 RD",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-4c-r1r-3-12x56-rd",
+   "meopta-4k-r1r-3-12x56-rd",
+   "meopta-bdc-2-7x-at-4x",
+   "meopta-bdc-3-sfp-7x-at-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": 116,
+  "fov_m_at_100m": [
+   11.0,
+   3.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meostarr1.pdf",
+  "notes": "MeoStar R1 manual (manual-riflescope-meostarr1.pdf, EN specifications p.19-21). Tube from dimension G. 'Adjustment range (cm/100m)' used as elevation travel. Covers R1r 3-12x56 RD/RGD and R1rr 3-12x56 RD/MR (rail). 4C/4K at 4x; BDC 2/3 (listed for 'RD/RGD') at 7x.",
+  "id": "meopta-meostar-r1r-3-12x56-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoTac 3-12x50 RD",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-mildot-3"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 291,
+  "fov_m_at_100m": [
+   12.2,
+   3.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-meotac.pdf",
+  "notes": "MeoTac manual (manual-riflescope-meotac.pdf p.16): 'Reticle in 1st focal plane', rectification step 1 cm/100m (= 0.1 mrad), range V 291 / H 160 cm/100m, parallax 25 m-inf, 970 g. Tube 34 mm from dimension G (the MeoForce DF 3-12x50 successor is listed with a 34 mm tube). Manual name 'MeoTac 3-12x50'; reticle sheet 'MeoTac 3-12x50 RD'.",
+  "id": "meopta-meotac-3-12x50-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "ZD 6-24x56 RD MOA",
+  "magnification_min": 6,
+  "magnification_max": 24,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 24,
+  "reticles": [
+   "meopta-mildot-2-zd-6-24x56-at-24x",
+   "meopta-mt-223-zd-6-24x56",
+   "meopta-mt-308-zd-6-24x56"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   5.58,
+   1.54
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-zd6-24x56rd.pdf",
+  "notes": "ZD 6-24x56 RD manual (manual-riflescope-zd6-24x56rd.pdf, EN basic parameters p.16, reticle p.19): FOV 3,2-0,88 deg; elevation min. 80 MOA, windage min. 30 MOA; click '1/4 MOA or 0,1mRad (depending from the riflescope type)'; reticles MIL-DOT 2, MT223, MT308; reticle dimensions apply at 12x. FOV in m/100 m from the MeoForce DF 6-24x56 product sheet (same scope: 5.58-1.54). Tube 30 mm from the MeoForce DF 6-24x56 drawing. Elevation = the stated minimum 80 MOA. The reticle figures hold at 24x, so that is the reference magnification here.",
+  "id": "meopta-zd-6-24x56-rd-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "ZD 6-24x56 RD MRAD",
+  "magnification_min": 6,
+  "magnification_max": 24,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 24,
+  "reticles": [
+   "meopta-mildot-2-zd-6-24x56-at-24x",
+   "meopta-mt-223-zd-6-24x56",
+   "meopta-mt-308-zd-6-24x56"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 23.3,
+  "fov_m_at_100m": [
+   5.58,
+   1.54
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/manual-riflescope-zd6-24x56rd.pdf",
+  "notes": "ZD 6-24x56 RD manual (manual-riflescope-zd6-24x56rd.pdf, EN basic parameters p.16, reticle p.19): FOV 3,2-0,88 deg; elevation min. 80 MOA, windage min. 30 MOA; click '1/4 MOA or 0,1mRad (depending from the riflescope type)'; reticles MIL-DOT 2, MT223, MT308; reticle dimensions apply at 12x. FOV in m/100 m from the MeoForce DF 6-24x56 product sheet (same scope: 5.58-1.54). Tube 30 mm from the MeoForce DF 6-24x56 drawing. Elevation 80 MOA converted to 23.3 mrad (not published in mrad). The reticle figures hold at 24x, so that is the reference magnification here.",
+  "id": "meopta-zd-6-24x56-rd-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "ZD 1-4x22 RD",
+  "magnification_min": 1,
+  "magnification_max": 4,
+  "objective_mm": 22,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-7-62-nato-zd-1-4x22",
+   "meopta-k-5-56-zd-1-4x22"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-7,62-NATO.pdf",
+  "notes": "Only documented in the 7.62 NATO and K-5.56 ZD reticle sheets (figures at 4x). No specifications published. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-zd-1-4x22-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "ZD 4-16x44 RD",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 14,
+  "reticles": [
+   "meopta-mildot-special-14x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.5,
+  "elevation_travel": 116.4,
+  "fov_m_at_100m": [
+   8.5,
+   2.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-MilDot-Special.pdf",
+  "notes": "Only the MilDot Special reticle sheet (14x) names the ZD 4-16x44 RD. Its successor MeoForce DF 4-16x44 has the same reticle figures; specs here are copied from the MeoForce DF 4-16x44 sheet (assumption: same scope).",
+  "id": "meopta-zd-4-16x44-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 3-9x40",
+  "magnification_min": 3,
+  "magnification_max": 9,
+  "objective_mm": 40,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-4-estimate",
+   "meopta-zplex-ii-meopro-3-9x40",
+   "meopta-bdc-a-b-meopro-9x-at-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/MeoPro_Riflescope_Manual.pdf",
+  "notes": "MeoPro riflescope manual (MeoPro_Riflescope_Manual.pdf, US, rev.A): model list with reticles; click '1/4\" at 100 yards (0.7cm at 100m)'. No FOV, tube or travel published. Reticle 'Z' = ZPlex II (the ZPlex II sheet lists these MeoPro models); 'BDC' = BDC/a, BDC/b sheet. Includes 3-9x40 R/M (rimfire/muzzleloader). ZPlex II at 4x; BDC at max power.",
+  "id": "meopta-meopro-3-9x40",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 4.5-14x44",
+  "magnification_min": 4.5,
+  "magnification_max": 14,
+  "objective_mm": 44,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "meopta-zplex-ii-meopro-10x",
+   "meopta-bdc-a-b-meopro-14x-at-10x",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/MeoPro_Riflescope_Manual.pdf",
+  "notes": "MeoPro riflescope manual (MeoPro_Riflescope_Manual.pdf, US, rev.A): model list with reticles; click '1/4\" at 100 yards (0.7cm at 100m)'. No FOV, tube or travel published. Reticle 'Z' = ZPlex II (the ZPlex II sheet lists these MeoPro models); 'BDC' = BDC/a, BDC/b sheet. Includes 4.5-14x44 HTR. ZPlex II at 10x; BDC at max power. CROSSHAIR reticles (offered, no published figures): McWhorter HV.",
+  "id": "meopta-meopro-4-5-14x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 4.5-14x50",
+  "magnification_min": 4.5,
+  "magnification_max": 14,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "meopta-zplex-ii-meopro-10x",
+   "meopta-bdc-a-b-meopro-14x-at-10x",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/MeoPro_Riflescope_Manual.pdf",
+  "notes": "MeoPro riflescope manual (MeoPro_Riflescope_Manual.pdf, US, rev.A): model list with reticles; click '1/4\" at 100 yards (0.7cm at 100m)'. No FOV, tube or travel published. Reticle 'Z' = ZPlex II (the ZPlex II sheet lists these MeoPro models); 'BDC' = BDC/a, BDC/b sheet. Includes 4.5-14x50 HTR. CROSSHAIR reticles (offered, no published figures): McWhorter HV.",
+  "id": "meopta-meopro-4-5-14x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 6.5-20x50",
+  "magnification_min": 6.5,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "meopta-zplex-ii-meopro-10x",
+   "meopta-bdc-a-b-meopro-20x-at-10x",
+   "meopta-windmax-8-meopro-6-5-20x50-at-10x",
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 0.7,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/MeoPro_Riflescope_Manual.pdf",
+  "notes": "MeoPro riflescope manual (MeoPro_Riflescope_Manual.pdf, US, rev.A): model list with reticles; click '1/4\" at 100 yards (0.7cm at 100m)'. No FOV, tube or travel published. Reticle 'Z' = ZPlex II (the ZPlex II sheet lists these MeoPro models); 'BDC' = BDC/a, BDC/b sheet. Includes 6.5-20x50 HTR (Z, BDC, McWhorter HV, WindMax 8) and 'MeoPro 6.5-20x50 Target' (Windmax 8 sheet). ZPlex II at 10x, Windmax 8 at 14x. CROSSHAIR reticles (offered, no published figures): McWhorter HV.",
+  "id": "meopta-meopro-6-5-20x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 3-9x42",
+  "magnification_min": 3,
+  "magnification_max": 9,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 9,
+  "reticles": [
+   "meopta-zplex-ii-meopro-4x-at-9x",
+   "meopta-mmd",
+   "meopta-bdc-a-b-meopro"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlex-II.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. ZPlex II at 4x; MMD and BDC at max. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder. The reticle figures hold at 9x, so that is the reference magnification here.",
+  "id": "meopta-meopro-3-9x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 3-9x50",
+  "magnification_min": 3,
+  "magnification_max": 9,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-zplex-ii-meopro-4x",
+   "meopta-bdc-a-b-meopro-9x-at-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlex-II.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-3-9x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 3.5-10x44",
+  "magnification_min": 3.5,
+  "magnification_max": 10,
+  "objective_mm": 44,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-zplex-ii-meopro-4x",
+   "meopta-bdc-a-b-meopro-10x-at-4x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlex-II.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-3-5-10x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 3.5-10x44 RD",
+  "magnification_min": 3.5,
+  "magnification_max": 10,
+  "objective_mm": 44,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-4c-meopro-3-5-10x44-rd-at-7x",
+   "meopta-bdc-2-7x",
+   "meopta-bdc-3-sfp-7x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-4C.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. 4C at 4x; BDC 2/3 at 7x. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder. The reticle figures hold at 7x, so that is the reference magnification here.",
+  "id": "meopta-meopro-3-5-10x44-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 4-12x50",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "meopta-zplex-ii-meopro-4x-at-12x",
+   "meopta-mmd",
+   "meopta-bdc-a-b-meopro"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlex-II.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder. The reticle figures hold at 12x, so that is the reference magnification here.",
+  "id": "meopta-meopro-4-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 6-18x50",
+  "magnification_min": 6,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "meopta-zplex-ii-meopro-6-18x50-at-18x",
+   "meopta-mildot-max",
+   "meopta-bdc-a-b-meopro"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlex-II.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. ZPlex II A at 6x / C at 4x as printed; MilDot and BDC at max. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder. The reticle figures hold at 18x, so that is the reference magnification here.",
+  "id": "meopta-meopro-6-18x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro 6x42",
+  "magnification_min": 6,
+  "magnification_max": 6,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-zplex-ii-meopro-6x42"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Fixed power. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-6x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika5 2-10x42",
+  "magnification_min": 2,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlus.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Also '2-10x42 Rimfire' version. Predecessor of MeoPro R5 2-10x42. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-optika5-2-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika5 3-15x44",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlus.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-optika5-3-15x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika5 4-20x44",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 44,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlus.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-optika5-4-20x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika5 4-20x50",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-optika5"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlus.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-optika5-4-20x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "MeoPro Optika5 4-20x50 RD",
+  "magnification_min": 4,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-zplus-rd-optika5-4-20x50"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-ZPlus-RD.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-meopro-optika5-4-20x50-rd",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 1.5-6x42",
+  "magnification_min": 1.5,
+  "magnification_max": 6,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4a-artemis-2000-1-5-6x42",
+   "meopta-zplex-artemis-2000-1-5-6x42"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane and reference magnification not published (Power blank); Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-1-5-6x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 2-8x42",
+  "magnification_min": 2,
+  "magnification_max": 8,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-artemis-2000-2-8x42"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane not published; Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-2-8x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 3-9x42",
+  "magnification_min": 3,
+  "magnification_max": 9,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-artemis-2000-3-9x42"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane not published; Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-3-9x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 3-12x50",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-3-12"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane not published; shares the 4B table with the FFP MeoStar R1 3-12x56. Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-3-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 4x32",
+  "magnification_min": 4,
+  "magnification_max": 4,
+  "objective_mm": 32,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4a-artemis-2000-4x32"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Fixed power. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-4x32",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 6x42",
+  "magnification_min": 6,
+  "magnification_max": 6,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-artemis-2000-6x42"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Fixed power. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-6x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2000 7x50",
+  "magnification_min": 7,
+  "magnification_max": 7,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-1-artemis",
+   "meopta-4b-artemis-2000-7x50"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Fixed power. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2000-7x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2100 7x50",
+  "magnification_min": 7,
+  "magnification_max": 7,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7,
+  "reticles": [
+   "meopta-4c-artemis-2100-7x50"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-4C.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Fixed power; 4C RD illuminated. Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2100-7x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 2100 3-12x50",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-4c-r1-3-12x56-rd"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": true,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-4C.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane not published (Power blank); Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-2100-3-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Meopta",
+  "model": "Artemis 3000 3-9x42",
+  "magnification_min": 3,
+  "magnification_max": 9,
+  "objective_mm": 42,
+  "tube_mm": null,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "meopta-1-artemis"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": null,
+  "elevation_travel": null,
+  "fov_m_at_100m": null,
+  "illuminated": false,
+  "source_url": "https://www.meoptasportsoptics.eu/files/reticle/reticle-1.pdf",
+  "notes": "Documented only in Meopta reticle sheets (no specification published on Meopta's sites); magnification/objective from the model name. Focal plane not published; Focal plane taken as first (FFP): Meopta's reticle sheets leave the Power column blank for these scopes, as they do only for FFP scopes (SFP tables give the magnification). Meopta publishes no click value for this scope, so the app says so; the click unit is a placeholder.",
+  "id": "meopta-artemis-3000-3-9x42",
+  "verified_on": "2026-10-20"
+ }
+]

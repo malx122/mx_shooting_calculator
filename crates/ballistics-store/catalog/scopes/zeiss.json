@@ -1,0 +1,940 @@
+[
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 1.1-8x24",
+  "magnification_min": 1.1,
+  "magnification_max": 8,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "zeiss-54-v8-1-1-8x24",
+   "zeiss-60-v8-1-1-8x24"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 500,
+  "fov_m_at_100m": [
+   39.6,
+   5.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/v8.html",
+  "notes": "Figures from the ZEISS V8 product page 'Technical Data' (global English site): magnification, field of view at 100 m, 'Elevation Adjustment Range at 100 m' (in cm, used as elevation_travel with 1 cm clicks), 'Adjustment per Click at 100 m' 1 cm, main tube. The 2026 North America catalog (p.146) gives the same click as '1 cm / 0.1 MRAD'. Illuminated (fibre-optic illuminated dot). Reticle options on the product page: 54 | 60. Reference magnification 8x = maximum; the #54 and #60 datasheets give subtensions per magnification including an 8x column. Windage 320 cm. Objective tube 30 mm (24 mm effective objective). The US catalog lists only #60 for this model.",
+  "id": "zeiss-v8-1-1-8x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 1.8-14x50",
+  "magnification_min": 1.8,
+  "magnification_max": 13.5,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 13.5,
+  "reticles": [
+   "zeiss-54-v8-1-8-14x50-at-13-5x",
+   "zeiss-60-v8-1-8-14x50-at-13-5x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 310,
+  "fov_m_at_100m": [
+   23.0,
+   3.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/v8.html",
+  "notes": "Figures from the ZEISS V8 product page 'Technical Data' (global English site): magnification, field of view at 100 m, 'Elevation Adjustment Range at 100 m' (in cm, used as elevation_travel with 1 cm clicks), 'Adjustment per Click at 100 m' 1 cm, main tube. The 2026 North America catalog (p.146) gives the same click as '1 cm / 0.1 MRAD'. Illuminated (fibre-optic illuminated dot). Zeiss names the model 1.8-14x50 but its technical data (product page and manual) give 1.8-13.5x. The #60 datasheet's column is '14x', beyond the true 13.5x maximum, so the reticles are rescaled to hold at 13.5x. Reticle options on the product page: 54 | 60; the #54 datasheet (10/2021) marks 1.8-14x50 as 'not available' and has figures only up to 8x, so zeiss-54-v8-1-8-14x50 is an ESTIMATE scaled from the V8 #54 table (see reticles.md). The US catalog lists only #60. Windage 200 cm. Parallax 50 m to infinity.",
+  "id": "zeiss-v8-1-8-14x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 2.8-20x56",
+  "magnification_min": 2.8,
+  "magnification_max": 20,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 20,
+  "reticles": [
+   "zeiss-43-v8-2-8-20x56",
+   "zeiss-60-v8-2-8-20x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 210,
+  "fov_m_at_100m": [
+   15.5,
+   2.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/v8.html",
+  "notes": "Figures from the ZEISS V8 product page 'Technical Data' (global English site): magnification, field of view at 100 m, 'Elevation Adjustment Range at 100 m' (in cm, used as elevation_travel with 1 cm clicks), 'Adjustment per Click at 100 m' 1 cm, main tube. The 2026 North America catalog (p.146) gives the same click as '1 cm / 0.1 MRAD'. Illuminated (fibre-optic illuminated dot). Reticle options (global): 43 | 60. Reference magnification 20x (maximum; reticle 43 dots are exactly 10 cm/100 m = 1 mrad apart at 20x per its datasheet). Windage 135 cm. ASV bullet-drop compensator turret. The North-America MOA version is a separate entry (V8 NA 2.8-20x56).",
+  "id": "zeiss-v8-2-8-20x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 4.8-35x60",
+  "magnification_min": 4.8,
+  "magnification_max": 35,
+  "objective_mm": 60,
+  "tube_mm": 34,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 35,
+  "reticles": [
+   "zeiss-43-30x-at-35x",
+   "zeiss-60-v8-4-8-35x60"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   8.6,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/v8.html",
+  "notes": "Figures from the ZEISS V8 product page 'Technical Data' (global English site): magnification, field of view at 100 m, 'Elevation Adjustment Range at 100 m' (in cm, used as elevation_travel with 1 cm clicks), 'Adjustment per Click at 100 m' 1 cm, main tube. The 2026 North America catalog (p.146) gives the same click as '1 cm / 0.1 MRAD'. Illuminated (fibre-optic illuminated dot). Reticle options (global): 43 | 60. reticle_reference_magnification 35 (maximum; the #60 figures are taken at 35x). NOTE: reticle 43's figures are published at 30x (dots exactly 10 cm = 1 mrad apart at 30x), so zeiss-43-30x has published_at_magnification 30, not 35. Windage 85 cm. 34 mm tube. ASV-ALR turret. The North-America MOA version is a separate entry.",
+  "id": "zeiss-v8-4-8-35x60",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 NA 2.8-20x56",
+  "magnification_min": 2.8,
+  "magnification_max": 20,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 20,
+  "reticles": [
+   "zeiss-ahr-v8-na-2-8-20x56",
+   "zeiss-60-v8-2-8-20x56"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 72,
+  "fov_m_at_100m": [
+   15.5,
+   2.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v8.html",
+  "notes": "V8 NA = North-America configuration (2026 North America catalog p.146-147 and US V8 product page): MOA reticle and 0.25 MOA clicks, traditional rotation direction, external multi-turn elevation turret with Ballistic Stop. Elevation range in MOA from the US product page and catalog. Same optics as the global model. Reticles: AHR (#90, illuminated) or #60. Windage 46.5 MOA. Reference 20x (catalog AHR and #60 tables '@ 20x').",
+  "id": "zeiss-v8-na-2-8-20x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V8 NA 4.8-35x60",
+  "magnification_min": 4.8,
+  "magnification_max": 35,
+  "objective_mm": 60,
+  "tube_mm": 34,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 35,
+  "reticles": [
+   "zeiss-ahr-v8-na-4-8-35x60",
+   "zeiss-60-v8-4-8-35x60"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 48,
+  "fov_m_at_100m": [
+   8.6,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v8.html",
+  "notes": "V8 NA = North-America configuration (2026 North America catalog p.146-147 and US V8 product page): MOA reticle and 0.25 MOA clicks, traditional rotation direction, external multi-turn elevation turret with Ballistic Stop. Elevation range in MOA from the US product page and catalog. Same optics as the global model. Reticles: AHR (#90, illuminated) or #60. Windage 29 MOA. Reference 35x (catalog AHR and #60 tables '@ 35x').",
+  "id": "zeiss-v8-na-4-8-35x60",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Victory HT 2.5-10x50",
+  "magnification_min": 2.5,
+  "magnification_max": 10,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "zeiss-60-victory-ht-2-5-10x50"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   14.8,
+   4.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/victory-ht.html",
+  "notes": "Figures from the Victory HT product page 'Technical Data'. Click 1 cm/100 m (also manual). Reticle option on the product page: 60 only. Reference magnification = maximum (the #60 datasheet's Victory HT table has a column at it). Elevation range 140 cm at 100 m. Parallax 100 m.",
+  "id": "zeiss-victory-ht-2-5-10x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Victory HT 3-12x56",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "zeiss-60-victory-ht-3-12x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 120,
+  "fov_m_at_100m": [
+   12.5,
+   3.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/victory-ht.html",
+  "notes": "Figures from the Victory HT product page 'Technical Data'. Click 1 cm/100 m (also manual). Reticle option on the product page: 60 only. Reference magnification = maximum (the #60 datasheet's Victory HT table has a column at it). Elevation range 120 cm at 100 m. Parallax 100 m.",
+  "id": "zeiss-victory-ht-3-12x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Victory HT 1.1-4x24",
+  "magnification_min": 1.1,
+  "magnification_max": 4,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 300,
+  "fov_m_at_100m": [
+   38.0,
+   10.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/content/dam/pno/downloads/riflescopes/manuals/manual-zeiss-victory-ht.pdf",
+  "notes": "Older model, documented only in the Victory HT manual on Zeiss' site (technical data: magnification, field of view m/100m, 'Square adjustment range m/100m', 1 cm/100 m per click, 30 mm centre tube). Not on the current product page. The manual names no reticle and the reticle datasheets (#60 Victory HT table covers only 2.5-10x50 and 3-12x56) give no figures for it, so the reticle is unknown: plain-crosshair stands in. elevation_travel is the published 'square adjustment range' converted to cm (it is not stated whether that is the total elevation range). reticle_reference_magnification assumed = maximum. Illuminated (all Victory HT are illuminated per the manual). Square adjustment range 3.0 m/100m.",
+  "id": "zeiss-victory-ht-1-1-4x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Victory HT 1.5-6x42",
+  "magnification_min": 1.5,
+  "magnification_max": 6,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "plain-crosshair"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 230,
+  "fov_m_at_100m": [
+   24.8,
+   6.9
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/content/dam/pno/downloads/riflescopes/manuals/manual-zeiss-victory-ht.pdf",
+  "notes": "Older model, documented only in the Victory HT manual on Zeiss' site (technical data: magnification, field of view m/100m, 'Square adjustment range m/100m', 1 cm/100 m per click, 30 mm centre tube). Not on the current product page. The manual names no reticle and the reticle datasheets (#60 Victory HT table covers only 2.5-10x50 and 3-12x56) give no figures for it, so the reticle is unknown: plain-crosshair stands in. elevation_travel is the published 'square adjustment range' converted to cm (it is not stated whether that is the total elevation range). reticle_reference_magnification assumed = maximum. Illuminated (all Victory HT are illuminated per the manual). Square adjustment range 2.3 m/100m.",
+  "id": "zeiss-victory-ht-1-5-6x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 1.1-6x24",
+  "magnification_min": 1.1,
+  "magnification_max": 6.5,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "zeiss-60-conquest-v6-1-1-6x24",
+   "zeiss-zmoa-4-conquest-v6-1-1-6x24"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 300,
+  "fov_m_at_100m": [
+   38.1,
+   6.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "Figures from the Conquest V6 product page 'Technical Data' (global site) and the Conquest V6 manual. Zeiss names it 1.1-6x24 (US: 1-6x24) but the technical data give 1.1-6.5x. reticle_reference_magnification 6: the ZMOA-4 datasheet/catalog give 4 MOA tick spacing at 6x and the #60 tables have a 6x column. 1 cm clicks, 300 cm elevation (manual 'Adjustment range cm/100m 300'). Reticle options 60 | ZMOA-4. The US version has 0.5 MOA clicks (separate entry). Parallax 100 m.",
+  "id": "zeiss-conquest-v6-1-1-6x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 1.1-6x24 (MOA)",
+  "magnification_min": 1.1,
+  "magnification_max": 6.5,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "zeiss-60-conquest-v6-1-1-6x24",
+   "zeiss-zmoa-4-conquest-v6-1-1-6x24"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.5,
+  "elevation_travel": 103,
+  "fov_m_at_100m": [
+   38.1,
+   6.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "North-America version (US product page and 2026 North America catalog p.146): 0.5 MOA clicks, 103 MOA elevation, 103 MOA windage, parallax 100 yds. Reticles #60 illum. / ZMOA-4. Field of view from the global/US product page (38.1-6.6 m, '124-21 ft'); the US catalog instead prints 102.6-16.8 ft at 100 yds (34.2-5.6 m) - inconsistent, the metric figure is kept. Magnification 1.1-6.5x per technical data; reference 6x (see the global entry).",
+  "id": "zeiss-conquest-v6-1-1-6x24-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 2-12x50",
+  "magnification_min": 2,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "zeiss-60-conquest-v6-2-12x50"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   20.5,
+   3.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "Figures from the Conquest V6 product page 'Technical Data' (global site) and the Conquest V6 manual. Reticle option 60 only. 1 cm clicks, 250 cm elevation. Not offered in North America. Parallax 100 m. Reference 12x = maximum.",
+  "id": "zeiss-conquest-v6-2-12x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 2.5-15x56",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "zeiss-60-conquest-v6-2-5-15x56"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 200,
+  "fov_m_at_100m": [
+   16.4,
+   2.7
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "Figures from the Conquest V6 product page 'Technical Data' (global site) and the Conquest V6 manual. Reticle option 60 only. 1 cm clicks, 200 cm elevation. Not offered in North America. Parallax 100 m. Reference 15x = maximum (no published #60 column at 15x; figures derived, see reticles.md).",
+  "id": "zeiss-conquest-v6-2-5-15x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 3-18x50",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "zeiss-6-conquest-v6-3-18x50",
+   "zeiss-zbr-2-conquest-v6-3-18x50",
+   "zeiss-zmoa-2-conquest-v6-3-18x50",
+   "zeiss-ahr-conquest-v6-3-18x50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 103,
+  "fov_m_at_100m": [
+   12.4,
+   2.1
+  ],
+  "illuminated": false,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "Figures from the Conquest V6 product page 'Technical Data' (global site) and the Conquest V6 manual. Click 1/4 MOA (0.7 cm/100 m) on the global page and manual; elevation 300 cm = 103 MOA (manual: 103x58 MOA (300x170 cm)), windage 58 MOA. Reticle options (global): 6 | ZBR-2 | ZMOA-2, all non-illuminated (illuminated false). The 2026 North America catalog adds AHR (#90) for this model, non-illuminated (dot 'N/A'); the AHR datasheet itself says AHR is only for V8 NA. Reference 18x = maximum (all four reticles published '@ 18x'). Parallax 45 m (50 yds) to infinity.",
+  "id": "zeiss-conquest-v6-3-18x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V6 5-30x50",
+  "magnification_min": 5,
+  "magnification_max": 30,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 30,
+  "reticles": [
+   "zeiss-43-30x",
+   "zeiss-zbr-1-conquest-v6-5-30x50-at-30x",
+   "zeiss-zmoa-1-conquest-v6-5-30x50-at-30x",
+   "zeiss-ahr-conquest-v6-5-30x50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 62,
+  "fov_m_at_100m": [
+   7.4,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v6.html",
+  "notes": "Figures from the Conquest V6 product page 'Technical Data' (global site) and the Conquest V6 manual. Click 1/4 MOA (0.7 cm/100 m); elevation 180 cm = 62 MOA (manual: 62x34 MOA (180x100 cm)). Reticle options (global): 43 | ZBR-1 | ZMOA-1; reticle 43 exists illuminated and non-illuminated (both datasheets list V6 5-30x50). US catalog adds AHR (#90, non-illuminated) and its #6 table also shows a 'Conquest V6 5-30x50 @30x' column, but #6 is not in the model's reticle list anywhere (product page, spec table, #6 datasheet says not available), so #6 is not listed. reticle_reference_magnification 30 (maximum; #43 and AHR figures at 30x). NOTE: ZBR-1 and ZMOA-1 on this model are calibrated at 25x (1 MOA tick spacing at 25x in both datasheets; catalog ZBR-1 '@ 25x'); their reticle entries carry published_at_magnification 25.",
+  "id": "zeiss-conquest-v6-5-30x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 1-4x24",
+  "magnification_min": 1,
+  "magnification_max": 4,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 4,
+  "reticles": [
+   "zeiss-60-conquest-v4-1-4x24"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.5,
+  "elevation_travel": 100,
+  "fov_m_at_100m": [
+   38.0,
+   9.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v4.html",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Not in the 2026 North America catalog. Product page: 'Adjustment per Click at 100 m 1.4 cm' and elevation 300 cm; manual: adjustment range 100 MOA (300 cm/100 m). 1.4 cm/100 m is 1/2 MOA (1.45 cm), so click_unit moa 0.5 and travel 100 MOA (assumption from the 1.4 cm figure; the manual's click row did not extract). Reticle option 60 only. Parallax 100 yds (91.4 m). Reference 4x = maximum.",
+  "id": "zeiss-conquest-v4-1-4x24",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 3-12x44",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "zeiss-20-conquest-v4-3-12x"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 70,
+  "fov_m_at_100m": [
+   12.7,
+   3.2
+  ],
+  "illuminated": false,
+  "source_url": "https://www.zeiss.com/content/dam/pno/downloads/_local/united-states/catalog-zeiss-hunting-shooting-us.pdf",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Only on the US site (catalog p.148, US V4 content page) and in the manual; the US product page's technical-data block labelled '1-4x24' is garbled (mixes 3-12x44 and 6-24x50 data) and was not used. Field of view 38-9.5 ft/100 yds (manual: 12.7-3.2 m/100 m). Elevation 70 MOA, windage 70 MOA, parallax 100 yds. Reticle: Z-Plex (#20) only, non-illuminated. Reference 12x = maximum.",
+  "id": "zeiss-conquest-v4-3-12x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 3-12x56",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "zeiss-60-conquest-v4-3-12x56",
+   "zeiss-20-conquest-v4-3-12x"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 70,
+  "fov_m_at_100m": [
+   12.7,
+   3.2
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v4.html",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Product page: reticles 60 | 20, click 1/4 MOA (0.7 cm/100 m), elevation 200 cm; catalog/manual 70 MOA. Illuminated with #60 (Z-Plex version non-illuminated). Parallax 100 yds. Reference 12x = maximum.",
+  "id": "zeiss-conquest-v4-3-12x56",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 4-16x44",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "zeiss-60-conquest-v4-4-16x44",
+   "zeiss-zbi-conquest-v4-4-16x",
+   "zeiss-zmoai-t30-conquest-v4-4-16x",
+   "zeiss-20-conquest-v4-4-16x44",
+   "zeiss-zbr-2-conquest-v6-3-18x50",
+   "zeiss-zmoa-2-conquest-v6-3-18x50",
+   "zeiss-zmoa-t30-conquest-v4-4-16x44"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   9.5,
+   2.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v4.html",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Product page reticles: 60 | ZBi | ZMOAi-T30 | 20 | ZBR-2 | ZMOA-2 | ZMOA-T30 (US catalog: #60, Z-Plex, ZBi, ZMOAi-T30). Elevation 230 cm (page) = 80 MOA (catalog/manual 80x80). Illuminated with #60/ZBi/ZMOAi-T30. Parallax 10 yds (9.1 m) to infinity. Reference 16x = maximum.",
+  "id": "zeiss-conquest-v4-4-16x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 4-16x50",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "zeiss-zbi-conquest-v4-4-16x",
+   "zeiss-zmoai-t30-conquest-v4-4-16x",
+   "zeiss-zmoai-1-conquest-v4-6-24x50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   9.5,
+   2.4
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v4.html",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Product page reticles: ZBi | ZMOAi-T30 | ZMOAi-1 (all illuminated). Field of view: the global product page says 8.7-2.2 m (28.5-7.1 ft) but its own ft figure, the manual (9.5-2.4 m) and the catalog (28.5-7.1 ft) agree on 9.5-2.4 m, used here. Elevation 230 cm = 80 MOA (manual 80x60). ZMOAi-1 for this model has figures only in the US catalog (the ZMOAi-1 datasheet marks 4-16x50 not available). Reference 16x.",
+  "id": "zeiss-conquest-v4-4-16x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "Conquest V4 6-24x50",
+  "magnification_min": 6,
+  "magnification_max": 24,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 24,
+  "reticles": [
+   "zeiss-60-conquest-v4-6-24x50",
+   "zeiss-zbi-conquest-v4-4-16x",
+   "zeiss-zmoai-20-conquest-v4-6-24x50",
+   "zeiss-zmoai-t20-conquest-v4-6-24x50",
+   "zeiss-zmoai-1-conquest-v4-6-24x50",
+   "zeiss-zbr-1-conquest-v4-6-24x50",
+   "zeiss-zmoa-1-conquest-v4-6-24x50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.3,
+   1.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/hunting/products/riflescopes/conquest-v4.html",
+  "notes": "Conquest V4: product page 'Technical Data' (global site), Conquest V4 manual, and the 2026 North America catalog p.148 (elevation range in MOA, 0.25 MOA clicks). Product page reticles: 60 | ZBi | ZMOAi-20 | ZMOAi-T20 | ZMOAi-1 | ZBR-1 | ZMOA-1. Elevation 230 cm = 80 MOA (manual 80x60). Parallax 10 yds to infinity. Reference 24x = maximum (all MOA reticles 1 MOA at 24x).",
+  "id": "zeiss-conquest-v4-6-24x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S5 318-50 (MRAD)",
+  "magnification_min": 3.6,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-mri-lrp-s5-318-50"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 40.7,
+  "fov_m_at_100m": [
+   10.0,
+   2.0
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s5.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MRAD version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 40.7 MRAD / 140 MOA, windage 24 MRAD / 60 MOA. Parallax 25 m to infinity.",
+  "id": "zeiss-lrp-s5-318-50-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S5 318-50 (MOA)",
+  "magnification_min": 3.6,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-moai-lrp-s5-318-50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   10.0,
+   2.0
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s5.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MOA version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 40.7 MRAD / 140 MOA, windage 24 MRAD / 60 MOA. Parallax 25 m to infinity.",
+  "id": "zeiss-lrp-s5-318-50-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S5 525-56 (MRAD)",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-mri-lrp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 40.7,
+  "fov_m_at_100m": [
+   7.5,
+   1.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s5.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MRAD version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 40.7 MRAD / 140 MOA. Parallax 25 m to infinity.",
+  "id": "zeiss-lrp-s5-525-56-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S5 525-56 (MOA)",
+  "magnification_min": 5,
+  "magnification_max": 25,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-moai-lrp"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 140,
+  "fov_m_at_100m": [
+   7.5,
+   1.5
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s5.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MOA version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 40.7 MRAD / 140 MOA. Parallax 25 m to infinity.",
+  "id": "zeiss-lrp-s5-525-56-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S3 425-50 (MRAD)",
+  "magnification_min": 4,
+  "magnification_max": 25,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-mri-lrp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 46.5,
+  "fov_m_at_100m": [
+   9.5,
+   1.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s3.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MRAD version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 46.5 MRAD / 160 MOA (catalog 46.54 MRAD), windage 17.45 MRAD / 60 MOA. Parallax 15 m to infinity.",
+  "id": "zeiss-lrp-s3-425-50-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S3 425-50 (MOA)",
+  "magnification_min": 4,
+  "magnification_max": 25,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-moai-lrp"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 160,
+  "fov_m_at_100m": [
+   9.5,
+   1.6
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s3.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MOA version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 46.5 MRAD / 160 MOA (catalog 46.54 MRAD), windage 17.45 MRAD / 60 MOA. Parallax 15 m to infinity.",
+  "id": "zeiss-lrp-s3-425-50-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S3 636-56 (MRAD)",
+  "magnification_min": 6,
+  "magnification_max": 36,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-mri-lrp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 32.0,
+  "fov_m_at_100m": [
+   6.8,
+   1.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s3.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MRAD version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 32.0 MRAD / 110 MOA, windage 14.55 MRAD / 50 MOA. Parallax 10 m to infinity.",
+  "id": "zeiss-lrp-s3-636-56-mrad",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "LRP S3 636-56 (MOA)",
+  "magnification_min": 6,
+  "magnification_max": 36,
+  "objective_mm": 56,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "zeiss-zf-moai-lrp"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 110,
+  "fov_m_at_100m": [
+   6.8,
+   1.1
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/en/precision-shooting/products/first-focal-plane-riflescopes/lrp-s3.html",
+  "notes": "First focal plane, so reticle_reference_magnification is null. Figures from the LRP product page 'Technical Data' and the 2026 North America catalog p.150. Sold in MRAD (0.1 MRAD clicks, ZF-MRi reticle) and MOA (0.25 MOA clicks, ZF-MOAi reticle) versions; this entry is the MOA version. Illuminated (dual colour red/green, daylight visible). 34 mm tube. Elevation 32.0 MRAD / 110 MOA, windage 14.55 MRAD / 50 MOA. Parallax 10 m to infinity.",
+  "id": "zeiss-lrp-s3-636-56-moa",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 2.5-8x35 RF",
+  "magnification_min": 2.5,
+  "magnification_max": 8,
+  "objective_mm": 35,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "zeiss-xrr-v3-2-5-8x35"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   16.06,
+   4.93
+  ],
+  "illuminated": false,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). 1-inch tube (25.4 mm). Parallax 50 yds ('RF' version; Zeiss does not spell out RF on the page). Reticle XRR (#84) only. FOV 48.17-14.78 ft.",
+  "id": "zeiss-v3-2-5-8x35-rf",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 2.5-8x35",
+  "magnification_min": 2.5,
+  "magnification_max": 8,
+  "objective_mm": 35,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "zeiss-6-v3-2-5-8x35",
+   "zeiss-xrr-v3-2-5-8x35"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   16.06,
+   4.93
+  ],
+  "illuminated": false,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). 1-inch tube. Parallax 150 yds. Reticles #6 (plex-style) / XRR. FOV 48.17-14.78 ft.",
+  "id": "zeiss-v3-2-5-8x35",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 3.5-10x42",
+  "magnification_min": 3.5,
+  "magnification_max": 10,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "zeiss-6-v3-2-5-8x35",
+   "zeiss-shr-v3-3-5-10x42",
+   "zeiss-shri-v3-3-5-10x42"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 100,
+  "fov_m_at_100m": [
+   11.39,
+   3.94
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). Reticles #6 / SHR / SHRi (illuminated centre dot; illuminated true for the SHRi version). Parallax 150 yds. FOV 34.17-11.82 ft.",
+  "id": "zeiss-v3-3-5-10x42",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 4.5-14x44",
+  "magnification_min": 4.5,
+  "magnification_max": 14,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 14,
+  "reticles": [
+   "zeiss-xrr-v3-4-5-14x",
+   "zeiss-shr-v3-4-5-14x",
+   "zeiss-shri-v3-4-5-14x"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 90,
+  "fov_m_at_100m": [
+   8.7,
+   2.8
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). Reticles XRR / SHR / SHRi (illuminated version). Parallax fixed 150 yds or adjustable 25 yds to infinity. FOV 26.09-8.41 ft.",
+  "id": "zeiss-v3-4-5-14x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 4.5-14x50",
+  "magnification_min": 4.5,
+  "magnification_max": 14,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 14,
+  "reticles": [
+   "zeiss-xrr-v3-4-5-14x",
+   "zeiss-shr-v3-4-5-14x",
+   "zeiss-shri-v3-4-5-14x"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 90,
+  "fov_m_at_100m": [
+   8.69,
+   2.8
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). Reticles XRR / SHR / SHRi (illuminated version). Parallax 25 yds to infinity. FOV 26.06-8.41 ft.",
+  "id": "zeiss-v3-4-5-14x50",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "Zeiss",
+  "model": "V3 6-18x50",
+  "magnification_min": 6,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "zeiss-xrr-v3-6-18x50",
+   "zeiss-shr-v3-6-18x50",
+   "zeiss-shri-v3-6-18x50"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 80,
+  "fov_m_at_100m": [
+   6.55,
+   2.18
+  ],
+  "illuminated": true,
+  "source_url": "https://www.zeiss.com/photonics-and-optics/us/hunting/products/riflescopes/v3.html",
+  "notes": "ZEISS V3 (new for 2026 in North America): US V3 product page 'Technical Data' and 2026 North America catalog p.149. Field of view published in ft at 100 yds only, divided by 3. 0.25 MOA clicks; elevation range in MOA. Reference magnification = maximum (V3 reticle datasheets give figures '@ max'). Reticles XRR / SHR / SHRi (illuminated version). Parallax 25 yds to infinity. FOV 19.65-6.53 ft.",
+  "id": "zeiss-v3-6-18x50",
+  "verified_on": "2026-10-20"
+ }
+]

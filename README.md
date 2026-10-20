@@ -549,7 +549,7 @@ next round.
 
 `crates/ballistics-store/catalog/scopes/` (one file per maker) and
 `reticles.json` hold scope specifications and reticle geometry. Reticles
-stay in one file because makers' scopes can share a reticle. They cover three makers:
+stay in one file because makers' scopes can share a reticle. They cover seven makers:
 
 - **Kahles:** 8 scopes with their 4-Dot, G4B, 4-DH and SKMR4 reticles drawn.
   Kahles publishes dimensioned drawings for every hunting reticle.
@@ -581,6 +581,57 @@ stay in one file because makers' scopes can share a reticle. They cover three ma
   - **Not drawn.** Delta publishes nothing to draw SKR-1/2, DLR-3, Di MD,
     2D FFP or the Javelin's 4A SB from, so those scopes offer the plain
     crosshair.
+- **Swarovski Optik:** 34 scopes, all second focal plane:
+  - **Current:** Z8i, Z8i+, Z6i, Z5i+ (MOA and MRAD versions) and dS Gen. III.
+  - **Older ones Swarovski still documents:** Z3, Z5 2.4-12x50 and 3.5-18x44, and Z5+.
+  - **Sources.** Swarovski's product pages (the data each page carries
+    for its variants) and its technical data sheets; each entry's notes
+    say which.
+  - **Reticles.** 13 drawn:
+    - from Swarovski's published figures: BRS(-I), BRW(-I), BRW2m-I and 4Wm-I;
+    - with an estimated size, from Swarovski's pictures (the notes say so):
+      4A, 4A-I, 4A-IF, LD-I, D-I and Plex(-I). These have no hold marks,
+      so only how the posts look is uncertain.
+  - **Not drawn.** Swarovski's subtension program is gone and nothing else
+    gives the figures for 4W(-I), BRX(-I), BRX Heavy, BRH and BRT-I.
+    Their hold and wind marks shouldn't be guessed, so those scopes offer
+    the plain crosshair until the figures turn up.
+- **Zeiss:** 36 scopes: V8, Conquest V6 and V4, V3, Victory HT and the LRP
+  S3/S5 long-range scopes.
+  - **Sources.** Zeiss's product pages, catalogues and illuminated and
+    non-illuminated reticle data sheets.
+  - **Reticles.** 52 entries from Zeiss's per-scope tables: #60, #54, #43,
+    #6, #20 Z-Plex, #90 AHR, ZMOA, ZBR, ZBi, ZMOA-T, XRR, SHR(i) and the
+    LRP's ZF-MRi and ZF-MOAi. Only the #54 on the V8 1.8-14x50 is drawn at
+    an estimated size, because Zeiss publishes it for the 1.1-8x24 only.
+  - **Not drawn.** The older Victory HT 1.1-4x24 and 1.5-6x42 don't name
+    their reticle, so they offer the plain crosshair.
+- **Meopta:** 89 scopes: MeoPro Optika6, R6 and R5, MeoHunter R5, MeoStar R1,
+  R1r and R2, MeoTac, the ZD scopes, and older MeoPro, Optika5 and
+  Artemis 2000/2100/3000 models that Meopta still documents in its reticle
+  sheets.
+  - **Sources.** Meopta's catalogues, manuals and one reticle sheet per
+    reticle. The older scopes are known only from the reticle sheets, so
+    their click values are "not published".
+  - **Reticles.** 106 entries from those sheets: the 1, 4A–4K, ZPlex,
+    ZPlus and KDot hunting reticles, the Dichro versions, BDC, MMD,
+    MilDot, MRad, McWhorter, Windmax 8, MT and the calibre-specific RD
+    reticles. ZPlex on the Optika6 1-6x24 SFP and the R5, 4C on the
+    Optika6 1-6x24 FFP and the "4" on the MeoPro 3-9x40 are drawn at an
+    estimated size. Meopta's sheets leave the magnification blank only for
+    first-focal-plane scopes, so the old Artemis variables, whose focal
+    plane isn't stated, are taken as first focal plane.
+  - **Not drawn.** Eleven offerings have no sheet (such as the
+    non-illuminated .223, .308 and 6.5CM, Z-Plus Dichro, and McWhorter HV on
+    the MeoPro), so those scopes also offer the plain crosshair.
+- **GPO:** 34 scopes: SPECTRA, PASSION, CENTURI and GPOTAC.
+  - **Sources.** GPO's technical information and gp-optics.com's reticle
+    sheets, plus GPO USA's subtension pages.
+  - **Reticles.** 28 entries: G4 and G4i (glass, Fiber and Drop), G3i
+    Drive, BRi, BRWi, LR Pro, PLRi, MOAi and HSi-CQB. The CENTURI and
+    PASSION G4i are estimates scaled from the SPECTRA tables.
+  - **Not drawn.** MOAi on the CENTURI scopes, MIL-FFP and the GPOTAC 8X's
+    HSi have no figures, so those scopes offer the plain crosshair.
 
 **How reticles are drawn.** Every reticle is the project's own drawing:
 code builds it from the subtension figures the maker publishes (spacings,
@@ -616,7 +667,11 @@ scope picker, which also finds catalog scopes by reticle name.
 magnification, stored as `reticle_reference_magnification`. Because the real
 size of a reticle differs between scope models, Kahles publishes one value
 table per model, so the catalog has one reticle entry per scope (for example
-"4-Dot (HELIA 2,4-12x56i)").
+"4-Dot (HELIA 2,4-12x56i)"). A scope has one reference magnification, but
+makers publish each reticle's figures at a magnification of their own (Meopta
+gives one scope's reticles at 4×, 7× and "max"). The scope takes the
+magnification most of its reticles hold at, and the others get a copy
+rescaled to it, which its notes say.
 
 **In the app:**
 

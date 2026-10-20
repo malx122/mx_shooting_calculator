@@ -6,14 +6,21 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
-### Changed
-
-- **Google Drive sync asks for less:** only the app's own folder in your
-  Drive, no longer your e-mail address. The Sync window reminds you to use
-  the same Google account on every device.
-
 ### Added
 
+- **Swarovski Optik scopes:** 34 scopes (Z8i, Z8i+, Z6i, Z5i+, Z5+, Z5,
+  Z3 and dS), with 13 of their reticles drawn. BRS, BRW, BRW2m-I and 4Wm-I
+  come from Swarovski's published figures. 4A, 4A-I, 4A-IF, LD-I, D-I and
+  Plex are drawn at an estimated size, which their notes say. The ballistic
+  reticles Swarovski publishes no figures for (4W, BRX, BRH, BRT) show the
+  plain crosshair rather than guessed hold marks.
+- **Zeiss, Meopta and GPO scopes:** 36 Zeiss scopes (V8, Conquest V6/V4,
+  V3, Victory HT, LRP), 89 Meopta scopes (MeoPro, MeoHunter, MeoStar,
+  MeoTac, ZD and older Artemis models) and 34 GPO scopes (SPECTRA, PASSION,
+  CENTURI, GPOTAC), with their reticles drawn from the makers' published
+  figures. A few plain reticles are drawn at an estimated size, which their
+  notes say; ballistic reticles with no published figures show the plain
+  crosshair.
 - **Desktop apps** for macOS (Apple silicon and Intel), Windows and Linux,
   attached to each release on GitHub, and a **download page** with a
   **privacy policy** beside the web version.
@@ -23,10 +30,18 @@ any release may still change things noticeably.
   [docs/export-format.md](docs/export-format.md), with a JSON Schema
   published beside the download page.
 
+### Changed
+
+- **Google Drive sync asks for less:** only the app's own folder in your
+  Drive, no longer your e-mail address. The Sync window reminds you to use
+  the same Google account on every device.
+
 ### Fixed
 
 - The legal class, season and light pills wrap instead of pushing the
   scope view off the edge.
+- The estimated field of view, used when a maker publishes none, for
+  scopes that start below 1×.
 
 ## [0.7.0] - 2026-10-20
 

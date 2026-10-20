@@ -1,0 +1,868 @@
+[
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 7.5x50i",
+  "magnification_min": 7.5,
+  "magnification_max": 7.5,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 7.5,
+  "reticles": [
+   "gpo-g4i-spectra-7-5x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 280,
+  "fov_m_at_100m": [
+   5.1,
+   5.1
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "Fixed 7.5x. All figures from GPO 2023 SPECTRA technical PDF p.3: FOV 5.1 m/100 m, 1 click = 1 cm/100 m, elevation 280 cm/100 m, 30 mm tube, focal plane F2, reticle G4i (figures 'Coverage in cm/100 Meter'). GPO USA page (spectra-fixed-power-7-5x50i) lists reticle 'BRi', FOV 15.5 ft, 100 in elevation and '1cm (1 click= x/100m)'; the BRi entry conflicts with GPO's own PDF and the GPO USA subtension screenshot (both G4i), so G4i is used. Not on the current gp-optics.com shop.",
+  "id": "gpo-spectra-7-5x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 4X 2.5-10x44",
+  "magnification_min": 2.5,
+  "magnification_max": 10,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "gpo-g4-spectra-2-5-10x44"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 235,
+  "fov_m_at_100m": [
+   16.2,
+   4.1
+  ],
+  "illuminated": false,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "Non-illuminated. GPO 2023 SPECTRA PDF p.5: FOV 16.2-4.1 m, 1 click = 1 cm/100 m, elevation 235 cm, reticle G4 (figures at 10x). Focal plane not printed for this model; SFP assumed (all SPECTRA hunting models are F2 and the figures are given 'at 10x'). GPO USA page spectra-4x-2-5-10x44: '.1 mrad', FOV 49-13 ft, elevation '85ft' (sic). Not on the current gp-optics.com shop.",
+  "id": "gpo-spectra-4x-2-5-10x44",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 4X 2.5-10x44i",
+  "magnification_min": 2.5,
+  "magnification_max": 10,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 10,
+  "reticles": [
+   "gpo-g4i-drop-spectra-2-5-10x44i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 235,
+  "fov_m_at_100m": [
+   16.2,
+   4.1
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-4x-2,5-10x44i/019ac9b8504e71319a3084f843168a3e",
+  "notes": "gp-optics.com tech table: FOV 16.2-4.1 m, click 1 cm/100 m, elevation 235 cm, reticle G4i Drop; same in GPO 2023 PDF p.7 (G4i Drop figures at 10x). Focal plane not printed on these pages; SFP assumed (figures 'at 10x'). GPO USA (spectra-4x-2-5-10x44i): '.1 mrad', FOV 40-13 ft.",
+  "id": "gpo-spectra-4x-2-5-10x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 4X 4-16x50i",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "gpo-g4i-drop-spectra-4-16x50i",
+   "gpo-g4i-fiber-spectra-4-16x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 210,
+  "fov_m_at_100m": [
+   10.4,
+   2.6
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-4x-4-16x50i/019ac9c3ff2e73ab9b1c6be9c485c59e",
+  "notes": "gp-optics.com: FOV 10.4-2.6 m, click 1 cm, elevation 210 cm, parallax 15 m, reticles G4i Fiber, G4i Drop; GPO 2023 PDF p.9 agrees (parallax '15m - inf'). Figures stated 'at 16x' for both reticles, but the G4i Fiber numbers (B 300 cm) look like they hold at 4x, not 16x; see reticles.md. SFP assumed (not printed). GPO USA (spectra-4x-4-16x50i) lists G4i and G4i Drop variants (RS441/RS442), '.1 mrad'.",
+  "id": "gpo-spectra-4x-4-16x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 5X 3-15x56i",
+  "magnification_min": 3,
+  "magnification_max": 15,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-3-15x56i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   11.1,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-5x-3-15x56i-/019ac541a7bb702aa285e9a3ffee387e",
+  "notes": "gp-optics.com: FOV 11.1-2.3 m, click 1 cm, elevation 250 cm, parallax 10-inf, reticle G4i Fiber; GPO 2023 PDF p.11 agrees, figures at 15x. SFP assumed (not printed). Not sold by GPO USA.",
+  "id": "gpo-spectra-5x-3-15x56i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 1-6x24i",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 6,
+  "reticles": [
+   "gpo-g4i-spectra-1-6x24i",
+   "gpo-g4i-fiber-spectra-1-6x24i",
+   "gpo-g3i-drive-spectra-1-6x24i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 400,
+  "fov_m_at_100m": [
+   42.0,
+   7.0
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-1-6x24i/019a977329267bacb2e33da2004d5b6e",
+  "notes": "gp-optics.com: FOV 42-7 m, click 1 cm, elevation 400 cm, 2nd FP, reticles G4i Fiber, G4i, G3i Drive (figures at 6x, same on PDF p.19). Rail version with zero stop also offered. GPO USA (spectra-6x-1-26x24i, sic) sells G4i only, '.1 mrad', FOV 128-22 ft; its subtension screenshot gives different G4i numbers (see reticles.md).",
+  "id": "gpo-spectra-6x-1-6x24i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 1.5-9x32i",
+  "magnification_min": 1.5,
+  "magnification_max": 9,
+  "objective_mm": 32,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 9,
+  "reticles": [
+   "gpo-g4i-drop-spectra-1-5-9x",
+   "gpo-g4i-fiber-spectra-1-5-9x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 400,
+  "fov_m_at_100m": [
+   28.0,
+   4.6
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "GPO 2023 PDF p.15: FOV 28-4.6 m, click 1 cm, elevation 400 cm, reticles G4i Drop, G4i Fiber (figures at 9x). SFP assumed. GPO USA (spectra-6x-1-5-9x32i): reticle 'G4i', '.1 mrad', FOV 86-14 ft; its screenshot labels the second reticle 'G4i' with figures 2.6/300/150/11.7/1.4 that conflict with GPO Germany (see reticles.md). Not on the current gp-optics.com shop.",
+  "id": "gpo-spectra-6x-1-5-9x32i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 1.5-9x44i",
+  "magnification_min": 1.5,
+  "magnification_max": 9,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 9,
+  "reticles": [
+   "gpo-g4i-drop-spectra-1-5-9x",
+   "gpo-g4i-fiber-spectra-1-5-9x"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 400,
+  "fov_m_at_100m": [
+   28.0,
+   4.6
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-1.5-9x44i/019ab659af7e7f9eb998670b4e9f66f2",
+  "notes": "gp-optics.com: FOV 28-4.6 m, click 1 cm, elevation 400 cm, 2nd FP, reticles G4i Fiber, G4i Drop (figures at 9x; PDF p.17 identical). GPO USA (spectra-6x-1-5-9x44i) lists G4i (RS630) and G4i Drop (RS631).",
+  "id": "gpo-spectra-6x-1-5-9x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 2-12x44i",
+  "magnification_min": 2,
+  "magnification_max": 12,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-brwi-spectra-2-12x44i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 400,
+  "fov_m_at_100m": [
+   21.0,
+   3.5
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "GPO 2023 PDF p.21: FOV 21-3.5 m, click 1 cm, elevation 400 cm, reticle BRWi (figures at 12x). SFP assumed. GPO USA (spectra-6x-2-12x44i): BRWi, '.1 mrad, .36in', FOV 65-11 ft. Not on the current gp-optics.com shop.",
+  "id": "gpo-spectra-6x-2-12x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 2-12x50i",
+  "magnification_min": 2,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-spectra-2-12x50i",
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 400,
+  "fov_m_at_100m": [
+   21.0,
+   3.5
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-2-12x50i/019ab67f91677d27a4e099196279ce4d",
+  "notes": "gp-optics.com: FOV 21-3.5 m, click 1 cm, elevation 400 cm, 2nd FP, reticles G4i, G4i Fiber (figures at 12x, PDF p.23 identical). Rail + zero-stop version offered. GPO USA sells G4i ('.1 mrad'); its screenshot gives other G4i numbers (see reticles.md).",
+  "id": "gpo-spectra-6x-2-12x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 3-18x56i",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "gpo-bri-spectra-3-18x56i",
+   "gpo-g4i-fiber-spectra-3-18x56i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 250,
+  "fov_m_at_100m": [
+   11.0,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-3-18x56i/019ab6966d6375fa88351718b3a743ec",
+  "notes": "gp-optics.com: FOV 11-1.9 m, click 1 cm, elevation 250 cm, 2nd FP, reticles G4i Fiber, BRi (figures at 18x). GPO 2023 PDF p.13 (BRi only) prints FOV '11,1 - 21,9' (typo). GPO USA (spectra-6x-3-18x56i): BRi, '1cm (1 click= x/100m)', FOV 34-6 ft.",
+  "id": "gpo-spectra-6x-3-18x56i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 4.5-27x50i MOAi",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 27,
+  "reticles": [
+   "gpo-moai-spectra-4-5-27x50i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 60,
+  "fov_m_at_100m": [
+   7.6,
+   1.2
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-4.5-27x50i-moai/019ab6b216747749a5c3a9a42fe53572",
+  "notes": "gp-optics.com: FOV 7.6-1.2 m, click 1/4 MOA, elevation 60 MOA, 2nd FP, reticle MOAi (figures at 27x; PDF p.29 identical). GPO USA (spectra-6x-4-5-27x50i, RS673): MOAi, 1/4\" @100, ZeroStop, FOV 22.7-3.6 ft, elevation '70ft' (sic), 'Non-magnifying 2nd focal plane reticle'.",
+  "id": "gpo-spectra-6x-4-5-27x50i-moai",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 6X 4.5-27x50i FFP",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-lr-pro-ffp-4-5-27x50i",
+   "gpo-plri-ffp-4-5-27x50i"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 32,
+  "fov_m_at_100m": [
+   7.4,
+   1.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-6x-4.5-27x50i/019aba5e87187d25ad79300abd5b0874",
+  "notes": "gp-optics.com: FOV 7.4-1.3 m, 34 mm tube, 1st FP, reticles PLRi, LR Pro; click '1' (cm/100 m = 0.1 mrad), elevation 320 cm (= 32 mrad). GPO 2023 PDF: PLRi page p.27 says click '1mrad' (sic, 0.1 mrad) and 32 mrad; LR Pro page p.25 says 1 cm and 280 cm. Stored as 0.1 mrad / 32 mrad. Same optic as GPO USA's GPOTAC 6X 4.5-27x50i.",
+  "id": "gpo-spectra-6x-4-5-27x50i-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 8X 1-8x24i",
+  "magnification_min": 1,
+  "magnification_max": 8,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 8,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-1-8x24i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   41.0,
+   5.2
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-8x-1-8x24i/019abb08e21872b4ad47c9143c57f023",
+  "notes": "gp-optics.com: FOV 41-5.2 m, click 1 cm, elevation 320 cm, 2nd FP, G4i Fiber (figures at 8x). GPO 2023 PDF p.37 gives FOV 40.4-4.8 m and 350 cm; GPO USA (spectra-8x-1-8x24i): G4i, '.1 mrad', 126 in, FOV 40.4-4.8. Current gp-optics values used.",
+  "id": "gpo-spectra-8x-1-8x24i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 8X 1.6-13x44i",
+  "magnification_min": 1.6,
+  "magnification_max": 13,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 13,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-1-6-13x44i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   25.6,
+   3.2
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-8x-1.6-13x44i/019abb4a79e0701390f6f1b8155c607c",
+  "notes": "gp-optics.com only: FOV 25.6-3.2 m, click 1 cm, elevation 320 cm, 2nd FP, G4i Fiber (figures at 13x). Magnification printed '1,.x - 13x' (typo; the model name says 1.6).",
+  "id": "gpo-spectra-8x-1-6-13x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 8X 2-16x44i",
+  "magnification_min": 2,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 16,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-16x44i",
+   "gpo-bri-spectra-2-16x44i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 291,
+  "fov_m_at_100m": [
+   19.4,
+   2.4
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "GPO 2023 PDF p.35: FOV 19.4-2.4 m, click 1 cm, elevation 291 cm, reticles G4i Fiber, BRi (figures at 16x). SFP (GPO USA spectra-8x-2-16x44i-copy says 'Focal Plane: F2'). GPO USA: G4i (RS820) or BRi (RS821), '.1 mrad', 105 in, FOV 59-8. Not on the current gp-optics.com shop.",
+  "id": "gpo-spectra-8x-2-16x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 8X 2-16x50i",
+  "magnification_min": 2,
+  "magnification_max": 16,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   20.5,
+   2.6
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-8x-2-16x50i/019abb8b9405729c9e2bf6a258aea676",
+  "notes": "gp-optics.com only: FOV 20.5-2.6 m, click 1 cm, elevation 320 cm, G4i Fiber; focal plane left blank (SFP assumed like the other 8X models). GPO's reticle sheet for this scope (2-16x50i_ohneG4i_Absehentabelle) says 'Coverage in cm/100 Meter at 12x' with exactly the 2-12x50i G4i Fiber numbers, so reference magnification 12 is copied as published but is probably a copy error (16 likely).",
+  "id": "gpo-spectra-8x-2-16x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 8X 2.5-20x50i",
+  "magnification_min": 2.5,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 20,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-5-20x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 320,
+  "fov_m_at_100m": [
+   16.4,
+   2.0
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/spectra™-8x-2.5-20x50i/019abbb034607baba0bbba6a665a8acd",
+  "notes": "gp-optics.com: FOV 16.4-2 m, click '0.1 MRAD' (= 1 cm/100 m), elevation 320 cm, 2nd FP, G4i Fiber (figures at 20x). GPO 2023 PDF p.31: FOV 15.5-1.9 m, 261 cm. GPO USA (spectra-8x-2-5-20x50i): G4i, '.1 mrad', 94 in, FOV 48-6 ft.",
+  "id": "gpo-spectra-8x-2-5-20x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "SPECTRA 2.5-20x50i FFP",
+  "magnification_min": 2.5,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-bri-ffp-2-5-20x50i"
+  ],
+  "click_unit": "cm_at_100m",
+  "click_value": 1.0,
+  "elevation_travel": 265,
+  "fov_m_at_100m": [
+   14.1,
+   1.9
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/wp-content/uploads/2023/05/Spectra-riflescope-tech-specs-20230511_GPO_SPECTRA_quer_WEB.pdf",
+  "notes": "Only in GPO 2023 SPECTRA PDF p.33: 34 mm tube, FOV 14.1-1.9 m, click 1 cm/100 m, elevation 265 cm, reticle BRi. The page's reticle table is headed '3-18x56i' and 'at 20x' (copied text); the reticle is FFP. Possibly the European version of GPO USA's GPOTAC 8X 2.5-20x50i, but specs differ (see that entry).",
+  "id": "gpo-spectra-2-5-20x50i-ffp",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "GPO TAC 6X 1-6x24i",
+  "magnification_min": 1,
+  "magnification_max": 6,
+  "objective_mm": 24,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-hsi-cqb-ffp"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 23.2,
+  "fov_m_at_100m": [
+   38.0,
+   6.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/gpo-tac™-6x-1-6x24i/019abbbd0688703b947f79f58e07bb9a",
+  "notes": "gp-optics.com: FOV 38-6.3 m, click 0.1 MRAD/MIL, elevation 232 cm/100 m (= 23.2 mrad), 1st FP, reticle 'HSi' with a fully dimensioned drawing (HSi_6x_Absehen_Aufbau). GPO USA sells it as GPOTAC 1-6x24i FFP (RT610) with reticle 'HSi-CQB', 23 MILRADIAN / 84 in, FOV 113-19 ft.",
+  "id": "gpo-tac-6x-1-6x24i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "GPOTAC 8X 1-8x24i",
+  "magnification_min": 1,
+  "magnification_max": 8,
+  "objective_mm": 24,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "plain-crosshair"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 29,
+  "fov_m_at_100m": [
+   35.7,
+   4.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/gpo-tac/gpotac-8x-1-8x24i/",
+  "notes": "GPO USA only (RT820): 34 mm tube, 0.1 milrad, 105 in / 29 MILRADIAN, FOV 107-13 ft at 100 yd, 'Magnifying first focal plane', reticle HSi ('custom mil-spec horseshoe reticle'). GPO publishes no HSi (8X) figures, only a small picture (GPO-HSI-8X) -> plain crosshair (HSi is CROSSHAIR).",
+  "id": "gpo-gpotac-8x-1-8x24i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "GPOTAC 6X 4.5-27x50i",
+  "magnification_min": 4.5,
+  "magnification_max": 27,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-lr-pro-ffp-4-5-27x50i",
+   "gpo-plri-ffp-4-5-27x50i"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 32,
+  "fov_m_at_100m": [
+   7.7,
+   1.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/gpo-tac/gpotac-6x-4-5-27x50i/",
+  "notes": "GPO USA: 34 mm tube, 0.1 milrad, 115 in / 32 MILRADIAN, FOV 23-4 ft, FFP, reticles 'LRi Pro' (RS670) or PLRi (RS672). Same optic as GPO Germany's SPECTRA 6X 4.5-27x50i FFP (FOV 7.4-1.3 m); GPO's LR Pro and PLRi figure sets used.",
+  "id": "gpo-gpotac-6x-4-5-27x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "GPOTAC 8X 2.5-20x50i",
+  "magnification_min": 2.5,
+  "magnification_max": 20,
+  "objective_mm": 50,
+  "tube_mm": 34,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-bri-ffp-2-5-20x50i"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 40,
+  "fov_m_at_100m": [
+   16.3,
+   2.0
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/gpo-tac/gpotac-8x-2-5-20x50i/",
+  "notes": "GPO USA (RS831): 34 mm tube, 0.1 milrad, 144 in / 40 MILRADIAN, FOV 49-6 ft, reticle BRi in the first focal plane. Reticle assumed to be the FFP BRi published for the 34 mm SPECTRA 2.5-20x50i FFP in GPO's 2023 PDF (not confirmed; that PDF lists 265 cm travel and FOV 14.1-1.9 m, and the GPO USA weight/length equal the SFP SPECTRA 8X 2.5-20x50i, so the US page may be partly copied).",
+  "id": "gpo-gpotac-8x-2-5-20x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 2.5-15x44i",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "gpo-g4i-centuri",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 105,
+  "fov_m_at_100m": [
+   16.7,
+   2.7
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-2-5-15x44i/",
+  "notes": "GPO USA only. Two listings: G4i (RCX631) and MOAi (RC630). 1/4\" @100 yd, max elevation 110\" (= 105 MOA), FOV 50-8 ft, 'SFP MOAi illuminated ballistic reticle', ZeroStop locking turrets, parallax 10 y-inf. No reticle figures published for any CENTURI: G4i = ESTIMATE (ref. magnification 15 assumed), MOAi = CROSSHAIR (plain-crosshair; GPO's MOAi figures exist only for the SPECTRA 4.5-27x50i at 27x).",
+  "id": "gpo-centuri-2-5-15x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 2.5-15x50i",
+  "magnification_min": 2.5,
+  "magnification_max": 15,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "gpo-g4i-centuri",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 105,
+  "fov_m_at_100m": [
+   16.7,
+   2.7
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-2-5-15x50i/",
+  "notes": "GPO USA only. Listings: G4i (RCX636, ZeroStop locking), G4i CAPPED (RCX637, capped zero-stop), MOAi (RC635). 1/4\" @100 yd, 110\" (= 105 MOA), FOV 50-8 ft, SFP. G4i = ESTIMATE (ref. 15 assumed); MOAi = CROSSHAIR.",
+  "id": "gpo-centuri-2-5-15x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 3-12x44i Super Compact",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-centuri-at-12x"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 95.5,
+  "fov_m_at_100m": [
+   15.0,
+   3.7
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-3-12x44-super-compact/",
+  "notes": "GPO USA only (RC420): G4i, 1/4\" @100 yd, 100\" (= 95.5 MOA), FOV 45-11 ft, 'SFP Capped 1/4 MOA reset turrets', clockwise up. G4i = ESTIMATE (ref. 12 assumed). Page lists length as '9.9oz' (sic).",
+  "id": "gpo-centuri-3-12x44i-super-compact",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 3-18x44i",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 18,
+  "reticles": [
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 86,
+  "fov_m_at_100m": [
+   13.7,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-3-18x44i/",
+  "notes": "GPO USA only (RC650): MOAi, 1/4\" @100 yd, 90\" (= 86 MOA), FOV 41-7 ft, SFP. MOAi without published figures for this scope -> CROSSHAIR.",
+  "id": "gpo-centuri-3-18x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 3-18x50i",
+  "magnification_min": 3,
+  "magnification_max": 18,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "gpo-g4i-centuri",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 86,
+  "fov_m_at_100m": [
+   13.7,
+   2.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-3-18x50i-moai-reticle/",
+  "notes": "GPO USA only: G4i (RCX652, URL 'g4ii') and MOAi (RCX651). 1/4\" @100 yd, 90\" (= 86 MOA), FOV 41-7 ft, SFP. G4i = ESTIMATE (ref. 18 assumed); MOAi = CROSSHAIR. The reticle figures hold at 15x, so that is the reference magnification here.",
+  "id": "gpo-centuri-3-18x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 4-16x44i",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 15,
+  "reticles": [
+   "gpo-g4i-centuri",
+   "plain-crosshair"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 86,
+  "fov_m_at_100m": [
+   10.3,
+   2.7
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-4-16x44i/",
+  "notes": "GPO USA only: G4i (RCX441) and MOAi (RC440). 1/4\" @100 yd, 90\" (= 86 MOA), FOV 31-8 ft, SFP. G4i = ESTIMATE (ref. 16 assumed); MOAi = CROSSHAIR. The reticle figures hold at 15x, so that is the reference magnification here.",
+  "id": "gpo-centuri-4-16x44i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "CENTURI 4-16x44i FFP Super Compact",
+  "magnification_min": 4,
+  "magnification_max": 16,
+  "objective_mm": 44,
+  "tube_mm": 30,
+  "focal_plane": "ffp",
+  "reticle_reference_magnification": null,
+  "reticles": [
+   "gpo-hsi-cqb-ffp",
+   "gpo-plri-ffp-4-5-27x50i",
+   "plain-crosshair"
+  ],
+  "click_unit": "mrad",
+  "click_value": 0.1,
+  "elevation_travel": 22,
+  "fov_m_at_100m": [
+   11.3,
+   3.0
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/centuri-scopes-tactical/centuri-4-16x44i-ffp-super-compact/",
+  "notes": "GPO USA only. Listings: MIL-FFP (RC450), HSi-CQB (RCX451), PLRi (RCX450-OP; its attribute table wrongly repeats 'HSi-CQB'). 0.1 milrad, 22 milradian / 80\" elevation, FOV 34-9 ft, 'FFP I-Control Illuminated Mil-Base Reticle'. HSi-CQB and PLRi are ASSUMED to be the same FFP reticles GPO dimensions for the GPO TAC 1-6x24i and SPECTRA 4.5-27x50i FFP (FFP figures do not depend on magnification, but GPO does not confirm the etchings are identical). MIL-FFP has no published figures -> CROSSHAIR (plain-crosshair).",
+  "id": "gpo-centuri-4-16x44i-ffp-super-compact",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "PASSION HDi 4X 3-12x42i",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 42,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 76.4,
+  "fov_m_at_100m": [
+   13.3,
+   3.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/passion-scopes-tactical/passion-3x-3-9x42/",
+  "notes": "GPO USA only (RP421, new 2026 line; URL slug still 'passion-3x-3-9x42'): G4i Fiber, 1/4\" @100 yd, elevation 80\" at 100 y (= 76.4 MOA), FOV 40-10 ft, parallax 15 y-inf. Focal plane not stated; SFP assumed (hunting micro-dot reticle). No reticle figures -> G4i Fiber ESTIMATE, ref. 12 assumed. Magnification printed in the description as '3-12x42i'.",
+  "id": "gpo-passion-hdi-4x-3-12x42i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "PASSION HDi 4X 3-12x50i",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 76.4,
+  "fov_m_at_100m": [
+   13.3,
+   3.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/passion-scopes-tactical/passion-3x-4-12x42/",
+  "notes": "GPO USA only (RP422; page title '3-12x50', URL slug 'passion-3x-4-12x42'): G4i Fiber, 1/4\" @100 yd, 80\" (= 76.4 MOA), FOV 40-10 ft. SFP assumed; ESTIMATE, ref. 12 assumed.",
+  "id": "gpo-passion-hdi-4x-3-12x50i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "PASSION HDi 4X 3-12x56i",
+  "magnification_min": 3,
+  "magnification_max": 12,
+  "objective_mm": 56,
+  "tube_mm": 30,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 76.4,
+  "fov_m_at_100m": [
+   13.3,
+   3.3
+  ],
+  "illuminated": true,
+  "source_url": "https://gpo-usa.com/shop/tactical/scopes-tactical/passion-scopes-tactical/passion-3x-4-12x50i/",
+  "notes": "GPO USA only (RP423; page title '3-12x56', URL slug 'passion-3x-4-12x50i'): attribute says 'G4i', description says 'iControl Illuminated G4i fiber reticle'. 1/4\" @100 yd, 80\" (= 76.4 MOA), FOV 40-10 ft. SFP assumed; ESTIMATE, ref. 12 assumed.",
+  "id": "gpo-passion-hdi-4x-3-12x56i",
+  "verified_on": "2026-10-20"
+ },
+ {
+  "manufacturer": "GPO",
+  "model": "PASSION 3X 4-12x50i",
+  "magnification_min": 4,
+  "magnification_max": 12,
+  "objective_mm": 50,
+  "tube_mm": 25.4,
+  "focal_plane": "sfp",
+  "reticle_reference_magnification": 12,
+  "reticles": [
+   "gpo-g4i-fiber-spectra-2-12x50i"
+  ],
+  "click_unit": "moa",
+  "click_value": 0.25,
+  "elevation_travel": 55,
+  "fov_m_at_100m": [
+   10.4,
+   3.2
+  ],
+  "illuminated": true,
+  "source_url": "https://gp-optics.com/en/shop/p/passion™-3x-4-12x50i/019ac532efe67389b9508a0cd932940c",
+  "notes": "gp-optics.com: FOV 10.4-3.2 m, 1\" (25.4 mm) tube, click '.25 (1/4\")' at 100 y = '0.7' cm/100 m, elevation 160 cm/100 m (stored converted: 16 mrad = 55 MOA), parallax 100 m, 2nd FP, reticle G4i Fiber. No reticle figures -> ESTIMATE, ref. 12 assumed.",
+  "id": "gpo-passion-3x-4-12x50i",
+  "verified_on": "2026-10-20"
+ }
+]
