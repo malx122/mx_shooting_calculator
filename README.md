@@ -217,6 +217,17 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
 
    Edits apply to the calculation immediately and are kept when saved.
 
+   **Weather:** **📍 Weather here** (on a phone or in a browser that may
+   know your position) or a place search fills in the temperature,
+   sea-level pressure and the ground's height, humidity and the latitude,
+   from [Open-Meteo](https://open-meteo.com) (MET Norway's model in the
+   Nordics). The forecast wind (10 m above open ground) is turned into a
+   clock direction from the direction you shoot: type it, or on a phone
+   hold the phone flat with its top edge towards the target and press **🧭
+   Point the phone**. **Use the wind** brings it down to shooting height
+   (about 70 % over open ground; less in forest, so adjust it). On a phone
+   the wind picker offers the forecast wind too.
+
    **Target and ethics:** choose what you shoot at, either game or a sport
    target. The target sets the vital zone (or, on a sport target, the hit
    zone) and, for game, the minimum energy. You can change either for this

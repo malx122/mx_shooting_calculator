@@ -6,6 +6,13 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Weather where you are:** from your position or a place search
+  (Open-Meteo): temperature, pressure, the ground's height and humidity are
+  filled in. The forecast wind becomes a clock direction from the direction
+  of your shot, which a phone can take from its compass.
+
 ## [0.5.0] - 2026-10-20
 
 ### Added

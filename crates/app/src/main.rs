@@ -9,12 +9,14 @@ mod http;
 mod import;
 mod mobile;
 mod rifles;
+mod sensors;
 mod sight_picture;
 mod sync;
 mod targets;
 mod theme;
 mod trajectory3d;
 mod units;
+mod weather;
 #[cfg(target_arch = "wasm32")]
 mod web;
 mod widgets;

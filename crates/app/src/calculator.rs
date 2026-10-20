@@ -244,6 +244,8 @@ pub struct CalculatorPage {
     picker: Option<phone::Picker>,
     /// The target picker's search text.
     target_search: String,
+    /// The weather where the hunter is, when asked for.
+    pub weather: crate::weather::Weather,
 }
 
 impl CalculatorPage {
@@ -255,6 +257,7 @@ impl CalculatorPage {
             phone_view: phone::PhoneView::default(),
             picker: None,
             target_search: String::new(),
+            weather: crate::weather::Weather::default(),
         }
     }
 
@@ -264,6 +267,9 @@ impl CalculatorPage {
     }
 
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
+        if let Some(report) = self.weather.poll(context) {
+            crate::weather::apply(&report, &mut self.inputs);
+        }
         let mut actions = Vec::new();
         let rifle = self.selected_rifle(data).cloned();
         let bullets: Vec<&Bullet> = rifle
@@ -731,7 +737,10 @@ impl CalculatorPage {
         actions: &mut Vec<Action>,
     ) {
         let inputs = &mut self.inputs;
+        let weather = &mut self.weather;
         section(ui, "Weather", |ui| {
+            weather.panel(ui, inputs, data.country);
+            ui.add_space(4.0);
             grid(ui, "weather", |ui| {
                 quantity(
                     ui,

@@ -415,6 +415,7 @@ impl CalculatorPage {
 
     fn wind_sheet(&mut self, context: &egui::Context) {
         let inputs = &mut self.inputs;
+        let report = self.weather.report.clone();
         let shown = mobile::sheet(context, "wind-picker", "Wind", |ui| {
             let u = units::prefs(ui.ctx());
             ui.vertical_centered(|ui| {
@@ -478,6 +479,34 @@ impl CalculatorPage {
                     }
                 }
             });
+            if let Some(report) = &report {
+                ui.add_space(8.0);
+                let speed = crate::weather::shooting_height_speed(report);
+                let clock =
+                    crate::weather::wind_clock(report.wind_from_degrees, inputs.azimuth_degrees);
+                ui.weak(format!(
+                    "Forecast: {} from {} at {}, shooting towards {:.0}° {} (set under Conditions)",
+                    u.format(Quantity::WindSpeed, report.wind_speed_mps),
+                    crate::weather::compass_point(report.wind_from_degrees),
+                    report.place.name,
+                    inputs.azimuth_degrees,
+                    crate::weather::compass_point(inputs.azimuth_degrees),
+                ));
+                if ui
+                    .add(
+                        egui::Button::new(format!(
+                            "Use the forecast: {} from {}",
+                            u.format(Quantity::WindSpeed, speed),
+                            clock_text(clock)
+                        ))
+                        .min_size(vec2(ui.available_width(), 44.0)),
+                    )
+                    .clicked()
+                {
+                    inputs.wind_speed = (speed * 10.0).round() / 10.0;
+                    inputs.wind_clock = clock;
+                }
+            }
         });
         if shown.closed {
             self.picker = None;

@@ -132,6 +132,8 @@ pub fn start(make_app: fn(Result<Store, String>) -> eframe::AppCreator<'static>)
 thread_local! {
     /// The phone's latest front-to-back tilt (degrees), once measuring.
     static TILT: std::cell::Cell<Option<f64>> = const { std::cell::Cell::new(None) };
+    /// Where the phone's top edge points (degrees from north), once known.
+    static HEADING: std::cell::Cell<Option<f64>> = const { std::cell::Cell::new(None) };
     static MEASURING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
@@ -161,17 +163,40 @@ pub fn start_tilt(context: egui::Context) {
     let listen = {
         let window = window.clone();
         move || {
+            let repaint = context.clone();
             let closure = wasm_bindgen::closure::Closure::<
                 dyn FnMut(web_sys::DeviceOrientationEvent),
             >::new(move |event: web_sys::DeviceOrientationEvent| {
                 TILT.set(event.beta());
-                context.request_repaint();
+                // iPhones give the compass heading here.
+                if let Some(heading) = js_sys::Reflect::get(&event, &"webkitCompassHeading".into())
+                    .ok()
+                    .and_then(|heading| heading.as_f64())
+                {
+                    HEADING.set(Some(heading));
+                }
+                repaint.request_repaint();
             });
             let _ = window.add_event_listener_with_callback(
                 "deviceorientation",
                 closure.as_ref().unchecked_ref(),
             );
             closure.forget();
+            // Android gives it as an absolute orientation: alpha counts
+            // anticlockwise from north.
+            let absolute = wasm_bindgen::closure::Closure::<
+                dyn FnMut(web_sys::DeviceOrientationEvent),
+            >::new(move |event: web_sys::DeviceOrientationEvent| {
+                if let Some(alpha) = event.alpha() {
+                    HEADING.set(Some((360.0 - alpha).rem_euclid(360.0)));
+                    context.request_repaint();
+                }
+            });
+            let _ = window.add_event_listener_with_callback(
+                "deviceorientationabsolute",
+                absolute.as_ref().unchecked_ref(),
+            );
+            absolute.forget();
         }
     };
     let request = js_sys::Reflect::get(&window, &"DeviceOrientationEvent".into())
@@ -195,6 +220,71 @@ pub fn start_tilt(context: egui::Context) {
             }
         }),
         None => listen(),
+    }
+}
+
+/// Where the phone's top edge points, degrees from north, once known.
+pub fn heading() -> Option<f64> {
+    HEADING.get()
+}
+
+fn geolocation() -> Option<wasm_bindgen::JsValue> {
+    let navigator = web_sys::window()?.navigator();
+    js_sys::Reflect::get(&navigator, &"geolocation".into())
+        .ok()
+        .filter(|geolocation| !geolocation.is_undefined())
+}
+
+/// Whether the browser can tell where the device is.
+pub fn can_locate() -> bool {
+    geolocation().is_some()
+}
+
+/// Asks the browser where the device is (it asks the hunter first); `done`
+/// gets latitude and longitude, or why not.
+pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
+    let Some(geolocation) = geolocation() else {
+        return done(Err("this browser can't tell where you are".into()));
+    };
+    let done = std::rc::Rc::new(done);
+    let found = {
+        let done = done.clone();
+        wasm_bindgen::closure::Closure::once_into_js(move |position: wasm_bindgen::JsValue| {
+            let coordinate = |name: &str| {
+                js_sys::Reflect::get(&position, &"coords".into())
+                    .and_then(|coords| js_sys::Reflect::get(&coords, &name.into()))
+                    .ok()
+                    .and_then(|value| value.as_f64())
+            };
+            done(
+                coordinate("latitude")
+                    .zip(coordinate("longitude"))
+                    .ok_or_else(|| "the browser gave no position".to_owned()),
+            );
+        })
+    };
+    let failed = {
+        let done = done.clone();
+        wasm_bindgen::closure::Closure::once_into_js(move |error: wasm_bindgen::JsValue| {
+            let code = js_sys::Reflect::get(&error, &"code".into())
+                .ok()
+                .and_then(|code| code.as_f64());
+            done(Err(match code {
+                Some(1.0) => "the browser wasn't allowed to tell where you are".into(),
+                Some(3.0) => "finding your position took too long".into(),
+                _ => "your position couldn't be found".into(),
+            }));
+        })
+    };
+    let options = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&options, &"timeout".into(), &15000.into());
+    let _ = js_sys::Reflect::set(&options, &"maximumAge".into(), &600000.into());
+    let started = js_sys::Reflect::get(&geolocation, &"getCurrentPosition".into())
+        .ok()
+        .and_then(|function| function.dyn_into::<js_sys::Function>().ok())
+        .map(|function| function.call3(&geolocation, &found, &failed, &options));
+    if !matches!(started, Some(Ok(_))) {
+        done(Err("this browser can't tell where you are".into()));
     }
 }
 
