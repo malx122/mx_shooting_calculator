@@ -596,11 +596,9 @@ impl eframe::App for App {
         for action in actions {
             self.apply(action);
         }
-        if narrow {
-            self.menu_sheet(context);
-        } else {
-            self.menu = None;
-        }
+        // The phone menu's sheets; on wider screens the desktop menu opens
+        // the ones it has no room for.
+        self.menu_sheet(context);
         #[cfg(target_arch = "wasm32")]
         self.collect_picked_file();
         self.import_window(context);
@@ -699,22 +697,36 @@ impl App {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         self.desktop_menu(ui, context);
                         let now = context.input(|input| input.time);
-                        let sync = ui
-                            .add(
-                                egui::Button::new(
-                                    RichText::new(format!("     {}", self.sync.short_status()))
-                                        .size(12.0)
-                                        .color(theme::BONE_MUTED),
-                                )
-                                .frame(false),
-                            )
-                            .on_hover_text(self.sync.status(now));
-                        // The font has no dot, so paint one.
+                        // The font has no dot, so paint one in a slot of its own
+                        // before the status.
+                        let galley = ui.painter().layout_no_wrap(
+                            self.sync.short_status().to_owned(),
+                            egui::FontId::proportional(12.0),
+                            egui::Color32::PLACEHOLDER,
+                        );
+                        let dot = 14.0;
+                        let (rect, sync) = ui.allocate_exact_size(
+                            egui::vec2(dot + galley.size().x, galley.size().y.max(20.0)),
+                            egui::Sense::click(),
+                        );
+                        let colour = if sync.hovered() {
+                            theme::BONE
+                        } else {
+                            theme::BONE_MUTED
+                        };
                         ui.painter().circle_filled(
-                            sync.rect.left_center() + egui::vec2(9.0, 0.0),
+                            rect.left_center() + egui::vec2(4.0, 0.0),
                             4.0,
                             self.sync.colour(),
                         );
+                        ui.painter().galley(
+                            egui::pos2(rect.left() + dot, rect.center().y - galley.size().y / 2.0),
+                            galley,
+                            colour,
+                        );
+                        let sync = sync
+                            .on_hover_cursor(egui::CursorIcon::PointingHand)
+                            .on_hover_text(self.sync.status(now));
                         if sync.clicked() {
                             self.sync.window_open = !self.sync.window_open;
                         }
@@ -737,45 +749,28 @@ impl App {
 
     /// The desktop's one menu: settings, backups and about.
     fn desktop_menu(&mut self, ui: &mut egui::Ui, context: &egui::Context) {
-        let mut units_changed = false;
-        let mut purpose = None;
-        let mut country = None;
         let mut sync = false;
         let mut import = false;
         let mut export = false;
         let mut demo = false;
         ui.menu_button(RichText::new("•••").size(14.0), |ui| {
             ui.set_min_width(230.0);
-            ui.menu_button("Units", |ui| {
-                units_changed = units::menu(ui, &mut self.units)
-            });
-            ui.menu_button(
-                format!(
-                    "Use for: {}",
-                    self.purpose.unwrap_or(Purpose::Hunting).name()
-                ),
-                |ui| {
-                    for choice in [Purpose::Hunting, Purpose::Shooting] {
-                        let current = self.purpose.unwrap_or(Purpose::Hunting) == choice;
-                        if ui
-                            .selectable_label(current, choice.name())
-                            .on_hover_text(choice.detail())
-                            .clicked()
-                        {
-                            purpose = Some(choice);
-                            ui.close_menu();
-                        }
-                    }
-                },
-            );
+            // Choices open a sheet: submenus would have no room to open at
+            // the window's right edge and would cover this menu instead.
+            let purpose = self.purpose.unwrap_or(Purpose::Hunting).name();
+            let mut rows = vec![
+                ("Units…".to_owned(), MenuSheet::Units),
+                (format!("Use for: {purpose}…"), MenuSheet::Purpose),
+            ];
             if self.hunting() {
-                ui.menu_button(
-                    format!(
-                        "Hunting rules: {}",
-                        self.country.map_or("none", Country::name)
-                    ),
-                    |ui| country = country_menu(ui, self.country),
-                );
+                let country = self.country.map_or("none", Country::name);
+                rows.push((format!("Hunting rules: {country}…"), MenuSheet::Country));
+            }
+            for (label, sheet) in rows {
+                if ui.button(label).clicked() {
+                    self.menu = Some(sheet);
+                    ui.close_menu();
+                }
             }
             let now = ui.ctx().input(|input| input.time);
             if ui
@@ -823,15 +818,6 @@ impl App {
         })
         .response
         .on_hover_text("Menu");
-        if units_changed {
-            self.units_changed(context);
-        }
-        if let Some(purpose) = purpose {
-            self.set_purpose(purpose);
-        }
-        if let Some(country) = country {
-            self.set_country(country);
-        }
         if sync {
             self.sync.window_open = true;
         }
@@ -1245,34 +1231,6 @@ fn country_choice(country: Option<Country>) -> (&'static str, &'static str) {
         Some(country) => (country.name(), country.rules().law),
         None => ("None", "No legal checks, just the ethical guidelines"),
     }
-}
-
-/// The countries to choose from; returns the choice.
-fn country_menu(ui: &mut egui::Ui, current: Option<Country>) -> Option<Option<Country>> {
-    let mut chosen = None;
-    ui.label(RichText::new("Hunting rules for").small())
-        .on_hover_text("Legal ammunition, seasons and shooting hours");
-    for country in Country::ALL.map(Some).into_iter().chain([None]) {
-        let (title, detail) = country_choice(country);
-        let clicked = ui
-            .horizontal(|ui| {
-                match country {
-                    Some(country) => {
-                        crate::flags::show(ui, country, 11.0);
-                    }
-                    None => ui.add_space(crate::flags::width(Country::Sweden, 11.0)),
-                }
-                ui.selectable_label(current == country, title)
-                    .on_hover_text(detail)
-                    .clicked()
-            })
-            .inner;
-        if clicked {
-            chosen = Some(country);
-            ui.close_menu();
-        }
-    }
-    chosen
 }
 
 /// A tab's icon, drawn in a 24-point box around `center`.
