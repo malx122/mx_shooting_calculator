@@ -547,6 +547,46 @@ pub enum LoadZero {
     Recorded(ZeroWeather),
 }
 
+/// What truing adjusts to make the calculation match a real shot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TruingMethod {
+    /// Scale the muzzle velocity: for loads without a chronograph.
+    Velocity,
+    /// Scale the bullet's drag (its BC the other way): for loads whose
+    /// velocity was measured.
+    Drag,
+}
+
+/// A long shot that showed where the calculation was off, and the factor
+/// found to make it match.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Truing {
+    pub method: TruingMethod,
+    pub range_m: f64,
+    /// What it took to hit centre: elevation in mrad, up positive.
+    pub elevation_mrad: f64,
+    /// Shot angle then, degrees.
+    #[serde(default)]
+    pub inclination_degrees: f64,
+    /// The weather then.
+    pub weather: ZeroWeather,
+    /// The velocity or drag multiplier that makes the calculation match.
+    pub factor: f64,
+}
+
+impl Truing {
+    fn problem(&self) -> Option<&'static str> {
+        if !(50.0..=3000.0).contains(&self.range_m) {
+            Some("the truing range must be 50–3000 m")
+        } else if !(0.5..=2.0).contains(&self.factor) {
+            Some("the truing factor is out of range")
+        } else {
+            self.weather.problem()
+        }
+    }
+}
+
 /// A bullet as shot from one particular rifle: chronographed velocities,
 /// where it hits relative to the rifle's zero, and the weather it was zeroed
 /// in. Everything here overrides the bullet's general data for this rifle.
@@ -564,6 +604,9 @@ pub struct RifleLoad {
     pub impact_offset_mrad: [f64; 2],
     #[serde(default)]
     pub zero: LoadZero,
+    /// A long shot the calculation was trued to, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truing: Option<Truing>,
     pub notes: String,
     pub updated_at: i64,
     // A single measured velocity, as exports before format 2 stored it.
@@ -582,6 +625,7 @@ impl RifleLoad {
             velocities: Vec::new(),
             impact_offset_mrad: [0.0, 0.0],
             zero: LoadZero::Rifle,
+            truing: None,
             notes: String::new(),
             updated_at: 0,
             muzzle_velocity_mps: None,
@@ -608,6 +652,7 @@ impl RifleLoad {
         self.velocities.is_empty()
             && self.impact_offset_mrad == [0.0, 0.0]
             && self.zero == LoadZero::Rifle
+            && self.truing.is_none()
     }
 
     /// Velocity against powder temperature. Two or more measurements at
@@ -651,6 +696,7 @@ impl RifleLoad {
             LoadZero::Recorded(weather) => weather.problem(),
             _ => None,
         };
+        let truing_problem = self.truing.as_ref().and_then(Truing::problem);
         let checks = [
             (
                 self.velocities.len() <= 10,
@@ -669,6 +715,7 @@ impl RifleLoad {
                 "impact offset must be under 50 mrad",
             ),
             (zero_problem.is_none(), zero_problem.unwrap_or_default()),
+            (truing_problem.is_none(), truing_problem.unwrap_or_default()),
         ];
         first_failure(&checks, "rifle load")
     }

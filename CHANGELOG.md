@@ -12,6 +12,8 @@ any release may still change things noticeably.
   (Open-Meteo): temperature, pressure, the ground's height and humidity are
   filled in. The forecast wind becomes a clock direction from the direction
   of your shot, which a phone can take from its compass.
+- **Truing:** enter what a long shot really took to hit centre and the
+  calculation adjusts the load's velocity or drag to match it.
 
 ## [0.5.0] - 2026-10-20
 

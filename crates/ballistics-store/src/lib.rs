@@ -27,7 +27,8 @@ pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
-    RifleLoad, TableColumns, TableSettings, VelocityModel, VelocityPoint, ZeroWeather,
+    RifleLoad, TableColumns, TableSettings, Truing, TruingMethod, VelocityModel, VelocityPoint,
+    ZeroWeather,
 };
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,

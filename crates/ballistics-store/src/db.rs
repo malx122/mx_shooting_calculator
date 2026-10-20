@@ -114,6 +114,9 @@ pub(crate) const MIGRATIONS: &[&str] = &[
         PRIMARY KEY (kind, id)
     );
 "#,
+    r#"
+    ALTER TABLE rifle_loads ADD COLUMN truing TEXT;
+"#,
 ];
 
 /// The setting holding the store's clock: the latest time it has stamped
@@ -576,14 +579,15 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
 pub(crate) fn put_load(connection: &Connection, load: &RifleLoad) -> Result<(), StoreError> {
     connection.execute(
         "INSERT INTO rifle_loads (id, rifle_id, bullet_id, velocities, impact_offset_right_mrad,
-             impact_offset_up_mrad, zero, notes, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+             impact_offset_up_mrad, zero, notes, updated_at, truing)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
          ON CONFLICT (id) DO UPDATE SET
              rifle_id = excluded.rifle_id, bullet_id = excluded.bullet_id,
              velocities = excluded.velocities,
              impact_offset_right_mrad = excluded.impact_offset_right_mrad,
              impact_offset_up_mrad = excluded.impact_offset_up_mrad, zero = excluded.zero,
-             notes = excluded.notes, updated_at = excluded.updated_at",
+             notes = excluded.notes, updated_at = excluded.updated_at,
+             truing = excluded.truing",
         params![
             load.id,
             load.rifle_id,
@@ -594,6 +598,9 @@ pub(crate) fn put_load(connection: &Connection, load: &RifleLoad) -> Result<(), 
             serde_json::to_string(&load.zero)?,
             load.notes,
             load.updated_at,
+            load.truing
+                .map(|truing| serde_json::to_string(&truing))
+                .transpose()?,
         ],
     )?;
     Ok(())
@@ -716,5 +723,9 @@ pub(crate) fn load_from_row(row: &Row<'_>) -> rusqlite::Result<RifleLoad> {
     load.zero = from_json_column(&row.get::<_, String>("zero")?)?;
     load.notes = row.get("notes")?;
     load.updated_at = row.get("updated_at")?;
+    load.truing = row
+        .get::<_, Option<String>>("truing")?
+        .map(|text| from_json_column(&text))
+        .transpose()?;
     Ok(load)
 }

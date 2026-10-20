@@ -7,11 +7,13 @@
 use std::f64::consts::PI;
 use std::sync::Arc;
 
+use ballistics_core::solver;
 use ballistics_core::{
     Atmosphere, BcBands, Coriolis, DragCurve, DragModel, Load, RangeRow, Scenario, Solution, Wind,
 };
 use ballistics_store::{
-    BcModel, Bullet, ClickUnit, Country, LoadZero, Rifle, RifleLoad, RulesLoad, ZeroWeather,
+    BcModel, Bullet, ClickUnit, Country, LoadZero, Rifle, RifleLoad, RulesLoad, Truing,
+    TruingMethod, ZeroWeather,
 };
 use serde::{Deserialize, Serialize};
 
@@ -117,10 +119,24 @@ pub fn scenario(
             LoadZero::SameAsShot => (atmosphere, powder_temperature_c),
             LoadZero::Recorded(weather) => recorded(weather),
         };
+    // A trued load scales its velocity, or its drag (the BC the other way).
+    let (velocity_factor, drag_factor) = match load.and_then(|load| load.truing) {
+        Some(Truing {
+            method: TruingMethod::Velocity,
+            factor,
+            ..
+        }) => (factor, 1.0),
+        Some(Truing {
+            method: TruingMethod::Drag,
+            factor,
+            ..
+        }) => (1.0, factor),
+        None => (1.0, 1.0),
+    };
     let bands: Vec<(f64, f64)> = bullet
         .bc_bands
         .iter()
-        .map(|band| (band.velocity_mps, band.bc))
+        .map(|band| (band.velocity_mps, band.bc / drag_factor))
         .collect();
     let offset = load.map_or([0.0, 0.0], |load| load.impact_offset_mrad);
     Scenario {
@@ -128,7 +144,7 @@ pub fn scenario(
             mass_kg: bullet.mass_g / 1000.0,
             diameter_m: bullet.diameter_mm / 1000.0,
             length_m: bullet.length_mm.map(|mm| mm / 1000.0),
-            ballistic_coefficient: bullet.ballistic_coefficient().unwrap_or(0.0),
+            ballistic_coefficient: bullet.ballistic_coefficient().unwrap_or(0.0) / drag_factor,
             drag_model: match bullet.drag_model {
                 BcModel::G7 => DragModel::G7,
                 BcModel::G1 | BcModel::Custom => DragModel::G1,
@@ -142,7 +158,7 @@ pub fn scenario(
                         bullet
                             .drag_curve
                             .iter()
-                            .map(|point| (point.mach, point.cd))
+                            .map(|point| (point.mach, point.cd * drag_factor))
                             .collect(),
                     )
                     .ok()
@@ -157,7 +173,7 @@ pub fn scenario(
             right_hand_twist: rifle.right_hand_twist,
         },
         load: Load {
-            muzzle_velocity: velocity.velocity_mps,
+            muzzle_velocity: velocity.velocity_mps * velocity_factor,
             reference_temperature_c: velocity.reference_temperature_c,
             temperature_sensitivity: velocity.per_degree,
         },
@@ -176,6 +192,143 @@ pub fn scenario(
         },
         spin_drift: conditions.spin_drift,
     }
+}
+
+impl Conditions {
+    /// The conditions recorded with a zero or a truing shot (no wind).
+    pub fn recorded(weather: &ZeroWeather, inclination_degrees: f64) -> Conditions {
+        Conditions {
+            temperature_c: weather.temperature_c,
+            pressure: Pressure::Station(weather.pressure_hpa),
+            humidity_percent: weather.humidity_percent,
+            powder_temperature_c: Some(weather.powder_temperature_c),
+            inclination_degrees,
+            wind_speed_mps: 0.0,
+            ..Conditions::default()
+        }
+    }
+
+    /// The weather part, to keep with a truing shot.
+    pub fn weather(&self) -> ZeroWeather {
+        ZeroWeather {
+            temperature_c: self.temperature_c,
+            pressure_hpa: self.pressure.station_hpa(),
+            humidity_percent: self.humidity_percent,
+            powder_temperature_c: self.powder_temperature_c(),
+        }
+    }
+}
+
+/// Why a load can't be trued to an observed shot.
+#[derive(Clone, Debug, PartialEq)]
+pub enum TruingError {
+    /// The range is too close to the zero for the drop to say much.
+    TooShort,
+    /// No factor within reason explains the shot: check the zero, the
+    /// range, the units or the bullet.
+    NoMatch { predicted_mrad: f64 },
+    /// The bullet doesn't reach the range.
+    OutOfReach,
+}
+
+impl std::fmt::Display for TruingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TruingError::TooShort => f.write_str(
+                "the drop at that range is too small to true from; use a longer range (300 m or more works best)",
+            ),
+            TruingError::NoMatch { predicted_mrad } => write!(
+                f,
+                "no sensible change explains that hold (the calculation says {predicted_mrad:.2} mrad); \
+                 check the zero, the range and the units"
+            ),
+            TruingError::OutOfReach => f.write_str("the bullet doesn't reach that range"),
+        }
+    }
+}
+
+/// How far each method may move the load: velocity ±20 %, drag half to
+/// double.
+fn truing_bounds(method: TruingMethod) -> (f64, f64) {
+    match method {
+        TruingMethod::Velocity => (0.8, 1.2),
+        TruingMethod::Drag => (0.5, 2.0),
+    }
+}
+
+/// The elevation (mrad) the calculation gives at `range_m` with `truing`.
+fn elevation_with(
+    rifle: &Rifle,
+    bullet: &Bullet,
+    load: &RifleLoad,
+    truing: Truing,
+    range_m: f64,
+) -> Option<f64> {
+    let mut trued = load.clone();
+    trued.truing = Some(truing);
+    let conditions = Conditions::recorded(&truing.weather, truing.inclination_degrees);
+    let solution = solver::solve(
+        &scenario(rifle, bullet, Some(&trued), &conditions),
+        range_m + 5.0,
+    )
+    .ok()?;
+    Some(solution.at(range_m)?.elevation_correction * 1000.0)
+}
+
+/// Finds the velocity or drag factor that makes the calculation give the
+/// elevation it took to hit centre at `range_m` (`elevation_mrad`, up
+/// positive) in `conditions`. Any truing the load had is replaced.
+pub fn true_load(
+    rifle: &Rifle,
+    bullet: &Bullet,
+    load: &RifleLoad,
+    method: TruingMethod,
+    range_m: f64,
+    elevation_mrad: f64,
+    conditions: &Conditions,
+) -> Result<Truing, TruingError> {
+    let base = Truing {
+        method,
+        range_m,
+        elevation_mrad,
+        inclination_degrees: conditions.inclination_degrees,
+        weather: conditions.weather(),
+        factor: 1.0,
+    };
+    let at = |factor: f64| elevation_with(rifle, bullet, load, Truing { factor, ..base }, range_m);
+    let predicted = at(1.0).ok_or(TruingError::OutOfReach)?;
+    if predicted.abs() < 1.0 {
+        return Err(TruingError::TooShort);
+    }
+    // More velocity means less to hold over; more drag means more.
+    let (mut low, mut high) = truing_bounds(method);
+    let miss = |factor: f64| at(factor).map(|elevation| elevation - elevation_mrad);
+    let (Some(at_low), Some(at_high)) = (miss(low), miss(high)) else {
+        return Err(TruingError::NoMatch {
+            predicted_mrad: predicted,
+        });
+    };
+    if at_low.signum() == at_high.signum() {
+        return Err(TruingError::NoMatch {
+            predicted_mrad: predicted,
+        });
+    }
+    for _ in 0..40 {
+        let middle = (low + high) / 2.0;
+        let Some(at_middle) = miss(middle) else { break };
+        if at_middle.signum() == at_low.signum() {
+            low = middle;
+        } else {
+            high = middle;
+        }
+        if high - low < 1e-5 {
+            break;
+        }
+    }
+    Ok(Truing {
+        factor: (low + high) / 2.0,
+        ..base
+    })
 }
 
 /// An angle in the rifle's click unit (mil or MOA).
@@ -404,6 +557,87 @@ mod tests {
         bullet.construction = ballistics_store::Construction::Bonded;
         let bonded = assess(&bullet, &solution, Country::Sweden);
         assert_eq!(bonded.verdict(1, "Moose").0, Allowed::Yes);
+    }
+
+    #[test]
+    fn truing_finds_the_velocity_and_drag_that_match_a_long_shot() {
+        let rifle = rifle();
+        let bullet = bullet();
+        let load = RifleLoad::new(&rifle.id, &bullet.id);
+        let conditions = Conditions::default();
+        // Pretend the real load is 3 % slower: what it took to hit at 400 m.
+        let slower = Truing {
+            method: TruingMethod::Velocity,
+            range_m: 400.0,
+            elevation_mrad: 0.0,
+            inclination_degrees: 0.0,
+            weather: conditions.weather(),
+            factor: 0.97,
+        };
+        let observed = elevation_with(&rifle, &bullet, &load, slower, 400.0).unwrap();
+        let trued = true_load(
+            &rifle,
+            &bullet,
+            &load,
+            TruingMethod::Velocity,
+            400.0,
+            observed,
+            &conditions,
+        )
+        .unwrap();
+        assert!((trued.factor - 0.97).abs() < 1e-3, "{trued:?}");
+        // The same shot explained by drag instead: more drag than the BC says.
+        let by_drag = true_load(
+            &rifle,
+            &bullet,
+            &load,
+            TruingMethod::Drag,
+            400.0,
+            observed,
+            &conditions,
+        )
+        .unwrap();
+        assert!(by_drag.factor > 1.0, "{by_drag:?}");
+        // Applied, both give the observed hold at 400 m.
+        for truing in [trued, by_drag] {
+            let mut trued_load = load.clone();
+            trued_load.truing = Some(truing);
+            let solution = solver::solve(
+                &scenario(&rifle, &bullet, Some(&trued_load), &conditions),
+                450.0,
+            )
+            .unwrap();
+            let elevation = solution.at(400.0).unwrap().elevation_correction * 1000.0;
+            assert!(
+                (elevation - observed).abs() < 0.01,
+                "{elevation} vs {observed}"
+            );
+        }
+        // Near the zero there is nothing to learn; far off, nothing fits.
+        assert_eq!(
+            true_load(
+                &rifle,
+                &bullet,
+                &load,
+                TruingMethod::Velocity,
+                120.0,
+                0.3,
+                &conditions
+            ),
+            Err(TruingError::TooShort)
+        );
+        assert!(matches!(
+            true_load(
+                &rifle,
+                &bullet,
+                &load,
+                TruingMethod::Velocity,
+                400.0,
+                observed * 3.0,
+                &conditions
+            ),
+            Err(TruingError::NoMatch { .. })
+        ));
     }
 
     #[test]

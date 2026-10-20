@@ -6,7 +6,7 @@ use ballistics_core::atmosphere::STANDARD_SEA_LEVEL_PRESSURE_HPA;
 use ballistics_core::{Coriolis, RangeRow, Scenario, Solution, SolveError, solver};
 use ballistics_store::{
     BcModel, Bullet, BulletKind, Catalog, ClickUnit, LoadZero, PLAIN_CROSSHAIR, Reticle, Rifle,
-    RifleLoad, Scope, Target, VelocityPoint,
+    RifleLoad, Scope, Target, Truing, TruingMethod, VelocityPoint,
 };
 
 use eframe::egui::{self, RichText};
@@ -246,6 +246,28 @@ pub struct CalculatorPage {
     target_search: String,
     /// The weather where the hunter is, when asked for.
     pub weather: crate::weather::Weather,
+    /// The truing shot being entered.
+    truing_form: TruingForm,
+}
+
+/// A long shot to true the calculation to, as entered.
+struct TruingForm {
+    range_m: f64,
+    /// In the rifle's click unit, up positive.
+    elevation: f64,
+    method: Option<ballistics_store::TruingMethod>,
+    error: Option<String>,
+}
+
+impl Default for TruingForm {
+    fn default() -> Self {
+        TruingForm {
+            range_m: 300.0,
+            elevation: 0.0,
+            method: None,
+            error: None,
+        }
+    }
 }
 
 impl CalculatorPage {
@@ -258,6 +280,7 @@ impl CalculatorPage {
             picker: None,
             target_search: String::new(),
             weather: crate::weather::Weather::default(),
+            truing_form: TruingForm::default(),
         }
     }
 
@@ -600,6 +623,8 @@ impl CalculatorPage {
     ) {
         let powder = self.powder_temperature_c();
         let today = self.inputs.temperature_c;
+        let conditions = self.inputs.conditions();
+        let form = &mut self.truing_form;
         let Some(draft) = self.load_draft.as_mut() else {
             return;
         };
@@ -611,10 +636,23 @@ impl CalculatorPage {
             (count, _) => format!("fitted to {count} measurements"),
         };
         let u = units::prefs(ui.ctx());
+        let velocity_factor = match draft.truing {
+            Some(Truing {
+                method: TruingMethod::Velocity,
+                factor,
+                ..
+            }) => factor,
+            _ => 1.0,
+        };
         ui.label(format!(
-            "Muzzle velocity {} with the powder at {}, {source}",
-            u.format(Quantity::Speed, model.velocity_at(powder)),
+            "Muzzle velocity {} with the powder at {}, {source}{}",
+            u.format(Quantity::Speed, model.velocity_at(powder) * velocity_factor),
             u.format(Quantity::Temperature, powder),
+            if velocity_factor != 1.0 {
+                ", trued"
+            } else {
+                ""
+            },
         ));
 
         egui::CollapsingHeader::new("This bullet in this rifle").id_salt("rifle-load").show(ui, |ui| {
@@ -696,6 +734,116 @@ impl CalculatorPage {
                     quantity(ui, "Station pressure", &mut weather.pressure_hpa, Quantity::Pressure, 500.0..=1100.0, 1.0);
                     number(ui, "Humidity", &mut weather.humidity_percent, 0.0..=100.0, 1.0, " %");
                 });
+            }
+
+            ui.separator();
+            ui.strong("Truing");
+            ui.weak(
+                "Shot far and found the calculation off? Enter what it took to hit centre, in today's \
+                 weather above, and the calculation is adjusted to match. The longest range you've \
+                 shot works best (300 m or more).",
+            );
+            if let Some(truing) = draft.truing {
+                let what = match truing.method {
+                    TruingMethod::Velocity => format!(
+                        "velocity ×{:.3} ({} instead of {})",
+                        truing.factor,
+                        u.format(Quantity::Speed, model.velocity_at(powder) * truing.factor),
+                        u.format(Quantity::Speed, model.velocity_at(powder)),
+                    ),
+                    TruingMethod::Drag => format!(
+                        "drag ×{:.3}{}",
+                        truing.factor,
+                        bullet.ballistic_coefficient().map_or(String::new(), |bc| format!(
+                            " (BC {:.3} instead of {bc:.3})",
+                            bc / truing.factor
+                        )),
+                    ),
+                };
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(format!(
+                        "Trued to {}, {:.2} {} up, at {}: {what}.",
+                        u.format(Quantity::Distance, truing.range_m),
+                        from_radians(rifle.click_unit, truing.elevation_mrad / 1000.0),
+                        unit_label(rifle.click_unit),
+                        u.format(Quantity::Temperature, truing.weather.temperature_c),
+                    ));
+                    if ui.small_button("Remove").clicked() {
+                        draft.truing = None;
+                    }
+                });
+                if (truing.factor - 1.0).abs() > 0.1 {
+                    ui.colored_label(
+                        ui.visuals().warn_fg_color,
+                        "That's a large correction. Check the range, the zero and the clicks \
+                         before trusting it.",
+                    );
+                }
+            }
+            let measured = !draft.velocities.is_empty();
+            let method = form.method.unwrap_or(if measured {
+                TruingMethod::Drag
+            } else {
+                TruingMethod::Velocity
+            });
+            let unit = rifle.click_unit;
+            grid(ui, "truing", |ui| {
+                quantity(ui, "Range", &mut form.range_m, Quantity::Distance, 50.0..=2000.0, 5.0);
+                ui.label("It took");
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::DragValue::new(&mut form.elevation)
+                            .speed(0.05)
+                            .fixed_decimals(2)
+                            .suffix(format!(" {}", unit_label(unit))),
+                    );
+                    ui.label("up to hit centre");
+                    ui.weak(format!(
+                        "({} clicks)",
+                        (form.elevation / rifle.click_value).round()
+                    ));
+                });
+                ui.end_row();
+                ui.label("Adjust");
+                ui.vertical(|ui| {
+                    let mut chosen = method;
+                    ui.radio_value(&mut chosen, TruingMethod::Velocity, "the velocity")
+                        .on_hover_text("When the velocity is from the box or a guess: no chronograph");
+                    ui.radio_value(&mut chosen, TruingMethod::Drag, "the drag (BC)")
+                        .on_hover_text("When the velocity was measured, so the BC is what's uncertain");
+                    if chosen != method {
+                        form.method = Some(chosen);
+                    }
+                    ui.weak(if measured {
+                        "Your velocity is measured, so the drag is the likely culprit."
+                    } else {
+                        "Without a measured velocity, the velocity is the likely culprit."
+                    });
+                });
+                ui.end_row();
+            });
+            if ui.button("Calculate the truing").clicked() {
+                let mut base = draft.clone();
+                base.truing = None;
+                let elevation_mrad = to_radians(unit, form.elevation) * 1000.0;
+                match ballistics_shot::true_load(
+                    rifle,
+                    bullet,
+                    &base,
+                    method,
+                    form.range_m,
+                    elevation_mrad,
+                    &conditions,
+                ) {
+                    Ok(truing) => {
+                        draft.truing = Some(truing);
+                        form.error = None;
+                    }
+                    Err(error) => form.error = Some(error.to_string()),
+                }
+            }
+            if let Some(error) = &form.error {
+                ui.colored_label(ui.visuals().warn_fg_color, error);
             }
 
             ui.separator();
@@ -1061,6 +1209,7 @@ fn same_content(a: &RifleLoad, b: &RifleLoad) -> bool {
         && a.impact_offset_mrad == b.impact_offset_mrad
         && a.zero == b.zero
         && a.notes == b.notes
+        && a.truing == b.truing
 }
 
 /// View settings changed in the results, applied by the page.

@@ -386,6 +386,19 @@ fn new_fields_round_trip_through_the_database() {
         pressure_hpa: 990.0,
         humidity_percent: 60.0,
     });
+    load.truing = Some(Truing {
+        method: TruingMethod::Drag,
+        range_m: 450.0,
+        elevation_mrad: 4.6,
+        inclination_degrees: -3.0,
+        weather: ZeroWeather {
+            temperature_c: -4.0,
+            powder_temperature_c: -4.0,
+            pressure_hpa: 1002.0,
+            humidity_percent: 80.0,
+        },
+        factor: 1.06,
+    });
     store.save_rifle_load(&mut load).unwrap();
 
     assert_eq!(store.rifle(&rifle.id).unwrap().unwrap(), rifle);

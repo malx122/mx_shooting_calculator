@@ -214,6 +214,11 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      was zeroed with, at the zero range. The engine tilts the bore by that
      angle.
    - **Zero weather:** the rifle's, the same as today, or recorded values.
+   - **Truing:** after a long shot (300 m or more works best), enter the
+     range and what it took to hit centre, in that day's weather. The
+     engine finds the muzzle velocity (when you have no chronograph) or the
+     drag (when the velocity is measured, so the BC is the doubt) that
+     matches, and uses it from then on. The AI tools use it too.
 
    Edits apply to the calculation immediately and are kept when saved.
 
