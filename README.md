@@ -92,7 +92,8 @@ switches to a one-column layout with bigger text and touch targets
   - **Range:** a drag ruler, ± steps, and distances from the dope table plus
     recent ranges.
   - **Shot angle:** an inclinometer dial and presets. In the browser, "Measure
-    with the phone" reads the phone's tilt.
+    with the phone" reads the phone's tilt. The rifle's **cant** is set here
+    too.
   - **Wind:** a clock dial for the direction and quick speeds.
   - **Target:** search, recent targets, and **No target** (just the reticle
     and the impact point).
@@ -426,7 +427,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 
 | Crate | What it does |
 |---|---|
-| `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, spin drift, Coriolis and the hunting analyses. No dependencies, no I/O. |
+| `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, cant, spin drift, aerodynamic jump, Coriolis and the hunting analyses. No dependencies, no I/O. |
 | `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
 | `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. `cards/` lays out the printable cards once, in millimetres, for both the preview and a hand-written PDF (Helvetica, nothing embedded). |
 | `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
@@ -609,8 +610,8 @@ Edit the JSON directly and run the tests.
 - **Lapua Naturalis** has unusually low published G1 BCs (for example 0.201
   for the 6.5 mm 140 gr). Lapua's own velocity tables confirm them.
 - **Bullet length** is missing for most factory loads. Without it the app
-  cannot compute stability or spin drift and says so; enter the length if you
-  know it.
+  cannot compute stability, spin drift or aerodynamic jump and says so;
+  enter the length if you know it.
 - **RWS is not included:** its website asks AI crawlers not to collect its
   pages.
 
@@ -619,6 +620,22 @@ Edit the JSON directly and run the tests.
 `crates/ballistics-core/src/tests.rs` checks analytic limits and physical
 behaviour. It also checks agreement with py-ballisticcalc 3.1.1, an
 independent solver: drop agrees within 0.1 cm at 1000 m on level shots.
+
+Two effects are added to the point-mass flight:
+
+- **Aerodynamic jump:** a crosswind throws a spinning bullet slightly up or
+  down as it leaves the muzzle. The app uses Bryan Litz's fit,
+  (0.01·Sg − 0.0024·L + 0.032) MOA per mph of crosswind, with Sg the
+  stability and L the bullet's length in calibres: with a right-hand twist,
+  wind from the left lifts the bullet and wind from the right lowers it.
+  It needs the bullet's length, and can be switched off.
+- **Cant:** a rifle tilted about the line of sight turns the bore's own
+  geometry (its height under the scope and its angle up to the line of
+  sight) with it, while gravity and wind stay put. A dead-on hold then
+  lands to the side of the tilt and a little low, by the bore line's height
+  over the line of sight times the sine of the cant (5° at 300 m: a few
+  centimetres). The holds are worked out for the tilted reticle, and the
+  calculator says how far a level shot would differ.
 
 A point-mass model with one BC is very good at hunting ranges, but it is only
 as good as the BC and muzzle velocity you give it. Chronograph your rifle and

@@ -37,6 +37,7 @@ pub fn list() -> Value {
         "wind_speed_mps": {"type": "number", "description": "Wind speed in m/s. Default 0 (no wind)."},
         "wind_clock": {"type": "number", "description": "Where the wind comes FROM, as a clock face: 12 head-on, 3 from the right, 9 from the left, 6 from behind. Default 3."},
         "angle_degrees": {"type": "number", "description": "Shot angle: positive uphill, negative downhill. Default 0."},
+        "cant_degrees": {"type": "number", "description": "Rifle tilted about the line of sight: positive with the scope's top to the right. Default 0."},
         "temperature_c": {"type": "number", "description": "Air temperature in °C. Default: the weather last entered in the app."},
         "pressure_hpa": {"type": "number", "description": "Station (local, barometer) pressure in hPa. Default: from the app."},
         "humidity_percent": {"type": "number", "description": "Relative humidity in percent. Default: from the app."},
@@ -602,6 +603,7 @@ fn conditions(store: &Store, arguments: &Value) -> (Conditions, String) {
     conditions.wind_speed_mps = number("wind_speed_mps").unwrap_or(0.0);
     conditions.wind_clock = number("wind_clock").unwrap_or(3.0);
     conditions.inclination_degrees = number("angle_degrees").unwrap_or(0.0);
+    conditions.cant_degrees = number("cant_degrees").unwrap_or(0.0);
     let wind = if conditions.wind_speed_mps > 0.0 {
         format!(
             "wind {} m/s from {} o'clock",
@@ -625,7 +627,11 @@ fn conditions(store: &Store, arguments: &Value) -> (Conditions, String) {
             angle if angle < 0.0 => format!("{}° downhill", -angle),
             _ => "level".into(),
         }
-    );
+    ) + &match conditions.cant_degrees {
+        cant if cant > 0.0 => format!(", rifle canted {cant}° right"),
+        cant if cant < 0.0 => format!(", rifle canted {}° left", -cant),
+        _ => String::new(),
+    };
     (conditions, description)
 }
 

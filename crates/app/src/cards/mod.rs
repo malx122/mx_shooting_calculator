@@ -136,6 +136,7 @@ impl Subject {
             wind_clock: 3.0,
             inclination_degrees: 0.0,
             coriolis: None,
+            cant_degrees: 0.0,
             ..self.conditions.clone()
         };
         let scenario =

@@ -34,8 +34,10 @@ fn scenario() -> Scenario {
             wind: Wind::CALM,
             inclination_degrees: 0.0,
             coriolis: None,
+            cant_degrees: 0.0,
         },
         spin_drift: true,
+        aerodynamic_jump: true,
     }
 }
 
@@ -253,6 +255,8 @@ fn matches_an_independent_reference_solver() {
         speed: 4.0,
         from_degrees: 90.0,
     };
+    // The reference is a plain point-mass solver: no aerodynamic jump.
+    long_range.aerodynamic_jump = false;
     let cases = [
         (
             scenario(),
@@ -356,4 +360,83 @@ fn a_drag_curve_equal_to_the_g7_model_gives_the_same_trajectory() {
             "{range} m"
         );
     }
+}
+
+#[test]
+fn a_crosswind_from_the_right_throws_a_right_hand_twist_bullet_down() {
+    let windy = |from_degrees: f64, jump: bool, right_hand: bool| {
+        let mut s = scenario();
+        s.shot.wind = Wind {
+            speed: 4.0,
+            from_degrees,
+        };
+        s.aerodynamic_jump = jump;
+        s.rifle.right_hand_twist = right_hand;
+        row(&s, 300.0).drop
+    };
+    let from_right = windy(90.0, true, true) - windy(90.0, false, true);
+    let from_left = windy(270.0, true, true) - windy(270.0, false, true);
+    assert!(
+        from_right < 0.0 && from_left > 0.0,
+        "{from_right} {from_left}"
+    );
+    assert!((from_right + from_left).abs() < 1e-3);
+    // A left-hand twist turns it round.
+    assert!(windy(90.0, true, false) - windy(90.0, false, false) > 0.0);
+    // Litz: (0.01·Sg − 0.0024·L + 0.032) MOA per mph, here about 0.3 MOA
+    // for 4 m/s, a few centimetres at 300 m.
+    let s = scenario();
+    let sg = solver::solve(&s, 100.0).unwrap().stability.unwrap();
+    let moa = (0.01 * sg - 0.0024 * (0.031 / 0.00782) + 0.032) * 4.0 * 2.236_936;
+    let expected = moa * std::f64::consts::PI / (180.0 * 60.0) * 300.0;
+    assert!(
+        (from_right.abs() - expected).abs() < 1e-3,
+        "{from_right} {expected}"
+    );
+    // Head and tail winds give no jump.
+    assert!((windy(0.0, true, true) - windy(0.0, false, true)).abs() < 1e-9);
+}
+
+#[test]
+fn a_cant_to_the_right_lands_low_and_right() {
+    let level = solver::solve(&scenario(), 410.0).unwrap();
+    let mut canted_scenario = scenario();
+    canted_scenario.shot.cant_degrees = 5.0;
+    let canted = solver::solve(&canted_scenario, 410.0).unwrap();
+    let range = 400.0;
+    let (flat, tilted) = (level.at(range).unwrap(), canted.at(range).unwrap());
+    // No cant, no change.
+    assert_eq!(level.cant_shift(range), Some((0.0, 0.0)));
+    let (right, up) = canted.cant_shift(range).unwrap();
+    assert!(right > 0.0 && up < 0.0, "{right} {up}");
+    // A dead-on hold: the bore's line (r·θ − sight height over the line of
+    // sight) turns with the rifle, gravity doesn't. Sideways that is
+    // (r·θ − h)·sin(cant).
+    let bore_line = range * level.bore[1] - level.sight_height;
+    assert!(
+        (right - bore_line * 5f64.to_radians().sin()).abs() < 1e-3,
+        "{right}"
+    );
+    assert!((tilted.windage - flat.windage - right).abs() < 1e-9);
+    // The correction, held in the tilted reticle, brings the bullet back
+    // onto the line of sight.
+    let (sin, cos) = 5f64.to_radians().sin_cos();
+    let [bore_right, bore_up] = canted.bore;
+    let aim = (
+        range * (bore_right + tilted.windage_correction),
+        range * (bore_up + tilted.elevation_correction) - canted.sight_height,
+    );
+    let pushed = (
+        flat.windage - range * bore_right,
+        flat.drop - (range * bore_up - canted.sight_height),
+    );
+    let lands = (
+        aim.0 * cos + aim.1 * sin + pushed.0,
+        -aim.0 * sin + aim.1 * cos + pushed.1,
+    );
+    assert!(lands.0.abs() < 1e-9 && lands.1.abs() < 1e-9, "{lands:?}");
+    // In the tilted reticle "up" leans right: the hold goes left by the
+    // fall × sin(cant), and up by only the fall × cos(cant).
+    assert!(tilted.windage_correction < flat.windage_correction);
+    assert!(tilted.elevation_correction < flat.elevation_correction);
 }

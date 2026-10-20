@@ -60,6 +60,10 @@ pub struct Inputs {
     pub latitude_degrees: f64,
     pub azimuth_degrees: f64,
     pub spin_drift: bool,
+    /// The jump a crosswind gives the bullet at the muzzle.
+    pub aerodynamic_jump: bool,
+    /// The rifle tilted, degrees: positive with the scope's top to the right.
+    pub cant_degrees: f64,
     pub target_range_m: f64,
     /// The target: one of the hunter's own or the catalog's; `None` for
     /// no target (just the reticle and the shot).
@@ -107,6 +111,8 @@ impl Default for Inputs {
             latitude_degrees: 60.0,
             azimuth_degrees: 0.0,
             spin_drift: true,
+            aerodynamic_jump: true,
+            cant_degrees: 0.0,
             target_range_m: 150.0,
             target_id: Some(DEFAULT_TARGET.to_owned()),
             recent_targets: Vec::new(),
@@ -148,6 +154,8 @@ impl Inputs {
                 azimuth_degrees: self.azimuth_degrees,
             }),
             spin_drift: self.spin_drift,
+            aerodynamic_jump: self.aerodynamic_jump,
+            cant_degrees: self.cant_degrees,
         }
     }
 }
@@ -679,7 +687,11 @@ impl CalculatorPage {
     ) {
         let powder = self.powder_temperature_c();
         let today = self.inputs.temperature_c;
-        let conditions = self.inputs.conditions();
+        // A truing shot is taken level: the cant is the shooter's, not the load's.
+        let conditions = ballistics_shot::Conditions {
+            cant_degrees: 0.0,
+            ..self.inputs.conditions()
+        };
         let form = &mut self.truing_form;
         let Some(draft) = self.load_draft.as_mut() else {
             return;
@@ -1064,6 +1076,10 @@ impl CalculatorPage {
                 ui.label("");
                 ui.weak("positive uphill, negative downhill");
                 ui.end_row();
+                number(ui, "Cant", &mut inputs.cant_degrees, -30.0..=30.0, 0.5, "°");
+                ui.label("");
+                ui.weak("the rifle tilted: positive with the scope's top to the right");
+                ui.end_row();
                 quantity(
                     ui,
                     "Animal crossing at",
@@ -1077,6 +1093,14 @@ impl CalculatorPage {
                 ui.end_row();
                 ui.label("Spin drift");
                 ui.checkbox(&mut inputs.spin_drift, "include");
+                ui.end_row();
+                ui.label("Aerodynamic jump");
+                ui.checkbox(&mut inputs.aerodynamic_jump, "include")
+                    .on_hover_text(
+                        "A crosswind throws a spinning bullet a little up or down as it leaves \
+                     the muzzle (with a right-hand twist, wind from the left lifts it). Needs \
+                     the bullet's length.",
+                    );
                 ui.end_row();
                 ui.label("Coriolis");
                 ui.checkbox(&mut inputs.coriolis, "include");
@@ -1606,6 +1630,25 @@ impl ResultsView<'_> {
     }
 
     fn warnings(&self, ui: &mut egui::Ui, solution: &Solution) {
+        let cant = self.inputs.cant_degrees;
+        if cant != 0.0
+            && let Some((right, up)) = solution.cant_shift(self.inputs.target_range_m)
+        {
+            let u = units::prefs(ui.ctx());
+            ui.colored_label(
+                ui.visuals().warn_fg_color,
+                format!(
+                    "Canted {:.1}° {}: a dead-on hold lands {} {} and {} {} of a level one. \
+                     The holds above are for the tilted reticle; better to hold the rifle level.",
+                    cant.abs(),
+                    if cant > 0.0 { "right" } else { "left" },
+                    u.format(Quantity::ShortLength, right.abs() * 100.0),
+                    if right >= 0.0 { "right" } else { "left" },
+                    u.format(Quantity::ShortLength, up.abs() * 100.0),
+                    if up >= 0.0 { "higher" } else { "lower" },
+                ),
+            );
+        }
         if let Some(assessment) = &self.assessment
             && let Some(needed) = self
                 .aim

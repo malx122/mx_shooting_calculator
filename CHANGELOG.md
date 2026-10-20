@@ -26,6 +26,12 @@ any release may still change things noticeably.
   five fonts and colours per band and per range. The strip allows for the
   label's thickness (paper, sticker, photo paper, laminated or your own),
   so its ends meet round the turret.
+- **Aerodynamic jump:** a crosswind now lifts or lowers the bullet a little
+  at the muzzle (Litz's fit), when the bullet's length is known. On by
+  default; it can be switched off beside spin drift.
+- **Cant:** enter how much the rifle is tilted, and the holds allow for it;
+  the calculator says how far a dead-on hold lands from a level one. The AI
+  tools take a cant too.
 
 ## [0.5.0] - 2026-10-20
 

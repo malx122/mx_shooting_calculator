@@ -54,6 +54,10 @@ pub struct Conditions {
     /// Latitude and the shot's direction (degrees from north), for Coriolis.
     pub coriolis: Option<Coriolis>,
     pub spin_drift: bool,
+    /// The jump a crosswind gives the bullet at the muzzle.
+    pub aerodynamic_jump: bool,
+    /// The rifle tilted: positive with the scope's top to the right.
+    pub cant_degrees: f64,
 }
 
 impl Default for Conditions {
@@ -72,6 +76,8 @@ impl Default for Conditions {
             inclination_degrees: 0.0,
             coriolis: None,
             spin_drift: true,
+            aerodynamic_jump: true,
+            cant_degrees: 0.0,
         }
     }
 }
@@ -189,8 +195,10 @@ pub fn scenario(
             },
             inclination_degrees: conditions.inclination_degrees,
             coriolis: conditions.coriolis,
+            cant_degrees: conditions.cant_degrees,
         },
         spin_drift: conditions.spin_drift,
+        aerodynamic_jump: conditions.aerodynamic_jump,
     }
 }
 

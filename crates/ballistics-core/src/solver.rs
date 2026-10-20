@@ -20,6 +20,8 @@ const EARTH_ROTATION_RAD_PER_S: f64 = 7.292_115e-5;
 /// BC in lb/in² (the number printed on ammunition boxes) to kg/m².
 const BC_LB_PER_IN2_TO_KG_PER_M2: f64 = 703.069_58;
 const TIME_STEP_S: f64 = 0.000_5;
+const MPH_PER_MPS: f64 = 2.236_936;
+const RAD_PER_MOA: f64 = std::f64::consts::PI / (180.0 * 60.0);
 const MAX_FLIGHT_TIME_S: f64 = 15.0;
 const MIN_SPEED: f64 = 20.0;
 
@@ -187,6 +189,9 @@ pub struct Conditions {
     /// Angle of the line of sight: positive uphill, negative downhill.
     pub inclination_degrees: f64,
     pub coriolis: Option<Coriolis>,
+    /// The rifle tilted about the line of sight, as the shooter sees it:
+    /// positive with the top of the scope to the right.
+    pub cant_degrees: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -203,6 +208,9 @@ pub struct Scenario {
     pub impact_offset: [f64; 2],
     pub shot: Conditions,
     pub spin_drift: bool,
+    /// The small up or down jump a crosswind gives a spinning bullet as it
+    /// leaves the muzzle.
+    pub aerodynamic_jump: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -266,23 +274,80 @@ pub struct Solution {
     pub zero_windage: f64,
     pub samples: Vec<Sample>,
     pub mass_kg: f64,
+    /// The cant, radians (positive: scope's top to the right).
+    pub cant: f64,
+    /// The scope's height above the bore.
+    pub sight_height: f64,
+    /// The bore's angles to the line of sight as the bullet leaves:
+    /// [right, up], the zero's plus the load's impact offset.
+    pub bore: [f64; 2],
 }
 
 impl Solution {
     /// Trajectory values at a slant range, or `None` beyond the computed path.
+    /// With a cant, the drop and windage are where a dead-on hold lands and
+    /// the corrections are what to dial or hold in the tilted reticle.
     pub fn at(&self, range: f64) -> Option<RangeRow> {
         let sample = interpolate(&self.samples, range)?;
+        let (drop, windage, elevation_correction, windage_correction) = if self.cant == 0.0 {
+            (
+                sample.drop,
+                sample.windage,
+                (-sample.drop).atan2(range),
+                (-sample.windage).atan2(range),
+            )
+        } else {
+            self.canted(&sample)
+        };
         Some(RangeRow {
             range,
             time: sample.time,
-            drop: sample.drop,
-            windage: sample.windage,
-            elevation_correction: (-sample.drop).atan2(range),
-            windage_correction: (-sample.windage).atan2(range),
+            drop,
+            windage,
+            elevation_correction,
+            windage_correction,
             velocity: sample.velocity,
             mach: sample.mach,
             energy_j: kinetic_energy(self.mass_kg, sample.velocity),
         })
+    }
+
+    /// The canted shot. The bore's own geometry (its height under the
+    /// scope and its angles to the line of sight) turns with the rifle,
+    /// gravity and wind don't. In the rifle's frame the bore puts the
+    /// bullet at `bore` = (r·right, r·up − sight height) before gravity and
+    /// wind move it by `pushed`; canted, `bore` turns by the cant. The
+    /// correction is the extra angle, in the rifle's own frame, that brings
+    /// the turned bore and the push back onto the line of sight.
+    fn canted(&self, sample: &Sample) -> (f64, f64, f64, f64) {
+        let r = sample.range.max(1e-6);
+        let (sin, cos) = self.cant.sin_cos();
+        let [right, up] = self.bore;
+        let bore = (r * right, r * up - self.sight_height);
+        let pushed = (sample.windage - bore.0, sample.drop - bore.1);
+        // Turning the rifle clockwise (as the shooter sees it) by the cant
+        // takes its (right, up) to (x·cos + y·sin, −x·sin + y·cos).
+        let windage = bore.0 * cos + bore.1 * sin + pushed.0;
+        let drop = -bore.0 * sin + bore.1 * cos + pushed.1;
+        // What the rifle's frame must hold: the push turned back, reversed.
+        let need = (
+            -(pushed.0 * cos - pushed.1 * sin),
+            -(pushed.0 * sin + pushed.1 * cos),
+        );
+        let windage_correction = need.0 / r - right;
+        let elevation_correction = (need.1 + self.sight_height) / r - up;
+        (drop, windage, elevation_correction, windage_correction)
+    }
+
+    /// Where a canted dead-on hold lands compared with a level one at a
+    /// range: (right, up), metres. Zero without a cant.
+    pub fn cant_shift(&self, range: f64) -> Option<(f64, f64)> {
+        let sample = interpolate(&self.samples, range)?;
+        if self.cant == 0.0 {
+            return Some((0.0, 0.0));
+        }
+        let (drop, windage, _, _) = self.canted(&sample);
+        Some((windage - sample.windage, drop - sample.drop))
     }
 }
 
@@ -304,7 +369,14 @@ pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError
         shot.inclination_degrees.to_radians() + zero_elevation + offset_up,
         zero_windage + offset_right,
     );
-    let samples = flight.fly(launch, |sample| sample.range < max_range);
+    let mut samples = flight.fly(launch, |sample| sample.range < max_range);
+    if scenario.aerodynamic_jump
+        && let Some(jump) = aerodynamic_jump(scenario, stability)
+    {
+        for sample in &mut samples {
+            sample.drop += jump * sample.range;
+        }
+    }
     Ok(Solution {
         muzzle_velocity,
         stability,
@@ -312,7 +384,31 @@ pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError
         zero_windage,
         samples,
         mass_kg: scenario.bullet.mass_kg,
+        cant: shot.cant_degrees.to_radians(),
+        sight_height: scenario.rifle.sight_height_m,
+        bore: [zero_windage + offset_right, zero_elevation + offset_up],
     })
+}
+
+/// The vertical angle (radians, up positive) a crosswind gives the bullet
+/// at the muzzle: Litz's fit, (0.01·Sg − 0.0024·L + 0.032) MOA per mph of
+/// crosswind, L the bullet's length in calibres. With a right-hand twist,
+/// wind from the left throws it up, from the right down. Needs the
+/// stability, so the bullet's length.
+pub fn aerodynamic_jump(scenario: &Scenario, stability: Option<f64>) -> Option<f64> {
+    let sg = stability?;
+    let bullet = &scenario.bullet;
+    let calibres = bullet.length_m? / bullet.diameter_m;
+    let wind = scenario.shot.wind;
+    // Wind from the right (90°) is positive.
+    let from_right_mph = wind.speed * wind.from_degrees.to_radians().sin() * MPH_PER_MPS;
+    let moa_per_mph = 0.01 * sg - 0.0024 * calibres + 0.032;
+    let twist = if scenario.rifle.right_hand_twist {
+        1.0
+    } else {
+        -1.0
+    };
+    Some(-twist * moa_per_mph * from_right_mph * RAD_PER_MOA)
 }
 
 /// Flies a level, calm-air shot in the shot's atmosphere with the bore
@@ -327,6 +423,7 @@ pub fn fly_level(
         wind: Wind::CALM,
         inclination_degrees: 0.0,
         coriolis: None,
+        cant_degrees: 0.0,
         ..scenario.shot
     };
     let velocity = scenario.load.velocity_at(conditions.powder_temperature_c);
@@ -436,6 +533,7 @@ fn zero_angles(scenario: &Scenario) -> Result<(f64, f64), SolveError> {
         wind: Wind::CALM,
         inclination_degrees: 0.0,
         coriolis: None,
+        cant_degrees: 0.0,
     };
     let velocity = scenario.load.velocity_at(conditions.powder_temperature_c);
     let stability = muzzle_stability(scenario, velocity, &conditions.atmosphere);

@@ -241,7 +241,11 @@ impl CalculatorPage {
             ),
             (
                 Picker::Angle,
-                "Angle".to_owned(),
+                if self.inputs.cant_degrees == 0.0 {
+                    "Angle".to_owned()
+                } else {
+                    format!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
+                },
                 format!("{:+.0}°", self.inputs.inclination_degrees),
             ),
             (
@@ -388,6 +392,18 @@ impl CalculatorPage {
             });
             #[cfg(target_arch = "wasm32")]
             measure_with_phone(ui, &mut inputs.inclination_degrees);
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.label("Cant");
+                ui.add(
+                    egui::DragValue::new(&mut inputs.cant_degrees)
+                        .range(-30.0..=30.0)
+                        .speed(0.5)
+                        .max_decimals(1)
+                        .suffix("°"),
+                );
+                ui.weak("rifle tilted; + with the scope's top to the right");
+            });
             ui.add_space(6.0);
             let width = (ui.available_width() - 6.0 * 6.0) / 7.0;
             ui.horizontal(|ui| {
