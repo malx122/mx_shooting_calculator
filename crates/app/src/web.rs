@@ -24,11 +24,16 @@ pub type PickedSlot = Rc<RefCell<Option<PickedFile>>>;
 
 /// Offers `text` as a file download named `file_name`.
 pub fn download(file_name: &str, text: &str) -> Result<(), String> {
+    download_bytes(file_name, text.as_bytes(), "application/json")
+}
+
+/// Saves bytes as a file in the browser's downloads.
+pub fn download_bytes(file_name: &str, bytes: &[u8], mime: &str) -> Result<(), String> {
     let fail = |what: &str| format!("could not save the file ({what})");
-    let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(text));
+    let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let options = web_sys::BlobPropertyBag::new();
-    options.set_type("application/json");
-    let blob = web_sys::Blob::new_with_str_sequence_and_options(&parts, &options)
+    options.set_type(mime);
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &options)
         .map_err(|_| fail("blob"))?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(|_| fail("url"))?;
     let document = web_sys::window()

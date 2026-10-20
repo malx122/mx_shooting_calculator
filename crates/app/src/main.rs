@@ -1,6 +1,7 @@
 mod app;
 mod bullets;
 mod calculator;
+mod cards;
 mod changelog;
 mod figure;
 mod flags;

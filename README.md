@@ -286,6 +286,28 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    have its own minimum velocity. That velocity replaces the bullet's
    expansion velocity and your general one; small game sets none, since
    it doesn't need expansion.
+5. **Cards:** printable cards for the rifle, bullet and target chosen in
+   Calculate, in today's weather. The preview is the card as it prints;
+   **Save PDF** saves it (on the desktop it then opens in the PDF viewer;
+   on a phone it goes to the downloads, ready to print or keep).
+   - **Dope card:** what to dial or hold at each range. Pick the size
+     (a bank card, A7, A6, A5 or A4, portrait or landscape; small cards
+     can fill an A4 sheet with cut lines), the ranges (or a quick choice:
+     to the ethical limit, driven hunt, stand, long), one or more
+     temperatures (an elevation column each: autumn, winter, all year),
+     elevation as clicks, mil or MOA, or cm, wind columns for chosen
+     speeds, and speed, energy and time of flight. The text is made as
+     large as the card allows, and a meter says whether it is easy to
+     read, small, or too small. A red line marks the ethical limit and a
+     green bar the ranges where a dead-on hold stays in the vital zone.
+   - **Stand card:** a map of a hunting stand, facing its direction, over
+     90°, 180° or all round: range rings with the hold at each, the
+     dead-on zone in green, beyond the ethical limit in red, the shooting
+     sector the hunt leader gave (outside it greyed) and the directions
+     never to shoot (roads, houses, the next stand) hatched. Landmarks
+     with their range and direction are marked on the map and listed with
+     their hold; on a phone, 🧭 takes a direction from the compass. Spare
+     room becomes lines for notes. Stands are kept on the device.
 
 **Units** (in the header): metric or imperial for each quantity separately.
 Distance, drop, sight height, velocity, wind speed, temperature, sensitivity,
@@ -385,7 +407,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 |---|---|
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, spin drift, Coriolis and the hunting analyses. No dependencies, no I/O. |
 | `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
-| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. |
+| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. `cards/` lays out the printable cards once, in millimetres, for both the preview and a hand-written PDF (Helvetica, nothing embedded). |
 | `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
 | `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
 | `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |

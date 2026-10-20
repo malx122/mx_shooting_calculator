@@ -163,7 +163,7 @@ fn animal(drawing: &Drawing, height: f64, length: f64, antlers: bool) -> (Vec<Pa
 
 /// Triangles filling a simple polygon by ear clipping, as corner indices;
 /// none when it is convex (or too broken to fill).
-fn triangulate(points: &[[f64; 2]]) -> Vec<[u32; 3]> {
+pub fn triangulate(points: &[[f64; 2]]) -> Vec<[u32; 3]> {
     let n = points.len();
     if n < 4 {
         return Vec::new();

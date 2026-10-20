@@ -284,6 +284,46 @@ impl CalculatorPage {
         }
     }
 
+    /// What a printed card is for: the chosen rifle, bullet (with its saved
+    /// data for the rifle) and target, in today's weather.
+    pub fn card_subject(&self, data: &Data) -> Option<crate::cards::Subject> {
+        let rifle = self
+            .inputs
+            .rifle_id
+            .as_ref()
+            .and_then(|id| data.rifles.iter().find(|rifle| &rifle.id == id))
+            .or(data.rifles.first())?;
+        let fits = |bullet: &&Bullet| bullet.caliber == rifle.caliber;
+        let bullet = self
+            .inputs
+            .bullet_id
+            .as_ref()
+            .and_then(|id| {
+                data.bullets
+                    .iter()
+                    .filter(fits)
+                    .find(|bullet| &bullet.id == id)
+            })
+            .or_else(|| data.bullets.iter().find(fits))?;
+        let aim = Aim::new(&self.inputs, data);
+        Some(crate::cards::Subject {
+            load: data
+                .loads
+                .iter()
+                .find(|load| load.rifle_id == rifle.id && load.bullet_id == bullet.id)
+                .cloned(),
+            target: aim.target.as_ref().map(|target| target.name.clone()),
+            vital_cm: aim.vital_diameter_cm,
+            min_energy_j: aim.min_energy_j,
+            min_velocity_mps: aim
+                .min_velocity_mps
+                .unwrap_or_else(|| ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)),
+            conditions: self.inputs.conditions(),
+            rifle: rifle.clone(),
+            bullet: bullet.clone(),
+        })
+    }
+
     /// Drops unsaved rifle-load edits, e.g. after the load was reset.
     pub fn forget_load_draft(&mut self) {
         self.load_draft = None;

@@ -14,6 +14,11 @@ any release may still change things noticeably.
   of your shot, which a phone can take from its compass.
 - **Truing:** enter what a long shot really took to hit centre and the
   calculation adjusts the load's velocity or drag to match it.
+- **Cards:** printable dope cards (bank card to A4, several temperatures
+  and wind speeds, the ethical limit and dead-on ranges marked, text sized
+  to fit with a readability meter) and stand cards (a map of the stand with
+  range rings and holds, the shooting sector, no-shoot directions and
+  landmarks). Saved as PDF.
 
 ## [0.5.0] - 2026-10-20
 

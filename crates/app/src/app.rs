@@ -10,6 +10,7 @@ use eframe::egui::{self, RichText};
 
 use crate::bullets::BulletsPage;
 use crate::calculator::{CalculatorPage, Inputs};
+use crate::cards::{CardSettings, CardsPage};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
 use crate::rifles::RiflesPage;
@@ -19,6 +20,8 @@ use crate::theme;
 use crate::units::{self, UnitPrefs};
 
 const CALCULATOR_SETTINGS: &str = "calculator";
+/// The card choices and the hunter's stands.
+const CARD_SETTINGS: &str = "cards";
 /// Whose hunting rules to check: a country, or `null` for none. Absent
 /// until the hunter chooses; then the device's language decides.
 const COUNTRY_SETTING: &str = "country";
@@ -32,6 +35,7 @@ pub enum Page {
     Rifles,
     Bullets,
     Targets,
+    Cards,
 }
 
 pub enum Action {
@@ -131,6 +135,8 @@ pub struct App {
     rifles: RiflesPage,
     bullets: BulletsPage,
     targets: TargetsPage,
+    cards: CardsPage,
+    saved_cards: CardSettings,
     saved_inputs: Inputs,
     units: UnitPrefs,
     status: Option<Status>,
@@ -161,6 +167,11 @@ impl App {
             .ok()
             .flatten()
             .unwrap_or_default();
+        let cards: CardSettings = store
+            .setting(CARD_SETTINGS)
+            .ok()
+            .flatten()
+            .unwrap_or_default();
         #[allow(unused_mut)]
         let mut sync = Sync::new(&store);
         #[cfg(target_arch = "wasm32")]
@@ -185,6 +196,8 @@ impl App {
             rifles: RiflesPage::default(),
             bullets: BulletsPage::default(),
             targets: TargetsPage::default(),
+            cards: CardsPage::new(cards.clone()),
+            saved_cards: cards,
             saved_inputs: inputs,
             units,
             status: None,
@@ -414,9 +427,17 @@ impl App {
     /// Saves the calculator inputs when they change, but not mid-drag.
     fn persist_inputs(&mut self, context: &egui::Context) {
         let inputs = &self.calculator.inputs;
-        if *inputs != self.saved_inputs && !context.input(|input| input.pointer.any_down()) {
+        let dragging = context.input(|input| input.pointer.any_down());
+        if *inputs != self.saved_inputs && !dragging {
             match self.store.set_setting(CALCULATOR_SETTINGS, inputs) {
                 Ok(()) => self.saved_inputs = inputs.clone(),
+                Err(error) => self.report(Err(error)),
+            }
+        }
+        let cards = &self.cards.settings;
+        if *cards != self.saved_cards && !dragging {
+            match self.store.set_setting(CARD_SETTINGS, cards) {
+                Ok(()) => self.saved_cards = cards.clone(),
                 Err(error) => self.report(Err(error)),
             }
         }
@@ -457,6 +478,10 @@ impl eframe::App for App {
             Page::Rifles => self.rifles.show(context, &self.data),
             Page::Bullets => self.bullets.show(context, &self.data),
             Page::Targets => self.targets.show(context, &self.data),
+            Page::Cards => {
+                let subject = self.calculator.card_subject(&self.data);
+                self.cards.show(context, subject)
+            }
         };
         for action in actions {
             self.apply(action);
@@ -535,6 +560,7 @@ impl App {
                         (Page::Rifles, "Rifles"),
                         (Page::Bullets, "My bullets"),
                         (Page::Targets, "Targets"),
+                        (Page::Cards, "Cards"),
                     ] {
                         ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
                     }
@@ -661,6 +687,7 @@ impl App {
                     (Page::Rifles, "Rifles"),
                     (Page::Bullets, "Bullets"),
                     (Page::Targets, "Targets"),
+                    (Page::Cards, "Cards"),
                 ];
                 let width = ui.available_width() / tabs.len() as f32;
                 ui.horizontal(|ui| {
@@ -985,6 +1012,20 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
             painter.circle_stroke(center, 9.0, stroke);
             painter.circle_stroke(center, 5.0, stroke);
             painter.circle_filled(center, 1.5, colour);
+        }
+        Page::Cards => {
+            // A card with a table's lines.
+            painter.add(line(&[
+                (4.0, 5.0),
+                (20.0, 5.0),
+                (20.0, 19.0),
+                (4.0, 19.0),
+                (4.0, 5.0),
+            ]));
+            for y in [9.5, 14.0] {
+                painter.add(line(&[(7.0, y), (17.0, y)]));
+            }
+            painter.add(line(&[(10.0, 7.5), (10.0, 17.0)]));
         }
     }
 }
