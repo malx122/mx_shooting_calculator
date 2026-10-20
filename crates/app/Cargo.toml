@@ -29,6 +29,10 @@ ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
 directories = "6"
 ureq = "3"
 
+# Linux desktops: windows on X11 and on Wayland.
+[target.'cfg(target_os = "linux")'.dependencies]
+eframe = { version = "0.31", default-features = false, features = ["x11", "wayland"] }
+
 # The web build (`trunk build` in this folder; see README).
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1"
