@@ -62,7 +62,8 @@ needs these repository secrets:
 The Google client (Google Cloud Console → APIs & Services) needs the
 **Google Drive API** enabled, the redirect URI
 `https://mxsc-sync.malx122.workers.dev/v1/google/callback`, and the scope
-`.../auth/drive.appdata` on its consent screen. While the consent screen is
+`.../auth/drive.appdata` on its consent screen (the only one asked for: not
+even `openid` or `email`). While the consent screen is
 in testing, only its test users can sign in.
 
 By hand, after `npx wrangler login`: `npm run deploy` (applies new database

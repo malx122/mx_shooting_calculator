@@ -123,16 +123,11 @@
 
       <h2>Sync with Google Drive</h2>
       <p>If you choose to sync through Google Drive and sign in with Google, the app asks Google
-        for these permissions, and no others:</p>
-      <ul>
-        <li><strong>Its own folder in your Drive</strong>
-          (<code>drive.appdata</code>): a hidden folder only this app can see. The app keeps
-          one file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads,
-          scopes and targets, so your devices share them. It cannot see or change any other
-          file in your Drive.</li>
-        <li><strong>Your e-mail address</strong> (<code>openid</code>, <code>email</code>):
-          only to show which account is signed in.</li>
-      </ul>
+        for one permission: <strong>its own folder in your Drive</strong>
+        (<code>drive.appdata</code>), a hidden folder only this app can see. The app keeps one
+        file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads, scopes
+        and targets, so your devices share them. It cannot see or change any other file in
+        your Drive, and it doesn't ask for your name or e-mail address.</p>
       <p>The sign-in passes through the app's sync server, because Google requires a secret
         that can't be kept in the app. The server hands the sign-in to your device within ten
         minutes and keeps nothing afterwards; later it only passes requests for a fresh access

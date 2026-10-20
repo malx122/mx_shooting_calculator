@@ -49,9 +49,10 @@ enum Settings {
         key: String,
         server: String,
     },
+    // Earlier versions kept the account's e-mail address here too; it is
+    // no longer asked for, and an old one is ignored.
     Google {
         refresh_token: String,
-        email: Option<String>,
         server: String,
     },
 }
@@ -161,14 +162,9 @@ impl Sync {
         let settings: Option<Settings> = store.setting(SETTING).ok().flatten();
         let target = settings.as_ref().and_then(|settings| match settings {
             Settings::Key { key, .. } => SyncKey::parse(key).map(Target::Key),
-            Settings::Google {
-                refresh_token,
-                email,
-                ..
-            } => Some(Target::Google(Arc::new(Mutex::new(google::Account::new(
-                refresh_token.clone(),
-                email.clone(),
-            ))))),
+            Settings::Google { refresh_token, .. } => Some(Target::Google(Arc::new(Mutex::new(
+                google::Account::new(refresh_token.clone()),
+            )))),
         });
         let (sender, receiver) = channel();
         Sync {
@@ -500,7 +496,6 @@ impl Sync {
     fn turn_on_google(&mut self, store: &Store, account: google::Account) -> Result<(), String> {
         let settings = Settings::Google {
             refresh_token: account.refresh_token.clone(),
-            email: account.email.clone(),
             server: self.server(),
         };
         self.fresh_start = true;
@@ -660,17 +655,13 @@ impl Sync {
                 ui.add_space(8.0);
                 self.buttons(ui, store, &context, now);
             }
-            Some(Target::Google(account)) => {
+            Some(Target::Google(_)) => {
                 self.status_line(ui, now);
-                let email = account.lock().expect("not poisoned").email.clone();
-                ui.label(match email {
-                    Some(email) => format!("Syncing through Google Drive as {email}."),
-                    None => "Syncing through Google Drive.".to_owned(),
-                });
+                ui.label("Syncing through Google Drive.");
                 ui.weak(
                     "Your data is kept in a hidden folder in your own Google Drive that only \
-                     this app can reach. Sign in with the same Google account on your other \
-                     devices.",
+                     this app can reach. Use the same Google account on every device: each \
+                     account keeps a copy of its own.",
                 );
                 if self.needs_sign_in
                     && ui.button(RichText::new("Sign in again").strong()).clicked()
@@ -726,7 +717,10 @@ impl Sync {
         );
         ui.add_space(8.0);
         ui.label(RichText::new("With Google Drive").strong());
-        ui.label("Kept in a hidden folder in your own Drive. Sign in on each device.");
+        ui.label(
+            "Kept in a hidden folder in your own Drive. Sign in on each device, with the \
+             same Google account on all of them.",
+        );
         if ui.button("Sign in with Google").clicked() {
             self.sign_in(context);
         }
@@ -853,5 +847,25 @@ fn qr_code(ui: &mut egui::Ui, text: &str, size: f32) {
                 egui::Color32::BLACK,
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_google_sign_in_saved_with_an_email_address_still_loads() {
+        let saved = r#"{"via":"google","refresh_token":"token","email":"a@example.com","server":"https://example.com"}"#;
+        let settings: Settings = serde_json::from_str(saved).unwrap();
+        assert!(
+            matches!(settings, Settings::Google { refresh_token, .. } if refresh_token == "token")
+        );
+        let written = serde_json::to_string(&Settings::Google {
+            refresh_token: "token".into(),
+            server: "https://example.com".into(),
+        })
+        .unwrap();
+        assert!(!written.contains("email"));
     }
 }

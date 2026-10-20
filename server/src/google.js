@@ -18,7 +18,8 @@
 //
 // S is a random 32-hex-digit id the app makes for each sign-in.
 
-const SCOPES = 'openid email https://www.googleapis.com/auth/drive.appdata';
+// Only the app's own hidden folder in the hunter's Drive: not even who they are.
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const SESSION = /^[0-9a-f]{32}$/;
 const HAND_OVER_MS = 10 * 60 * 1000;
 
@@ -64,7 +65,6 @@ export async function google(request, env, url, reply, json) {
       expires_in: tokens.expires_in,
       // What the hunter allowed: Google lets them leave Drive unticked.
       scope: tokens.scope,
-      email: emailOf(tokens.id_token),
     };
     await env.DB.prepare(
       'INSERT INTO google_sessions (id, tokens, created_at) VALUES (?1, ?2, ?3) ON CONFLICT (id) DO NOTHING',
@@ -115,17 +115,6 @@ async function exchange(env, fields) {
     }),
   });
   return response.json();
-}
-
-/// The email in Google's ID token. It came straight from Google over TLS,
-/// so it is read, not verified.
-function emailOf(idToken) {
-  try {
-    const payload = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(payload)).email ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function escape(text) {

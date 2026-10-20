@@ -6,6 +6,12 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Changed
+
+- **Google Drive sync asks for less:** only the app's own folder in your
+  Drive, no longer your e-mail address. The Sync window reminds you to use
+  the same Google account on every device.
+
 ### Added
 
 - **Desktop apps** for macOS (Apple silicon and Intel), Windows and Linux,

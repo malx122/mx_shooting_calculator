@@ -19,19 +19,18 @@ pub const DELETED: &[u8] = b"MXS-DELETED";
 /// How long a sign-in may take in the browser.
 const SIGN_IN_S: u32 = 600;
 
-/// A signed-in Google account.
+/// A signed-in Google account. The app doesn't ask which: only for its
+/// own folder in the account's Drive.
 pub struct Account {
     pub refresh_token: String,
-    pub email: Option<String>,
     access_token: Option<String>,
     expires_at_ms: i64,
 }
 
 impl Account {
-    pub fn new(refresh_token: String, email: Option<String>) -> Account {
+    pub fn new(refresh_token: String) -> Account {
         Account {
             refresh_token,
-            email,
             access_token: None,
             expires_at_ms: 0,
         }
@@ -63,7 +62,6 @@ struct Tokens {
     expires_in: Option<i64>,
     /// The permissions granted, separated by spaces.
     scope: Option<String>,
-    email: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -108,7 +106,7 @@ pub async fn finish_sign_in(server: String, session: String) -> Result<Account, 
                 let refresh_token = tokens
                     .refresh_token
                     .ok_or_else(|| "Google sent no lasting sign-in".to_owned())?;
-                let mut account = Account::new(refresh_token, tokens.email);
+                let mut account = Account::new(refresh_token);
                 account.access_token = Some(tokens.access_token);
                 account.expires_at_ms = now_ms() + tokens.expires_in.unwrap_or(3600) * 1000;
                 return Ok(account);
@@ -324,7 +322,7 @@ mod tests {
     #[test]
     #[ignore = "needs the network"]
     fn a_dead_sign_in_asks_to_sign_in_again() {
-        let account: Shared = Arc::new(Mutex::new(Account::new("made-up".into(), None)));
+        let account: Shared = Arc::new(Mutex::new(Account::new("made-up".into())));
         let server = crate::sync::DEFAULT_SERVER.to_owned();
         let mut outcome = None;
         http::spawn_blocking_for_tests(async {
