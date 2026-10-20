@@ -114,6 +114,9 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
         let part = (row.in_region(region) == Coverage::Part).then(|| row.area.clone());
         let who = if row.applies_to == "all" {
             String::new()
+        } else if row.applies_to.contains('(') {
+            // Already holds brackets: no brackets in brackets.
+            format!(" – {}", row.applies_to)
         } else {
             format!(" ({})", row.applies_to)
         };
@@ -158,6 +161,12 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
             }
             None => told.push((text, tone, part, 1)),
         }
+    }
+    // While the season is open here, later periods are noise: the table
+    // on the Targets page has them.
+    let open = told.iter().any(|(_, tone, ..)| *tone == Tone::Open);
+    if open {
+        told.retain(|(text, ..)| !text.starts_with("Opens"));
     }
     for (text, tone, part, count) in told {
         let text = match part {
@@ -222,8 +231,11 @@ pub fn light_line(
     }
     let Some(place) = place else {
         return Some((
-            "Shooting light: find where you are under Weather (📍 Weather here, or a place)."
-                .into(),
+            if crate::sensors::can_locate() {
+                "Shooting light: needs your position.".into()
+            } else {
+                "Shooting light: search for your place under Weather.".into()
+            },
             Tone::Plain,
         ));
     };
@@ -253,9 +265,14 @@ pub fn light_line(
             restricted,
         } => {
             let mut text = format!(
-                "Shooting light at {short_place} today: {}–{}",
+                "Shooting light at {short_place} today: {}–{}{}",
                 sun::clock(start),
-                sun::clock(end)
+                sun::clock(end),
+                if end >= 1440.0 {
+                    " (after midnight)"
+                } else {
+                    ""
+                }
             );
             if let Some((from, what)) = &restricted {
                 text.push_str(&format!("; from {} {what}", sun::clock(*from)));
@@ -289,6 +306,7 @@ fn span(minutes: f64) -> String {
 
 /// The short block for the calculator: the season where the hunter is and
 /// today's light. `region` is the hunter's choice, kept with the inputs.
+/// Returns true when the hunter asks to find their position.
 pub fn today_block(
     ui: &mut egui::Ui,
     country: Country,
@@ -296,8 +314,9 @@ pub fn today_block(
     name: &str,
     region: &mut Option<String>,
     place: Option<&Place>,
-) {
+) -> bool {
     let law = country.hunting();
+    let mut locate = false;
     let (today, _) = now(law);
     if region
         .as_ref()
@@ -321,10 +340,17 @@ pub fn today_block(
     if let Some((text, tone)) = light_line(law, species, name, place, country) {
         ui.label(coloured(ui, &text, tone));
     }
+    if place.is_none() && law.daily_rule(species, today).is_some() && crate::sensors::can_locate() {
+        locate = ui
+            .button("📍 Use my position")
+            .on_hover_text("For today's shooting light (and the weather) where you are")
+            .clicked();
+    }
     ui.weak(format!(
         "From the law as of {}; seasons can change, check before you hunt. More under Targets.",
         law.as_of
     ));
+    locate
 }
 
 fn region_picker(ui: &mut egui::Ui, law: &HuntingLaw, region: &mut Option<String>) {
@@ -358,42 +384,62 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
                 }
             }
             let rows = season.rows_on(today);
-            if !rows.is_empty() {
-                egui::Grid::new(format!("season-{species}"))
-                    .num_columns(3)
-                    .min_col_width(90.0)
-                    .striped(true)
-                    .spacing([10.0, 3.0])
+            // The hunter's own area first, marked; the rest folded.
+            let (here, elsewhere): (Vec<&SeasonRow>, Vec<&SeasonRow>) =
+                rows.iter().partition(|row| {
+                    region.is_some_and(|region| row.in_region(region) != Coverage::None)
+                });
+            let show = |ui: &mut egui::Ui, row: &SeasonRow, mine: bool| {
+                let dates = match row.span_around(today) {
+                    Some((start, end)) if !row.closed() => {
+                        format!("{} – {}", day_text(start), day_text(end))
+                    }
+                    _ => "no hunting".to_owned(),
+                };
+                let mut detail = if row.applies_to == "all" {
+                    String::new()
+                } else {
+                    row.applies_to.clone()
+                };
+                if let Some(method) = &row.method {
+                    detail = if detail.is_empty() {
+                        method.clone()
+                    } else {
+                        format!("{detail}, {method}")
+                    };
+                }
+                let frame = if mine {
+                    egui::Frame::new()
+                        .fill(ui.visuals().selection.bg_fill.gamma_multiply(0.35))
+                        .corner_radius(4.0)
+                        .inner_margin(egui::Margin::symmetric(6, 3))
+                } else {
+                    egui::Frame::new().inner_margin(egui::Margin::symmetric(6, 3))
+                };
+                frame.show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(RichText::new(dates).strong());
+                        if !detail.is_empty() {
+                            ui.label(detail);
+                        }
+                    });
+                    ui.add(egui::Label::new(RichText::new(&row.area).small().weak()).wrap());
+                });
+            };
+            for row in &here {
+                show(ui, row, true);
+            }
+            if here.is_empty() {
+                for row in &elsewhere {
+                    show(ui, row, false);
+                }
+            } else if !elsewhere.is_empty() {
+                egui::CollapsingHeader::new(format!("Other areas ({})", elsewhere.len()))
+                    .id_salt(format!("season-others-{species}"))
                     .show(ui, |ui| {
-                        for row in rows {
-                            let here = region
-                                .is_some_and(|region| row.in_region(region) != Coverage::None);
-                            let dates = match row.span_around(today) {
-                                Some((start, end)) if !row.closed() => {
-                                    format!("{} – {}", day_text(start), day_text(end))
-                                }
-                                _ => "no hunting".to_owned(),
-                            };
-                            let mut area = RichText::new(&row.area);
-                            if here {
-                                area = area.strong();
-                            }
-                            ui.add(egui::Label::new(area).wrap());
-                            ui.label(dates);
-                            let mut detail = if row.applies_to == "all" {
-                                String::new()
-                            } else {
-                                row.applies_to.clone()
-                            };
-                            if let Some(method) = &row.method {
-                                detail = if detail.is_empty() {
-                                    method.clone()
-                                } else {
-                                    format!("{detail}, {method}")
-                                };
-                            }
-                            ui.add(egui::Label::new(RichText::new(detail).weak()).wrap());
-                            ui.end_row();
+                        for row in &elsewhere {
+                            show(ui, row, false);
                         }
                     });
             }

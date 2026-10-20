@@ -429,7 +429,9 @@ impl Store {
 
 /// See `Store::stamp`; also works inside a transaction.
 pub(crate) fn stamp_on(connection: &Connection, previous: i64) -> Result<i64, StoreError> {
-    let at = now_ms().max(previous + 1).max(clock(connection)? + 1);
+    let at = now_ms()
+        .max(previous.saturating_add(1))
+        .max(clock(connection)?.saturating_add(1));
     set_clock(connection, at)?;
     Ok(at)
 }

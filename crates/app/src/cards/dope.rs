@@ -173,13 +173,23 @@ impl DopeTable {
         let several = temperatures.len() > 1;
         for (temperature, solution) in temperatures.iter().zip(&solutions) {
             let group = if several {
-                format!("Up at {}", whole(u, Quantity::Temperature, *temperature))
+                format!(
+                    "Elevation at {}",
+                    whole(u, Quantity::Temperature, *temperature)
+                )
             } else {
-                "Up".to_owned()
+                "Elevation".to_owned()
             };
             let holds: Vec<Option<Hold>> = ranges
                 .iter()
-                .map(|range| solution.at(*range).map(|row| Hold::new(rifle, &row)))
+                // At the muzzle there is nothing to dial: the angle to a
+                // point 0 m away is meaningless.
+                .map(|range| {
+                    solution
+                        .at(*range)
+                        .filter(|_| *range >= 1.0)
+                        .map(|row| Hold::new(rifle, &row))
+                })
                 .collect();
             let mut add = |head: &str, cell: &dyn Fn(&Hold) -> String| {
                 columns.push(Column {
@@ -218,6 +228,9 @@ impl DopeTable {
                     .iter()
                     .map(|&range| {
                         let (Some(calm), Some(blown)) = (still.at(range), windy.at(range)) else {
+                            return "–".to_owned();
+                        };
+                        if range < 1.0 {
                             return "–".to_owned();
                         };
                         // The wind alone, without spin drift; always a size.
@@ -367,13 +380,24 @@ pub fn layout(
     {
         weather.push_str(" · trued");
     }
+    // The app's own holds include today's wind, angle and cant; a card
+    // can't know them.
+    weather.push_str(" · level, calm air");
     about.push(weather);
     if !options.note.trim().is_empty() {
         about.push(options.note.trim().to_owned());
     }
     let mut legend = Vec::new();
     if options.legend {
-        if let (Some(limit), Some(target)) = (table.ethical_m, &subject.target) {
+        if let (Some(limit), Some(target)) = (table.ethical_m, &subject.target)
+            && table.ranges.first().is_some_and(|first| limit < *first)
+        {
+            legend.push(format!(
+                "Every range here is beyond the ethical limit for {} ({})",
+                target.to_lowercase(),
+                u.format(Quantity::Distance, limit)
+            ));
+        } else if let (Some(limit), Some(target)) = (table.ethical_m, &subject.target) {
             legend.push(format!(
                 "Red line: ethical limit for {} at {}",
                 target.to_lowercase(),

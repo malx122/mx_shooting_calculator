@@ -25,6 +25,37 @@ any release may still change things noticeably.
   a bullet that hits higher or lower than the rifle's zero load). Turret
   labels start where the bullet comes down to the line of sight.
 
+### Fixed
+
+- A bullet or measurement with an impossible number (from a chronograph
+  file, a backup or a very light, high-drag bullet) could crash the app and
+  keep it from starting. Numbers must now be finite and within what rifles
+  and bullets can be, on saving and on import, and the engine stops a
+  flight that runs away instead of crashing.
+- A Strelok backup with an infinite speed could make an export that
+  wouldn't import; a damaged, deeply nested one crashed the import.
+- A backup stamped far in the future made later edits lose to it.
+- "Make it my zero" could halve the dead-on range it promised.
+- Two measured velocities a fraction of a degree apart gave an absurd
+  temperature sensitivity; it is now fitted only over at least 2 °C and
+  kept believable.
+- The shooting light in the far north in summer, which runs past midnight.
+- A dope card from 0 m printed 1570.8 mil on its first row.
+- Chronograph import errors weren't shown; caliber and scope pickers stayed
+  open after a choice; a long name stretched the calculator's panel; the
+  truing form kept another bullet's numbers; the turret label's ruler
+  numbers ran together on small turrets; "near the sound barrier" showed
+  far below it; the phone showed "beyond the ethical range" in green.
+
+### Changed
+
+- Cards say they are worked out level and in calm air (Calculate also
+  counts today's wind, angle and cant). "Drop" in the dope table is
+  "Height", the card's "Up" is "Elevation", and "1 click" is singular.
+- Hunting today has a **Use my position** button; messages clear after a
+  few seconds; the season table lists your county first; ranges up to
+  2000 m on both phone and desktop.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added

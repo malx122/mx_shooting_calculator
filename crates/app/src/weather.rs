@@ -250,6 +250,14 @@ impl Weather {
 
     /// The panel above the weather inputs: where to get the weather, what
     /// came, and the forecast wind for this shot.
+    /// Finds where the device is and fetches the weather there.
+    pub fn locate_here(&mut self, context: &egui::Context) {
+        self.busy = Some("Finding where you are…");
+        self.error = None;
+        let reply = self.send(context);
+        crate::sensors::locate(move |place| reply(Reply::Located(place)));
+    }
+
     pub fn panel(
         &mut self,
         ui: &mut egui::Ui,
@@ -264,10 +272,7 @@ impl Weather {
                     .on_hover_text("From your position (the browser asks first)")
                     .clicked()
             {
-                self.busy = Some("Finding where you are…");
-                self.error = None;
-                let reply = self.send(&context);
-                crate::sensors::locate(move |place| reply(Reply::Located(place)));
+                self.locate_here(&context);
             }
             let field = ui.add(
                 egui::TextEdit::singleline(&mut self.search)

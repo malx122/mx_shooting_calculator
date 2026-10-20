@@ -198,6 +198,7 @@ impl Store {
         mode: Mode,
         dry_run: bool,
     ) -> Result<ImportReport, StoreError> {
+        let data = &without_future(data);
         let transaction = self.connection().transaction()?;
         let mut report = ImportReport::default();
         let mut latest = 0;
@@ -346,6 +347,39 @@ fn apply_deletion(
         &deletion.id,
         deletion.deleted_at,
     )
+}
+
+/// The data with impossible times (more than a week ahead: a wrong
+/// clock, a damaged file) made the oldest: such a time would otherwise win
+/// every later merge, and a cap that moves with the clock would still beat
+/// edits made since.
+fn without_future(data: &PersonalData) -> PersonalData {
+    let limit = crate::model::now_ms() + 7 * 24 * 60 * 60 * 1000;
+    let fix = |at: &mut i64| {
+        if *at > limit {
+            *at = 0;
+        }
+    };
+    let mut data = data.clone();
+    data.rifles
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.bullets
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.rifle_loads
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.scopes
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.targets
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.deleted
+        .iter_mut()
+        .for_each(|deletion| fix(&mut deletion.deleted_at));
+    data
 }
 
 /// Settles a record this device deleted. Returns the record to merge, or

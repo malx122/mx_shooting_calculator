@@ -239,7 +239,10 @@ pub fn layout(
         };
         let hold = Hold::new(rifle, &row);
         match options.hold_as {
-            Measure::Clicks => format!("{:+} cl", hold.elevation_clicks).replace("+0 ", "0 "),
+            Measure::Clicks => format!("{:+} clicks", hold.elevation_clicks)
+                .replace("+0 ", "0 ")
+                .replace("+1 clicks", "+1 click")
+                .replace("-1 clicks", "-1 click"),
             Measure::Angle => format!(
                 "{:+.1} {}",
                 hold.elevation,
@@ -334,7 +337,7 @@ pub fn layout(
         &mut sheet,
         &mut y,
         &format!(
-            "Faces {} ({:.0}°) · {} · zero {}",
+            "Faces {} ({:.0}°) · {} · zero {} · holds for level shots in calm air",
             compass_point(stand.facing_degrees),
             stand.facing_degrees.rem_euclid(360.0),
             u.format(Quantity::Temperature, today),

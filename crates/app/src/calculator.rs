@@ -280,6 +280,8 @@ pub struct CalculatorPage {
     /// A chronograph file being picked, and one being looked at.
     chrono_file: crate::files::Picked,
     chrono: Option<ChronoImport>,
+    /// Why the last chronograph file couldn't be read.
+    chrono_error: Option<String>,
 }
 
 /// A chronograph file read, before its string is added to the load.
@@ -293,6 +295,8 @@ struct ChronoImport {
 
 /// A long shot to true the calculation to, as entered.
 struct TruingForm {
+    /// The rifle and bullet it was filled in for.
+    for_load: Option<(String, String)>,
     range_m: f64,
     /// In the rifle's click unit, up positive.
     elevation: f64,
@@ -303,6 +307,7 @@ struct TruingForm {
 impl Default for TruingForm {
     fn default() -> Self {
         TruingForm {
+            for_load: None,
             range_m: 300.0,
             elevation: 0.0,
             method: None,
@@ -324,6 +329,7 @@ impl CalculatorPage {
             truing_form: TruingForm::default(),
             chrono_file: crate::files::Picked::default(),
             chrono: None,
+            chrono_error: None,
         }
     }
 
@@ -470,6 +476,7 @@ impl CalculatorPage {
         egui::SidePanel::left("calculator-inputs")
             .resizable(true)
             .default_width(360.0)
+            .max_width(560.0)
             .show(context, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     self.equipment(
@@ -532,7 +539,11 @@ impl CalculatorPage {
                     context,
                     scenario,
                     aim.vital_diameter_cm,
-                    rifle.table.end_m.max(SOLVE_RANGE_M),
+                    rifle
+                        .table
+                        .end_m
+                        .max(SOLVE_RANGE_M)
+                        .max(self.inputs.target_range_m + 10.0),
                 );
                 let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
                 match &computed.solution {
@@ -661,7 +672,9 @@ impl CalculatorPage {
                 ui.label("Rifle");
                 egui::ComboBox::from_id_salt("rifle")
                     .width(230.0)
-                    .selected_text(rifle.map_or("None".to_owned(), |rifle| rifle.name.clone()))
+                    .selected_text(
+                        rifle.map_or("None".to_owned(), |rifle| shortened(&rifle.name, 40)),
+                    )
                     .show_ui(ui, |ui| {
                         for candidate in &data.rifles {
                             let text = format!(
@@ -681,7 +694,9 @@ impl CalculatorPage {
                 ui.label("Bullet");
                 egui::ComboBox::from_id_salt("bullet")
                     .width(230.0)
-                    .selected_text(bullet.map_or("None".to_owned(), Bullet::display_name))
+                    .selected_text(bullet.map_or("None".to_owned(), |bullet| {
+                        shortened(&bullet.display_name(), 40)
+                    }))
                     .show_ui(ui, |ui| {
                         for candidate in bullets {
                             let selected = bullet.is_some_and(|bullet| bullet.id == candidate.id);
@@ -751,8 +766,8 @@ impl CalculatorPage {
         };
         let form = &mut self.truing_form;
         let chrono_file = self.chrono_file.clone();
-        let mut chrono_error = None;
         if let Some((file, bytes)) = chrono_file.take() {
+            self.chrono_error = None;
             match ballistics_store::chrono::parse(&bytes) {
                 Ok(sessions) => {
                     self.chrono = Some(ChronoImport {
@@ -762,13 +777,25 @@ impl CalculatorPage {
                         temperature_c: today.round(),
                     })
                 }
-                Err(error) => chrono_error = Some(format!("{file}: {error}")),
+                Err(error) => {
+                    self.chrono = None;
+                    self.chrono_error = Some(format!("{file}: {error}"));
+                }
             }
         }
         let chrono = &mut self.chrono;
+        let chrono_error = &mut self.chrono_error;
         let Some(draft) = self.load_draft.as_mut() else {
             return;
         };
+        // Another rifle or bullet: its own truing shot, not the last one's.
+        let load_key = Some((draft.rifle_id.clone(), draft.bullet_id.clone()));
+        if form.for_load != load_key {
+            *form = TruingForm {
+                for_load: load_key,
+                ..TruingForm::default()
+            };
+        }
         let model = draft.velocity_model(bullet);
         let source = match (draft.velocities.len(), bullet.kind) {
             (0, BulletKind::Factory) => "from the box".to_owned(),
@@ -837,8 +864,13 @@ impl CalculatorPage {
                     chrono_file.pick(ui.ctx(), "Chronograph files", &["csv", "CSV"]);
                 }
             });
-            if let Some(error) = &chrono_error {
-                ui.colored_label(ui.visuals().error_fg_color, error);
+            if let Some(error) = chrono_error.clone() {
+                ui.horizontal_wrapped(|ui| {
+                    ui.colored_label(ui.visuals().error_fg_color, error);
+                    if ui.small_button("✖").clicked() {
+                        *chrono_error = None;
+                    }
+                });
             }
             let mut close = false;
             if let Some(import) = chrono.as_mut() {
@@ -864,8 +896,9 @@ impl CalculatorPage {
                     let session = &import.sessions[import.chosen];
                     let stats = session.stats();
                     ui.label(format!(
-                        "{} shots{}: average {}, SD {}, ES {}",
+                        "{} shot{}{}: average {}, SD {}, ES {}",
                         stats.count,
+                        if stats.count == 1 { "" } else { "s" },
                         if session.missed > 0 { format!(" ({} not read, left out)", session.missed) } else { String::new() },
                         u.format(Quantity::Speed, session.average_mps()),
                         spread_text(&u, stats.sd_mps),
@@ -908,7 +941,13 @@ impl CalculatorPage {
                 "Temperature sensitivity {} ({:+.1} % per 15 °C), {}.",
                 u.format_signed(Quantity::Sensitivity, model.per_degree),
                 model.percent_per_15c(),
-                if draft.velocities.len() >= 2 { "from your measurements" } else { "from the bullet data" }
+                if model.fitted {
+                    "from your measurements"
+                } else if draft.velocities.len() >= 2 {
+                    "from the bullet data (your measurements need to be at least 2 °C apart)"
+                } else {
+                    "from the bullet data"
+                }
             ));
 
             ui.separator();
@@ -1027,8 +1066,8 @@ impl CalculatorPage {
                     );
                     ui.label("up to hit centre");
                     ui.weak(format!(
-                        "({} clicks)",
-                        (form.elevation / rifle.click_value).round()
+                        "({})",
+                        clicks_text((form.elevation / rifle.click_value).round() as i64)
                     ));
                 });
                 ui.end_row();
@@ -1222,7 +1261,7 @@ impl CalculatorPage {
                     "Range (rangefinder)",
                     &mut inputs.target_range_m,
                     Quantity::Distance,
-                    5.0..=1000.0,
+                    5.0..=MAX_RANGE_M,
                     1.0,
                 );
                 number(
@@ -1298,6 +1337,7 @@ impl CalculatorPage {
             });
         }
 
+        let mut locate_here = false;
         section(ui, "Target and ethics", |ui| {
             if target_picker(ui, "calculator-target", data, &mut inputs.target_id) {
                 // A new target brings its own zone and energy.
@@ -1382,7 +1422,7 @@ impl CalculatorPage {
                 );
                 if let Some(country) = data.country {
                     ui.add_space(4.0);
-                    crate::hunting::today_block(
+                    locate_here |= crate::hunting::today_block(
                         ui,
                         country,
                         target.catalog_id.as_deref().unwrap_or(&target.id),
@@ -1403,6 +1443,9 @@ impl CalculatorPage {
             }
         });
 
+        if locate_here {
+            weather.locate_here(ui.ctx());
+        }
         if let Some(rifle) = rifle {
             section(ui, "Dope table", |ui| {
                 let table = rifle.table;
@@ -1418,6 +1461,27 @@ impl CalculatorPage {
                 }
             });
         }
+    }
+}
+
+/// The text cut to `chars` characters with an ellipsis, for narrow places.
+pub fn shortened(text: &str, chars: usize) -> String {
+    if text.chars().count() <= chars {
+        text.to_owned()
+    } else {
+        format!("{}…", text.chars().take(chars - 1).collect::<String>())
+    }
+}
+
+/// The longest range to calculate a shot at, on the phone and desktop.
+pub const MAX_RANGE_M: f64 = 2000.0;
+
+/// "1 click", "3 clicks".
+pub fn clicks_text(clicks: i64) -> String {
+    if clicks.abs() == 1 {
+        format!("{clicks} click")
+    } else {
+        format!("{clicks} clicks")
     }
 }
 
@@ -1531,7 +1595,8 @@ impl ViewRequests {
         let height = self.zero_height? - zeros.offset_up * zeros.reference;
         let mut zeroed = rifle.clone();
         zeroed.zero_range_m = zeros.reference;
-        zeroed.zero_height_cm = (height * 1000.0).round() / 10.0;
+        // Rounded down to the millimetre, so the peak stays inside the zone.
+        zeroed.zero_height_cm = (height * 1000.0).floor() / 10.0;
         Some(zeroed)
     }
 }
@@ -1653,14 +1718,20 @@ impl ResultsView<'_> {
         let zeros = self.zeros;
         let reference = zeros.reference;
         let mut use_zero = None;
-        ui.heading(if self.aim.is_game() {
-            "Hunting limits"
-        } else {
-            "Limits"
-        });
+        let narrow = mobile::is_narrow(ui.ctx());
+        // On a phone the fold it sits in is titled already.
+        if !narrow {
+            ui.heading(if self.aim.is_game() {
+                "Hunting limits"
+            } else {
+                "Limits"
+            });
+        }
+        let width = ui.available_width();
         egui::Grid::new("limits")
             .num_columns(2)
             .spacing([16.0, 4.0])
+            .max_col_width(if narrow { width * 0.6 } else { width * 0.7 })
             .show(ui, |ui| {
                 if let Some(min_energy) = self.aim.min_energy_j {
                     ui.label("Ethical maximum range");
@@ -1819,8 +1890,8 @@ impl ResultsView<'_> {
         ui.label(RichText::new(format!("{} · {}", scope.display_name(), reticle.name)).small());
         if self.inputs.dial_elevation {
             ui.small(format!(
-                "Dial {} click(s) {}, then hold the orange dot on the target.",
-                dialled_clicks.abs(),
+                "Dial {} {}, then hold the orange dot on the target.",
+                clicks_text(dialled_clicks.abs() as i64),
                 if dialled_clicks >= 0.0 { "up" } else { "down" }
             ));
         } else {
@@ -1855,7 +1926,7 @@ impl ResultsView<'_> {
         }
         if !drawn.field_of_view_known {
             ui.small(format!(
-                "Field of view not published; estimated as {:.0} mrad from the magnification. Enter the scope's field of view (Rifles → My scopes) for a true picture.",
+                "Field of view not published; estimated as {:.0} mrad from the magnification. Enter the scope's field of view (Rifles, My scopes) for a true picture.",
                 drawn.field_of_view_mrad
             ));
         }
@@ -1886,7 +1957,7 @@ impl ResultsView<'_> {
                 elevation.abs(),
                 unit_label(unit)
             )));
-            ui.weak(format!("{} clicks", self.clicks(elevation).abs()));
+            ui.weak(clicks_text(self.clicks(elevation).abs()));
             ui.add_space(24.0);
             ui.label(big(format!(
                 "{} {:.2} {}",
@@ -1898,7 +1969,7 @@ impl ResultsView<'_> {
                 windage.abs(),
                 unit_label(unit)
             )));
-            ui.weak(format!("{} clicks", self.clicks(windage).abs()));
+            ui.weak(clicks_text(self.clicks(windage).abs()));
         });
         let u = units::prefs(ui.ctx());
         ui.label(format!(
@@ -1990,7 +2061,7 @@ impl ResultsView<'_> {
             _ => {}
         }
         if let Some(row) = solution.at(self.inputs.target_range_m)
-            && row.mach < 1.2
+            && (0.8..1.2).contains(&row.mach)
         {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
@@ -2128,7 +2199,7 @@ impl ResultsView<'_> {
         let header = |name: &str, quantity: Quantity| format!("{name} {}", u.label(quantity));
         let (range_header, drop_header, wind_header, speed_header, energy_header, lead_header) = (
             header("Range", Quantity::Distance),
-            header("Drop", Quantity::ShortLength),
+            header("Height", Quantity::ShortLength),
             header("Wind", Quantity::ShortLength),
             u.label(Quantity::Speed).to_owned(),
             header("Energy", Quantity::Energy),

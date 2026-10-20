@@ -364,7 +364,7 @@ fn editor(
             "Diameter",
             &mut bullet.diameter_mm,
             Quantity::BulletDiameter,
-            0.0..=15.0,
+            1.0..=16.0,
             0.01,
         );
         quantity(
@@ -372,7 +372,7 @@ fn editor(
             "Mass",
             &mut bullet.mass_g,
             Quantity::BulletMass,
-            0.0..=60.0,
+            0.1..=100.0,
             0.05,
         );
         optional_quantity(
@@ -403,7 +403,7 @@ fn editor(
             "Muzzle velocity",
             &mut bullet.muzzle_velocity_mps,
             Quantity::Speed,
-            0.0..=1300.0,
+            0.0..=1600.0,
             1.0,
         );
         quantity(

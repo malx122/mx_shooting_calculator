@@ -491,6 +491,22 @@ mod tests {
     }
 
     #[test]
+    fn every_catalog_bullet_can_be_added_to_a_collection() {
+        let catalog = Catalog::builtin();
+        for caliber in &catalog.calibers {
+            for bullet in catalog.bullets_for(caliber) {
+                let collected = bullet.to_collection(caliber);
+                // Handloads need the hunter's velocity before saving.
+                if collected.muzzle_velocity_mps > 0.0 {
+                    collected.validate().unwrap_or_else(|problem| {
+                        panic!("{} in {}: {problem}", collected.display_name(), caliber.key)
+                    });
+                }
+            }
+        }
+    }
+
+    #[test]
     fn caliber_search_ignores_notation() {
         let catalog = Catalog::builtin();
         for query in ["6.5x55", "6,5×55", "6.5 swedish", "6.5×55 SE"] {

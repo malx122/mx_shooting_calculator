@@ -129,6 +129,9 @@ struct Status {
     error: bool,
 }
 
+/// How long a message that isn't an error stays, seconds.
+const STATUS_SECONDS: f64 = 10.0;
+
 pub struct App {
     store: Store,
     data: Data,
@@ -148,6 +151,8 @@ pub struct App {
     menu: Option<MenuSheet>,
     sync: Sync,
     country: Option<Country>,
+    /// The message shown and since when (seconds, egui time).
+    status_seen: Option<(String, f64)>,
     /// The desktop's What's new window is open.
     whats_new_open: bool,
     /// The hunter's data changed this frame: sync it.
@@ -190,6 +195,7 @@ impl App {
             sync,
             country,
             whats_new_open: false,
+            status_seen: None,
             data_changed: false,
             store,
             data: Data::default(),
@@ -457,6 +463,26 @@ impl eframe::App for App {
             self.tab_bar(context);
         } else {
             self.desktop_header(context);
+        }
+        // Messages go away by themselves after a while; errors stay.
+        let now = context.input(|input| input.time);
+        match &self.status {
+            Some(status) if !status.error => {
+                if self
+                    .status_seen
+                    .as_ref()
+                    .is_none_or(|(text, _)| *text != status.text)
+                {
+                    self.status_seen = Some((status.text.clone(), now));
+                }
+                let since = self.status_seen.as_ref().map_or(now, |(_, since)| *since);
+                if now - since > STATUS_SECONDS {
+                    self.status = None;
+                } else {
+                    context.request_repaint_after(std::time::Duration::from_secs(1));
+                }
+            }
+            _ => self.status_seen = None,
         }
         if let Some(status) = &self.status {
             let mut dismiss = false;
@@ -919,7 +945,7 @@ impl App {
 fn country_label(country: Option<Country>) -> String {
     match country {
         Some(country) => format!("        {}", country.name()),
-        None => "Rules: none".to_owned(),
+        None => "Hunting rules: none".to_owned(),
     }
 }
 
@@ -946,7 +972,8 @@ fn country_choice(country: Option<Country>) -> (&'static str, &'static str) {
 /// The countries to choose from; returns the choice.
 fn country_menu(ui: &mut egui::Ui, current: Option<Country>) -> Option<Option<Country>> {
     let mut chosen = None;
-    ui.label(RichText::new("Hunting rules (ammunition, seasons, hours) of").small());
+    ui.label(RichText::new("Hunting rules for").small())
+        .on_hover_text("Legal ammunition, seasons and shooting hours");
     for country in Country::ALL.map(Some).into_iter().chain([None]) {
         let (title, detail) = country_choice(country);
         let clicked = ui

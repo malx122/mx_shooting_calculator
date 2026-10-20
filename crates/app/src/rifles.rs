@@ -318,7 +318,7 @@ fn rifle_fields(
             "Twist, 1 turn in",
             &mut rifle.twist_in,
             Quantity::Twist,
-            5.0..=20.0,
+            3.0..=40.0,
             0.05,
         );
         ui.label("Twist direction");
@@ -340,7 +340,7 @@ fn rifle_fields(
             "Zero range",
             &mut rifle.zero_range_m,
             Quantity::Distance,
-            10.0..=500.0,
+            10.0..=1000.0,
             1.0,
         );
         quantity(
@@ -450,7 +450,8 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings) {
     });
     let columns = &mut table.columns;
     ui.horizontal_wrapped(|ui| {
-        ui.label("Drop:");
+        ui.label("Height:")
+            .on_hover_text("Where a dead-on hold hits: + above the aim, − below");
         ui.checkbox(&mut columns.drop_length, "cm");
         ui.checkbox(&mut columns.drop_mil, "mil");
         ui.checkbox(&mut columns.drop_moa, "MOA");
@@ -690,7 +691,8 @@ fn scope_editor(
                     }
                     if chosen_one {
                         search.clear();
-                        ui.close_menu();
+                        // A combo box popup, not a menu: close_menu leaves it open.
+                        ui.memory_mut(|memory| memory.close_popup());
                     }
                     ui.data_mut(|data| data.insert_temp(search_id, search));
                 });

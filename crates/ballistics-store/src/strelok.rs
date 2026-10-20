@@ -329,14 +329,52 @@ fn text(node: Node<'_, '_>, tag: &str) -> String {
 }
 
 fn number(node: Node<'_, '_>, tag: &str) -> f64 {
-    text(node, tag).replace(',', ".").parse().unwrap_or(0.0)
+    // "1e999", "inf" and "NaN" parse, but aren't numbers to keep.
+    text(node, tag)
+        .replace(',', ".")
+        .parse()
+        .ok()
+        .filter(|value: &f64| value.is_finite())
+        .unwrap_or(0.0)
 }
 
 fn flag(node: Node<'_, '_>, tag: &str) -> bool {
     text(node, tag).eq_ignore_ascii_case("true")
 }
 
+/// How deep elements nest, at most: a damaged file can nest thousands
+/// deep, which would overflow the stack while reading it.
+fn nesting(xml: &str) -> usize {
+    let (mut depth, mut deepest) = (0usize, 0usize);
+    let bytes = xml.as_bytes();
+    for (index, byte) in bytes.iter().enumerate() {
+        if *byte != b'<' {
+            continue;
+        }
+        match bytes.get(index + 1) {
+            Some(b'/') => depth = depth.saturating_sub(1),
+            Some(b'?' | b'!') | None => {}
+            Some(_) => {
+                // A tag that closes itself doesn't go deeper.
+                let end = bytes[index..].iter().position(|byte| *byte == b'>');
+                let closes_itself =
+                    end.is_some_and(|end| end > 0 && bytes[index + end - 1] == b'/');
+                if !closes_itself {
+                    depth += 1;
+                    deepest = deepest.max(depth);
+                }
+            }
+        }
+    }
+    deepest
+}
+
 fn parse(xml: &str) -> Result<Backup, StoreError> {
+    if nesting(xml) > 32 {
+        return Err(StoreError::Invalid(
+            "this is not a readable Strelok backup: it nests too deep".into(),
+        ));
+    }
     let repaired = repair_ampersands(xml);
     let document = Document::parse(&repaired).map_err(|error| {
         StoreError::Invalid(format!("this is not a readable Strelok backup: {error}"))
@@ -1206,7 +1244,7 @@ mod tests {
 
         // A newer backup updates what the hunter hasn't touched.
         let newer = PlanOptions {
-            updated_at: i64::MAX / 2,
+            updated_at: crate::model::now_ms() + 60_000,
             ..options()
         };
         let changed = SAMPLE.replacen(
@@ -1219,6 +1257,18 @@ mod tests {
             .unwrap();
         assert_eq!(later.added, 0);
         assert!(later.updated > 0);
+    }
+
+    #[test]
+    fn deeply_nested_files_are_refused_not_a_stack_overflow() {
+        // Found by stress testing: 50 000 nested elements crashed the reader.
+        let deep = format!(
+            "<StrelokPro>{}{}</StrelokPro>",
+            "<Cartridge>".repeat(50_000),
+            "</Cartridge>".repeat(50_000)
+        );
+        assert!(parse(&deep).is_err());
+        assert!(nesting(SAMPLE) <= 32);
     }
 
     #[test]

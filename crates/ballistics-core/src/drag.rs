@@ -61,7 +61,8 @@ impl DragCurve {
 fn interpolate(table: &[(f64, f64)], mach: f64) -> f64 {
     let first = table[0];
     let last = table[table.len() - 1];
-    if mach <= first.0 {
+    // A Mach number that isn't one (NaN) would index before the table.
+    if !mach.is_finite() || mach <= first.0 {
         return first.1;
     }
     if mach >= last.0 {

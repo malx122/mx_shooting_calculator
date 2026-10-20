@@ -543,15 +543,23 @@ pub fn strip(
         let rifle = &subject.rifle;
         let per_unit = (1.0 / rifle.click_value).round().max(1.0) as u32;
         let spacing = width / per_turn;
-        let every = if spacing < 0.45 { 2 } else { 1 };
+        // Ticks at least 0.4 mm apart, and numbers far enough apart to read
+        // (every 1, 2, 5 or 10 units on a small turret).
+        let every = [1, 2, 5, 10, 20, 50]
+            .into_iter()
+            .find(|every| *every as f32 * spacing >= 0.4)
+            .unwrap_or(100);
         sheet.line([0.0, bands_bottom], [width, bands_bottom], 0.2, ruler_ink);
         let size = ruler_height * 0.36 / PT;
-        for click in 0..turret.clicks_per_turn {
+        let widest = font.width(&format!("{}", turret.clicks_per_turn / per_unit), size) + 0.8;
+        let unit_spacing = spacing * per_unit as f32;
+        let numbered = [1, 2, 5, 10, 20, 50]
+            .into_iter()
+            .find(|every| *every as f32 * unit_spacing >= widest)
+            .unwrap_or(100);
+        for click in (0..turret.clicks_per_turn).step_by(every as usize) {
             let whole = click % per_unit == 0;
             let half = per_unit.is_multiple_of(2) && click % per_unit == per_unit / 2;
-            if !whole && !half && click % every != 0 {
-                continue;
-            }
             let x = x_of(click as f32);
             let length = ruler_height
                 * if whole {
@@ -567,7 +575,7 @@ pub fn strip(
                 if whole { 0.22 } else { 0.12 },
                 ruler_ink,
             );
-            if whole {
+            if whole && (click / per_unit).is_multiple_of(numbered) {
                 sheet.text_font(
                     [x, height - ruler_height * 0.55],
                     format!("{}", click / per_unit),

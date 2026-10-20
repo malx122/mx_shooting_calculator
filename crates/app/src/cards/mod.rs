@@ -354,7 +354,7 @@ impl CardsPage {
     fn subject_line(&self, ui: &mut egui::Ui, subject: &Subject, actions: &mut Vec<Action>) {
         ui.horizontal_wrapped(|ui| {
             ui.weak(format!(
-                "For {} with {}{}, in today's weather.",
+                "For {} with {}{}, in today's weather, level and in calm air (Calculate also counts today's wind, angle and cant).",
                 subject.rifle.name,
                 subject.bullet.display_name(),
                 subject
@@ -1392,7 +1392,7 @@ impl CardsPage {
         ui.horizontal_wrapped(|ui| {
             ui.label("Hold as");
             ui.selectable_value(&mut options.hold_as, Measure::Clicks, "clicks");
-            ui.selectable_value(&mut options.hold_as, Measure::Angle, "angle");
+            ui.selectable_value(&mut options.hold_as, Measure::Angle, "mil or MOA");
             ui.selectable_value(
                 &mut options.hold_as,
                 Measure::Length,

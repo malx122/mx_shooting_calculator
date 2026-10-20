@@ -118,7 +118,8 @@ pub fn caliber_picker(
                 if response.clicked() {
                     chosen = Some(caliber);
                     search.clear();
-                    ui.close_menu();
+                    // A combo box popup, not a menu: close_menu leaves it open.
+                    ui.memory_mut(|memory| memory.close_popup());
                 }
             }
         });
@@ -279,7 +280,8 @@ pub fn scope_picker(
             }
             if choice.is_some() {
                 search.clear();
-                ui.close_menu();
+                // A combo box popup, not a menu: close_menu leaves it open.
+                ui.memory_mut(|memory| memory.close_popup());
             }
         });
     choice

@@ -466,9 +466,58 @@ fn validate(scenario: &Scenario) -> Result<(), SolveError> {
         shot,
         ..
     } = scenario;
+    let muzzle = load.velocity_at(shot.powder_temperature_c);
+    let zero_muzzle = load.velocity_at(scenario.zero_powder_temperature_c);
+    // Every number finite and within what a rifle bullet can be: beyond
+    // that the integration breaks down rather than giving an answer.
+    let numbers = [
+        bullet.mass_kg,
+        bullet.diameter_m,
+        bullet.length_m.unwrap_or(0.01),
+        bullet.ballistic_coefficient,
+        rifle.sight_height_m,
+        rifle.zero_range_m,
+        rifle.zero_height_m,
+        rifle.twist_m,
+        muzzle,
+        zero_muzzle,
+        shot.inclination_degrees,
+        shot.cant_degrees,
+        shot.wind.speed,
+        shot.wind.from_degrees,
+        shot.powder_temperature_c,
+        scenario.zero_powder_temperature_c,
+    ];
+    if numbers.iter().any(|value| !value.is_finite()) {
+        return Err(SolveError::InvalidInput(
+            "a number is not a number (infinite or undefined)",
+        ));
+    }
     let checks = [
-        (bullet.mass_kg > 0.0, "bullet mass must be positive"),
-        (bullet.diameter_m > 0.0, "bullet diameter must be positive"),
+        (
+            (0.000_1..=0.2).contains(&bullet.mass_kg),
+            "bullet mass must be between 0.1 g and 200 g",
+        ),
+        (
+            (0.001..=0.04).contains(&bullet.diameter_m),
+            "bullet diameter must be between 1 mm and 40 mm",
+        ),
+        (
+            bullet.ballistic_coefficient <= 3.0,
+            "ballistic coefficient is implausibly high",
+        ),
+        (
+            muzzle < 2500.0 && zero_muzzle < 2500.0,
+            "muzzle velocity must be under 2500 m/s",
+        ),
+        (
+            rifle.zero_range_m <= 3000.0,
+            "zero range is implausibly long",
+        ),
+        (
+            rifle.zero_height_m.abs() <= 1.0,
+            "zero height is implausibly large",
+        ),
         (
             bullet.length_m.is_none_or(|length| length > 0.0),
             "bullet length must be positive",
@@ -702,6 +751,16 @@ impl Flight {
             position = position + (velocity + v2 * 2.0 + v3 * 2.0 + v4) * (dt / 6.0);
             velocity = velocity + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (dt / 6.0);
             time += dt;
+            // A step that blows up (a very light bullet with a lot of
+            // drag) ends the path rather than filling it with nonsense.
+            if !(position.x.is_finite()
+                && position.y.is_finite()
+                && position.z.is_finite()
+                && velocity.length().is_finite())
+                || velocity.length() > launch.length() * 1.5 + 100.0
+            {
+                break;
+            }
             let sample = self.sample(time, position, velocity);
             samples.push(sample);
             if !keep_going(&sample) {

@@ -474,3 +474,62 @@ fn the_best_point_blank_zero_is_told_at_100_m() {
     let at_zero = analysis::height_at(&s, best.elevation, best.zero_range).unwrap();
     assert!(at_zero.abs() < 1e-3);
 }
+
+#[test]
+fn absurd_bullets_are_refused_or_fly_short_without_a_panic() {
+    // Found by stress testing: these panicked in the drag table lookup.
+    let mut feather = scenario();
+    feather.bullet.mass_kg = 0.000_02;
+    feather.bullet.diameter_m = 0.015;
+    assert!(solver::solve(&feather, 300.0).is_err());
+
+    // Light and draggy, but allowed: the path may end early, never panic.
+    let mut draggy = scenario();
+    draggy.bullet.mass_kg = 0.000_15;
+    draggy.bullet.diameter_m = 0.015;
+    draggy.bullet.drag_curve = Some(std::sync::Arc::new(
+        DragCurve::new(vec![(0.0, 2.9), (5.0, 2.9)]).unwrap(),
+    ));
+    draggy.load.muzzle_velocity = 1300.0;
+    let _ = solver::solve(&draggy, 300.0);
+
+    for velocity in [f64::INFINITY, f64::NAN, 1e300] {
+        let mut fast = scenario();
+        fast.load.muzzle_velocity = velocity;
+        assert!(solver::solve(&fast, 300.0).is_err(), "{velocity}");
+    }
+    assert_eq!(
+        DragModel::G7.drag_coefficient(f64::NAN),
+        DragModel::G7.drag_coefficient(0.0)
+    );
+}
+
+#[test]
+fn the_best_zero_saved_to_the_millimetre_keeps_its_range() {
+    // Found by stress testing: saving the best point-blank zero as a height
+    // at 100 m, rounded to a millimetre, could halve the dead-on range.
+    for (velocity, bc, sight) in [
+        (600.0, 0.25, 0.03),
+        (790.0, 0.45, 0.045),
+        (900.0, 0.3, 0.06),
+    ] {
+        let mut s = scenario();
+        s.load.muzzle_velocity = velocity;
+        s.bullet.ballistic_coefficient = bc;
+        s.bullet.drag_model = DragModel::G7;
+        s.rifle.sight_height_m = sight;
+        let best = analysis::optimal_point_blank(&s, 0.3).unwrap();
+        let height = analysis::height_at(&s, best.elevation, 100.0).unwrap();
+        let mut zeroed = s.clone();
+        zeroed.rifle.zero_range_m = 100.0;
+        zeroed.rifle.zero_height_m = (height * 1000.0).floor() / 1000.0;
+        let solution = solver::solve(&zeroed, 600.0).unwrap();
+        let kept = analysis::point_blank_with_zero(&solution, 0.3).unwrap();
+        assert!(
+            (kept.far_limit - best.point_blank.far_limit).abs() < 5.0,
+            "{velocity} m/s: {} vs {}",
+            kept.far_limit,
+            best.point_blank.far_limit
+        );
+    }
+}

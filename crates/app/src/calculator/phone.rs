@@ -190,7 +190,11 @@ impl CalculatorPage {
             ui.ctx(),
             scenario,
             frame.aim.vital_diameter_cm,
-            rifle.table.end_m.max(SOLVE_RANGE_M),
+            rifle
+                .table
+                .end_m
+                .max(SOLVE_RANGE_M)
+                .max(self.inputs.target_range_m + 10.0),
         );
         let requests = {
             let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
@@ -242,14 +246,16 @@ impl CalculatorPage {
                 .id_salt("phone-hunting")
                 .default_open(true)
                 .show(ui, |ui| {
-                    crate::hunting::today_block(
+                    if crate::hunting::today_block(
                         ui,
                         country,
                         target.catalog_id.as_deref().unwrap_or(&target.id),
                         &target.name,
                         &mut self.inputs.region,
                         self.inputs.place.as_ref(),
-                    );
+                    ) {
+                        self.weather.locate_here(ui.ctx());
+                    }
                 });
         }
         requests.range_note
@@ -308,13 +314,18 @@ impl CalculatorPage {
                         ui,
                         &mut inputs.target_range_m,
                         Quantity::Distance,
-                        5.0..=3000.0,
+                        5.0..=super::MAX_RANGE_M,
                         1.0,
                     );
                 });
                 ui.weak("Tap the number to type an exact range");
                 if let Some(note) = &note {
-                    ui.colored_label(theme::MEADOW, note);
+                    let colour = if note.starts_with("Beyond") {
+                        ui.visuals().warn_fg_color
+                    } else {
+                        theme::MEADOW
+                    };
+                    ui.colored_label(colour, note);
                 }
             });
             ui.add_space(6.0);
@@ -500,7 +511,7 @@ impl CalculatorPage {
                     .add(egui::Button::new(RichText::new("+").size(24.0)).min_size(side))
                     .clicked()
                 {
-                    inputs.wind_speed += step;
+                    inputs.wind_speed = (inputs.wind_speed + step).min(30.0);
                 }
             });
             ui.add_space(6.0);
@@ -922,8 +933,8 @@ impl ResultsView<'_> {
             .then_some(chosen);
         if self.inputs.dial_elevation {
             ui.small(format!(
-                "Dial {} click(s) {}, then hold the orange dot on the target.",
-                dialled_clicks.abs(),
+                "Dial {} {}, then hold the orange dot on the target.",
+                super::clicks_text(dialled_clicks.abs() as i64),
                 if dialled_clicks >= 0.0 { "up" } else { "down" }
             ));
         } else {

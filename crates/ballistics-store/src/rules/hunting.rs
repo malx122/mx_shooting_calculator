@@ -376,8 +376,9 @@ pub struct HuntingLaw {
 /// (minutes after midnight).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Light {
-    /// From `start` to `end`; from the restriction's start to `end` only
-    /// what it says.
+    /// From `start` to `end`, minutes from the date's local midnight (past
+    /// 1440 when it runs into the night after); from the restriction's
+    /// start to `end` only what it says.
     Window {
         start: f64,
         end: f64,
@@ -428,7 +429,10 @@ impl HuntingLaw {
                 From::Sunrise => sunrise,
                 From::Sunset => sunset,
             } + f64::from(time.minutes);
-            sun::local(date, utc, self.utc_offset_hours).0
+            // Minutes from the date's local midnight: past 24:00 (or
+            // below 0) when the light runs over midnight, as in the north.
+            let (minutes, days) = sun::local(date, utc, self.utc_offset_hours);
+            minutes + days as f64 * 1440.0
         };
         Some(Light::Window {
             start: at(rule.start),
@@ -552,6 +556,18 @@ mod tests {
                 .light("mallard", date(2026, 10, 20), 61.5, 23.8)
                 .is_some()
         );
+    }
+
+    #[test]
+    fn light_runs_over_midnight_in_the_north() {
+        // Found by stress testing: Luleå on 1 June ends after midnight.
+        let sweden = crate::Country::Sweden.hunting();
+        let Some(Light::Window { start, end, .. }) =
+            sweden.light("moose", date(2026, 6, 1), 65.58, 22.15)
+        else {
+            panic!("the sun sets in Luleå on 1 June");
+        };
+        assert!(end > 1440.0 && end > start + 20.0 * 60.0, "{start} {end}");
     }
 
     #[test]

@@ -104,6 +104,12 @@ pub fn parse(bytes: &[u8]) -> Result<Vec<Session>, String> {
     Ok(sessions)
 }
 
+/// A muzzle velocity a chronograph can have read, m/s; anything else is
+/// a misread (or a damaged file).
+fn plausible(mps: f64) -> bool {
+    (10.0..=2500.0).contains(&mps)
+}
+
 /// Splits a CSV line on `separator`, honouring quotes, trimming cells.
 fn cells(line: &str, separator: char) -> Vec<String> {
     let mut cells = Vec::new();
@@ -184,7 +190,7 @@ fn garmin(lines: &[&str]) -> Result<Vec<Session>, String> {
             continue;
         }
         match row.get(1).and_then(|cell| number(cell)) {
-            Some(speed) if speed > 0.0 => session.velocities_mps.push(speed * unit),
+            Some(speed) if plausible(speed * unit) => session.velocities_mps.push(speed * unit),
             _ => session.missed += 1,
         }
     }
@@ -232,7 +238,7 @@ fn labradar(lines: &[&str]) -> Result<Vec<Session>, String> {
             continue;
         }
         match row.get(v0).and_then(|cell| number(cell)) {
-            Some(speed) if speed > 0.0 => session.velocities_mps.push(speed * unit),
+            Some(speed) if plausible(speed * unit) => session.velocities_mps.push(speed * unit),
             _ => session.missed += 1,
         }
     }
@@ -266,7 +272,7 @@ fn magnetospeed(lines: &[&str]) -> Result<Vec<Session>, String> {
         if row.len() >= 4 && row[0].parse::<u32>().is_ok() && row[1].parse::<u32>().is_ok() {
             let unit = speed_unit(&row[3]).unwrap_or(MPS_PER_FPS);
             match number(&row[2]) {
-                Some(speed) if speed > 0.0 => session.velocities_mps.push(speed * unit),
+                Some(speed) if plausible(speed * unit) => session.velocities_mps.push(speed * unit),
                 _ => session.missed += 1,
             }
         }
@@ -395,6 +401,15 @@ Series,Shot,Speed   \r\n\
         assert_eq!(sessions[0].velocities_mps.len(), 3);
         assert_eq!(sessions[1].name.as_deref(), Some("Series 2"));
         assert!((sessions[1].average_mps() - 2776.0 * 0.3048).abs() < 1e-9);
+    }
+
+    #[test]
+    fn impossible_speeds_are_misreads() {
+        let file = "\"x\"\n#,SPEED (FPS),x\n1, 1e308, 0\n2, 1e308, 0\n3, 2800, 0\n-,,,\n";
+        let session = &parse(file.as_bytes()).unwrap()[0];
+        assert_eq!(session.velocities_mps.len(), 1);
+        assert_eq!(session.missed, 2);
+        assert!(session.average_mps().is_finite());
     }
 
     #[test]

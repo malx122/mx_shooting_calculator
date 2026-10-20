@@ -151,7 +151,11 @@ pub fn moving_target_lead(row: &RangeRow, target_speed: f64) -> Lead {
 }
 
 fn point_blank_range(samples: &[Sample], radius: f64) -> Option<PointBlank> {
-    let inside = |sample: &Sample| sample.drop.abs() <= radius;
+    // A path that only grazes the top of the zone at its peak, by a
+    // millimetre (a zero rounded to the nearest one), counts as inside:
+    // that is the best point-blank zero, not a miss.
+    const GRAZE: f64 = 0.001;
+    let inside = |sample: &Sample| sample.drop.abs() <= radius + GRAZE;
     let first_inside = samples.iter().position(inside)?;
     let near_limit = if first_inside == 0 {
         0.0

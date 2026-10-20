@@ -981,3 +981,44 @@ fn a_swedish_class_from_an_older_backup_becomes_the_swedish_level() {
     assert!(exported.contains(r#""sweden": 2"#), "{exported}");
     assert!(!exported.contains("swedish_class"));
 }
+
+#[test]
+fn a_time_from_the_future_doesnt_beat_later_edits() {
+    // Found by stress testing: a backup stamped at the end of time made
+    // every later local edit lose to it.
+    let store = Store::open_in_memory().unwrap();
+    let mut x_bolt = rifle("Future X-Bolt", "308-win");
+    store.save_rifle(&mut x_bolt).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(&store.export_json().unwrap()).unwrap();
+    data["rifles"][0]["updated_at"] = serde_json::json!(i64::MAX);
+    let future = data.to_string();
+
+    let mut fresh = Store::open_in_memory().unwrap();
+    fresh.import_json(&future).unwrap();
+    let mut edited = fresh.rifles().unwrap().remove(0);
+    edited.name = "Future X-Bolt v2".into();
+    fresh.save_rifle(&mut edited).unwrap();
+    fresh.import_json(&future).unwrap();
+    assert_eq!(fresh.rifles().unwrap()[0].name, "Future X-Bolt v2");
+}
+
+#[test]
+fn temperature_sensitivity_needs_a_spread_and_stays_believable() {
+    // Found by stress testing: 0.5 °C apart gave 2900 m/s per °C.
+    let bullet = bullet("Oryx", "308-win");
+    let mut load = RifleLoad::new("rifle", &bullet.id);
+    for (temperature_c, velocity_mps) in [(5.0, 50.0), (5.5, 1500.0)] {
+        load.velocities.push(VelocityPoint {
+            temperature_c,
+            velocity_mps,
+            shots: None,
+        });
+    }
+    let model = load.velocity_model(&bullet);
+    assert!(!model.fitted);
+    assert_eq!(model.per_degree, bullet.velocity_per_degree);
+    load.velocities[1].temperature_c = 15.0;
+    let model = load.velocity_model(&bullet);
+    assert!(model.fitted);
+    assert_eq!(model.per_degree, crate::model::MAX_PER_DEGREE);
+}

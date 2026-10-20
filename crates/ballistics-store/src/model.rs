@@ -123,13 +123,23 @@ impl Rifle {
     pub fn validate(&self) -> Result<(), String> {
         let checks = [
             (!self.name.trim().is_empty(), "the rifle needs a name"),
-            (!self.caliber.is_empty(), "choose a caliber"),
-            (self.twist_in > 0.0, "twist rate must be positive"),
             (
-                self.sight_height_cm >= 0.0,
-                "sight height cannot be negative",
+                self.name.chars().count() <= NAME_MAX,
+                "the name is too long",
             ),
-            (self.zero_range_m > 0.0, "zero range must be positive"),
+            (!self.caliber.is_empty(), "choose a caliber"),
+            (
+                (3.0..=40.0).contains(&self.twist_in),
+                "twist must be 1 turn in 3 to 40 inches",
+            ),
+            (
+                (0.0..=20.0).contains(&self.sight_height_cm),
+                "sight height must be 0 to 20 cm",
+            ),
+            (
+                (10.0..=1000.0).contains(&self.zero_range_m),
+                "zero range must be 10 to 1000 m",
+            ),
             (
                 self.zero_height_cm.abs() <= 50.0,
                 "the zero can be at most 50 cm high or low",
@@ -142,10 +152,14 @@ impl Rifle {
                 self.table.problem().is_none(),
                 self.table.problem().unwrap_or_default(),
             ),
-            (self.click_value > 0.0, "click value must be positive"),
             (
-                self.barrel_length_mm.is_none_or(|mm| mm > 0.0),
-                "barrel length must be positive",
+                (0.01..=1.0).contains(&self.click_value),
+                "click value must be 0.01 to 1",
+            ),
+            (
+                self.barrel_length_mm
+                    .is_none_or(|mm| (100.0..=1500.0).contains(&mm)),
+                "barrel length must be 100 to 1500 mm",
             ),
         ];
         first_failure(&checks, &self.name)
@@ -429,16 +443,38 @@ impl Bullet {
     }
 
     pub fn validate(&self) -> Result<(), String> {
-        let positive = |value: Option<f64>| value.is_none_or(|v| v > 0.0);
+        let within = |value: Option<f64>, range: std::ops::RangeInclusive<f64>| {
+            value.is_none_or(|v| range.contains(&v))
+        };
         let checks = [
             (!self.name.trim().is_empty(), "the bullet needs a name"),
-            (!self.caliber.is_empty(), "choose a caliber"),
-            (self.diameter_mm > 0.0, "diameter must be positive"),
-            (self.mass_g > 0.0, "mass must be positive"),
-            (positive(self.length_mm), "length must be positive"),
             (
-                positive(self.bc_g1) && positive(self.bc_g7),
-                "BC must be positive",
+                self.name.chars().count() <= NAME_MAX
+                    && self.manufacturer.chars().count() <= NAME_MAX,
+                "the name is too long",
+            ),
+            (!self.caliber.is_empty(), "choose a caliber"),
+            (
+                (1.0..=16.0).contains(&self.diameter_mm),
+                "diameter must be 1 to 16 mm",
+            ),
+            (
+                (0.1..=100.0).contains(&self.mass_g),
+                "mass must be 0.1 to 100 g",
+            ),
+            (
+                within(self.length_mm, 1.0..=100.0),
+                "length must be 1 to 100 mm",
+            ),
+            (
+                within(self.bc_g1, 0.01..=2.0) && within(self.bc_g7, 0.01..=2.0),
+                "BC must be 0.01 to 2",
+            ),
+            (
+                within(Some(self.velocity_per_degree), -5.0..=5.0)
+                    && within(Some(self.velocity_temperature_c), -60.0..=70.0)
+                    && within(self.min_expansion_mps, 50.0..=1500.0),
+                "velocity data is out of range",
             ),
             (
                 self.drag_model == BcModel::Custom || self.ballistic_coefficient().is_some(),
@@ -463,12 +499,16 @@ impl Bullet {
                 "two drag curve points have the same Mach number",
             ),
             (self.muzzle_velocity_mps > 0.0, "enter the muzzle velocity"),
+            (
+                self.muzzle_velocity_mps <= 1600.0,
+                "muzzle velocity must be at most 1600 m/s",
+            ),
             (self.bc_bands.len() <= 5, "at most five BC bands"),
             (
-                self.bc_bands
-                    .iter()
-                    .all(|band| band.velocity_mps > 0.0 && band.bc > 0.0),
-                "BC bands need a positive velocity and BC",
+                self.bc_bands.iter().all(|band| {
+                    (1.0..=2000.0).contains(&band.velocity_mps) && (0.01..=2.0).contains(&band.bc)
+                }),
+                "BC bands need a velocity up to 2000 m/s and a BC of 0.01 to 2",
             ),
             (
                 {
@@ -480,12 +520,8 @@ impl Bullet {
                 "two BC bands have the same velocity",
             ),
             (
-                positive(self.test_barrel_mm),
-                "test barrel length must be positive",
-            ),
-            (
-                positive(self.min_expansion_mps),
-                "expansion velocity must be positive",
+                within(self.test_barrel_mm, 50.0..=1500.0),
+                "test barrel length must be 50 to 1500 mm",
             ),
         ];
         first_failure(&checks, &self.name)
@@ -519,6 +555,9 @@ pub struct VelocityModel {
     pub reference_temperature_c: f64,
     /// Change in m/s per °C.
     pub per_degree: f64,
+    /// The change was fitted to the hunter's measurements (else it is the
+    /// bullet's).
+    pub fitted: bool,
 }
 
 impl VelocityModel {
@@ -688,6 +727,7 @@ impl RifleLoad {
             velocity_mps: bullet.muzzle_velocity_mps,
             reference_temperature_c: bullet.velocity_temperature_c,
             per_degree: bullet.velocity_per_degree,
+            fitted: false,
         };
         if points.is_empty() {
             return from_bullet;
@@ -699,12 +739,22 @@ impl RifleLoad {
             .iter()
             .map(|p| (p.temperature_c - mean_temperature).powi(2))
             .sum();
-        let per_degree = if spread > 1e-9 {
-            points
+        // Measurements a few degrees apart say little about the change
+        // with temperature (and a slip of the finger says a lot): fit only
+        // over at least 2 °C, and keep to what powders do.
+        let (coldest, warmest) = points
+            .iter()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), p| {
+                (low.min(p.temperature_c), high.max(p.temperature_c))
+            });
+        let fitted = warmest - coldest >= MIN_FIT_SPREAD_C && spread > 1e-9;
+        let per_degree = if fitted {
+            (points
                 .iter()
                 .map(|p| (p.temperature_c - mean_temperature) * (p.velocity_mps - mean_velocity))
                 .sum::<f64>()
-                / spread
+                / spread)
+                .clamp(-MAX_PER_DEGREE, MAX_PER_DEGREE)
         } else {
             bullet.velocity_per_degree
         };
@@ -712,6 +762,7 @@ impl RifleLoad {
             velocity_mps: mean_velocity,
             reference_temperature_c: mean_temperature,
             per_degree,
+            fitted,
         }
     }
 
@@ -727,10 +778,11 @@ impl RifleLoad {
                 "at most ten velocity measurements",
             ),
             (
-                self.velocities
-                    .iter()
-                    .all(|p| p.velocity_mps > 0.0 && (-60.0..=70.0).contains(&p.temperature_c)),
-                "measured velocities must be positive, at -60…70 °C",
+                self.velocities.iter().all(|p| {
+                    (20.0..=2000.0).contains(&p.velocity_mps)
+                        && (-60.0..=70.0).contains(&p.temperature_c)
+                }),
+                "measured velocities must be 20–2000 m/s, at -60…70 °C",
             ),
             (
                 self.impact_offset_mrad
@@ -744,6 +796,15 @@ impl RifleLoad {
         first_failure(&checks, "rifle load")
     }
 }
+
+/// The temperature span measurements need before a sensitivity is fitted.
+pub const MIN_FIT_SPREAD_C: f64 = 2.0;
+/// The largest change with temperature believed, m/s per °C (powders do
+/// about 0.1–3).
+pub const MAX_PER_DEGREE: f64 = 5.0;
+
+/// The longest name a record may have.
+pub const NAME_MAX: usize = 120;
 
 fn first_failure(checks: &[(bool, &str)], record: &str) -> Result<(), String> {
     match checks.iter().find(|(ok, _)| !ok) {
