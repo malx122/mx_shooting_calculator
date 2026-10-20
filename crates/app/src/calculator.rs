@@ -319,6 +319,11 @@ impl CalculatorPage {
                 .min_velocity_mps
                 .unwrap_or_else(|| ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)),
             conditions: self.inputs.conditions(),
+            elevation_travel_clicks: rifle
+                .scope_id
+                .as_deref()
+                .and_then(|id| data.scope(id))
+                .and_then(|scope| Some(scope.elevation_travel? / scope.click_value?)),
             rifle: rifle.clone(),
             bullet: bullet.clone(),
         })

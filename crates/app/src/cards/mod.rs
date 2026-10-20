@@ -7,6 +7,7 @@ pub mod dope;
 mod pdf;
 pub mod sheet;
 pub mod stand;
+pub mod turret;
 
 use ballistics_core::Solution;
 use ballistics_core::analysis::{self, PointBlank};
@@ -23,6 +24,7 @@ use crate::widgets::{confirm_button, grid};
 use dope::{DopeOptions, DopeTable, Measure};
 use sheet::Sheet;
 use stand::{Landmark, NoShoot, Stand, StandOptions, View};
+use turret::{Numbers, Plan, Turret, TurretOptions};
 
 /// Paper and card sizes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,6 +101,8 @@ pub struct Subject {
     pub min_energy_j: Option<f64>,
     pub min_velocity_mps: f64,
     pub conditions: ballistics_shot::Conditions,
+    /// The scope's whole elevation travel in clicks, when known.
+    pub elevation_travel_clicks: Option<f64>,
 }
 
 impl Subject {
@@ -161,6 +165,7 @@ pub enum Kind {
     #[default]
     Dope,
     Stand,
+    Turret,
 }
 
 /// The hunter's card choices and stands, kept on this device.
@@ -172,6 +177,9 @@ pub struct CardSettings {
     pub stand: StandOptions,
     pub stands: Vec<Stand>,
     pub stand_index: usize,
+    pub turret: TurretOptions,
+    /// Each rifle's elevation turret, by rifle id.
+    pub turrets: std::collections::BTreeMap<String, Turret>,
 }
 
 /// A compass reading wanted for a field.
@@ -192,6 +200,8 @@ struct Preview {
     rows: usize,
     columns: usize,
     ethical_m: Option<f64>,
+    /// Things worth knowing about how the card came out.
+    notes: Vec<String>,
 }
 
 type PreviewKey = (CardSettings, Subject, UnitPrefs);
@@ -288,7 +298,7 @@ impl CardsPage {
     }
 
     fn kind_picker(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             for (kind, label, hint) in [
                 (
                     Kind::Dope,
@@ -300,6 +310,11 @@ impl CardsPage {
                     "Stand card",
                     "A map of a stand: rings with holds, limits, landmarks",
                 ),
+                (
+                    Kind::Turret,
+                    "Turret label",
+                    "A strip for the elevation turret with the ranges at their clicks",
+                ),
             ] {
                 let selected = self.settings.kind == kind;
                 let text = RichText::new(label).size(16.0);
@@ -307,7 +322,7 @@ impl CardsPage {
                     .add(
                         egui::Button::new(text)
                             .selected(selected)
-                            .min_size(egui::vec2(120.0, 34.0)),
+                            .min_size(egui::vec2(104.0, 34.0)),
                     )
                     .on_hover_text(hint)
                     .clicked()
@@ -358,6 +373,7 @@ impl CardsPage {
                         rows: table.ranges.len(),
                         columns: table.columns.len(),
                         ethical_m: table.ethical_m,
+                        notes: Vec::new(),
                         card: layout.sheet,
                     }
                 })
@@ -371,6 +387,44 @@ impl CardsPage {
                     rows: stand.landmarks.len(),
                     columns: 0,
                     ethical_m: None,
+                    notes: Vec::new(),
+                })
+            }
+            Kind::Turret => {
+                let turret = self.turret_for(subject);
+                let options = &self.settings.turret;
+                Plan::compute(subject, &turret, options, u).map(|mut plan| {
+                    let strip = turret::strip(subject, &turret, options, &mut plan, u);
+                    let page = turret::page(subject, &turret, options, &plan, &strip, u);
+                    let mut notes = Vec::new();
+                    let crowded = plan.marks.iter().filter(|mark| mark.crowded).count();
+                    if crowded > 0 {
+                        notes.push(format!(
+                            "{crowded} marks left off where they would overlap (they are in the \
+                             table on the sheet)."
+                        ));
+                    }
+                    if let Some(range) = plan.out_of_travel.first() {
+                        notes.push(format!(
+                            "From {} the scope runs out of elevation.",
+                            u.format(Quantity::Distance, *range)
+                        ));
+                    }
+                    if plan.turns > 1 {
+                        notes.push(format!(
+                            "{} turns of the turret: a band for each, the first at the bottom.",
+                            plan.turns
+                        ));
+                    }
+                    Preview {
+                        pages: vec![page],
+                        card: strip,
+                        text_size: None,
+                        rows: plan.marks.len(),
+                        columns: 0,
+                        ethical_m: plan.ethical_m,
+                        notes,
+                    }
                 })
             }
         };
@@ -393,6 +447,9 @@ impl CardsPage {
                 return;
             }
         };
+        for note in &preview.notes {
+            ui.weak(note);
+        }
         let Some(size) = preview.text_size else {
             return;
         };
@@ -464,11 +521,16 @@ impl CardsPage {
                             format!("Stand card, {}", stand.name),
                         )
                     }
+                    Kind::Turret => (
+                        format!("turret-label-{}.pdf", file_part(&subject.rifle.name)),
+                        format!("Turret label, {}", subject.rifle.name),
+                    ),
                 };
                 let bytes = pdf::write(&preview.pages, &title);
                 self.status = Some(save(ui.ctx(), &file, &bytes));
             }
             if let Some(Ok(preview)) = self.current()
+                && self.settings.kind == Kind::Dope
                 && preview
                     .pages
                     .first()
@@ -493,7 +555,204 @@ impl CardsPage {
         match self.settings.kind {
             Kind::Dope => self.dope_controls(ui, subject),
             Kind::Stand => self.stand_controls(ui),
+            Kind::Turret => self.turret_controls(ui, subject),
         }
+    }
+
+    /// The rifle's turret as measured, or a start from its clicks.
+    fn turret_for(&self, subject: &Subject) -> Turret {
+        let rifle = &subject.rifle;
+        self.settings
+            .turrets
+            .get(&rifle.id)
+            .cloned()
+            .unwrap_or_else(|| {
+                Turret::for_clicks(
+                    rifle.click_value,
+                    rifle.click_unit == ballistics_store::ClickUnit::Mil,
+                )
+            })
+    }
+
+    fn turret_controls(&mut self, ui: &mut egui::Ui, subject: &Subject) {
+        let rifle = &subject.rifle;
+        let fallback = self.turret_for(subject);
+        let u = units::prefs(ui.ctx());
+        let ethical = self
+            .current()
+            .and_then(|preview| preview.as_ref().ok())
+            .and_then(|preview| preview.ethical_m);
+        let unit = ballistics_shot::unit_label(rifle.click_unit);
+        let turret = self
+            .settings
+            .turrets
+            .entry(rifle.id.clone())
+            .or_insert(fallback);
+
+        ui.strong("The turret");
+        ui.weak(
+            "Measure the elevation turret's cap with a caliper. The height is the band the \
+             label will cover. Kept for this rifle.",
+        );
+        grid(ui, "turret-size", |ui| {
+            ui.label("Diameter");
+            ui.add(
+                egui::DragValue::new(&mut turret.diameter_mm)
+                    .range(10.0..=80.0)
+                    .speed(0.1)
+                    .max_decimals(1)
+                    .suffix(" mm"),
+            );
+            ui.end_row();
+            ui.label("Height");
+            ui.add(
+                egui::DragValue::new(&mut turret.height_mm)
+                    .range(5.0..=40.0)
+                    .speed(0.1)
+                    .max_decimals(1)
+                    .suffix(" mm"),
+            );
+            ui.end_row();
+            ui.label("Clicks a turn");
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::DragValue::new(&mut turret.clicks_per_turn)
+                        .range(10..=400)
+                        .speed(1.0),
+                );
+                ui.weak(format!(
+                    "= {:.1} {unit} a turn",
+                    f64::from(turret.clicks_per_turn) * rifle.click_value
+                ));
+            });
+            ui.end_row();
+            ui.label("Dialling up turns");
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut turret.clockwise, false, "anticlockwise")
+                    .on_hover_text("Seen from above; most scopes");
+                ui.selectable_value(&mut turret.clockwise, true, "clockwise");
+            });
+            ui.end_row();
+        });
+        ui.weak(format!(
+            "The strip: {:.1} × {:.1} mm, {} clicks of {} {unit}.",
+            turret.circumference_mm(),
+            turret.height_mm,
+            turret.clicks_per_turn,
+            rifle.click_value
+        ));
+
+        let options = &mut self.settings.turret;
+        ui.add_space(6.0);
+        ui.strong("Ranges");
+        grid(ui, "turret-ranges", |ui| {
+            ui.label("From");
+            ui.weak(format!(
+                "the zero, {}",
+                u.format(Quantity::Distance, rifle.zero_range_m)
+            ));
+            ui.end_row();
+            units::quantity(
+                ui,
+                "To",
+                &mut options.end_m,
+                Quantity::Distance,
+                100.0..=2000.0,
+                5.0,
+            );
+            ui.label("Numbers every");
+            ui.horizontal(|ui| {
+                for every in [50.0, 100.0] {
+                    ui.selectable_value(
+                        &mut options.numbers_every,
+                        every,
+                        format!("{every:.0} {}", u.label(Quantity::Distance)),
+                    );
+                }
+            });
+            ui.end_row();
+            ui.label("Marks between");
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut options.marks_every, 0.0, "none");
+                for every in [25.0, 50.0] {
+                    if every < options.numbers_every {
+                        ui.selectable_value(
+                            &mut options.marks_every,
+                            every,
+                            format!("every {every:.0}"),
+                        );
+                    }
+                }
+            });
+            ui.end_row();
+            ui.label("Numbers as");
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut options.numbers, Numbers::Hundreds, "1 2 3")
+                    .on_hover_text("Hundreds: room for bigger digits");
+                ui.selectable_value(&mut options.numbers, Numbers::Full, "100 200 300");
+            });
+            ui.end_row();
+        });
+        if options.marks_every >= options.numbers_every {
+            options.marks_every = 0.0;
+        }
+        ui.horizontal_wrapped(|ui| {
+            ui.weak("Quick:");
+            if let Some(limit) = ethical
+                && ui.small_button("To the limit").clicked()
+            {
+                options.end_m = (limit / 25.0).floor() * 25.0;
+            }
+            for end in [300.0, 500.0, 800.0] {
+                if ui.small_button(u.format(Quantity::Distance, end)).clicked() {
+                    options.end_m = end;
+                }
+            }
+        });
+        ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
+            ui.checkbox(&mut options.stop_at_limit, "End at the ethical limit")
+                .on_hover_text("Otherwise the ranges beyond it are marked in red");
+        });
+
+        ui.add_space(6.0);
+        ui.strong("Temperature");
+        ui.horizontal_wrapped(|ui| {
+            let mut today = options.temperature_c.is_none();
+            if ui
+                .selectable_label(
+                    today,
+                    format!(
+                        "Today ({})",
+                        u.format(Quantity::Temperature, subject.conditions.temperature_c)
+                    ),
+                )
+                .clicked()
+            {
+                today = true;
+                options.temperature_c = None;
+            }
+            if ui.selectable_label(!today, "Chosen").clicked() && today {
+                options.temperature_c = Some(subject.conditions.temperature_c.round());
+            }
+            if let Some(temperature) = &mut options.temperature_c {
+                units::drag(ui, temperature, Quantity::Temperature, -40.0..=50.0, 1.0);
+            }
+        });
+        ui.weak("Cold air and cartridges need more clicks: a label for the season.");
+
+        ui.add_space(6.0);
+        ui.strong("Look");
+        ui.horizontal_wrapped(|ui| {
+            toggle(ui, &mut options.ruler, "click ruler");
+            toggle(ui, &mut options.description, "description line");
+            ui.separator();
+            ui.selectable_value(&mut options.dark, false, "black on white");
+            ui.selectable_value(&mut options.dark, true, "white on black");
+        });
+        ui.horizontal(|ui| {
+            ui.label("Copies on the sheet");
+            ui.add(egui::DragValue::new(&mut options.copies).range(1..=8));
+        });
     }
 
     fn dope_controls(&mut self, ui: &mut egui::Ui, subject: &Subject) {
@@ -1247,6 +1506,7 @@ mod tests {
             min_energy_j: Some(2000.0),
             min_velocity_mps: 550.0,
             conditions: ballistics_shot::Conditions::default(),
+            elevation_travel_clicks: None,
         }
     }
 
@@ -1307,8 +1567,48 @@ mod tests {
             let sheet = stand::layout(&subject, &stand, &StandOptions::default(), &u).unwrap();
             stand_pdfs.push(pdf::write(&[sheet], "Stand card"));
         }
+        let turret = Turret::default();
+        let options = TurretOptions::default();
+        let mut plan = Plan::compute(&subject, &turret, &options, &u).unwrap();
+        // The zero range sits at click 0 and the clicks grow with range.
+        assert_eq!(plan.marks[0].clicks, 0);
+        assert_eq!(plan.marks[0].text, "1");
+        assert!(
+            plan.marks
+                .windows(2)
+                .all(|pair| pair[0].clicks <= pair[1].clicks)
+        );
+        assert!(plan.marks.iter().any(|mark| mark.beyond));
+        let strip = turret::strip(&subject, &turret, &options, &mut plan, &u);
+        assert!((strip.width - turret.circumference_mm()).abs() < 1e-3);
+        let turret_pdf = pdf::write(
+            &[turret::page(&subject, &turret, &options, &plan, &strip, &u)],
+            "Turret label",
+        );
+        let dark = TurretOptions {
+            dark: true,
+            numbers: Numbers::Full,
+            end_m: 900.0,
+            ..options
+        };
+        let mut dark_plan = Plan::compute(&subject, &turret, &dark, &u).unwrap();
+        assert!(dark_plan.turns >= 2);
+        let dark_strip = turret::strip(&subject, &turret, &dark, &mut dark_plan, &u);
+        let dark_pdf = pdf::write(
+            &[turret::page(
+                &subject,
+                &turret,
+                &dark,
+                &dark_plan,
+                &dark_strip,
+                &u,
+            )],
+            "Turret label",
+        );
         if let Ok(folder) = std::env::var("MXSC_CARDS_OUT") {
             let folder = std::path::Path::new(&folder);
+            std::fs::write(folder.join("turret.pdf"), &turret_pdf).unwrap();
+            std::fs::write(folder.join("turret-dark.pdf"), &dark_pdf).unwrap();
             std::fs::write(folder.join("dope-a4.pdf"), &sheet_pdf).unwrap();
             std::fs::write(folder.join("dope-a6.pdf"), &a6_pdf).unwrap();
             for (name, bytes) in ["quarter", "half", "full"].iter().zip(&stand_pdfs) {

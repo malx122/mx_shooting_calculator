@@ -19,6 +19,9 @@ any release may still change things noticeably.
   to fit with a readability meter) and stand cards (a map of the stand with
   range rings and holds, the shooting sector, no-shoot directions and
   landmarks). Saved as PDF.
+- **Turret labels:** a strip for the elevation turret with each range at
+  the clicks it needs, worked out by the calculation, a band for each turn
+  and a click ruler. Measure the turret once per rifle.
 
 ## [0.5.0] - 2026-10-20
 

@@ -308,6 +308,17 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      with their range and direction are marked on the map and listed with
      their hold; on a phone, 🧭 takes a direction from the compass. Spare
      room becomes lines for notes. Stands are kept on the device.
+   - **Turret label:** a strip to wrap round the elevation turret, with
+     the ranges at the clicks they need. Measure the turret once (diameter
+     and height with a caliper, clicks a turn, which way it turns when
+     dialling up); it is kept for the rifle. The marks come from the
+     calculation at today's or a chosen temperature: a number every 50 or
+     100 m (as "1 2 3" or "100 200 300"), lines and dots between, red
+     beyond the ethical limit, and a band for each turn of the turret.
+     Under them is a ruler with a tick for every click and the mil (or
+     MOA) numbered. Marks that would overlap are left off and listed. The
+     A4 sheet has copies of the strip with cut marks, a 50 mm bar to check
+     the print scale, and the clicks for every range.
 
 **Units** (in the header): metric or imperial for each quantity separately.
 Distance, drop, sight height, velocity, wind speed, temperature, sensitivity,
