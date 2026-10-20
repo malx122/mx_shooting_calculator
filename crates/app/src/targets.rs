@@ -87,7 +87,7 @@ impl TargetsPage {
             }
             Showing::Catalog(id) => {
                 if let Some(target) = Catalog::builtin().target(id)
-                    && catalog_view(ui, target, data.country, data.region.as_deref())
+                    && catalog_view(ui, target, data, data.region.as_deref())
                 {
                     self.showing = Showing::Custom(Box::new(target.to_custom()));
                 }
@@ -108,7 +108,9 @@ impl TargetsPage {
             self.showing = Showing::Custom(Box::new(Target::new_custom()));
         }
         for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
-            if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
+            if mobile::list_row(ui, &target.name, &summary(ui, target, data.hunting), false)
+                .clicked()
+            {
                 self.showing = Showing::Custom(Box::new(target.clone()));
             }
         }
@@ -118,7 +120,9 @@ impl TargetsPage {
         ui.add_space(10.0);
         let mut chosen = None;
         catalog_groups(ui, &self.search, |ui, target| {
-            if mobile::list_row(ui, &target.name, &summary(ui, target), false).clicked() {
+            if mobile::list_row(ui, &target.name, &summary(ui, target, data.hunting), false)
+                .clicked()
+            {
                 chosen = Some(target.id.clone());
             }
         });
@@ -207,11 +211,11 @@ pub fn catalog_groups(
 }
 
 /// A target's zone and energy, for list rows.
-fn summary(ui: &egui::Ui, target: &Target) -> String {
+fn summary(ui: &egui::Ui, target: &Target, hunting: bool) -> String {
     let u = units::prefs(ui.ctx());
     let zone = u.format(Quantity::ShortLength, target.vital_diameter_cm);
     match target.min_energy_j {
-        Some(energy) if target.is_game() => {
+        Some(energy) if target.is_game() && hunting => {
             format!("{zone} · {}", u.format(Quantity::Energy, energy))
         }
         _ => zone,
@@ -235,12 +239,8 @@ fn preview_size(ui: &egui::Ui) -> egui::Vec2 {
 
 /// A catalog target, read-only. Returns true when the hunter asks for
 /// their own copy.
-fn catalog_view(
-    ui: &mut egui::Ui,
-    target: &Target,
-    country: Option<Country>,
-    region: Option<&str>,
-) -> bool {
+fn catalog_view(ui: &mut egui::Ui, target: &Target, data: &Data, region: Option<&str>) -> bool {
+    let country = data.country;
     ui.heading(&target.name);
     ui.weak(match target.kind {
         TargetKind::Game => "Game, from the catalog",
@@ -249,7 +249,7 @@ fn catalog_view(
     ui.add_space(6.0);
     let size = preview_size(ui);
     let details = |ui: &mut egui::Ui| {
-        facts(ui, target, country);
+        facts(ui, target, country, data.hunting);
         ui.add_space(6.0);
         if !target.notes.is_empty() {
             ui.label(&target.notes);
@@ -285,7 +285,7 @@ fn catalog_view(
     }
 }
 
-fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>) {
+fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>, hunting: bool) {
     let u = units::prefs(ui.ctx());
     let short = |cm: f64| u.format(Quantity::ShortLength, cm);
     grid(ui, "target-facts", |ui| {
@@ -337,14 +337,14 @@ fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>) {
                 ui.end_row();
             }
         }
-        ui.label(if target.is_game() {
+        ui.label(if target.is_game() && hunting {
             "Vital zone"
         } else {
             "Hit zone"
         });
         ui.label(short(target.vital_diameter_cm));
         ui.end_row();
-        if target.is_game() {
+        if target.is_game() && hunting {
             ui.label("Minimum energy");
             ui.label(target.min_energy_j.map_or("none".to_owned(), |energy| {
                 u.format(Quantity::Energy, energy)
@@ -400,7 +400,7 @@ fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec
             let close = ui
                 .vertical(|ui| {
                     ui.set_max_width(420.0);
-                    editor_fields(ui, target, stored, data.country, actions)
+                    editor_fields(ui, target, stored, data, actions)
                 })
                 .inner;
             ui.add_space(16.0);
@@ -411,7 +411,7 @@ fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec
     } else {
         preview(ui, target, size);
         ui.add_space(8.0);
-        editor_fields(ui, target, stored, data.country, actions)
+        editor_fields(ui, target, stored, data, actions)
     }
 }
 
@@ -420,10 +420,10 @@ fn editor_fields(
     ui: &mut egui::Ui,
     target: &mut Target,
     stored: bool,
-    country: Option<Country>,
+    data: &Data,
     actions: &mut Vec<Action>,
 ) -> bool {
-    fields(ui, target, country);
+    fields(ui, target, data.country, data.hunting);
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         if ui.button("Save").clicked() {
@@ -437,7 +437,7 @@ fn editor_fields(
     .inner
 }
 
-fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>) {
+fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunting: bool) {
     grid(ui, "target-editor", |ui| {
         text(ui, "Name", &mut target.name);
         ui.label("Kind");
@@ -561,7 +561,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>) {
         if !matches!(target.shape, TargetShape::Plate { .. }) {
             quantity(
                 ui,
-                if target.is_game() {
+                if target.is_game() && hunting {
                     "Vital zone diameter"
                 } else {
                     "Hit zone diameter"
@@ -572,7 +572,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>) {
                 0.5,
             );
         }
-        if target.is_game() {
+        if target.is_game() && hunting {
             optional_quantity(
                 ui,
                 "Minimum energy",

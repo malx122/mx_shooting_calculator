@@ -1,18 +1,18 @@
 //! The Rifles page: the hunter's rifles and own scopes, with an editor for
-//! each.
+//! each, and for each rifle the bullets shot in it (their loads).
 
 use ballistics_store::{
-    AngleUnit, Catalog, ClickUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, Rifle, TableSettings,
-    UserScope,
+    AngleUnit, Catalog, ClickUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, Rifle, UserScope,
 };
-use eframe::egui;
+use eframe::egui::{self, RichText};
 
 use crate::app::{Action, Data};
+use crate::loads::LoadEditor;
 use crate::mobile;
 use crate::sight_picture::reticle_preview;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{
-    ScopeChoice, caliber_name, caliber_picker, confirm_button, grid, number, optional_number,
+    ScopeChoice, caliber_name, caliber_picker, confirm_button, fold, grid, number, optional_number,
     reticle_name, scope_picker, scope_summary, text,
 };
 
@@ -26,6 +26,9 @@ pub struct RiflesPage {
     editing: Editing,
     caliber_search: String,
     scope_search: String,
+    /// The bullet whose load in the open rifle is shown.
+    load_bullet: Option<String>,
+    loads: LoadEditor,
 }
 
 impl Default for RiflesPage {
@@ -34,13 +37,33 @@ impl Default for RiflesPage {
             editing: Editing::Nothing,
             caliber_search: String::new(),
             scope_search: String::new(),
+            load_bullet: None,
+            loads: LoadEditor::default(),
         }
     }
 }
 
 impl RiflesPage {
-    pub fn edit(&mut self, rifle: &Rifle) {
-        self.editing = Editing::Rifle(rifle.clone());
+    /// Opens a rifle with one of its bullets' setup showing.
+    pub fn edit_load(&mut self, rifle: &Rifle, bullet_id: &str) {
+        if !matches!(&self.editing, Editing::Rifle(editing) if editing.id == rifle.id) {
+            self.editing = Editing::Rifle(rifle.clone());
+        }
+        self.load_bullet = Some(bullet_id.to_owned());
+    }
+
+    /// Drops unsaved load edits, e.g. after the load was reset.
+    pub fn forget_load_draft(&mut self) {
+        self.loads.forget();
+    }
+
+    /// Takes a range table saved from Calculate into an open draft.
+    pub fn table_saved(&mut self, rifle: &Rifle) {
+        if let Editing::Rifle(editing) = &mut self.editing
+            && editing.id == rifle.id
+        {
+            editing.table = rifle.table;
+        }
     }
 
     /// Keeps the editor on the record that was just saved.
@@ -124,6 +147,8 @@ impl RiflesPage {
                 data,
                 &mut self.caliber_search,
                 &mut self.scope_search,
+                &mut self.load_bullet,
+                &mut self.loads,
                 actions,
             ),
             Editing::Scope(scope) => scope_editor(ui, scope, data, actions),
@@ -180,7 +205,7 @@ impl RiflesPage {
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
         ui.heading("Rifles");
-        if ui.button("➕ New rifle").clicked() {
+        if ui.button("+ New rifle").clicked() {
             self.new_rifle();
         }
         ui.add_space(4.0);
@@ -206,7 +231,7 @@ impl RiflesPage {
         ui.separator();
         ui.heading("My scopes");
         ui.weak("For scopes that aren't in the catalog.");
-        if ui.button("➕ New scope").clicked() {
+        if ui.button("+ New scope").clicked() {
             self.editing = Editing::Scope(UserScope::new());
         }
         ui.add_space(4.0);
@@ -224,12 +249,15 @@ impl RiflesPage {
 }
 
 /// The rifle editor. Returns true when the hunter cancels a new rifle.
+#[allow(clippy::too_many_arguments)]
 fn rifle_editor(
     ui: &mut egui::Ui,
     rifle: &mut Rifle,
     data: &Data,
     caliber_search: &mut String,
     scope_search: &mut String,
+    load_bullet: &mut Option<String>,
+    loads: &mut LoadEditor,
     actions: &mut Vec<Action>,
 ) -> bool {
     let stored = data.rifles.iter().find(|stored| stored.id == rifle.id);
@@ -247,7 +275,10 @@ fn rifle_editor(
     let mut cancel = false;
     ui.horizontal(|ui| {
         if ui
-            .add_enabled(problem.is_none() && changed, egui::Button::new("💾 Save"))
+            .add_enabled(
+                problem.is_none() && changed,
+                egui::Button::new(RichText::new("Save").strong()),
+            )
             .clicked()
         {
             actions.push(Action::SaveRifle(rifle.clone()));
@@ -269,24 +300,85 @@ fn rifle_editor(
         ui.weak("Unsaved changes");
     }
 
-    if stored.is_some() {
+    if let Some(stored) = stored {
         ui.separator();
-        let count = data
-            .bullets
-            .iter()
-            .filter(|b| b.caliber == rifle.caliber)
-            .count();
-        ui.horizontal(|ui| {
-            ui.label(format!(
-                "{count} bullet(s) in your collection for {}.",
+        loads_section(ui, stored, data, load_bullet, loads, actions);
+    }
+    cancel
+}
+
+/// The bullets for the rifle's caliber, each with its setup in this rifle:
+/// velocities, point of impact, zero weather and truing.
+fn loads_section(
+    ui: &mut egui::Ui,
+    rifle: &Rifle,
+    data: &Data,
+    load_bullet: &mut Option<String>,
+    loads: &mut LoadEditor,
+    actions: &mut Vec<Action>,
+) {
+    ui.heading("Loads in this rifle");
+    let bullets: Vec<_> = data
+        .bullets
+        .iter()
+        .filter(|bullet| bullet.caliber == rifle.caliber)
+        .collect();
+    if bullets.is_empty() {
+        ui.horizontal_wrapped(|ui| {
+            ui.weak(format!(
+                "No {} bullets in your collection yet.",
                 caliber_name(&rifle.caliber)
             ));
-            if ui.button("Show bullets").clicked() {
+            if ui.button("Add bullets").clicked() {
                 actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
             }
         });
+        return;
     }
-    cancel
+    if load_bullet
+        .as_ref()
+        .is_none_or(|id| !bullets.iter().any(|bullet| &bullet.id == id))
+    {
+        *load_bullet = Some(bullets[0].id.clone());
+    }
+    let load_of = |bullet_id: &str| {
+        data.loads
+            .iter()
+            .find(|load| load.rifle_id == rifle.id && load.bullet_id == bullet_id)
+    };
+    ui.horizontal_wrapped(|ui| {
+        for bullet in &bullets {
+            let selected = load_bullet.as_deref() == Some(bullet.id.as_str());
+            let set_up = load_of(&bullet.id).is_some();
+            let text = if set_up {
+                format!("{} ✔", bullet.display_name())
+            } else {
+                bullet.display_name()
+            };
+            if ui
+                .add(egui::Button::new(text).selected(selected))
+                .on_hover_text(if set_up {
+                    "Set up for this rifle"
+                } else {
+                    "Using the bullet's own data"
+                })
+                .clicked()
+            {
+                *load_bullet = Some(bullet.id.clone());
+            }
+        }
+        if ui.small_button("+ Add bullets").clicked() {
+            actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
+        }
+    });
+    ui.add_space(4.0);
+    let Some(bullet) = bullets
+        .iter()
+        .find(|bullet| load_bullet.as_deref() == Some(bullet.id.as_str()))
+    else {
+        return;
+    };
+    loads.show(ui, rifle, bullet, load_of(&bullet.id), &data.today, actions);
 }
 
 fn rifle_fields(
@@ -296,6 +388,7 @@ fn rifle_fields(
     caliber_search: &mut String,
     scope_search: &mut String,
 ) {
+    let u = units::prefs(ui.ctx());
     grid(ui, "rifle-editor", |ui| {
         text(ui, "Name", &mut rifle.name);
         ui.label("Caliber");
@@ -304,29 +397,8 @@ fn rifle_fields(
             rifle.twist_in = caliber.typical_twist_in;
         }
         ui.end_row();
-        optional_quantity(
-            ui,
-            "Barrel length",
-            &mut rifle.barrel_length_mm,
-            560.0,
-            Quantity::BarrelLength,
-            200.0..=1000.0,
-            1.0,
-        );
-        quantity(
-            ui,
-            "Twist, 1 turn in",
-            &mut rifle.twist_in,
-            Quantity::Twist,
-            3.0..=40.0,
-            0.05,
-        );
-        ui.label("Twist direction");
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut rifle.right_hand_twist, true, "Right");
-            ui.selectable_value(&mut rifle.right_hand_twist, false, "Left");
-        });
-        ui.end_row();
+        scope_rows(ui, rifle, data, scope_search);
+        click_rows(ui, rifle, data);
         quantity(
             ui,
             "Sight height",
@@ -335,141 +407,206 @@ fn rifle_fields(
             0.0..=15.0,
             0.1,
         );
-        quantity(
-            ui,
-            "Zero range",
-            &mut rifle.zero_range_m,
-            Quantity::Distance,
-            10.0..=1000.0,
-            1.0,
-        );
-        quantity(
-            ui,
-            "  hitting there",
-            &mut rifle.zero_height_cm,
-            Quantity::ShortLength,
-            -50.0..=50.0,
-            0.1,
-        );
-        ui.label("");
-        ui.weak("0 on the crosshair; + high, − low (\"4 cm high at 100 m\")");
-        ui.end_row();
-        quantity(
-            ui,
-            "Zeroed at",
-            &mut rifle.zero_temperature_c,
-            Quantity::Temperature,
-            -40.0..=50.0,
-            0.5,
-        );
-        quantity(
-            ui,
-            "  station pressure",
-            &mut rifle.zero_pressure_hpa,
-            Quantity::Pressure,
-            500.0..=1100.0,
-            1.0,
-        );
-        number(
-            ui,
-            "  humidity",
-            &mut rifle.zero_humidity_percent,
-            0.0..=100.0,
-            1.0,
-            " %",
-        );
-        ui.label("  powder temperature");
+        ui.label("Zero");
         ui.horizontal(|ui| {
-            let mut same = rifle.zero_powder_temperature_c.is_none();
-            if ui.checkbox(&mut same, "same as air").changed() {
-                rifle.zero_powder_temperature_c = (!same).then_some(rifle.zero_temperature_c);
-            }
-            if let Some(powder) = &mut rifle.zero_powder_temperature_c {
-                units::drag(ui, powder, Quantity::Temperature, -45.0..=60.0, 0.5);
-            }
-        });
-        ui.end_row();
-        scope_rows(ui, rifle, data, scope_search);
-        ui.label("Scope clicks");
-        ui.horizontal(|ui| {
-            let before = rifle.click_unit;
-            ui.selectable_value(&mut rifle.click_unit, ClickUnit::Mil, "mil");
-            ui.selectable_value(&mut rifle.click_unit, ClickUnit::Moa, "MOA");
-            if before != rifle.click_unit {
-                rifle.click_value = match rifle.click_unit {
-                    ClickUnit::Mil => 0.1,
-                    ClickUnit::Moa => 0.25,
-                };
-            }
-            ui.add(
-                egui::DragValue::new(&mut rifle.click_value)
-                    .range(0.01..=1.0)
-                    .speed(0.005)
-                    .prefix("per click "),
+            units::drag(
+                ui,
+                &mut rifle.zero_range_m,
+                Quantity::Distance,
+                10.0..=1000.0,
+                1.0,
             );
+            ui.label("hitting");
+            units::drag(
+                ui,
+                &mut rifle.zero_height_cm,
+                Quantity::ShortLength,
+                -50.0..=50.0,
+                0.1,
+            )
+            .on_hover_text("0 on the crosshair; + high, − low (\"4 cm high at 100 m\")");
+            ui.weak("above the aim");
         });
-        ui.end_row();
-        ui.label("Notes");
-        ui.text_edit_multiline(&mut rifle.notes);
         ui.end_row();
     });
-    ui.small(
-        "The twist is set to a common value for the caliber; check your barrel's actual twist.",
+    ui.add_space(4.0);
+
+    let short = |quantity: Quantity, value: f64| {
+        let number = format!("{:.2}", u.show(quantity, value));
+        let number = number.trim_end_matches('0').trim_end_matches('.');
+        format!("{number} {}", u.label(quantity))
+    };
+    let barrel = format!(
+        "{} · 1:{} {}",
+        rifle
+            .barrel_length_mm
+            .map_or("length unknown".to_owned(), |mm| short(
+                Quantity::BarrelLength,
+                mm
+            )),
+        short(Quantity::Twist, rifle.twist_in),
+        if rifle.right_hand_twist {
+            "right"
+        } else {
+            "left"
+        }
     );
-    table_settings(ui, &mut rifle.table);
+    fold(ui, "rifle-barrel", "Barrel", &barrel, |ui| {
+        grid(ui, "rifle-barrel-grid", |ui| {
+            optional_quantity(
+                ui,
+                "Barrel length",
+                &mut rifle.barrel_length_mm,
+                560.0,
+                Quantity::BarrelLength,
+                200.0..=1000.0,
+                1.0,
+            );
+            quantity(
+                ui,
+                "Twist, 1 turn in",
+                &mut rifle.twist_in,
+                Quantity::Twist,
+                3.0..=40.0,
+                0.05,
+            );
+            ui.label("");
+            ui.weak("Set to a common value for the caliber; check your barrel's.");
+            ui.end_row();
+            ui.label("Twist direction");
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut rifle.right_hand_twist, true, "Right");
+                ui.selectable_value(&mut rifle.right_hand_twist, false, "Left");
+            });
+            ui.end_row();
+        });
+    });
+    let weather = format!(
+        "{} · {} · {} %",
+        u.format(Quantity::Temperature, rifle.zero_temperature_c),
+        u.format(Quantity::Pressure, rifle.zero_pressure_hpa),
+        rifle.zero_humidity_percent.round()
+    );
+    fold(
+        ui,
+        "rifle-zero-weather",
+        "Zero conditions",
+        &weather,
+        |ui| {
+            ui.weak("The weather the rifle was zeroed in.");
+            grid(ui, "rifle-zero-grid", |ui| {
+                quantity(
+                    ui,
+                    "Temperature",
+                    &mut rifle.zero_temperature_c,
+                    Quantity::Temperature,
+                    -40.0..=50.0,
+                    0.5,
+                );
+                quantity(
+                    ui,
+                    "Barometer at the range",
+                    &mut rifle.zero_pressure_hpa,
+                    Quantity::Pressure,
+                    500.0..=1100.0,
+                    1.0,
+                );
+                number(
+                    ui,
+                    "Humidity",
+                    &mut rifle.zero_humidity_percent,
+                    0.0..=100.0,
+                    1.0,
+                    " %",
+                );
+                ui.label("Powder temperature");
+                ui.horizontal(|ui| {
+                    let mut same = rifle.zero_powder_temperature_c.is_none();
+                    if ui.checkbox(&mut same, "same as air").changed() {
+                        rifle.zero_powder_temperature_c =
+                            (!same).then_some(rifle.zero_temperature_c);
+                    }
+                    if let Some(powder) = &mut rifle.zero_powder_temperature_c {
+                        units::drag(ui, powder, Quantity::Temperature, -45.0..=60.0, 0.5);
+                    }
+                });
+                ui.end_row();
+            });
+        },
+    );
+    let notes = rifle.notes.lines().next().unwrap_or_default().to_owned();
+    fold(
+        ui,
+        "rifle-notes",
+        "Notes",
+        &crate::calculator::shortened(&notes, 50),
+        |ui| {
+            ui.text_edit_multiline(&mut rifle.notes);
+        },
+    );
 }
 
-fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings) {
-    ui.add_space(8.0);
-    ui.strong("Dope table");
-    grid(ui, "table-range", |ui| {
-        quantity(
-            ui,
-            "From",
-            &mut table.start_m,
-            Quantity::Distance,
-            0.0..=2900.0,
-            5.0,
-        );
-        quantity(
-            ui,
-            "To",
-            &mut table.end_m,
-            Quantity::Distance,
-            10.0..=3000.0,
-            10.0,
-        );
-        quantity(
-            ui,
-            "Every",
-            &mut table.step_m,
-            Quantity::Distance,
-            1.0..=500.0,
-            1.0,
-        );
-    });
-    let columns = &mut table.columns;
-    ui.horizontal_wrapped(|ui| {
-        ui.label("Height:")
-            .on_hover_text("Where a dead-on hold hits: + above the aim, − below");
-        ui.checkbox(&mut columns.drop_length, "cm");
-        ui.checkbox(&mut columns.drop_mil, "mil");
-        ui.checkbox(&mut columns.drop_moa, "MOA");
-        ui.checkbox(&mut columns.drop_clicks, "clicks");
-    });
-    ui.horizontal_wrapped(|ui| {
-        ui.label("Wind:");
-        ui.checkbox(&mut columns.wind_length, "cm");
-        ui.checkbox(&mut columns.wind_mil, "mil");
-        ui.checkbox(&mut columns.wind_moa, "MOA");
-        ui.checkbox(&mut columns.wind_clicks, "clicks");
-    });
-    ui.horizontal_wrapped(|ui| {
-        ui.label("Also:");
-        ui.checkbox(&mut columns.velocity, "velocity");
-        ui.checkbox(&mut columns.energy, "energy");
-        ui.checkbox(&mut columns.time, "time of flight");
-    });
+/// The scope's clicks: taken from the scope when it publishes them, with a
+/// way to set them by hand.
+fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
+    let from_scope = rifle
+        .scope_id
+        .as_deref()
+        .and_then(|id| data.scope(id))
+        .and_then(|scope| scope.rifle_clicks());
+    let own_id = ui.id().with("own-clicks");
+    let own = ui
+        .data(|data| data.get_temp::<bool>(own_id))
+        .unwrap_or(false);
+    ui.label("Clicks");
+    match from_scope {
+        Some(clicks) if !own && clicks == (rifle.click_unit, rifle.click_value) => {
+            ui.horizontal(|ui| {
+                ui.label(format!(
+                    "{} {} a click, from the scope",
+                    rifle.click_value,
+                    ballistics_shot::unit_label(rifle.click_unit)
+                ));
+                if ui.small_button("Change").clicked() {
+                    ui.data_mut(|data| data.insert_temp(own_id, true));
+                }
+            });
+        }
+        _ => {
+            ui.horizontal_wrapped(|ui| {
+                let before = rifle.click_unit;
+                ui.selectable_value(&mut rifle.click_unit, ClickUnit::Mil, "mil");
+                ui.selectable_value(&mut rifle.click_unit, ClickUnit::Moa, "MOA");
+                if before != rifle.click_unit {
+                    rifle.click_value = match rifle.click_unit {
+                        ClickUnit::Mil => 0.1,
+                        ClickUnit::Moa => 0.25,
+                    };
+                }
+                ui.add(
+                    egui::DragValue::new(&mut rifle.click_value)
+                        .range(0.01..=1.0)
+                        .speed(0.005)
+                        .suffix(" a click"),
+                );
+                if let Some(clicks) = from_scope
+                    && clicks != (rifle.click_unit, rifle.click_value)
+                    && ui
+                        .small_button("Use the scope's")
+                        .on_hover_text(format!(
+                            "{} {} a click",
+                            clicks.1,
+                            ballistics_shot::unit_label(clicks.0)
+                        ))
+                        .clicked()
+                {
+                    (rifle.click_unit, rifle.click_value) = clicks;
+                    ui.data_mut(|data| data.insert_temp(own_id, false));
+                }
+            });
+        }
+    }
+    ui.end_row();
 }
 
 /// Scope and reticle rows of the rifle editor. Choosing a scope also takes
@@ -723,7 +860,7 @@ fn scope_editor(
     let mut cancel = false;
     ui.horizontal(|ui| {
         if ui
-            .add_enabled(problem.is_none() && changed, egui::Button::new("💾 Save"))
+            .add_enabled(problem.is_none() && changed, egui::Button::new("Save"))
             .clicked()
         {
             actions.push(Action::SaveScope(scope.clone()));

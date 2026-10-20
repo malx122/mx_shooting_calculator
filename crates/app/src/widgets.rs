@@ -2,15 +2,53 @@
 
 use std::ops::RangeInclusive;
 
-use ballistics_store::{
-    Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, Scope, Target, TargetGroup, UserScope,
-};
+use ballistics_store::{Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, Scope, UserScope};
 use eframe::egui::{self, RichText};
 
-pub fn section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
-    egui::CollapsingHeader::new(RichText::new(title).strong())
-        .default_open(true)
-        .show(ui, contents);
+/// A folded section whose header also tells what is inside, so it needs
+/// opening only to change it: "Weather   3.6 °C · 1013 hPa · Mora".
+pub fn fold<R>(
+    ui: &mut egui::Ui,
+    id: &str,
+    title: &str,
+    summary: &str,
+    contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> Option<R> {
+    fold_with(ui, id, title, summary, false, contents)
+}
+
+/// A fold that starts open when `open` is true.
+pub fn fold_with<R>(
+    ui: &mut egui::Ui,
+    id: &str,
+    title: &str,
+    summary: &str,
+    open: bool,
+    contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> Option<R> {
+    let mut job = egui::text::LayoutJob::default();
+    let body = egui::TextStyle::Body.resolve(ui.style());
+    job.append(
+        title,
+        0.0,
+        egui::TextFormat::simple(body.clone(), ui.visuals().strong_text_color()),
+    );
+    if !summary.is_empty() {
+        job.append(
+            summary,
+            12.0,
+            egui::TextFormat::simple(
+                egui::FontId::proportional(body.size * 0.9),
+                ui.visuals().weak_text_color(),
+            ),
+        );
+    }
+    job.wrap = egui::text::TextWrapping::truncate_at_width(ui.available_width() - 24.0);
+    egui::CollapsingHeader::new(job)
+        .id_salt(id)
+        .default_open(open)
+        .show(ui, contents)
+        .body_returned
 }
 
 pub fn grid(ui: &mut egui::Ui, id: &str, contents: impl FnOnce(&mut egui::Ui)) {
@@ -124,51 +162,6 @@ pub fn caliber_picker(
             }
         });
     chosen
-}
-
-/// A drop-down of the hunter's own targets, then the catalog's game and
-/// sport targets. Returns true when the choice changed.
-pub fn target_picker(
-    ui: &mut egui::Ui,
-    id_salt: &str,
-    data: &crate::app::Data,
-    selected: &mut Option<String>,
-) -> bool {
-    let current = match selected {
-        None => "No target".to_owned(),
-        Some(id) => data
-            .target(id)
-            .map_or_else(|| "Choose a target".to_owned(), |target| target.name),
-    };
-    let before = selected.clone();
-    egui::ComboBox::from_id_salt(id_salt)
-        .selected_text(current)
-        .width(260.0)
-        .height(420.0)
-        .show_ui(ui, |ui| {
-            ui.selectable_value(selected, None, "No target");
-            let mut group =
-                |ui: &mut egui::Ui, title: &str, targets: &mut dyn Iterator<Item = &Target>| {
-                    let mut first = true;
-                    for target in targets {
-                        if first {
-                            ui.label(RichText::new(title).small().strong());
-                            first = false;
-                        }
-                        ui.selectable_value(selected, Some(target.id.clone()), &target.name);
-                    }
-                };
-            let catalog = &Catalog::builtin().targets;
-            group(ui, "My targets", &mut data.targets.iter());
-            for kind in TargetGroup::ALL {
-                group(
-                    ui,
-                    kind.label(),
-                    &mut catalog.iter().filter(|t| t.group() == kind),
-                );
-            }
-        });
-    *selected != before
 }
 
 /// A button that needs a second click to confirm. Returns true on confirm.

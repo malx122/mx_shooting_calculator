@@ -8,6 +8,11 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Hunting or target shooting:** the app asks once what it is used for.
+  Target shooting leaves out everything about hunting (ethical limits,
+  legal ammunition, seasons, shooting light, stand cards), and every target
+  is just a hit zone. **Use for** in the menu changes it.
+
 - **Chronograph import:** measured velocities from a Garmin Xero
   (ShotView CSV), LabRadar or MagnetoSpeed file, with the string's shot
   count, SD and ES kept and shown. A warning if the average is far from what
@@ -49,6 +54,33 @@ any release may still change things noticeably.
 
 ### Changed
 
+- **A simpler Calculate.** Four tiles for what changes every shot (range,
+  angle, wind, target) open the same pickers as on a phone. Weather, fine
+  corrections (cant, spin drift, aerodynamic jump, Coriolis) and the
+  target's own numbers are folded, each with a summary line. Dial and
+  illumination sit under the scope view.
+- **Go or no-go in one place:** the legal class, the season in your county
+  and today's shooting light are pills under the hold, with the county to
+  choose and **Use my position** next to them. On a phone they are one line.
+- **Limits at a glance:** the ethical max and the dead-on hold, with the
+  zeros, muzzle velocity and stability under Details.
+- **The range table** (once the dope table) shows the clicks, angles, wind
+  and energy for new rifles; **Columns…** on the table sets its ranges and
+  columns, kept for the rifle. A phone shows three columns, or all.
+- **Load setup moved to the Rifles page:** measured velocities, chronograph
+  files, point of impact, zero weather and truing are under **Loads in this
+  rifle**; Calculate keeps one line about the load with a **Load setup…**
+  link. Truing is behind **Shot long and missed? True the calculation…**.
+- **Rifle form:** the basics first, the clicks taken from the scope, the
+  barrel, zero weather and notes folded.
+- **One menu:** on the desktop the header's Units, Rules, Sync, Import and
+  Export are one ⋯ menu (with What's new and About), next to the rules'
+  flag and a sync dot. A first start asks where you hunt.
+- **Bullets:** one **+ Add from the catalog** button; the caliber choice
+  belongs to the catalog, which shows each bullet's legal class. The bullet
+  form folds the drag model and the velocity details.
+- **Turret label:** its settings are in three groups: your turret (folded
+  once measured), the ranges, and the look.
 - Cards say they are worked out level and in calm air (Calculate also
   counts today's wind, angle and cant). "Drop" in the dope table is
   "Height", the card's "Up" is "Elevation", and "1 click" is singular.

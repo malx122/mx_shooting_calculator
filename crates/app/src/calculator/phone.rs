@@ -1,15 +1,12 @@
-//! The calculator on a phone: results first, quick fields for range, shot
-//! angle and wind, a target button beside the scope view, and the inputs on
-//! a page of their own. The pickers slide up as sheets (see `mobile.rs`).
-
-use std::f32::consts::{FRAC_PI_2, PI};
+//! The calculator on a phone: results first, tiles for range, shot angle,
+//! wind and target, and the inputs on a page of their own. The pickers
+//! slide up as sheets (see `mobile.rs`); on a desktop they are dialogs.
 
 use ballistics_core::Solution;
 use ballistics_core::analysis::OptimalZero;
 use ballistics_store::{Bullet, ClickUnit, Reticle, Rifle, RifleLoad, Scope, Target};
 use eframe::egui::{
-    self, Align2, Color32, FontId, Pos2, Rect, RichText, Sense, Shape, Stroke, Ui, UiBuilder, pos2,
-    vec2,
+    self, Align2, FontId, Rect, RichText, Sense, Shape, Stroke, Ui, UiBuilder, pos2, vec2,
 };
 
 use ballistics_shot::{from_radians, unit_label};
@@ -25,6 +22,7 @@ use crate::theme;
 use crate::trajectory3d;
 use crate::units::{self, Quantity};
 use crate::widgets::caliber_name;
+use crate::widgets::fold;
 
 /// Which phone view of the calculator is showing.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -52,17 +50,7 @@ pub(super) struct PhoneFrame<'a> {
     pub load: Option<&'a RifleLoad>,
     pub optics: Option<&'a (Scope, Reticle)>,
     pub aim: &'a Aim,
-    pub effective_load: Option<&'a RifleLoad>,
     pub country: Option<ballistics_store::Country>,
-}
-
-/// What the results asked for.
-#[derive(Default)]
-struct PhoneRequests {
-    view: ViewRequests,
-    target: bool,
-    /// For the range picker: how the range relates to the limits.
-    range_note: Option<String>,
 }
 
 /// Preset wind speeds (m/s) and what they feel like.
@@ -84,7 +72,6 @@ impl CalculatorPage {
         frame: PhoneFrame<'_>,
         actions: &mut Vec<Action>,
     ) {
-        let mut range_note = None;
         egui::CentralPanel::default().show(context, |ui| match self.phone_view {
             PhoneView::Conditions => {
                 if mobile::back_button(ui, "Calculate") {
@@ -101,26 +88,32 @@ impl CalculatorPage {
                         actions,
                     );
                     if frame.rifle.is_some() && frame.bullet.is_some() {
-                        self.conditions(
-                            ui,
-                            data,
-                            frame.aim,
-                            frame.rifle,
-                            frame.bullet,
-                            frame.optics,
-                            actions,
-                        );
+                        ui.add_space(6.0);
+                        self.conditions(ui, data, frame.aim, frame.bullet, actions);
                     }
                 });
             }
             PhoneView::Results => {
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    range_note = self.phone_results(ui, &frame, actions);
+                    self.phone_results(ui, &frame, actions);
                 });
             }
         });
+        self.picker_sheet(context, data, frame.rifle);
+    }
+
+    /// The open picker's sheet, if any.
+    pub(super) fn picker_sheet(
+        &mut self,
+        context: &egui::Context,
+        data: &Data,
+        rifle: Option<&Rifle>,
+    ) {
         match self.picker {
-            Some(Picker::Range) => self.range_sheet(context, frame.rifle, range_note),
+            Some(Picker::Range) => {
+                let note = self.range_note(context);
+                self.range_sheet(context, rifle, note)
+            }
             Some(Picker::Angle) => self.angle_sheet(context),
             Some(Picker::Wind) => self.wind_sheet(context),
             Some(Picker::Target) => self.target_sheet(context, data),
@@ -128,13 +121,35 @@ impl CalculatorPage {
         }
     }
 
-    /// The results page. Returns the note for the range picker.
-    fn phone_results(
-        &mut self,
-        ui: &mut Ui,
-        frame: &PhoneFrame<'_>,
-        actions: &mut Vec<Action>,
-    ) -> Option<String> {
+    /// For the range picker: how the range stands against the limits, from
+    /// the last calculation.
+    fn range_note(&self, context: &egui::Context) -> Option<String> {
+        let u = units::prefs(context);
+        let (ethical, point_blank) = self.limits;
+        match (ethical, point_blank) {
+            (Some(limit), _) if self.inputs.target_range_m > limit => Some(format!(
+                "Beyond the ethical range ({})",
+                u.format(Quantity::Distance, limit)
+            )),
+            (Some(limit), Some(blank)) => Some(format!(
+                "Inside the ethical range ({}) · dead-on hold to {}",
+                u.format(Quantity::Distance, limit),
+                u.format(Quantity::Distance, blank)
+            )),
+            (Some(limit), None) => Some(format!(
+                "Inside the ethical range ({})",
+                u.format(Quantity::Distance, limit)
+            )),
+            (None, Some(blank)) => Some(format!(
+                "Dead-on hold to {}",
+                u.format(Quantity::Distance, blank)
+            )),
+            (None, None) => None,
+        }
+    }
+
+    /// The results page.
+    fn phone_results(&mut self, ui: &mut Ui, frame: &PhoneFrame<'_>, actions: &mut Vec<Action>) {
         let u = units::prefs(ui.ctx());
         // The setup: tapping it opens all the inputs.
         let title = frame.rifle.map_or_else(
@@ -175,23 +190,23 @@ impl CalculatorPage {
                         "No {} bullets in your collection",
                         caliber_name(&rifle.caliber)
                     ));
-                    if ui.button("Go to My bullets").clicked() {
+                    if ui.button("Go to Bullets").clicked() {
                         actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                     }
                 }
             }
-            return None;
+            return;
         };
 
-        self.quick_fields(ui);
+        self.tiles(ui, frame.aim);
 
-        let scenario = self.scenario(rifle, bullet, frame.effective_load);
+        let table = self.table_for(rifle);
+        let scenario = self.scenario(rifle, bullet, frame.load);
         self.refresh(
             ui.ctx(),
             scenario,
             frame.aim.vital_diameter_cm,
-            rifle
-                .table
+            table
                 .end_m
                 .max(SOLVE_RANGE_M)
                 .max(self.inputs.target_range_m + 10.0),
@@ -203,6 +218,7 @@ impl CalculatorPage {
                     let view = ResultsView {
                         inputs: &self.inputs,
                         rifle,
+                        table,
                         optics: frame.optics,
                         aim: frame.aim,
                         min_velocity: frame.aim.min_velocity_mps.unwrap_or_else(|| {
@@ -213,88 +229,18 @@ impl CalculatorPage {
                             .map(|country| ballistics_shot::assess(bullet, solution, country)),
                         zeros: computed.zeros,
                     };
+                    let (ethical, point_blank) = view.limits_of(solution);
+                    self.limits = (ethical, point_blank.map(|blank| blank.far_limit));
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }
                 Err(error) => {
                     ui.heading("No solution");
                     ui.colored_label(ui.visuals().error_fg_color, error.to_string());
-                    PhoneRequests::default()
+                    ViewRequests::default()
                 }
             }
         };
-        if let Some(magnification) = requests.view.magnification {
-            self.inputs.magnification = Some(magnification);
-        }
-        if let Some(three_d) = requests.view.trajectory_3d {
-            self.inputs.trajectory_3d = three_d;
-        }
-        if requests.target {
-            self.picker = Some(Picker::Target);
-        }
-        let zeros = self
-            .cache
-            .as_ref()
-            .map(|(_, computed)| computed.zeros)
-            .unwrap_or_default();
-        if let Some(rifle) = requests.view.use_zero(rifle, &zeros) {
-            actions.push(Action::SaveRifle(rifle));
-        }
-        if let (Some(country), Some(target)) = (frame.country, frame.aim.target.as_ref())
-            && target.is_game()
-        {
-            egui::CollapsingHeader::new(RichText::new("Hunting today").strong())
-                .id_salt("phone-hunting")
-                .default_open(true)
-                .show(ui, |ui| {
-                    if crate::hunting::today_block(
-                        ui,
-                        country,
-                        target.catalog_id.as_deref().unwrap_or(&target.id),
-                        &target.name,
-                        &mut self.inputs.region,
-                        self.inputs.place.as_ref(),
-                    ) {
-                        self.weather.locate_here(ui.ctx());
-                    }
-                });
-        }
-        requests.range_note
-    }
-
-    /// Range, shot angle and wind: the inputs that change in the field.
-    fn quick_fields(&mut self, ui: &mut Ui) {
-        let u = units::prefs(ui.ctx());
-        let gap = 8.0;
-        let width = (ui.available_width() - 2.0 * gap) / 3.0;
-        let fields = [
-            (
-                Picker::Range,
-                "Range".to_owned(),
-                u.format(Quantity::Distance, self.inputs.target_range_m),
-            ),
-            (
-                Picker::Angle,
-                if self.inputs.cant_degrees == 0.0 {
-                    "Angle".to_owned()
-                } else {
-                    format!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
-                },
-                format!("{:+.0}°", self.inputs.inclination_degrees),
-            ),
-            (
-                Picker::Wind,
-                format!("Wind · {}", clock_text(self.inputs.wind_clock)),
-                u.format(Quantity::WindSpeed, self.inputs.wind_speed),
-            ),
-        ];
-        ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = gap;
-            for (picker, label, value) in fields {
-                if quick_field(ui, width, &label, &value).clicked() {
-                    self.picker = Some(picker);
-                }
-            }
-        });
+        self.apply_requests(requests, rifle, ui.ctx(), actions);
     }
 
     fn range_sheet(
@@ -370,7 +316,7 @@ impl CalculatorPage {
                     presets.push(*recent);
                 }
             }
-            ui.weak("From your dope table, and recent");
+            ui.weak("From your range table, and recent");
             ui.horizontal_wrapped(|ui| {
                 for preset in presets {
                     let selected = (preset - inputs.target_range_m).abs() < 0.5;
@@ -584,7 +530,7 @@ impl CalculatorPage {
                 mobile::list_row(
                     ui,
                     &target.name,
-                    &target_summary(ui, target),
+                    &target_summary(ui, target, data.hunting),
                     current.as_deref() == Some(target.id.as_str()),
                 )
                 .clicked()
@@ -647,37 +593,16 @@ impl CalculatorPage {
 }
 
 impl ResultsView<'_> {
-    /// The results on a phone: the hold, the scope view with the target
-    /// button, and the rest folded away.
+    /// The results on a phone: the hold, the go/no-go line, the scope view,
+    /// and the rest folded away.
     fn show_phone(
         &self,
         ui: &mut Ui,
         solution: &Solution,
         optimal: Option<&OptimalZero>,
-    ) -> PhoneRequests {
-        let mut requests = PhoneRequests::default();
+    ) -> ViewRequests {
+        let mut requests = ViewRequests::default();
         let (ethical, point_blank) = self.limits_of(solution);
-        let u = units::prefs(ui.ctx());
-        requests.range_note = match (ethical, point_blank) {
-            (Some(limit), _) if self.inputs.target_range_m > limit => Some(format!(
-                "Beyond the ethical range ({})",
-                u.format(Quantity::Distance, limit)
-            )),
-            (Some(limit), Some(blank)) => Some(format!(
-                "Inside the ethical range ({}) · dead-on hold to {}",
-                u.format(Quantity::Distance, limit),
-                u.format(Quantity::Distance, blank.far_limit)
-            )),
-            (Some(limit), None) => Some(format!(
-                "Inside the ethical range ({})",
-                u.format(Quantity::Distance, limit)
-            )),
-            (None, Some(blank)) => Some(format!(
-                "Dead-on hold to {}",
-                u.format(Quantity::Distance, blank.far_limit)
-            )),
-            (None, None) => None,
-        };
 
         ui.add_space(4.0);
         match solution.at(self.inputs.target_range_m) {
@@ -689,23 +614,87 @@ impl ResultsView<'_> {
                 );
             }
         }
+        if let Some(statuses) = self.statuses() {
+            // One line; open it for the pills and the region.
+            let mut job = egui::text::LayoutJob::default();
+            for (index, pill) in statuses.pills.iter().enumerate() {
+                let (mark, colour) = match pill.tone {
+                    crate::hunting::Tone::Open => ("✔", theme::MEADOW),
+                    crate::hunting::Tone::Closed => ("✖", theme::ALARM),
+                    crate::hunting::Tone::Warn => ("!", ui.visuals().warn_fg_color),
+                    crate::hunting::Tone::Plain => ("·", theme::BONE_MUTED),
+                };
+                job.append(
+                    &format!("{mark} {}", pill.what),
+                    if index == 0 { 0.0 } else { 14.0 },
+                    egui::TextFormat::simple(egui::TextStyle::Body.resolve(ui.style()), colour),
+                );
+            }
+            egui::CollapsingHeader::new(job)
+                .id_salt("phone-status")
+                .show(ui, |ui| self.go_no_go(ui, &statuses, &mut requests));
+        }
         self.warnings(ui, solution);
         ui.add_space(4.0);
-        let (magnification, target) = self.phone_scope(ui, solution);
-        requests.view.magnification = magnification;
-        requests.target = target;
+        self.phone_scope(ui, solution, &mut requests);
         ui.add_space(6.0);
 
+        let limits_title = if self.aim.is_game() {
+            "Hunting limits"
+        } else {
+            "Limits"
+        };
+        let u = units::prefs(ui.ctx());
+        let summary = match (ethical, point_blank) {
+            (Some(limit), _) => format!("{} max", u.format(Quantity::Distance, limit)),
+            (None, Some(blank)) => format!(
+                "dead-on to {}",
+                u.format(Quantity::Distance, blank.far_limit)
+            ),
+            (None, None) => String::new(),
+        };
+        if let Some(height) = fold(ui, "phone-limits", limits_title, &summary, |ui| {
+            self.limits(ui, solution, optimal, ethical, point_blank)
+        })
+        .flatten()
+        {
+            requests.zero_height = Some(height);
+        }
+        egui::CollapsingHeader::new(RichText::new("Range table").strong())
+            .id_salt("phone-table")
+            .show(ui, |ui| {
+                self.table_heading_phone(ui, &mut requests);
+                let all_id = ui.id().with("all-columns");
+                let all = ui
+                    .data(|data| data.get_temp::<bool>(all_id))
+                    .unwrap_or(false);
+                let left_out = egui::ScrollArea::horizontal()
+                    .id_salt("phone-table-scroll")
+                    .show(ui, |ui| {
+                        self.table(ui, solution, ethical, (!all).then_some(PHONE_COLUMNS))
+                    })
+                    .inner;
+                if left_out || all {
+                    let label = if all {
+                        "Fewer columns"
+                    } else {
+                        "Show all columns"
+                    };
+                    if ui.button(label).clicked() {
+                        ui.data_mut(|data| data.insert_temp(all_id, !all));
+                    }
+                }
+            });
         egui::CollapsingHeader::new(RichText::new("Trajectory · 2D / 3D").strong())
             .id_salt("phone-trajectory")
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     let three_d = self.inputs.trajectory_3d;
                     if ui.selectable_label(!three_d, "2D").clicked() {
-                        requests.view.trajectory_3d = Some(false);
+                        requests.trajectory_3d = Some(false);
                     }
                     if ui.selectable_label(three_d, "3D").clicked() {
-                        requests.view.trajectory_3d = Some(true);
+                        requests.trajectory_3d = Some(true);
                     }
                 });
                 if self.inputs.trajectory_3d {
@@ -727,25 +716,37 @@ impl ResultsView<'_> {
                     );
                 }
             });
-        egui::CollapsingHeader::new(RichText::new("Dope table").strong())
-            .id_salt("phone-table")
-            .show(ui, |ui| {
-                egui::ScrollArea::horizontal()
-                    .id_salt("phone-table-scroll")
-                    .show(ui, |ui| self.table(ui, solution, ethical));
-            });
-        let limits_title = if self.aim.is_game() {
-            "Hunting limits"
-        } else {
-            "Limits"
-        };
-        egui::CollapsingHeader::new(RichText::new(limits_title).strong())
-            .id_salt("phone-limits")
-            .show(ui, |ui| {
-                requests.view.zero_height =
-                    self.limits(ui, solution, optimal, ethical, point_blank);
-            });
         requests
+    }
+
+    /// The phone table's ranges, and the button for its columns.
+    fn table_heading_phone(&self, ui: &mut Ui, requests: &mut ViewRequests) {
+        let u = units::prefs(ui.ctx());
+        let table = self.table;
+        let id = ui.id().with("columns-open");
+        ui.horizontal(|ui| {
+            ui.weak(format!(
+                "{}–{} every {}",
+                u.format(Quantity::Distance, table.start_m),
+                u.format(Quantity::Distance, table.end_m),
+                u.format(Quantity::Distance, table.step_m)
+            ));
+            if ui.button("Columns…").clicked() {
+                ui.data_mut(|data| data.insert_temp(id, true));
+            }
+        });
+        if ui.data(|data| data.get_temp::<bool>(id)).unwrap_or(false) {
+            let mut changed = table;
+            let shown = mobile::sheet(ui.ctx(), "table-columns", "Range table", |ui| {
+                super::table_settings(ui, &mut changed, self.rifle.click_unit);
+            });
+            if changed != table {
+                requests.table = Some(changed);
+            }
+            if shown.closed {
+                ui.data_mut(|data| data.insert_temp(id, false));
+            }
+        }
     }
 
     /// The holds in two big columns, with speed and energy under them.
@@ -771,8 +772,7 @@ impl ResultsView<'_> {
                             .size(24.0)
                             .strong(),
                         );
-                        let plural = if clicks.abs() == 1 { "" } else { "s" };
-                        ui.weak(format!("{} click{plural} {way}", clicks.abs()));
+                        ui.weak(format!("{} {way}", super::clicks_text(clicks.abs())));
                     };
                     hold(
                         &mut columns[0],
@@ -815,24 +815,17 @@ impl ResultsView<'_> {
             });
     }
 
-    /// The scope view on the left, the target button top right along its
-    /// rim, the magnification under it. Returns the magnification the
-    /// hunter moved to, and whether the target button was tapped.
-    fn phone_scope(&self, ui: &mut Ui, solution: &Solution) -> (Option<f64>, bool) {
+    /// The scope view with its magnification and width beside it, the
+    /// slider, and whether the shot is dialled or held.
+    fn phone_scope(&self, ui: &mut Ui, solution: &Solution, requests: &mut ViewRequests) {
         let Some((scope, reticle)) = self.optics else {
             ui.weak(
                 "Choose a scope and reticle for this rifle (Rifles) to see the view through it.",
             );
-            let tapped = ui
-                .add(
-                    egui::Button::new(format!("Target · {}", self.aim.name()))
-                        .min_size(vec2(0.0, TOUCH)),
-                )
-                .clicked();
-            return (None, tapped);
+            return;
         };
         let Some(row) = solution.at(self.inputs.target_range_m) else {
-            return (None, false);
+            return;
         };
         let magnification =
             scope.clamp_magnification(self.inputs.magnification.unwrap_or(scope.magnification_max));
@@ -844,7 +837,7 @@ impl ResultsView<'_> {
             sight_impact(&row, click_mrad, self.inputs.dial_elevation);
 
         let width = ui.available_width();
-        let size = (width * 0.68).min(320.0);
+        let size = (width * 0.74).min(340.0);
         let (rect, _) = ui.allocate_exact_size(vec2(width, size), Sense::hover());
         let picture_rect = Rect::from_min_size(rect.min, vec2(size, size));
         let mut picture_ui = ui.new_child(UiBuilder::new().max_rect(picture_rect));
@@ -858,59 +851,6 @@ impl ResultsView<'_> {
             illumination: self.inputs.illumination,
         }
         .show(&mut picture_ui, size);
-
-        // The target button, its left edge following the eyepiece's rim.
-        let rim = size / 2.0 - 6.0 + 2.5;
-        let outline = target_outline(
-            picture_rect.center(),
-            rim + 8.0,
-            rect.top(),
-            rect.top() + 64.0,
-            rect.right(),
-            11.5,
-        );
-        let mut tapped = false;
-        if let Some(outline) = outline {
-            let bounds = Rect::from_points(&outline.points);
-            let response = ui.interact(bounds, ui.id().with("phone-target"), Sense::click());
-            let pressed = response.is_pointer_button_down_on();
-            tapped = response.clicked()
-                && response
-                    .interact_pointer_pos()
-                    .is_none_or(|pointer| inside(&outline.points, pointer));
-            let fill = if pressed {
-                theme::FOREST_600
-            } else {
-                theme::FOREST_700
-            };
-            paint_filled(ui.painter(), &outline.points, outline.inside, fill);
-            ui.painter().add(Shape::closed_line(
-                outline.points.clone(),
-                Stroke::new(1.0_f32, theme::FOREST_600),
-            ));
-            let label = match (&self.aim.target, self.aim.vital_diameter_cm) {
-                (Some(_), Some(zone)) => format!(
-                    "Target · {}",
-                    units::prefs(ui.ctx()).format(Quantity::ShortLength, zone)
-                ),
-                _ => "Target".to_owned(),
-            };
-            let x = outline.text_x;
-            ui.painter().text(
-                pos2(x, rect.top() + 20.0),
-                Align2::CENTER_CENTER,
-                label,
-                FontId::proportional(12.0),
-                theme::BONE_MUTED,
-            );
-            ui.painter().text(
-                pos2(x, rect.top() + 42.0),
-                Align2::CENTER_CENTER,
-                self.aim.name(),
-                FontId::proportional(18.0),
-                theme::BONE,
-            );
-        }
         // The magnification and the view's width, bottom right.
         ui.painter().text(
             rect.right_bottom() - vec2(0.0, 20.0),
@@ -928,9 +868,10 @@ impl ResultsView<'_> {
         );
 
         let mut chosen = magnification;
-        let requested = magnification_slider(ui, &mut chosen, scope, size)
-            .changed()
-            .then_some(chosen);
+        if magnification_slider(ui, &mut chosen, scope, size).changed() {
+            requests.magnification = Some(chosen);
+        }
+        super::view_toggles(ui, self.inputs, scope, requests);
         if self.inputs.dial_elevation {
             ui.small(format!(
                 "Dial {} {}, then hold the orange dot on the target.",
@@ -946,12 +887,15 @@ impl ResultsView<'_> {
                 "The impact is outside the view: zoom out or dial.",
             );
         }
-        (requested, tapped)
     }
 }
 
+/// The most columns the phone's range table shows besides the range,
+/// unless all are asked for.
+const PHONE_COLUMNS: usize = 3;
+
 /// A quick field: a small label over a big value, the size of a thumb.
-fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> egui::Response {
+pub(super) fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(vec2(width, 58.0), Sense::click());
     let fill = if response.is_pointer_button_down_on() {
         theme::FOREST_600
@@ -984,7 +928,7 @@ fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> egui::Respo
 }
 
 /// "3 o'clock", "2:30".
-fn clock_text(clock: f64) -> String {
+pub(super) fn clock_text(clock: f64) -> String {
     let hour = clock.rem_euclid(12.0);
     let hour = if hour < 0.25 { 12.0 } else { hour };
     if (hour - hour.round()).abs() < 0.01 {
@@ -998,13 +942,14 @@ fn clock_text(clock: f64) -> String {
     }
 }
 
-fn target_summary(ui: &Ui, target: &Target) -> String {
+fn target_summary(ui: &Ui, target: &Target, hunting: bool) -> String {
     let u = units::prefs(ui.ctx());
     let zone = u.format(Quantity::ShortLength, target.vital_diameter_cm);
     match target.min_energy_j {
-        Some(energy) if target.is_game() => {
+        Some(energy) if target.is_game() && hunting => {
             format!("{zone} · {}", u.format(Quantity::Energy, energy))
         }
+        _ if target.is_game() => zone,
         _ => format!("{zone} · sport"),
     }
 }
@@ -1234,130 +1179,4 @@ fn wind_clock(ui: &mut Ui, clock: &mut f64) {
     let from = at(*clock, number_radius - 24.0);
     let to = at(*clock, 18.0);
     painter.arrow(from, to - from, Stroke::new(4.0_f32, theme::BLAZE));
-}
-
-/// The target button's outline and where its text goes.
-struct Outline {
-    points: Vec<Pos2>,
-    /// A point the whole outline can be seen from, for filling.
-    inside: Pos2,
-    text_x: f32,
-}
-
-/// A rounded box from `top` to `bottom` and up to `right`, whose left side
-/// follows a circle of radius `rim` around `center` (keeping clear of it),
-/// with all four corners rounded by `corner`.
-fn target_outline(
-    center: Pos2,
-    rim: f32,
-    top: f32,
-    bottom: f32,
-    right: f32,
-    corner: f32,
-) -> Option<Outline> {
-    // The centre of a corner circle touching the edge at `edge_y` and the rim.
-    let fillet = |y: f32| {
-        let dy = y - center.y;
-        let reach = (rim + corner).powi(2) - dy * dy;
-        (reach > 0.0).then(|| pos2(center.x + reach.sqrt(), y))
-    };
-    let top_fillet = fillet(top + corner)?;
-    let bottom_fillet = fillet(bottom - corner)?;
-    if bottom_fillet.x + 60.0 > right {
-        return None;
-    }
-    let on_rim = |fillet: Pos2| center + (fillet - center) * (rim / (rim + corner));
-    let angle = |from: Pos2, to: Pos2| (to.y - from.y).atan2(to.x - from.x);
-    let mut points = Vec::new();
-    arc(
-        &mut points,
-        pos2(right - corner, top + corner),
-        corner,
-        -FRAC_PI_2,
-        0.0,
-    );
-    arc(
-        &mut points,
-        pos2(right - corner, bottom - corner),
-        corner,
-        0.0,
-        FRAC_PI_2,
-    );
-    let bottom_rim = on_rim(bottom_fillet);
-    let top_rim = on_rim(top_fillet);
-    arc(
-        &mut points,
-        bottom_fillet,
-        corner,
-        FRAC_PI_2,
-        angle(bottom_fillet, bottom_rim),
-    );
-    arc(
-        &mut points,
-        center,
-        rim,
-        angle(center, bottom_rim),
-        angle(center, top_rim),
-    );
-    arc(
-        &mut points,
-        top_fillet,
-        corner,
-        angle(top_fillet, top_rim),
-        -FRAC_PI_2,
-    );
-    let middle = (top + bottom) / 2.0;
-    let edge_at_middle = center.x + (rim * rim - (middle - center.y).powi(2)).max(0.0).sqrt();
-    Some(Outline {
-        points,
-        inside: pos2(right - corner - 4.0, middle),
-        text_x: (edge_at_middle + right) / 2.0,
-    })
-}
-
-/// Points along a circle from `from` to `to` (radians), the short way.
-fn arc(points: &mut Vec<Pos2>, center: Pos2, radius: f32, from: f32, to: f32) {
-    let mut sweep = to - from;
-    while sweep > PI {
-        sweep -= 2.0 * PI;
-    }
-    while sweep < -PI {
-        sweep += 2.0 * PI;
-    }
-    let steps = ((sweep.abs() * radius / 3.0).ceil() as usize).max(2);
-    for step in 0..=steps {
-        let a = from + sweep * step as f32 / steps as f32;
-        points.push(center + vec2(a.cos(), a.sin()) * radius);
-    }
-}
-
-/// Fills an outline that can be seen whole from `inside` as a fan.
-fn paint_filled(painter: &egui::Painter, points: &[Pos2], inside: Pos2, fill: Color32) {
-    let mut mesh = egui::Mesh::default();
-    mesh.colored_vertex(inside, fill);
-    for point in points {
-        mesh.colored_vertex(*point, fill);
-    }
-    let count = points.len() as u32;
-    for index in 0..count {
-        mesh.add_triangle(0, 1 + index, 1 + (index + 1) % count);
-    }
-    painter.add(Shape::mesh(mesh));
-}
-
-/// Whether a point lies inside a polygon (even-odd rule).
-fn inside(points: &[Pos2], point: Pos2) -> bool {
-    let mut result = false;
-    let mut previous = points[points.len() - 1];
-    for &current in points {
-        if (current.y > point.y) != (previous.y > point.y)
-            && point.x
-                < (previous.x - current.x) * (point.y - current.y) / (previous.y - current.y)
-                    + current.x
-        {
-            result = !result;
-        }
-        previous = current;
-    }
-    result
 }

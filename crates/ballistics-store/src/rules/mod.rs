@@ -34,6 +34,14 @@ impl Country {
         }
     }
 
+    /// The two-letter country code: "SE".
+    pub fn code(self) -> &'static str {
+        match self {
+            Country::Sweden => "SE",
+            Country::Finland => "FI",
+        }
+    }
+
     /// The adjective for texts: "Swedish rules".
     pub fn adjective(self) -> &'static str {
         match self {

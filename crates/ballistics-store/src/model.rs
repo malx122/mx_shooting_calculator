@@ -232,18 +232,20 @@ pub struct TableColumns {
 
 impl Default for TableColumns {
     fn default() -> Self {
+        // What a scope shooter reads: the clicks to dial, the angles to
+        // hold, and the energy. The rest can be switched on.
         Self {
-            drop_length: true,
+            drop_length: false,
             drop_mil: true,
             drop_moa: false,
             drop_clicks: true,
-            wind_length: true,
+            wind_length: false,
             wind_mil: true,
             wind_moa: false,
-            wind_clicks: true,
-            velocity: true,
+            wind_clicks: false,
+            velocity: false,
             energy: true,
-            time: true,
+            time: false,
         }
     }
 }

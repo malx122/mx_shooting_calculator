@@ -304,20 +304,175 @@ fn span(minutes: f64) -> String {
     }
 }
 
-/// The short block for the calculator: the season where the hunter is and
-/// today's light. `region` is the hunter's choice, kept with the inputs.
-/// Returns true when the hunter asks to find their position.
-pub fn today_block(
-    ui: &mut egui::Ui,
+/// One go/no-go fact as a short pill, with the full sentence on hover.
+pub struct Pill {
+    /// What it is about: "class", "season" or "light".
+    pub what: &'static str,
+    pub text: String,
+    pub tone: Tone,
+    pub detail: String,
+    /// The light can't be told without the hunter's position.
+    pub needs_position: bool,
+}
+
+/// The season in a few words: "Open until 31 Jan", "Closed · opens 8 Oct".
+pub fn season_short(season: &Season, region: Option<&str>, date: Date) -> (String, Tone) {
+    let Some(region) = region else {
+        return if season.licence_only {
+            ("Licence only".into(), Tone::Closed)
+        } else {
+            ("Season: choose your county".into(), Tone::Plain)
+        };
+    };
+    let rows: Vec<&SeasonRow> = season
+        .rows_on(date)
+        .iter()
+        .filter(|row| row.in_region(region) != Coverage::None && !row.closed())
+        .collect();
+    let part = |row: &SeasonRow| {
+        if row.in_region(region) == Coverage::Part || row.applies_to != "all" {
+            " (in part)"
+        } else {
+            ""
+        }
+    };
+    if let Some((row, (_, end))) = rows
+        .iter()
+        .filter(|row| row.open_on(date))
+        .filter_map(|row| Some((*row, row.span_around(date)?)))
+        .max_by_key(|(_, (_, end))| *end)
+    {
+        return (
+            format!("Open until {}{}", day_text(end), part(row)),
+            Tone::Open,
+        );
+    }
+    match rows
+        .iter()
+        .filter_map(|row| row.span_around(date))
+        .map(|(start, _)| start)
+        .min()
+    {
+        Some(start) => (format!("Closed · opens {}", day_text(start)), Tone::Closed),
+        None if season.licence_only => ("Licence only".into(), Tone::Closed),
+        None => ("No season here".into(), Tone::Closed),
+    }
+}
+
+/// Today's shooting light in a few words: "Light 06:56–18:36 · allowed now".
+fn light_short(law: &HuntingLaw, species: &str, place: Option<&Place>) -> Option<(String, Tone)> {
+    let (today, clock) = now(law);
+    law.daily_rule(species, today)?;
+    let Some(place) = place else {
+        return Some(("Light: set your place under Weather".into(), Tone::Plain));
+    };
+    Some(
+        match law.light(species, today, place.latitude, place.longitude)? {
+            Light::MidnightSun => ("Light: midnight sun".into(), Tone::Warn),
+            Light::PolarNight => ("Light: polar night".into(), Tone::Warn),
+            Light::Window {
+                start,
+                end,
+                restricted,
+            } => {
+                let window = format!("Light {}–{}", sun::clock(start), sun::clock(end));
+                let (now_text, tone) = if clock < start {
+                    (format!("starts in {}", span(start - clock)), Tone::Closed)
+                } else if clock > end {
+                    ("over for today".to_owned(), Tone::Closed)
+                } else if let Some((_, what)) =
+                    restricted.as_ref().filter(|(from, _)| clock >= *from)
+                {
+                    (what.clone(), Tone::Warn)
+                } else {
+                    ("allowed now".to_owned(), Tone::Open)
+                };
+                (format!("{window} · {now_text}"), tone)
+            }
+        },
+    )
+}
+
+/// The season and today's light as pills, for the result's header.
+pub fn pills(
     country: Country,
     species: &str,
     name: &str,
-    region: &mut Option<String>,
+    region: Option<&str>,
     place: Option<&Place>,
-) -> bool {
+) -> Vec<Pill> {
     let law = country.hunting();
-    let mut locate = false;
     let (today, _) = now(law);
+    let mut pills = Vec::new();
+    if let Some(season) = law.season(species) {
+        let (text, tone) = season_short(season, region, today);
+        let detail = season_lines(season, region, today)
+            .into_iter()
+            .map(|(line, _)| line)
+            .collect::<Vec<_>>()
+            .join("\n");
+        pills.push(Pill {
+            what: "season",
+            text,
+            tone,
+            detail,
+            needs_position: false,
+        });
+    }
+    if let Some((text, tone)) = light_short(law, species, place) {
+        let detail =
+            light_line(law, species, name, place, country).map_or(String::new(), |(line, _)| line);
+        pills.push(Pill {
+            what: "light",
+            text,
+            tone,
+            detail,
+            needs_position: place.is_none(),
+        });
+    }
+    pills
+}
+
+/// A pill: ✔ for open, ✖ for closed, ! for a warning.
+pub fn pill(ui: &mut egui::Ui, text: &str, tone: Tone, detail: &str) -> egui::Response {
+    let (mark, fill, colour) = match tone {
+        Tone::Open => ("✔", crate::theme::FOREST_700, crate::theme::MEADOW),
+        Tone::Closed => (
+            "✖",
+            egui::Color32::from_rgb(0x4A, 0x20, 0x20),
+            egui::Color32::from_rgb(0xF0, 0x8A, 0x7A),
+        ),
+        Tone::Warn => (
+            "!",
+            egui::Color32::from_rgb(0x4A, 0x3A, 0x17),
+            ui.visuals().warn_fg_color,
+        ),
+        Tone::Plain => ("", crate::theme::FOREST_700, ui.visuals().text_color()),
+    };
+    let text = if mark.is_empty() {
+        text.to_owned()
+    } else {
+        format!("{mark} {text}")
+    };
+    let response = egui::Frame::new()
+        .fill(fill)
+        .corner_radius(6)
+        .inner_margin(egui::Margin::symmetric(9, 4))
+        .show(ui, |ui| {
+            ui.add(egui::Label::new(RichText::new(text).color(colour)).extend())
+        })
+        .response;
+    if detail.is_empty() {
+        response
+    } else {
+        response.on_hover_text(detail)
+    }
+}
+
+/// The hunter's county or region: the one chosen if the law knows it,
+/// else the one their place is in.
+pub fn resolve_region(country: Country, region: &mut Option<String>, place: Option<&Place>) {
+    let law = country.hunting();
     if region
         .as_ref()
         .is_some_and(|chosen| !law.regions.contains(chosen))
@@ -327,35 +482,16 @@ pub fn today_block(
     if region.is_none() {
         *region = place.and_then(|place| region_of(country, place));
     }
-    ui.horizontal_wrapped(|ui| {
-        crate::flags::show(ui, country, 11.0);
-        ui.strong("Hunting today");
-        region_picker(ui, law, region);
-    });
-    if let Some(season) = law.season(species) {
-        for (text, tone) in season_lines(season, region.as_deref(), today) {
-            ui.label(coloured(ui, &text, tone));
-        }
-    }
-    if let Some((text, tone)) = light_line(law, species, name, place, country) {
-        ui.label(coloured(ui, &text, tone));
-    }
-    if place.is_none() && law.daily_rule(species, today).is_some() && crate::sensors::can_locate() {
-        locate = ui
-            .button("📍 Use my position")
-            .on_hover_text("For today's shooting light (and the weather) where you are")
-            .clicked();
-    }
-    ui.weak(format!(
-        "From the law as of {}; seasons can change, check before you hunt. More under Targets.",
-        law.as_of
-    ));
-    locate
+}
+
+/// The hunter's county or region, as a small drop-down.
+pub fn region_menu(ui: &mut egui::Ui, country: Country, region: &mut Option<String>) {
+    region_picker(ui, country.hunting(), region);
 }
 
 fn region_picker(ui: &mut egui::Ui, law: &HuntingLaw, region: &mut Option<String>) {
     egui::ComboBox::from_id_salt("hunting-region")
-        .selected_text(region.as_deref().unwrap_or("choose county or region"))
+        .selected_text(region.as_deref().unwrap_or("choose county"))
         .show_ui(ui, |ui| {
             for name in &law.regions {
                 ui.selectable_value(region, Some(name.clone()), name);
@@ -518,6 +654,24 @@ mod tests {
             Some("Pohjois-Pohjanmaa")
         );
         assert_eq!(region(Country::Sweden, "Lapland"), None);
+    }
+
+    #[test]
+    fn the_season_is_told_short_for_a_pill() {
+        let law = Country::Sweden.hunting();
+        let moose = law.season("moose").unwrap();
+        let day = Date {
+            year: 2026,
+            month: 9,
+            day: 15,
+        };
+        let (text, tone) = season_short(moose, Some("Skåne län"), day);
+        assert_eq!(text, "Closed · opens 8 Oct");
+        assert!(tone == Tone::Closed);
+        let (text, tone) = season_short(moose, Some("Jämtlands län"), day);
+        assert!(text.starts_with("Open until 31 Jan"), "{text}");
+        assert!(tone == Tone::Open);
+        assert!(season_short(moose, None, day).1 == Tone::Plain);
     }
 
     #[test]

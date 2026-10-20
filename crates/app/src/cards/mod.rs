@@ -21,7 +21,7 @@ use crate::app::{Action, Page};
 use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, UnitPrefs};
-use crate::widgets::{confirm_button, grid};
+use crate::widgets::{confirm_button, fold_with, grid};
 use dope::{DopeOptions, DopeTable, Measure};
 use sheet::Sheet;
 use stand::{Landmark, NoShoot, Stand, StandOptions, View};
@@ -232,6 +232,8 @@ pub struct CardsPage {
     /// The compass reading wanted, once the compass answers.
     heading: Option<Heading>,
     status: Option<(String, bool)>,
+    /// Hunting: stand cards and the ethical limit. Off for target shooting.
+    hunting: bool,
 }
 
 impl CardsPage {
@@ -242,11 +244,21 @@ impl CardsPage {
             true_size: false,
             heading: None,
             status: None,
+            hunting: true,
         }
     }
 
-    pub fn show(&mut self, context: &egui::Context, subject: Option<Subject>) -> Vec<Action> {
+    pub fn show(
+        &mut self,
+        context: &egui::Context,
+        subject: Option<Subject>,
+        hunting: bool,
+    ) -> Vec<Action> {
         let mut actions = Vec::new();
+        self.hunting = hunting;
+        if !hunting && self.settings.kind == Kind::Stand {
+            self.settings.kind = Kind::Dope;
+        }
         let Some(subject) = subject else {
             egui::CentralPanel::default().show(context, |ui| {
                 ui.heading("Cards");
@@ -334,6 +346,9 @@ impl CardsPage {
                     "A strip for the elevation turret with the ranges at their clicks",
                 ),
             ] {
+                if kind == Kind::Stand && !self.hunting {
+                    continue;
+                }
                 let selected = self.settings.kind == kind;
                 let text = RichText::new(label).size(16.0);
                 if ui
@@ -610,104 +625,127 @@ impl CardsPage {
             .and_then(|preview| preview.plan.clone());
         let marks = plan.as_ref().map_or(Vec::new(), |plan| plan.marks.clone());
         let turns = plan.as_ref().map_or(1, |plan| plan.turns as usize);
+        let measured = self.settings.turrets.contains_key(&rifle.id);
+        let hunting = self.hunting;
         let turret = self
             .settings
             .turrets
             .entry(rifle.id.clone())
             .or_insert(fallback);
 
-        ui.strong("The turret");
-        ui.weak(
-            "Measure the elevation turret's cap with a caliper where the label goes: over \
+        let summary = format!(
+            "{:.1} mm × {:.1} mm · {} clicks · {}",
+            turret.diameter_mm,
+            turret.height_mm,
+            turret.clicks_per_turn,
+            if turret.clockwise {
+                "clockwise"
+            } else {
+                "anticlockwise"
+            }
+        );
+        fold_with(
+            ui,
+            "turret-yours",
+            "Your turret",
+            &summary,
+            !measured,
+            |ui| {
+                ui.weak(
+                    "Measure the elevation turret's cap with a caliper where the label goes: over \
              the ridges if it is knurled, as the label sits on them. The height is the band \
              the label will cover. Kept for this rifle.",
-        );
-        grid(ui, "turret-size", |ui| {
-            ui.label("Diameter");
-            ui.add(
-                egui::DragValue::new(&mut turret.diameter_mm)
-                    .range(10.0..=80.0)
-                    .speed(0.1)
-                    .max_decimals(1)
-                    .suffix(" mm"),
-            );
-            ui.end_row();
-            ui.label("Height");
-            ui.add(
-                egui::DragValue::new(&mut turret.height_mm)
-                    .range(5.0..=40.0)
-                    .speed(0.1)
-                    .max_decimals(1)
-                    .suffix(" mm"),
-            );
-            ui.end_row();
-            ui.label("Label");
-            ui.horizontal(|ui| {
-                const MATERIALS: [(&str, f64, &str); 4] = [
-                    ("Paper", 0.1, "Ordinary printer paper, about 0.1 mm"),
-                    (
-                        "Sticker",
-                        0.15,
-                        "Printable vinyl or sticker paper with its glue",
-                    ),
-                    ("Photo paper", 0.25, "Photo paper or thin card"),
-                    ("Laminated", 0.3, "Paper laminated before it is wrapped"),
-                ];
-                let chosen = MATERIALS
-                    .iter()
-                    .find(|(_, thickness, _)| (turret.thickness_mm - thickness).abs() < 1e-6)
-                    .map_or("Your own", |(name, _, _)| name);
-                egui::ComboBox::from_id_salt("turret-material")
-                    .selected_text(chosen)
-                    .show_ui(ui, |ui| {
-                        for (name, thickness, hint) in MATERIALS {
-                            ui.selectable_value(&mut turret.thickness_mm, thickness, name)
-                                .on_hover_text(hint);
-                        }
-                    });
-                ui.add(
-                    egui::DragValue::new(&mut turret.thickness_mm)
-                        .range(0.0..=1.0)
-                        .speed(0.01)
-                        .max_decimals(2)
-                        .suffix(" mm thick"),
-                )
-                .on_hover_text(
-                    "It wraps round its middle, so the strip is made π × thickness longer. \
+                );
+                grid(ui, "turret-size", |ui| {
+                    ui.label("Diameter");
+                    ui.add(
+                        egui::DragValue::new(&mut turret.diameter_mm)
+                            .range(10.0..=80.0)
+                            .speed(0.1)
+                            .max_decimals(1)
+                            .suffix(" mm"),
+                    );
+                    ui.end_row();
+                    ui.label("Height");
+                    ui.add(
+                        egui::DragValue::new(&mut turret.height_mm)
+                            .range(5.0..=40.0)
+                            .speed(0.1)
+                            .max_decimals(1)
+                            .suffix(" mm"),
+                    );
+                    ui.end_row();
+                    ui.label("Label");
+                    ui.horizontal(|ui| {
+                        const MATERIALS: [(&str, f64, &str); 4] = [
+                            ("Paper", 0.1, "Ordinary printer paper, about 0.1 mm"),
+                            (
+                                "Sticker",
+                                0.15,
+                                "Printable vinyl or sticker paper with its glue",
+                            ),
+                            ("Photo paper", 0.25, "Photo paper or thin card"),
+                            ("Laminated", 0.3, "Paper laminated before it is wrapped"),
+                        ];
+                        let chosen = MATERIALS
+                            .iter()
+                            .find(|(_, thickness, _)| {
+                                (turret.thickness_mm - thickness).abs() < 1e-6
+                            })
+                            .map_or("Your own", |(name, _, _)| name);
+                        egui::ComboBox::from_id_salt("turret-material")
+                            .selected_text(chosen)
+                            .show_ui(ui, |ui| {
+                                for (name, thickness, hint) in MATERIALS {
+                                    ui.selectable_value(&mut turret.thickness_mm, thickness, name)
+                                        .on_hover_text(hint);
+                                }
+                            });
+                        ui.add(
+                            egui::DragValue::new(&mut turret.thickness_mm)
+                                .range(0.0..=1.0)
+                                .speed(0.01)
+                                .max_decimals(2)
+                                .suffix(" mm thick"),
+                        )
+                        .on_hover_text(
+                            "It wraps round its middle, so the strip is made π × thickness longer. \
                      Tape over it afterwards doesn't count.",
-                );
-            });
-            ui.end_row();
-            ui.label("Clicks a turn");
-            ui.horizontal(|ui| {
-                ui.add(
-                    egui::DragValue::new(&mut turret.clicks_per_turn)
-                        .range(10..=400)
-                        .speed(1.0),
-                );
+                        );
+                    });
+                    ui.end_row();
+                    ui.label("Clicks a turn");
+                    ui.horizontal(|ui| {
+                        ui.add(
+                            egui::DragValue::new(&mut turret.clicks_per_turn)
+                                .range(10..=400)
+                                .speed(1.0),
+                        );
+                        ui.weak(format!(
+                            "= {:.1} {unit} a turn",
+                            f64::from(turret.clicks_per_turn) * rifle.click_value
+                        ));
+                    });
+                    ui.end_row();
+                    ui.label("Dialling up turns");
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut turret.clockwise, false, "anticlockwise")
+                            .on_hover_text("Seen from above; most scopes");
+                        ui.selectable_value(&mut turret.clockwise, true, "clockwise");
+                    });
+                    ui.end_row();
+                });
                 ui.weak(format!(
-                    "= {:.1} {unit} a turn",
-                    f64::from(turret.clicks_per_turn) * rifle.click_value
-                ));
-            });
-            ui.end_row();
-            ui.label("Dialling up turns");
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut turret.clockwise, false, "anticlockwise")
-                    .on_hover_text("Seen from above; most scopes");
-                ui.selectable_value(&mut turret.clockwise, true, "clockwise");
-            });
-            ui.end_row();
-        });
-        ui.weak(format!(
-            "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
+                    "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
              clicks of {} {unit}.",
-            turret.circumference_mm(),
-            turret.height_mm,
-            std::f64::consts::PI * turret.thickness_mm,
-            turret.clicks_per_turn,
-            rifle.click_value
-        ));
+                    turret.circumference_mm(),
+                    turret.height_mm,
+                    std::f64::consts::PI * turret.thickness_mm,
+                    turret.clicks_per_turn,
+                    rifle.click_value
+                ));
+            },
+        );
         let per_turn = i64::from(turret.clicks_per_turn.max(1));
 
         let options = &mut self.settings.turret;
@@ -781,10 +819,12 @@ impl CardsPage {
                 }
             }
         });
-        ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
-            ui.checkbox(&mut options.stop_at_limit, "End at the ethical limit")
-                .on_hover_text("Otherwise the ranges beyond it get their own colour");
-        });
+        if self.hunting {
+            ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
+                ui.checkbox(&mut options.stop_at_limit, "End at the ethical limit")
+                    .on_hover_text("Otherwise the ranges beyond it get their own colour");
+            });
+        }
 
         ui.add_space(6.0);
         ui.strong("Temperature");
@@ -823,155 +863,169 @@ impl CardsPage {
         ui.weak("Cold air and cartridges need more clicks: a label for the season.");
 
         ui.add_space(6.0);
-        ui.strong("Lettering");
-        grid(ui, "turret-lettering", |ui| {
-            ui.label("Font");
-            egui::ComboBox::from_id_salt("turret-font")
-                .selected_text(RichText::new(options.font.name()).family(options.font.family()))
-                .show_ui(ui, |ui| {
-                    for font in fonts::Font::ALL {
-                        ui.selectable_value(
-                            &mut options.font,
-                            font,
-                            RichText::new(format!("{}  123", font.name()))
-                                .family(font.family())
-                                .size(16.0),
-                        )
-                        .on_hover_text(font.hint());
-                    }
-                });
-            ui.end_row();
-            ui.label("Number size");
-            ui.add(
-                egui::Slider::new(&mut options.number_size, 0.35..=0.9)
-                    .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
-                    .custom_parser(|text| {
-                        text.trim_end_matches(['%', ' '])
-                            .parse::<f64>()
-                            .ok()
-                            .map(|value| value / 100.0)
-                    }),
-            )
-            .on_hover_text("Of the band's height");
-            ui.end_row();
-            ui.label("Under the numbers");
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut options.marker, Marker::None, "nothing");
-                ui.selectable_value(&mut options.marker, Marker::Tick, "a tick");
-                ui.selectable_value(&mut options.marker, Marker::Triangle, "a triangle");
-            })
-            .response
-            .on_hover_text("A small mark at the number's exact click");
-            ui.end_row();
-            ui.label("Show");
-            ui.horizontal_wrapped(|ui| {
-                toggle(ui, &mut options.ruler, "click ruler");
-                toggle(ui, &mut options.description, "description line");
-            });
-            ui.end_row();
-        });
-
-        ui.add_space(6.0);
-        ui.strong("Colours");
-        ui.horizontal_wrapped(|ui| {
-            for (name, background, ink, beyond) in turret::SCHEMES {
-                let text = RichText::new(name)
-                    .color(Color32::from_rgb(ink[0], ink[1], ink[2]))
-                    .background_color(Color32::from_rgb(
-                        background[0],
-                        background[1],
-                        background[2],
-                    ));
-                if ui.button(text).clicked() {
-                    options.background = background;
-                    options.ink = ink;
-                    options.beyond = beyond;
-                    options.bands.clear();
-                    options.description_colours = turret::Colours::default();
-                    options.ruler_colours = turret::Colours::default();
-                }
+        let look = format!(
+            "{} · numbers {:.0} % · {}",
+            options.font.name(),
+            options.number_size * 100.0,
+            match options.marker {
+                Marker::None => "no marker",
+                Marker::Tick => "ticks",
+                Marker::Triangle => "triangles",
             }
-        });
-        grid(ui, "turret-colours", |ui| {
-            ui.label("Label");
-            ui.horizontal(|ui| {
-                egui::color_picker::color_edit_button_srgb(ui, &mut options.background)
-                    .on_hover_text("Background");
-                egui::color_picker::color_edit_button_srgb(ui, &mut options.ink)
-                    .on_hover_text("Marks and text");
-                ui.weak("background, marks");
-            });
-            ui.end_row();
-            ui.label("Beyond the limit");
-            egui::color_picker::color_edit_button_srgb(ui, &mut options.beyond);
-            ui.end_row();
-            if options.description {
-                ui.label("Description");
-                part_colours(
-                    ui,
-                    &mut options.description_colours,
-                    options.background,
-                    options.ink,
-                );
-                ui.end_row();
-            }
-            for turn in 0..turns {
-                if options.bands.len() <= turn {
-                    options.bands.resize(turn + 1, turret::Colours::default());
-                }
-                ui.label(format!("Turn {}", turn + 1));
-                let (background, ink) = (options.background, options.ink);
-                part_colours(ui, &mut options.bands[turn], background, ink);
-                ui.end_row();
-            }
-            if options.ruler {
-                ui.label("Ruler");
-                part_colours(
-                    ui,
-                    &mut options.ruler_colours,
-                    options.background,
-                    options.ink,
-                );
-                ui.end_row();
-            }
-        });
-        egui::CollapsingHeader::new("Colours of single ranges")
-            .id_salt("turret-range-colours")
-            .show(ui, |ui| {
-                ui.weak("Give a range a colour of its own, say the ones you shoot most.");
-                egui::Grid::new("turret-range-colour-grid")
-                    .num_columns(3)
-                    .spacing([10.0, 3.0])
-                    .show(ui, |ui| {
-                        for mark in &marks {
-                            let key = turret::range_key(mark.range_m);
-                            let turn = (mark.clicks / per_turn) as usize;
-                            let mut colour = options.mark_colour(mark, turn);
-                            ui.label(u.format(Quantity::Distance, mark.range_m));
-                            ui.weak(if mark.crowded {
-                                format!("{} clicks, left off", mark.clicks)
-                            } else {
-                                format!("{} clicks", mark.clicks)
-                            });
-                            ui.horizontal(|ui| {
-                                if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
-                                    .changed()
-                                {
-                                    options.range_colours.insert(key, colour);
-                                }
-                                if options.range_colours.contains_key(&key)
-                                    && ui
-                                        .small_button("↺")
-                                        .on_hover_text("Back to its band's")
-                                        .clicked()
-                                {
-                                    options.range_colours.remove(&key);
-                                }
-                            });
-                            ui.end_row();
+        );
+        fold_with(ui, "turret-look", "Look", &look, false, |ui| {
+            ui.strong("Lettering");
+            grid(ui, "turret-lettering", |ui| {
+                ui.label("Font");
+                egui::ComboBox::from_id_salt("turret-font")
+                    .selected_text(RichText::new(options.font.name()).family(options.font.family()))
+                    .show_ui(ui, |ui| {
+                        for font in fonts::Font::ALL {
+                            ui.selectable_value(
+                                &mut options.font,
+                                font,
+                                RichText::new(format!("{}  123", font.name()))
+                                    .family(font.family())
+                                    .size(16.0),
+                            )
+                            .on_hover_text(font.hint());
                         }
                     });
+                ui.end_row();
+                ui.label("Number size");
+                ui.add(
+                    egui::Slider::new(&mut options.number_size, 0.35..=0.9)
+                        .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
+                        .custom_parser(|text| {
+                            text.trim_end_matches(['%', ' '])
+                                .parse::<f64>()
+                                .ok()
+                                .map(|value| value / 100.0)
+                        }),
+                )
+                .on_hover_text("Of the band's height");
+                ui.end_row();
+                ui.label("Under the numbers");
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut options.marker, Marker::None, "nothing");
+                    ui.selectable_value(&mut options.marker, Marker::Tick, "a tick");
+                    ui.selectable_value(&mut options.marker, Marker::Triangle, "a triangle");
+                })
+                .response
+                .on_hover_text("A small mark at the number's exact click");
+                ui.end_row();
+                ui.label("Show");
+                ui.horizontal_wrapped(|ui| {
+                    toggle(ui, &mut options.ruler, "click ruler");
+                    toggle(ui, &mut options.description, "description line");
+                });
+                ui.end_row();
             });
+
+            ui.add_space(6.0);
+            ui.strong("Colours");
+            ui.horizontal_wrapped(|ui| {
+                for (name, background, ink, beyond) in turret::SCHEMES {
+                    let text = RichText::new(name)
+                        .color(Color32::from_rgb(ink[0], ink[1], ink[2]))
+                        .background_color(Color32::from_rgb(
+                            background[0],
+                            background[1],
+                            background[2],
+                        ));
+                    if ui.button(text).clicked() {
+                        options.background = background;
+                        options.ink = ink;
+                        options.beyond = beyond;
+                        options.bands.clear();
+                        options.description_colours = turret::Colours::default();
+                        options.ruler_colours = turret::Colours::default();
+                    }
+                }
+            });
+            grid(ui, "turret-colours", |ui| {
+                ui.label("Label");
+                ui.horizontal(|ui| {
+                    egui::color_picker::color_edit_button_srgb(ui, &mut options.background)
+                        .on_hover_text("Background");
+                    egui::color_picker::color_edit_button_srgb(ui, &mut options.ink)
+                        .on_hover_text("Marks and text");
+                    ui.weak("background, marks");
+                });
+                ui.end_row();
+                if hunting {
+                    ui.label("Beyond the limit");
+                    egui::color_picker::color_edit_button_srgb(ui, &mut options.beyond);
+                    ui.end_row();
+                }
+                if options.description {
+                    ui.label("Description");
+                    part_colours(
+                        ui,
+                        &mut options.description_colours,
+                        options.background,
+                        options.ink,
+                    );
+                    ui.end_row();
+                }
+                for turn in 0..turns {
+                    if options.bands.len() <= turn {
+                        options.bands.resize(turn + 1, turret::Colours::default());
+                    }
+                    ui.label(format!("Turn {}", turn + 1));
+                    let (background, ink) = (options.background, options.ink);
+                    part_colours(ui, &mut options.bands[turn], background, ink);
+                    ui.end_row();
+                }
+                if options.ruler {
+                    ui.label("Ruler");
+                    part_colours(
+                        ui,
+                        &mut options.ruler_colours,
+                        options.background,
+                        options.ink,
+                    );
+                    ui.end_row();
+                }
+            });
+            egui::CollapsingHeader::new("Colours of single ranges")
+                .id_salt("turret-range-colours")
+                .show(ui, |ui| {
+                    ui.weak("Give a range a colour of its own, say the ones you shoot most.");
+                    egui::Grid::new("turret-range-colour-grid")
+                        .num_columns(3)
+                        .spacing([10.0, 3.0])
+                        .show(ui, |ui| {
+                            for mark in &marks {
+                                let key = turret::range_key(mark.range_m);
+                                let turn = (mark.clicks / per_turn) as usize;
+                                let mut colour = options.mark_colour(mark, turn);
+                                ui.label(u.format(Quantity::Distance, mark.range_m));
+                                ui.weak(if mark.crowded {
+                                    format!("{} clicks, left off", mark.clicks)
+                                } else {
+                                    format!("{} clicks", mark.clicks)
+                                });
+                                ui.horizontal(|ui| {
+                                    if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
+                                        .changed()
+                                    {
+                                        options.range_colours.insert(key, colour);
+                                    }
+                                    if options.range_colours.contains_key(&key)
+                                        && ui
+                                            .small_button("↺")
+                                            .on_hover_text("Back to its band's")
+                                            .clicked()
+                                    {
+                                        options.range_colours.remove(&key);
+                                    }
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+        });
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label("Copies on the sheet");
@@ -1055,19 +1109,22 @@ impl CardsPage {
                 }
             }
         });
-        ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
-            ui.checkbox(
-                &mut options.stop_at_limit,
-                match ethical {
-                    Some(limit) => format!(
-                        "End at the ethical limit ({})",
-                        u.format(Quantity::Distance, limit)
-                    ),
-                    None => "End at the ethical limit".to_owned(),
-                },
-            )
-            .on_hover_text("Otherwise the ranges beyond it are greyed below a red line");
-        });
+        ui.add_enabled_ui(
+            self.hunting && (ethical.is_some() || options.stop_at_limit),
+            |ui| {
+                ui.checkbox(
+                    &mut options.stop_at_limit,
+                    match ethical {
+                        Some(limit) => format!(
+                            "End at the ethical limit ({})",
+                            u.format(Quantity::Distance, limit)
+                        ),
+                        None => "End at the ethical limit".to_owned(),
+                    },
+                )
+                .on_hover_text("Otherwise the ranges beyond it are greyed below a red line");
+            },
+        );
 
         ui.add_space(6.0);
         ui.strong("Temperatures");

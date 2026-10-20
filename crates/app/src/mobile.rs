@@ -129,7 +129,8 @@ pub struct Sheet<R> {
 }
 
 /// A sheet sliding up from the bottom over a dimmed screen, with a title
-/// and a Done button. Tapping outside it also closes it.
+/// and a Done button. Tapping outside it also closes it. On a wide screen
+/// it is a dialog in the middle instead.
 pub fn sheet<R>(
     context: &egui::Context,
     id: &str,
@@ -147,17 +148,32 @@ pub fn sheet<R>(
                 .rect_filled(screen, 0.0, Color32::from_black_alpha(150));
             closed |= response.clicked();
         });
-    let width = screen.width();
+    let wide = !is_narrow(context);
+    let width = if wide {
+        (screen.width() - 32.0).min(460.0)
+    } else {
+        screen.width()
+    };
     // Sit on the bottom edge, using the height measured last frame (an
     // anchored area would get too little room on its first frame).
     let height_id = Id::new(id).with("height");
     let height: f32 = context
         .data(|data| data.get_temp(height_id))
         .unwrap_or(screen.height() * 0.6);
-    let top = (screen.bottom() - height).max(screen.top() + screen.height() * 0.08);
+    let (left, top) = if wide {
+        (
+            screen.center().x - width / 2.0,
+            (screen.center().y - height / 2.0).max(screen.top() + 24.0),
+        )
+    } else {
+        (
+            screen.left(),
+            (screen.bottom() - height).max(screen.top() + screen.height() * 0.08),
+        )
+    };
     let shown = egui::Area::new(Id::new(id))
         .order(Order::Foreground)
-        .fixed_pos(pos2(screen.left(), top))
+        .fixed_pos(pos2(left, top))
         .constrain(false)
         .show(context, |ui| {
             // An area only gets the room between panels; the sheet covers
@@ -166,11 +182,15 @@ pub fn sheet<R>(
             egui::Frame::new()
                 .fill(theme::FOREST_800)
                 .stroke(Stroke::new(1.0_f32, theme::FOREST_600))
-                .corner_radius(CornerRadius {
-                    nw: 18,
-                    ne: 18,
-                    sw: 0,
-                    se: 0,
+                .corner_radius(if wide {
+                    CornerRadius::same(14)
+                } else {
+                    CornerRadius {
+                        nw: 18,
+                        ne: 18,
+                        sw: 0,
+                        se: 0,
+                    }
                 })
                 .inner_margin(egui::Margin {
                     left: 16,
@@ -180,14 +200,16 @@ pub fn sheet<R>(
                 })
                 .show(ui, |ui| {
                     ui.set_width(width - 32.0);
-                    // The grab handle.
-                    let (handle, _) =
-                        ui.allocate_exact_size(vec2(width - 32.0, 10.0), Sense::hover());
-                    ui.painter().rect_filled(
-                        egui::Rect::from_center_size(handle.center(), vec2(40.0, 5.0)),
-                        CornerRadius::same(3),
-                        theme::FOREST_600,
-                    );
+                    // The grab handle, for a sheet.
+                    if !wide {
+                        let (handle, _) =
+                            ui.allocate_exact_size(vec2(width - 32.0, 10.0), Sense::hover());
+                        ui.painter().rect_filled(
+                            egui::Rect::from_center_size(handle.center(), vec2(40.0, 5.0)),
+                            CornerRadius::same(3),
+                            theme::FOREST_600,
+                        );
+                    }
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(title).heading());
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

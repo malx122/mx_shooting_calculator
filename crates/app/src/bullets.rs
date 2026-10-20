@@ -1,9 +1,11 @@
-//! The My bullets page: the hunter's collection with an editor, and the
-//! base catalog to copy ready-made bullets from.
+//! The Bullets page: the hunter's collection with an editor, and the base
+//! catalog to copy ready-made bullets from.
+
+use std::collections::HashMap;
 
 use ballistics_store::{
     BcBand, BcModel, Bullet, BulletKind, Catalog, CatalogBullet, CatalogKind, Construction,
-    DragPoint, GRAMS_PER_GRAIN,
+    Country, DragPoint, GRAMS_PER_GRAIN,
 };
 use eframe::egui::{self, RichText};
 use egui_plot::{Line, Plot, PlotPoints};
@@ -12,7 +14,9 @@ use crate::app::{Action, Data};
 use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
-use crate::widgets::{caliber_name, caliber_picker, confirm_button, grid, optional_number, text};
+use crate::widgets::{
+    caliber_name, caliber_picker, confirm_button, fold, grid, optional_number, text,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 enum View {
@@ -32,6 +36,8 @@ pub struct BulletsPage {
     catalog_text: String,
     catalog_kind: Option<CatalogKind>,
     lead_free_only: bool,
+    /// The legal level of catalog bullets, worked out once each.
+    levels: HashMap<(String, String, Country), Option<u8>>,
 }
 
 impl Default for BulletsPage {
@@ -46,6 +52,7 @@ impl Default for BulletsPage {
             catalog_text: String::new(),
             catalog_kind: None,
             lead_free_only: false,
+            levels: HashMap::new(),
         }
     }
 }
@@ -82,18 +89,17 @@ impl BulletsPage {
             ui.horizontal_wrapped(|ui| {
                 ui.selectable_value(&mut self.view, View::Collection, "My bullets");
                 ui.selectable_value(&mut self.view, View::Catalog, "Catalog");
-                ui.separator();
-                ui.label("Caliber");
-                if let Some(caliber) = caliber_picker(
-                    ui,
-                    "bullets-caliber",
-                    &self.caliber,
-                    &mut self.caliber_search,
-                ) {
-                    self.caliber = caliber.key.clone();
-                }
-                if !self.caliber.is_empty() && ui.button("All calibers").clicked() {
-                    self.caliber.clear();
+                if self.view == View::Catalog {
+                    ui.separator();
+                    ui.label("Caliber");
+                    if let Some(caliber) = caliber_picker(
+                        ui,
+                        "bullets-caliber",
+                        &self.caliber,
+                        &mut self.caliber_search,
+                    ) {
+                        self.caliber = caliber.key.clone();
+                    }
                 }
             });
         });
@@ -129,17 +135,36 @@ impl BulletsPage {
     /// each is a big row.
     fn collection_list(&mut self, ui: &mut egui::Ui, data: &Data, phone: bool) {
         ui.horizontal_wrapped(|ui| {
-            if ui.button("➕ Add manually").clicked() {
+            if ui
+                .add(
+                    egui::Button::new(
+                        RichText::new("+ Add from the catalog")
+                            .strong()
+                            .color(theme::FOREST_900),
+                    )
+                    .fill(theme::BLAZE),
+                )
+                .on_hover_text("Factory ammunition and component bullets, with their data")
+                .clicked()
+            {
+                self.view = View::Catalog;
+            }
+            if ui.button("Add by hand").clicked() {
                 let caliber = Catalog::builtin().caliber(&self.caliber);
                 self.editing = Some(match caliber {
                     Some(caliber) => Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm),
                     None => Bullet::new_manual("", 0.0),
                 });
             }
-            if ui.button("📖 Add from catalog").clicked() {
-                self.view = View::Catalog;
-            }
         });
+        if !self.caliber.is_empty() {
+            ui.horizontal_wrapped(|ui| {
+                ui.weak(format!("Showing {} only", caliber_name(&self.caliber)));
+                if ui.small_button("Show all").clicked() {
+                    self.caliber.clear();
+                }
+            });
+        }
         ui.separator();
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut shown = 0;
@@ -202,14 +227,17 @@ impl BulletsPage {
                 bullet,
                 &mut self.editor_caliber_search,
                 &mut self.curve_paste,
+                data.hunting,
             );
             ui.add_space(8.0);
 
             let problem = bullet.validate().err();
             let changed = stored != Some(&*bullet);
             ui.horizontal_wrapped(|ui| {
-                let save =
-                    ui.add_enabled(problem.is_none() && changed, egui::Button::new("💾 Save"));
+                let save = ui.add_enabled(
+                    problem.is_none() && changed,
+                    egui::Button::new(RichText::new("Save").strong()),
+                );
                 if save.clicked() {
                     actions.push(Action::SaveBullet(bullet.clone()));
                 }
@@ -296,9 +324,20 @@ impl BulletsPage {
                 return;
             }
             let mut chosen = None;
+            let country = data.country;
+            let levels = &mut self.levels;
             egui::ScrollArea::both().show(ui, |ui| {
                 egui::Grid::new("catalog").striped(true).spacing([12.0, 4.0]).show(ui, |ui| {
-                    for header in ["", "Maker", "Product", "Type", "Mass", "BC G1", "BC G7", "Velocity", "Construction", "", "Source"] {
+                    let class = country.map(|country| format!("{} class", country.code()));
+                    for header in ["", "Maker", "Product", "Type", "Mass", "BC G1", "BC G7", "Velocity"] {
+                        ui.strong(header);
+                    }
+                    if let Some(class) = &class {
+                        ui.strong(class).on_hover_text(
+                            country.map_or(String::new(), |country| country.rules().help()),
+                        );
+                    }
+                    for header in ["Construction", "", "Source"] {
                         ui.strong(header);
                     }
                     ui.end_row();
@@ -322,6 +361,25 @@ impl BulletsPage {
                         ui.label(entry.bc_g1.map_or("–".to_owned(), |bc| format!("{bc:.3}")));
                         ui.label(entry.bc_g7.map_or("–".to_owned(), |bc| format!("{bc:.3}")));
                         ui.label(entry.muzzle_velocity_mps.map_or("your load".to_owned(), |v| u.format(Quantity::Speed, v)));
+                        if let Some(country) = country {
+                            let level = *levels
+                                .entry((entry.id.clone(), caliber.key.clone(), country))
+                                .or_insert_with(|| {
+                                    ballistics_shot::level_of(&entry.to_collection(caliber), country)
+                                });
+                            ui.label(match level {
+                                Some(level) => level.to_string(),
+                                None if entry.muzzle_velocity_mps.is_none() => "–".to_owned(),
+                                None => "none".to_owned(),
+                            })
+                            .on_hover_text(match level {
+                                Some(level) => format!(
+                                    "Meets {} out of a typical barrel; the load and barrel decide",
+                                    country.rules().level_name(level).to_lowercase()
+                                ),
+                                None => "No level known".to_owned(),
+                            });
+                        }
                         ui.label(entry.construction.label());
                         ui.label(if entry.lead_free { "lead-free" } else { "" });
                         ui.hyperlink_to("page", &entry.source_url).on_hover_text(&entry.source_url);
@@ -342,7 +400,9 @@ fn editor(
     bullet: &mut Bullet,
     caliber_search: &mut String,
     curve_paste: &mut String,
+    hunting: bool,
 ) {
+    let u = units::prefs(ui.ctx());
     grid(ui, "bullet-editor", |ui| {
         text(ui, "Manufacturer", &mut bullet.manufacturer);
         text(ui, "Name", &mut bullet.name);
@@ -384,20 +444,6 @@ fn editor(
             5.0..=80.0,
             0.1,
         );
-        optional_number(ui, "BC G1", &mut bullet.bc_g1, 0.4, 0.05..=1.2, 0.001, "");
-        optional_number(ui, "BC G7", &mut bullet.bc_g7, 0.2, 0.05..=1.2, 0.001, "");
-        ui.label("Calculate with");
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut bullet.drag_model, BcModel::G1, "G1");
-            ui.selectable_value(&mut bullet.drag_model, BcModel::G7, "G7");
-            ui.selectable_value(&mut bullet.drag_model, BcModel::Custom, "Own drag curve");
-        });
-        ui.end_row();
-        if bullet.drag_model == BcModel::Custom {
-            drag_curve_rows(ui, bullet, curve_paste);
-        } else {
-            bc_band_rows(ui, bullet);
-        }
         quantity(
             ui,
             "Muzzle velocity",
@@ -406,65 +452,133 @@ fn editor(
             0.0..=1600.0,
             1.0,
         );
-        quantity(
-            ui,
-            "  measured at",
-            &mut bullet.velocity_temperature_c,
-            Quantity::Temperature,
-            -40.0..=50.0,
-            0.5,
-        );
-        quantity(
-            ui,
-            "  temperature sensitivity",
-            &mut bullet.velocity_per_degree,
-            Quantity::Sensitivity,
-            0.0..=3.0,
-            0.05,
-        );
-        optional_quantity(
-            ui,
-            "  test barrel",
-            &mut bullet.test_barrel_mm,
-            610.0,
-            Quantity::BarrelLength,
-            200.0..=1000.0,
-            1.0,
-        );
-        ui.label("Construction");
-        egui::ComboBox::from_id_salt("construction")
-            .selected_text(bullet.construction.label())
-            .show_ui(ui, |ui| {
-                for construction in Construction::ALL {
-                    ui.selectable_value(
-                        &mut bullet.construction,
-                        construction,
-                        construction.label(),
-                    );
-                }
-            });
-        ui.end_row();
-        ui.label("Lead-free");
-        ui.checkbox(&mut bullet.lead_free, "");
-        ui.end_row();
-        optional_quantity(
-            ui,
-            "Min. expansion velocity",
-            &mut bullet.min_expansion_mps,
-            550.0,
-            Quantity::Speed,
-            100.0..=900.0,
-            5.0,
-        );
-        ui.label("Notes");
-        ui.text_edit_multiline(&mut bullet.notes);
-        ui.end_row();
     });
-    ui.small(RichText::new(format!(
-        "Temperature sensitivity: a typical {} is filled in; measure your own for cold-weather accuracy. \
-         Without a length, stability and spin drift are skipped.",
-        units::prefs(ui.ctx()).format(Quantity::Sensitivity, 0.5)
-    )));
+    if bullet.length_mm.is_none() {
+        ui.weak("Without a length, stability, spin drift and aerodynamic jump are skipped.");
+    }
+    ui.add_space(4.0);
+
+    let drag = match bullet.drag_model {
+        BcModel::Custom => format!("own drag curve, {} points", bullet.drag_curve.len()),
+        model => {
+            let bc = bullet
+                .ballistic_coefficient()
+                .map_or("no BC".to_owned(), |bc| format!("{bc:.3}"));
+            if bullet.bc_bands.is_empty() {
+                format!("{model:?} {bc}")
+            } else {
+                format!("{model:?} {bc}, {} bands", bullet.bc_bands.len())
+            }
+        }
+    };
+    fold(ui, "bullet-drag", "Drag model", &drag, |ui| {
+        grid(ui, "bullet-drag-grid", |ui| {
+            optional_number(ui, "BC G1", &mut bullet.bc_g1, 0.4, 0.05..=1.2, 0.001, "");
+            optional_number(ui, "BC G7", &mut bullet.bc_g7, 0.2, 0.05..=1.2, 0.001, "");
+            ui.label("Calculate with");
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut bullet.drag_model, BcModel::G1, "G1");
+                ui.selectable_value(&mut bullet.drag_model, BcModel::G7, "G7");
+                ui.selectable_value(&mut bullet.drag_model, BcModel::Custom, "Own drag curve");
+            });
+            ui.end_row();
+            if bullet.drag_model == BcModel::Custom {
+                drag_curve_rows(ui, bullet, curve_paste);
+            } else {
+                bc_band_rows(ui, bullet);
+            }
+        });
+    });
+    let velocity = format!(
+        "measured at {} · {}",
+        u.format(Quantity::Temperature, bullet.velocity_temperature_c),
+        u.format(Quantity::Sensitivity, bullet.velocity_per_degree)
+    );
+    fold(ui, "bullet-velocity", "Velocity details", &velocity, |ui| {
+        grid(ui, "bullet-velocity-grid", |ui| {
+            quantity(
+                ui,
+                "Measured at",
+                &mut bullet.velocity_temperature_c,
+                Quantity::Temperature,
+                -40.0..=50.0,
+                0.5,
+            );
+            quantity(
+                ui,
+                "Temperature sensitivity",
+                &mut bullet.velocity_per_degree,
+                Quantity::Sensitivity,
+                0.0..=3.0,
+                0.05,
+            );
+            optional_quantity(
+                ui,
+                "Test barrel",
+                &mut bullet.test_barrel_mm,
+                610.0,
+                Quantity::BarrelLength,
+                200.0..=1000.0,
+                1.0,
+            );
+        });
+        ui.weak(format!(
+            "A typical {} is filled in; measure your own for cold-weather accuracy.",
+            u.format(Quantity::Sensitivity, 0.5)
+        ));
+    });
+    let construction = |ui: &mut egui::Ui, bullet: &mut Bullet| {
+        grid(ui, "bullet-construction", |ui| {
+            ui.label("Construction");
+            egui::ComboBox::from_id_salt("construction")
+                .selected_text(bullet.construction.label())
+                .show_ui(ui, |ui| {
+                    for construction in Construction::ALL {
+                        ui.selectable_value(
+                            &mut bullet.construction,
+                            construction,
+                            construction.label(),
+                        );
+                    }
+                });
+            ui.end_row();
+            ui.label("Lead-free");
+            ui.checkbox(&mut bullet.lead_free, "");
+            ui.end_row();
+            optional_quantity(
+                ui,
+                "Min. expansion velocity",
+                &mut bullet.min_expansion_mps,
+                550.0,
+                Quantity::Speed,
+                100.0..=900.0,
+                5.0,
+            );
+        });
+    };
+    if hunting {
+        // They decide the legal class: always in view for a hunter.
+        ui.add_space(4.0);
+        construction(ui, bullet);
+    } else {
+        fold(
+            ui,
+            "bullet-construction-fold",
+            "Construction",
+            bullet.construction.label(),
+            |ui| construction(ui, bullet),
+        );
+    }
+    let notes = bullet.notes.lines().next().unwrap_or_default().to_owned();
+    fold(
+        ui,
+        "bullet-notes",
+        "Notes",
+        &crate::calculator::shortened(&notes, 50),
+        |ui| {
+            ui.text_edit_multiline(&mut bullet.notes);
+        },
+    );
 }
 
 /// Optional BCs by velocity for the selected drag model, as some makers
@@ -497,7 +611,7 @@ fn bc_band_rows(ui: &mut egui::Ui, bullet: &mut Bullet) {
         if let Some(index) = remove {
             bullet.bc_bands.remove(index);
         }
-        if bullet.bc_bands.len() < 5 && ui.small_button("➕ Add band").clicked() {
+        if bullet.bc_bands.len() < 5 && ui.small_button("+ Add band").clicked() {
             let bc = bullet.ballistic_coefficient().unwrap_or(0.4);
             let velocity_mps = bullet
                 .bc_bands
@@ -553,7 +667,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
                     bullet.drag_curve.remove(index);
                 }
             });
-            if ui.small_button("➕ Add point").clicked() {
+            if ui.small_button("+ Add point").clicked() {
                 let mach = bullet.drag_curve.last().map_or(0.5, |point| point.mach + 0.1);
                 let cd = bullet.drag_curve.last().map_or(0.3, |point| point.cd);
                 bullet.drag_curve.push(DragPoint { mach, cd });

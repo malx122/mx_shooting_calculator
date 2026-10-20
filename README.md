@@ -7,9 +7,9 @@ shooting. It runs on the desktop and in the browser. You keep your rifles
 and the bullets you shoot in them in a local database, and the calculator
 gives:
 
-- a dope table, with holds in mil or MOA and scope clicks;
+- a range table (dope), with holds in mil or MOA and scope clicks;
 - energy and velocity at impact, and an ethical range limit set by the
-  game you hunt;
+  game you hunt (target shooters can leave everything about hunting out);
 - point-blank range for your zero, and the zero that maximises it, told
   the way it is shot in ("13 cm high at 100 m") with a button to make it
   the rifle's zero;
@@ -81,18 +81,23 @@ Below 640 points of width (any phone, and a narrow desktop window) the app
 switches to a one-column layout with bigger text and touch targets
 (`mobile.rs`, `calculator/phone.rs`):
 
-- **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets) and
-  a compact header whose menu holds Units, Import, Export, Load demo data,
-  Install and the version.
+- **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets,
+  Cards) and a compact header whose menu holds Units, what the app is used
+  for, Hunting rules, Sync, Import, Export, Load demo data, Install and the
+  version.
 - **Calculate, results first:**
-  - The rifle and bullet line opens a Conditions page with every input.
-  - Under it are quick fields for **range**, **shot angle** and **wind**.
-  - Then the holds, and the scope view with the **target** button beside
-    it, its edge following the eyepiece's rim.
-  - Trajectory (2D/3D), dope table and limits fold out below.
-- **Pickers:** sheets that slide up from the bottom.
-  - **Range:** a drag ruler, ± steps, and distances from the dope table plus
-    recent ranges.
+  - The rifle and bullet line opens a page with the rest of the inputs,
+    each group folded with a summary.
+  - Under it are four tiles: **range**, **shot angle**, **wind** and
+    **target**.
+  - Then the holds, one line on the legal class, the season and the light
+    (tap it for the details), and the scope view.
+  - Limits, the range table (three columns, or all) and the trajectory
+    (2D/3D) fold out below.
+- **Pickers:** sheets that slide up from the bottom (on a desktop, the same
+  pickers open as dialogs from the tiles).
+  - **Range:** a drag ruler, ± steps, and distances from the range table
+    plus recent ranges.
   - **Shot angle:** an inclinometer dial and presets. In the browser, "Measure
     with the phone" reads the phone's tilt. The rifle's **cant** is set here
     too.
@@ -149,7 +154,7 @@ repository root.
 To change the sample data:
 
 1. Edit it in the app (`cargo dev`).
-2. Choose **Export…**.
+2. Choose **Export backup** in the menu.
 3. Save over `dev-data/sample.json`.
 
 `cargo test` checks that the fixture still imports and that its catalog links
@@ -193,25 +198,15 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    - the zero and the weather it was made in: temperature, powder
      temperature, pressure and humidity. The zero can be a height at its
      range, the way many hunters zero ("4 cm high at 100 m"): the bullet
-     then hits that high there instead of on the crosshair;
-   - its **dope table**: start, end and step, and which columns to show.
-     Drop and wind can each be shown in cm, mil, MOA or clicks, alongside
-     velocity, energy and time of flight.
-2. **My bullets:** build your collection.
-   - **From the catalog:** pick a caliber, then factory ammunition in that
-     caliber or a component bullet that fits its bore. Adding one makes your
-     own editable copy. Handloads need your own muzzle velocity before they
-     can be saved.
-   - **Manually:** for anything not in the catalog. A bullet can have up to
-     five **BCs by velocity band**, interpolated by speed through the air.
-   - **Own drag curve:** a bullet can use its own measured drag curve (Mach
-     against Cd, for example a maker's Doppler-radar data) instead of G1/G7
-     and a BC. Enter points or paste a whole table: spaces, tabs, commas,
-     semicolons and decimal commas are all read. With its own curve the
-     bullet needs no BC; the engine uses its mass and diameter.
-3. **Calculate:** choose a rifle. Only bullets *in your collection* loaded in
-   that rifle's caliber can be chosen. **"This bullet in this rifle"** holds
-   what is specific to that combination:
+     then hits that high there instead of on the crosshair.
+
+   The form starts with the basics (name, caliber, scope and reticle, the
+   clicks, sight height, zero); the barrel, the zero's weather and notes are
+   folded with a summary. A catalog scope brings its click value, shown as
+   "from the scope" with **Change** for your own.
+
+   Under the rifle, **Loads in this rifle** lists the bullets of its caliber.
+   Each has what is specific to that combination:
    - **Measured velocities:** chronograph averages at different temperatures.
      Two or more give the rifle's own temperature sensitivity, fitted as a
      line. **From a chronograph file…** reads a Garmin Xero (the ShotView
@@ -222,14 +217,52 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    - **Point of impact:** where this load hits relative to the load the rifle
      was zeroed with, at the zero range. The engine tilts the bore by that
      angle.
-   - **Zero weather:** the rifle's, the same as today, or recorded values.
-   - **Truing:** after a long shot (300 m or more works best), enter the
-     range and what it took to hit centre, in that day's weather. The
-     engine finds the muzzle velocity (when you have no chronograph) or the
-     drag (when the velocity is measured, so the BC is the doubt) that
-     matches, and uses it from then on. The AI tools use it too.
+   - **Zero weather:** the rifle's, the same as the shot's, or recorded
+     values.
+   - **Truing** (behind **Shot long and missed? True the calculation…**):
+     after a long shot (300 m or more works best), enter the range and what
+     it took to hit centre, in the weather set on Calculate. The engine
+     finds the muzzle velocity (when you have no chronograph) or the drag
+     (when the velocity is measured, so the BC is the doubt) that matches,
+     and uses it from then on. The AI tools use it too.
 
-   Edits apply to the calculation immediately and are kept when saved.
+   Calculate uses a load once it is saved.
+2. **Bullets:** build your collection.
+   - **From the catalog** (**+ Add from the catalog**): pick a caliber, then
+     factory ammunition in that caliber or a component bullet that fits its
+     bore. With hunting rules set, a column gives each one's legal class
+     out of a typical barrel. Adding one makes your own editable copy.
+     Handloads need your own muzzle velocity before they can be saved.
+   - **Manually:** for anything not in the catalog. A bullet can have up to
+     five **BCs by velocity band**, interpolated by speed through the air.
+   - **Own drag curve:** a bullet can use its own measured drag curve (Mach
+     against Cd, for example a maker's Doppler-radar data) instead of G1/G7
+     and a BC. Enter points or paste a whole table: spaces, tabs, commas,
+     semicolons and decimal commas are all read. With its own curve the
+     bullet needs no BC; the engine uses its mass and diameter.
+
+   The drag model (BCs, bands or a curve) and the velocity details are
+   folded with a summary; construction and lead-free, which decide the
+   legal class, stay in view for a hunter.
+3. **Calculate:** choose a rifle. Only bullets *in your collection* loaded in
+   that rifle's caliber can be chosen. A line under them tells the muzzle
+   velocity today and where it comes from (the box, your measurements,
+   trued); **Load setup…** opens the bullet's setup on the Rifles page.
+
+   Four tiles hold what changes every shot: **range**, **angle** (and cant),
+   **wind** and **target**, each opening a picker. The rest is folded, each
+   with a summary line: **Weather** (temperature, with **Air details** for
+   pressure, altitude, humidity and powder temperature), **Fine
+   corrections** (cant, spin drift, aerodynamic jump, Coriolis) and the
+   target's own numbers.
+
+   The results lead with the hold, then (for game, with hunting rules set)
+   pills for the **legal class**, the **season** in your county and today's
+   **shooting light**, then the **ethical max** and the **dead-on hold**,
+   with the zeros, muzzle velocity and stability under **Details**. Under
+   the scope view: dial or hold, and the illumination. The **range table**
+   shows the clicks, mil (or MOA), wind and energy at first; **Columns…**
+   sets its ranges and columns, kept for the rifle.
 
    **Weather:** **📍 Weather here** (on a phone or in a browser that may
    know your position) or a place search fills in the temperature,
@@ -253,8 +286,8 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    energy at the muzzle and at 100 m. A bullet whose construction isn't set
    (a Strelok import, say) is assumed to expand, and the result says so.
 
-   **Hunting today:** for game, with your country set, the target section
-   shows the season in your county (Sweden's län, Finland's maakunnat), from
+   **Hunting today:** for game, with your country set, the results show the
+   season in your county (Sweden's län, Finland's maakunnat), from
    the weather place search or picked from the list: open until when, or when
    it opens, for which animals and with which method limits. It also shows
    today's legal shooting light where you are (sunrise and sunset worked out
@@ -267,7 +300,7 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    and the sources. The data is the law as of its date: check before you
    hunt. How it is made and updated: [tools/hunting](tools/hunting/README.md).
 
-   **Hunting rules** (the flag in the header; on a phone, in the menu)
+   **Hunting rules** (in the menu; the header's flag shows the choice)
    chooses the country: **Sweden** (Naturvårdsverket, NFS 2023:8, classes
    1–4), **Finland** (Metsästysasetus 666/1993 § 16 a: moose, deer, roe
    deer, fox and small game classes) or **none** for no legal checks. It
@@ -353,14 +386,21 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      The A4 sheet has copies of the strip with cut marks, a 50 mm bar to
      check the print scale, and the clicks for every range.
 
-**Units** (in the header): metric or imperial for each quantity separately.
+**Hunting or target shooting:** the app asks once what it is used for (and a
+hunter where they hunt); the menu's **Use for** changes it. **Target
+shooting** leaves out everything about hunting: ethical limits, legal
+ammunition, seasons, shooting light and stand cards. Every target is then
+just a hit zone.
+
+**Units** (in the menu): metric or imperial for each quantity separately.
 Distance, drop, sight height, velocity, wind speed, temperature, sensitivity,
 pressure (hPa, mmHg or inHg), altitude, energy, bullet weight, length,
 diameter, barrel length and twist can each be set. Values are always stored
 in metric, so changing units never changes your data.
 
-**Export… / Import…** save and merge your rifles, bullets, rifle loads,
-custom scopes and custom targets as JSON. **Import…** also reads **Strelok Pro backups
+**Export backup / Import backup…** (in the menu) save and merge your rifles,
+bullets, rifle loads, custom scopes and custom targets as JSON. **Import
+backup…** also reads **Strelok Pro backups
 (`.srl`)**. It shows what it will add, with each rifle's inferred caliber to
 check, before writing anything, and importing the same backup again adds
 nothing. See [docs/strelok-import.md](docs/strelok-import.md). Import merges record by record and keeps whichever copy was edited
@@ -368,7 +408,7 @@ last, so the same file can move data between devices. Backups from earlier
 versions (formats 1 to 4) still import. Restoring a backup brings back
 records deleted since.
 
-**Sync** (in the header; in the phone's menu) keeps your rifles, bullets,
+**Sync** (in the menu; the header's dot shows how it is doing) keeps your rifles, bullets,
 loads, scopes and targets the same on all your devices, in one of two ways:
 
 - **With Google Drive:** **Sign in with Google** on each device, with the

@@ -1,6 +1,6 @@
 # Strelok Pro backups (`.srl`)
 
-MXSC imports Strelok Pro backups through **Import…**. The code is in
+MXSC imports Strelok Pro backups through **Import backup…** in the menu. The code is in
 `crates/ballistics-store/src/strelok.rs` and its tests use the made-up backup
 `crates/ballistics-store/testdata/strelok-sample.srl`. To see what a real
 file would become, without touching any database:

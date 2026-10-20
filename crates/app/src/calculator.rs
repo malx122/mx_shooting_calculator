@@ -5,15 +5,15 @@ use ballistics_core::analysis::{self, OptimalZero, PointBlank, ZeroFigure};
 use ballistics_core::atmosphere::STANDARD_SEA_LEVEL_PRESSURE_HPA;
 use ballistics_core::{Coriolis, RangeRow, Scenario, Solution, SolveError, solver};
 use ballistics_store::{
-    BcModel, Bullet, BulletKind, Catalog, ClickUnit, LoadZero, PLAIN_CROSSHAIR, Reticle, Rifle,
-    RifleLoad, Scope, Target, Truing, TruingMethod, VelocityPoint,
+    BcModel, Bullet, Catalog, ClickUnit, LoadZero, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad,
+    Scope, TableSettings, Target,
 };
 
 use eframe::egui::{self, RichText};
 use egui_plot::{HLine, Legend, Line, Plot, PlotBounds, PlotPoints, VLine};
 use serde::{Deserialize, Serialize};
 
-use ballistics_shot::{from_radians, to_radians, unit_label};
+use ballistics_shot::{from_radians, unit_label};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
@@ -22,7 +22,7 @@ use crate::sight_picture::{SightPicture, magnification_slider, magnification_tex
 use crate::theme;
 use crate::trajectory3d;
 use crate::units::{self, Quantity, UnitPrefs, quantity};
-use crate::widgets::{caliber_name, confirm_button, grid, number, section, target_picker};
+use crate::widgets::{caliber_name, fold, grid, number};
 
 mod phone;
 
@@ -177,6 +177,8 @@ pub struct Aim {
     /// The game's own minimum velocity, when it sets one.
     pub min_velocity_mps: Option<f64>,
     pub figure: Option<Figure>,
+    /// Hunting: a game target brings its ethical limits.
+    pub hunting: bool,
 }
 
 impl Aim {
@@ -188,6 +190,7 @@ impl Aim {
                 min_energy_j: None,
                 min_velocity_mps: None,
                 figure: None,
+                hunting: data.hunting,
             };
         };
         let target = data
@@ -195,7 +198,8 @@ impl Aim {
             .or_else(|| Catalog::builtin().target(DEFAULT_TARGET).cloned())
             .expect("the default target is in the catalog");
         let vital_diameter_cm = inputs.vital_override_cm.unwrap_or(target.vital_diameter_cm);
-        let min_energy_j = target.is_game().then(|| {
+        // Target shooting has no ethical limits, whatever the target.
+        let min_energy_j = (data.hunting && target.is_game()).then(|| {
             inputs
                 .min_energy_override_j
                 .or(target.min_energy_j)
@@ -203,6 +207,7 @@ impl Aim {
         });
         let min_velocity_mps = target
             .min_velocity_mps
+            .filter(|_| data.hunting)
             .map(|velocity| inputs.min_velocity_override_mps.unwrap_or(velocity));
         let figure = Figure::new(&target, vital_diameter_cm);
         Aim {
@@ -211,11 +216,14 @@ impl Aim {
             min_energy_j,
             min_velocity_mps,
             figure: Some(figure),
+            hunting: data.hunting,
         }
     }
 
+    /// A game target, when hunting: for target shooting every target is
+    /// just a hit zone.
     pub fn is_game(&self) -> bool {
-        self.target.as_ref().is_some_and(Target::is_game)
+        self.hunting && self.target.as_ref().is_some_and(Target::is_game)
     }
 
     /// The target's name, or "No target".
@@ -227,7 +235,7 @@ impl Aim {
 
     /// "vital zone" on game, "hit zone" on sport targets.
     pub fn zone_name(&self) -> &'static str {
-        if self.target.as_ref().is_some_and(|target| !target.is_game()) {
+        if self.target.is_some() && !self.is_game() {
             "hit zone"
         } else {
             "vital zone"
@@ -264,72 +272,34 @@ pub struct Zeros {
 
 pub struct CalculatorPage {
     pub inputs: Inputs,
-    /// The rifle-load being edited: the saved one, or a new empty one.
-    load_draft: Option<RifleLoad>,
     cache: Option<(CacheKey, Computed)>,
     /// On a phone: the results or the inputs page.
     phone_view: phone::PhoneView,
-    /// On a phone: the picker sheet that is open.
+    /// The picker that is open: a sheet on a phone, a dialog on a desktop.
     picker: Option<phone::Picker>,
     /// The target picker's search text.
     target_search: String,
     /// The weather where the hunter is, when asked for.
     pub weather: crate::weather::Weather,
-    /// The truing shot being entered.
-    truing_form: TruingForm,
-    /// A chronograph file being picked, and one being looked at.
-    chrono_file: crate::files::Picked,
-    chrono: Option<ChronoImport>,
-    /// Why the last chronograph file couldn't be read.
-    chrono_error: Option<String>,
-}
-
-/// A chronograph file read, before its string is added to the load.
-struct ChronoImport {
-    file: String,
-    sessions: Vec<ballistics_store::chrono::Session>,
-    chosen: usize,
-    /// The cartridges' temperature when they were shot.
-    temperature_c: f64,
-}
-
-/// A long shot to true the calculation to, as entered.
-struct TruingForm {
-    /// The rifle and bullet it was filled in for.
-    for_load: Option<(String, String)>,
-    range_m: f64,
-    /// In the rifle's click unit, up positive.
-    elevation: f64,
-    method: Option<ballistics_store::TruingMethod>,
-    error: Option<String>,
-}
-
-impl Default for TruingForm {
-    fn default() -> Self {
-        TruingForm {
-            for_load: None,
-            range_m: 300.0,
-            elevation: 0.0,
-            method: None,
-            error: None,
-        }
-    }
+    /// The range table's settings being changed, for the rifle with this
+    /// id: saved to it once the mouse or finger lets go.
+    table_edit: Option<(String, TableSettings)>,
+    /// The ethical limit and how far the dead-on hold reaches, from the
+    /// last results: for the range picker.
+    limits: (Option<f64>, Option<f64>),
 }
 
 impl CalculatorPage {
     pub fn new(inputs: Inputs) -> Self {
         Self {
             inputs,
-            load_draft: None,
             cache: None,
             phone_view: phone::PhoneView::default(),
             picker: None,
             target_search: String::new(),
             weather: crate::weather::Weather::default(),
-            truing_form: TruingForm::default(),
-            chrono_file: crate::files::Picked::default(),
-            chrono: None,
-            chrono_error: None,
+            table_edit: None,
+            limits: (None, None),
         }
     }
 
@@ -389,9 +359,72 @@ impl CalculatorPage {
         })
     }
 
-    /// Drops unsaved rifle-load edits, e.g. after the load was reset.
-    pub fn forget_load_draft(&mut self) {
-        self.load_draft = None;
+    /// The range table to show for the rifle: as being changed, or its own.
+    fn table_for(&self, rifle: &Rifle) -> TableSettings {
+        match &self.table_edit {
+            Some((id, table)) if *id == rifle.id => *table,
+            _ => rifle.table,
+        }
+    }
+
+    /// Saves a changed range table to its rifle once nothing is held down.
+    fn save_table(&mut self, context: &egui::Context, data: &Data, actions: &mut Vec<Action>) {
+        let Some((id, table)) = &self.table_edit else {
+            return;
+        };
+        if context.input(|input| input.pointer.any_down()) {
+            return;
+        }
+        if let Some(rifle) = data.rifles.iter().find(|rifle| rifle.id == *id) {
+            let mut changed = rifle.clone();
+            changed.table = *table;
+            if changed.validate().is_err() {
+                return;
+            }
+            if changed.table != rifle.table {
+                actions.push(Action::SaveTable(changed));
+            }
+        }
+        self.table_edit = None;
+    }
+
+    /// Applies what the results asked for.
+    fn apply_requests(
+        &mut self,
+        requested: ViewRequests,
+        rifle: &Rifle,
+        context: &egui::Context,
+        actions: &mut Vec<Action>,
+    ) {
+        let zeros = self
+            .cache
+            .as_ref()
+            .map(|(_, computed)| computed.zeros)
+            .unwrap_or_default();
+        if let Some(rifle) = requested.use_zero(rifle, &zeros) {
+            actions.push(Action::SaveRifle(rifle));
+        }
+        if let Some(magnification) = requested.magnification {
+            self.inputs.magnification = Some(magnification);
+        }
+        if let Some(three_d) = requested.trajectory_3d {
+            self.inputs.trajectory_3d = three_d;
+        }
+        if let Some(dial) = requested.dial_elevation {
+            self.inputs.dial_elevation = dial;
+        }
+        if let Some(on) = requested.illumination {
+            self.inputs.illumination = on;
+        }
+        if let Some(region) = requested.region {
+            self.inputs.region = region;
+        }
+        if requested.locate {
+            self.weather.locate_here(context);
+        }
+        if let Some(table) = requested.table {
+            self.table_edit = Some((rifle.id.clone(), table));
+        }
     }
 
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
@@ -425,32 +458,8 @@ impl CalculatorPage {
                 .cloned(),
             _ => None,
         };
-        // Keep the draft on the selected rifle and bullet.
-        let draft_matches = self.load_draft.as_ref().is_some_and(|draft| {
-            rifle
-                .as_ref()
-                .is_some_and(|rifle| rifle.id == draft.rifle_id)
-                && bullet
-                    .as_ref()
-                    .is_some_and(|bullet| bullet.id == draft.bullet_id)
-        });
-        if !draft_matches {
-            self.load_draft = match (&rifle, &bullet) {
-                (Some(rifle), Some(bullet)) => Some(
-                    load.clone()
-                        .unwrap_or_else(|| RifleLoad::new(&rifle.id, &bullet.id)),
-                ),
-                _ => None,
-            };
-        }
         let optics = rifle.as_ref().and_then(|rifle| data.optics(rifle));
         let aim = Aim::new(&self.inputs, data);
-        // Unsaved edits count as soon as they are valid.
-        let effective_load = self
-            .load_draft
-            .clone()
-            .filter(|draft| draft.validate().is_ok() && !draft.is_empty())
-            .or(load.clone());
         self.remember_target();
 
         if mobile::is_narrow(context) {
@@ -464,18 +473,17 @@ impl CalculatorPage {
                     load: load.as_ref(),
                     optics: optics.as_ref(),
                     aim: &aim,
-                    effective_load: effective_load.as_ref(),
                     country: data.country,
                 },
                 &mut actions,
             );
+            self.save_table(context, data, &mut actions);
             return actions;
         }
-        self.picker = None;
 
         egui::SidePanel::left("calculator-inputs")
             .resizable(true)
-            .default_width(360.0)
+            .default_width(370.0)
             .max_width(560.0)
             .show(context, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
@@ -489,15 +497,10 @@ impl CalculatorPage {
                         &mut actions,
                     );
                     if rifle.is_some() && bullet.is_some() {
-                        self.conditions(
-                            ui,
-                            data,
-                            &aim,
-                            rifle.as_ref(),
-                            bullet.as_ref(),
-                            optics.as_ref(),
-                            &mut actions,
-                        );
+                        ui.add_space(6.0);
+                        self.tiles(ui, &aim);
+                        ui.add_space(4.0);
+                        self.conditions(ui, data, &aim, bullet.as_ref(), &mut actions);
                     }
                 });
             });
@@ -529,18 +532,18 @@ impl CalculatorPage {
                 ui.label(
                     "Add factory ammunition or a handload from the catalog, or enter one by hand.",
                 );
-                if ui.button("Go to My bullets").clicked() {
+                if ui.button("Go to Bullets").clicked() {
                     actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                 }
             }
             (Some(rifle), Some(bullet)) => {
-                let scenario = self.scenario(rifle, bullet, effective_load.as_ref());
+                let table = self.table_for(rifle);
+                let scenario = self.scenario(rifle, bullet, load.as_ref());
                 self.refresh(
                     context,
                     scenario,
                     aim.vital_diameter_cm,
-                    rifle
-                        .table
+                    table
                         .end_m
                         .max(SOLVE_RANGE_M)
                         .max(self.inputs.target_range_m + 10.0),
@@ -551,6 +554,7 @@ impl CalculatorPage {
                         let view = ResultsView {
                             inputs: &self.inputs,
                             rifle,
+                            table,
                             optics: optics.as_ref(),
                             aim: &aim,
                             min_velocity: aim.min_velocity_mps.unwrap_or_else(|| {
@@ -561,18 +565,13 @@ impl CalculatorPage {
                                 .map(|country| ballistics_shot::assess(bullet, solution, country)),
                             zeros: computed.zeros,
                         };
+                        let (ethical, point_blank) = view.limits_of(solution);
+                        let limits = (ethical, point_blank.map(|blank| blank.far_limit));
                         let requested = egui::ScrollArea::vertical()
                             .show(ui, |ui| view.show(ui, solution, computed.optimal.as_ref()))
                             .inner;
-                        if let Some(magnification) = requested.magnification {
-                            self.inputs.magnification = Some(magnification);
-                        }
-                        if let Some(three_d) = requested.trajectory_3d {
-                            self.inputs.trajectory_3d = three_d;
-                        }
-                        if let Some(rifle) = requested.use_zero(rifle, &computed.zeros) {
-                            actions.push(Action::SaveRifle(rifle));
-                        }
+                        self.limits = limits;
+                        self.apply_requests(requested, rifle, context, &mut actions);
                     }
                     Err(error) => {
                         ui.heading("No solution");
@@ -581,6 +580,8 @@ impl CalculatorPage {
                 }
             }
         });
+        self.picker_sheet(context, data, rifle.as_ref());
+        self.save_table(context, data, &mut actions);
         actions
     }
 
@@ -646,14 +647,8 @@ impl CalculatorPage {
         ballistics_shot::scenario(rifle, bullet, load, &self.inputs.conditions())
     }
 
-    fn powder_temperature_c(&self) -> f64 {
-        if self.inputs.powder_follows_air {
-            self.inputs.temperature_c
-        } else {
-            self.inputs.powder_temperature_c
-        }
-    }
-
+    /// The rifle and bullet, and a line on the bullet in this rifle with a
+    /// way to its setup on the Rifles page.
     #[allow(clippy::too_many_arguments)]
     fn equipment(
         &mut self,
@@ -665,495 +660,201 @@ impl CalculatorPage {
         load: Option<&RifleLoad>,
         actions: &mut Vec<Action>,
     ) {
+        let u = units::prefs(ui.ctx());
         ui.heading("Calculate");
         ui.add_space(4.0);
-        section(ui, "Rifle and bullet", |ui| {
-            grid(ui, "equipment", |ui| {
-                ui.label("Rifle");
-                egui::ComboBox::from_id_salt("rifle")
-                    .width(230.0)
-                    .selected_text(
-                        rifle.map_or("None".to_owned(), |rifle| shortened(&rifle.name, 40)),
-                    )
-                    .show_ui(ui, |ui| {
-                        for candidate in &data.rifles {
-                            let text = format!(
-                                "{} ({})",
-                                candidate.name,
-                                caliber_name(&candidate.caliber)
-                            );
-                            let selected = rifle.is_some_and(|rifle| rifle.id == candidate.id);
-                            if ui.selectable_label(selected, text).clicked() {
-                                self.inputs.rifle_id = Some(candidate.id.clone());
-                                self.inputs.bullet_id = None;
-                                self.load_draft = None;
-                            }
+        grid(ui, "equipment", |ui| {
+            ui.label("Rifle");
+            let combo = egui::ComboBox::from_id_salt("rifle")
+                .width(240.0)
+                .selected_text(rifle.map_or("None".to_owned(), |rifle| shortened(&rifle.name, 40)))
+                .show_ui(ui, |ui| {
+                    for candidate in &data.rifles {
+                        let text =
+                            format!("{} ({})", candidate.name, caliber_name(&candidate.caliber));
+                        let selected = rifle.is_some_and(|rifle| rifle.id == candidate.id);
+                        if ui.selectable_label(selected, text).clicked() {
+                            self.inputs.rifle_id = Some(candidate.id.clone());
+                            self.inputs.bullet_id = None;
                         }
-                    });
-                ui.end_row();
-                ui.label("Bullet");
-                egui::ComboBox::from_id_salt("bullet")
-                    .width(230.0)
-                    .selected_text(bullet.map_or("None".to_owned(), |bullet| {
-                        shortened(&bullet.display_name(), 40)
-                    }))
-                    .show_ui(ui, |ui| {
-                        for candidate in bullets {
-                            let selected = bullet.is_some_and(|bullet| bullet.id == candidate.id);
-                            if ui
-                                .selectable_label(selected, candidate.display_name())
-                                .clicked()
-                            {
-                                self.inputs.bullet_id = Some(candidate.id.clone());
-                                self.load_draft = None;
-                            }
-                        }
-                    });
-                ui.end_row();
-            });
-            let (Some(rifle), Some(bullet)) = (rifle, bullet) else {
-                return;
-            };
-            let u = units::prefs(ui.ctx());
-            ui.weak(format!(
-                "{} · zero {} · sight {} · 1:{} {} twist · clicks {} {}",
-                caliber_name(&rifle.caliber),
-                zero_text(&u, rifle),
-                u.format(Quantity::SightHeight, rifle.sight_height_cm),
-                u.format(Quantity::Twist, rifle.twist_in),
-                if rifle.right_hand_twist {
-                    "right"
-                } else {
-                    "left"
-                },
-                rifle.click_value,
-                unit_label(rifle.click_unit),
-            ));
-            let drag = match bullet.drag_model {
-                BcModel::Custom => format!("own drag curve ({} points)", bullet.drag_curve.len()),
-                model => format!(
-                    "BC {model:?} {:.3}",
-                    bullet.ballistic_coefficient().unwrap_or_default()
-                ),
-            };
-            ui.weak(format!(
-                "{drag} · {}",
-                bullet.length_mm.map_or("length unknown".to_owned(), |mm| u
-                    .format(Quantity::BulletLength, mm)
-                    + " long"),
-            ));
-            ui.add_space(4.0);
-            self.load_panel(ui, rifle, bullet, load, actions);
-        });
-    }
-
-    /// Velocity, impact offset and zero weather of this bullet in this
-    /// rifle. Edits apply to the calculation at once and are kept once saved.
-    fn load_panel(
-        &mut self,
-        ui: &mut egui::Ui,
-        rifle: &Rifle,
-        bullet: &Bullet,
-        saved: Option<&RifleLoad>,
-        actions: &mut Vec<Action>,
-    ) {
-        let powder = self.powder_temperature_c();
-        let today = self.inputs.temperature_c;
-        // A truing shot is taken level: the cant is the shooter's, not the load's.
-        let conditions = ballistics_shot::Conditions {
-            cant_degrees: 0.0,
-            ..self.inputs.conditions()
-        };
-        let form = &mut self.truing_form;
-        let chrono_file = self.chrono_file.clone();
-        if let Some((file, bytes)) = chrono_file.take() {
-            self.chrono_error = None;
-            match ballistics_store::chrono::parse(&bytes) {
-                Ok(sessions) => {
-                    self.chrono = Some(ChronoImport {
-                        file,
-                        sessions,
-                        chosen: 0,
-                        temperature_c: today.round(),
-                    })
-                }
-                Err(error) => {
-                    self.chrono = None;
-                    self.chrono_error = Some(format!("{file}: {error}"));
-                }
-            }
-        }
-        let chrono = &mut self.chrono;
-        let chrono_error = &mut self.chrono_error;
-        let Some(draft) = self.load_draft.as_mut() else {
-            return;
-        };
-        // Another rifle or bullet: its own truing shot, not the last one's.
-        let load_key = Some((draft.rifle_id.clone(), draft.bullet_id.clone()));
-        if form.for_load != load_key {
-            *form = TruingForm {
-                for_load: load_key,
-                ..TruingForm::default()
-            };
-        }
-        let model = draft.velocity_model(bullet);
-        let source = match (draft.velocities.len(), bullet.kind) {
-            (0, BulletKind::Factory) => "from the box".to_owned(),
-            (0, BulletKind::Handload) => "from your load data".to_owned(),
-            (1, _) => "from your measurement".to_owned(),
-            (count, _) => format!("fitted to {count} measurements"),
-        };
-        let u = units::prefs(ui.ctx());
-        let velocity_factor = match draft.truing {
-            Some(Truing {
-                method: TruingMethod::Velocity,
-                factor,
-                ..
-            }) => factor,
-            _ => 1.0,
-        };
-        ui.label(format!(
-            "Muzzle velocity {} with the powder at {}, {source}{}",
-            u.format(Quantity::Speed, model.velocity_at(powder) * velocity_factor),
-            u.format(Quantity::Temperature, powder),
-            if velocity_factor != 1.0 {
-                ", trued"
-            } else {
-                ""
-            },
-        ));
-
-        egui::CollapsingHeader::new("This bullet in this rifle").id_salt("rifle-load").show(ui, |ui| {
-            ui.strong("Measured velocities");
-            ui.weak("Chronograph averages. Two or more at different temperatures give this rifle's own temperature sensitivity.");
-            let mut remove = None;
-            egui::Grid::new("velocities").num_columns(3).spacing([8.0, 4.0]).show(ui, |ui| {
-                for (index, point) in draft.velocities.iter_mut().enumerate() {
-                    units::drag(ui, &mut point.temperature_c, Quantity::Temperature, -60.0..=70.0, 0.5);
-                    units::drag(ui, &mut point.velocity_mps, Quantity::Speed, 50.0..=1500.0, 1.0);
-                    ui.horizontal(|ui| {
-                        if let Some(shots) = point.shots {
-                            ui.weak(format!(
-                                "{} shots, SD {}, ES {}",
-                                shots.count,
-                                spread_text(&u, shots.sd_mps),
-                                spread_text(&u, shots.es_mps)
-                            ));
-                        }
-                        if ui.small_button("✖").on_hover_text("Remove").clicked() {
-                            remove = Some(index);
-                        }
-                    });
-                    ui.end_row();
-                }
-            });
-            if let Some(index) = remove {
-                draft.velocities.remove(index);
-            }
-            ui.horizontal_wrapped(|ui| {
-                if draft.velocities.len() < 10 && ui.button("➕ Add measurement").clicked() {
-                    let velocity_mps = model.velocity_at(today).round();
-                    draft.velocities.push(VelocityPoint { temperature_c: today.round(), velocity_mps, shots: None });
-                }
-                if draft.velocities.len() < 10
-                    && ui
-                        .button("From a chronograph file…")
-                        .on_hover_text("Garmin Xero (ShotView CSV), LabRadar (SR…Report.csv) or MagnetoSpeed (LOG.CSV)")
-                        .clicked()
-                {
-                    chrono_file.pick(ui.ctx(), "Chronograph files", &["csv", "CSV"]);
-                }
-            });
-            if let Some(error) = chrono_error.clone() {
-                ui.horizontal_wrapped(|ui| {
-                    ui.colored_label(ui.visuals().error_fg_color, error);
-                    if ui.small_button("✖").clicked() {
-                        *chrono_error = None;
                     }
                 });
+            if let Some(rifle) = rifle {
+                combo.response.on_hover_text(format!(
+                    "{} · zero {} · sight {} · 1:{} {} twist · clicks {} {}",
+                    caliber_name(&rifle.caliber),
+                    zero_text(&u, rifle),
+                    u.format(Quantity::SightHeight, rifle.sight_height_cm),
+                    u.format(Quantity::Twist, rifle.twist_in),
+                    if rifle.right_hand_twist {
+                        "right"
+                    } else {
+                        "left"
+                    },
+                    rifle.click_value,
+                    unit_label(rifle.click_unit),
+                ));
             }
-            let mut close = false;
-            if let Some(import) = chrono.as_mut() {
-                egui::Frame::group(ui.style()).show(ui, |ui| {
-                    let session = &import.sessions[import.chosen.min(import.sessions.len() - 1)];
-                    ui.strong(format!("{} · {}", session.device.name(), import.file));
-                    if import.sessions.len() > 1 {
-                        egui::ComboBox::from_id_salt("chrono-session")
-                            .selected_text(import.sessions[import.chosen].name.clone().unwrap_or_default())
-                            .show_ui(ui, |ui| {
-                                for (index, session) in import.sessions.iter().enumerate() {
-                                    let label = format!(
-                                        "{} ({} shots)",
-                                        session.name.clone().unwrap_or_default(),
-                                        session.velocities_mps.len()
-                                    );
-                                    ui.selectable_value(&mut import.chosen, index, label);
-                                }
-                            });
-                    } else if let Some(name) = &session.name {
-                        ui.weak(name);
-                    }
-                    let session = &import.sessions[import.chosen];
-                    let stats = session.stats();
-                    ui.label(format!(
-                        "{} shot{}{}: average {}, SD {}, ES {}",
-                        stats.count,
-                        if stats.count == 1 { "" } else { "s" },
-                        if session.missed > 0 { format!(" ({} not read, left out)", session.missed) } else { String::new() },
-                        u.format(Quantity::Speed, session.average_mps()),
-                        spread_text(&u, stats.sd_mps),
-                        spread_text(&u, stats.es_mps),
-                    ))
-                    .on_hover_text("Worked out from the shots; the SD is a sample's (n − 1), a little larger than some chronograph apps show.");
-                    let expected = model.velocity_at(import.temperature_c);
-                    if (session.average_mps() / expected - 1.0).abs() > 0.15 {
-                        ui.colored_label(
-                            ui.visuals().warn_fg_color,
-                            format!(
-                                "That is far from the {} expected for this bullet: is it the right file?",
-                                u.format(Quantity::Speed, expected)
-                            ),
-                        );
-                    }
-                    ui.horizontal(|ui| {
-                        ui.label("The cartridges were at");
-                        units::drag(ui, &mut import.temperature_c, Quantity::Temperature, -60.0..=70.0, 0.5);
-                    });
-                    ui.horizontal(|ui| {
-                        if ui.button("Add the average").clicked() {
-                            draft.velocities.push(VelocityPoint {
-                                temperature_c: import.temperature_c,
-                                velocity_mps: session.average_mps(),
-                                shots: Some(stats),
-                            });
-                            close = true;
+            ui.end_row();
+            ui.label("Bullet");
+            let combo = egui::ComboBox::from_id_salt("bullet")
+                .width(240.0)
+                .selected_text(bullet.map_or("None".to_owned(), |bullet| {
+                    shortened(&bullet.display_name(), 40)
+                }))
+                .show_ui(ui, |ui| {
+                    for candidate in bullets {
+                        let selected = bullet.is_some_and(|bullet| bullet.id == candidate.id);
+                        if ui
+                            .selectable_label(selected, candidate.display_name())
+                            .clicked()
+                        {
+                            self.inputs.bullet_id = Some(candidate.id.clone());
                         }
-                        if ui.button("Cancel").clicked() {
-                            close = true;
-                        }
-                    });
-                });
-            }
-            if close {
-                *chrono = None;
-            }
-            ui.weak(format!(
-                "Temperature sensitivity {} ({:+.1} % per 15 °C), {}.",
-                u.format_signed(Quantity::Sensitivity, model.per_degree),
-                model.percent_per_15c(),
-                if model.fitted {
-                    "from your measurements"
-                } else if draft.velocities.len() >= 2 {
-                    "from the bullet data (your measurements need to be at least 2 °C apart)"
-                } else {
-                    "from the bullet data"
-                }
-            ));
-
-            ui.separator();
-            ui.strong("Point of impact at the zero range");
-            ui.weak("Where this load hits compared with the load the rifle was zeroed with.");
-            let unit = rifle.click_unit;
-            grid(ui, "impact-offset", |ui| {
-                for (label, index) in [("Up", 1), ("Right", 0)] {
-                    ui.label(label);
-                    let mut value = from_radians(unit, draft.impact_offset_mrad[index] / 1000.0);
-                    let response = ui.add(
-                        egui::DragValue::new(&mut value)
-                            .speed(0.01)
-                            .fixed_decimals(2)
-                            .suffix(format!(" {}", unit_label(unit))),
-                    );
-                    if response.changed() {
-                        draft.impact_offset_mrad[index] = (to_radians(unit, value) * 1000.0).clamp(-49.0, 49.0);
                     }
-                    // 1 mrad is 10 cm at 100 m.
-                    let centimetres = draft.impact_offset_mrad[index] * rifle.zero_range_m / 10.0;
-                    ui.weak(format!(
-                        "{} at {}",
-                        u.format_signed(Quantity::ShortLength, centimetres),
-                        u.format(Quantity::Distance, rifle.zero_range_m)
-                    ));
-                    ui.end_row();
-                }
-            });
-
-            ui.separator();
-            ui.strong("Zeroed in");
-            let mut mode = match draft.zero {
-                LoadZero::Rifle => 0,
-                LoadZero::SameAsShot => 1,
-                LoadZero::Recorded(_) => 2,
-            };
-            ui.radio_value(&mut mode, 0, "The rifle's zero weather");
-            ui.radio_value(&mut mode, 1, "The same weather as today");
-            ui.radio_value(&mut mode, 2, "This weather:");
-            draft.zero = match (mode, draft.zero) {
-                (0, _) => LoadZero::Rifle,
-                (1, _) => LoadZero::SameAsShot,
-                (_, LoadZero::Recorded(weather)) => LoadZero::Recorded(weather),
-                _ => LoadZero::Recorded(rifle.zero_weather()),
-            };
-            if let LoadZero::Recorded(weather) = &mut draft.zero {
-                grid(ui, "load-zero", |ui| {
-                    quantity(ui, "Air", &mut weather.temperature_c, Quantity::Temperature, -45.0..=50.0, 0.5);
-                    quantity(ui, "Powder", &mut weather.powder_temperature_c, Quantity::Temperature, -45.0..=60.0, 0.5);
-                    quantity(ui, "Station pressure", &mut weather.pressure_hpa, Quantity::Pressure, 500.0..=1100.0, 1.0);
-                    number(ui, "Humidity", &mut weather.humidity_percent, 0.0..=100.0, 1.0, " %");
                 });
-            }
-
-            ui.separator();
-            ui.strong("Truing");
-            ui.weak(
-                "Shot far and found the calculation off? Enter what it took to hit centre, in today's \
-                 weather above, and the calculation is adjusted to match. The longest range you've \
-                 shot works best (300 m or more).",
-            );
-            if let Some(truing) = draft.truing {
-                let what = match truing.method {
-                    TruingMethod::Velocity => format!(
-                        "velocity ×{:.3} ({} instead of {})",
-                        truing.factor,
-                        u.format(Quantity::Speed, model.velocity_at(powder) * truing.factor),
-                        u.format(Quantity::Speed, model.velocity_at(powder)),
-                    ),
-                    TruingMethod::Drag => format!(
-                        "drag ×{:.3}{}",
-                        truing.factor,
-                        bullet.ballistic_coefficient().map_or(String::new(), |bc| format!(
-                            " (BC {:.3} instead of {bc:.3})",
-                            bc / truing.factor
-                        )),
+            if let Some(bullet) = bullet {
+                let drag = match bullet.drag_model {
+                    BcModel::Custom => {
+                        format!("own drag curve ({} points)", bullet.drag_curve.len())
+                    }
+                    model => format!(
+                        "BC {model:?} {:.3}",
+                        bullet.ballistic_coefficient().unwrap_or_default()
                     ),
                 };
-                ui.horizontal_wrapped(|ui| {
-                    ui.label(format!(
-                        "Trued to {}, {:.2} {} up, at {}: {what}.",
-                        u.format(Quantity::Distance, truing.range_m),
-                        from_radians(rifle.click_unit, truing.elevation_mrad / 1000.0),
-                        unit_label(rifle.click_unit),
-                        u.format(Quantity::Temperature, truing.weather.temperature_c),
-                    ));
-                    if ui.small_button("Remove").clicked() {
-                        draft.truing = None;
-                    }
-                });
-                if (truing.factor - 1.0).abs() > 0.1 {
-                    ui.colored_label(
-                        ui.visuals().warn_fg_color,
-                        "That's a large correction. Check the range, the zero and the clicks \
-                         before trusting it.",
-                    );
-                }
+                combo.response.on_hover_text(format!(
+                    "{drag} · {}",
+                    bullet.length_mm.map_or("length unknown".to_owned(), |mm| u
+                        .format(Quantity::BulletLength, mm)
+                        + " long"),
+                ));
             }
-            let measured = !draft.velocities.is_empty();
-            let method = form.method.unwrap_or(if measured {
-                TruingMethod::Drag
-            } else {
-                TruingMethod::Velocity
-            });
-            let unit = rifle.click_unit;
-            grid(ui, "truing", |ui| {
-                quantity(ui, "Range", &mut form.range_m, Quantity::Distance, 50.0..=2000.0, 5.0);
-                ui.label("It took");
-                ui.horizontal(|ui| {
-                    ui.add(
-                        egui::DragValue::new(&mut form.elevation)
-                            .speed(0.05)
-                            .fixed_decimals(2)
-                            .suffix(format!(" {}", unit_label(unit))),
-                    );
-                    ui.label("up to hit centre");
-                    ui.weak(format!(
-                        "({})",
-                        clicks_text((form.elevation / rifle.click_value).round() as i64)
-                    ));
-                });
-                ui.end_row();
-                ui.label("Adjust");
-                ui.vertical(|ui| {
-                    let mut chosen = method;
-                    ui.radio_value(&mut chosen, TruingMethod::Velocity, "the velocity")
-                        .on_hover_text("When the velocity is from the box or a guess: no chronograph");
-                    ui.radio_value(&mut chosen, TruingMethod::Drag, "the drag (BC)")
-                        .on_hover_text("When the velocity was measured, so the BC is what's uncertain");
-                    if chosen != method {
-                        form.method = Some(chosen);
-                    }
-                    ui.weak(if measured {
-                        "Your velocity is measured, so the drag is the likely culprit."
-                    } else {
-                        "Without a measured velocity, the velocity is the likely culprit."
-                    });
-                });
-                ui.end_row();
-            });
-            if ui.button("Calculate the truing").clicked() {
-                let mut base = draft.clone();
-                base.truing = None;
-                let elevation_mrad = to_radians(unit, form.elevation) * 1000.0;
-                match ballistics_shot::true_load(
-                    rifle,
-                    bullet,
-                    &base,
-                    method,
-                    form.range_m,
-                    elevation_mrad,
-                    &conditions,
-                ) {
-                    Ok(truing) => {
-                        draft.truing = Some(truing);
-                        form.error = None;
-                    }
-                    Err(error) => form.error = Some(error.to_string()),
-                }
-            }
-            if let Some(error) = &form.error {
-                ui.colored_label(ui.visuals().warn_fg_color, error);
-            }
-
-            ui.separator();
-            let problem = draft.validate().err();
-            let changed = match saved {
-                Some(saved) => !same_content(saved, draft),
-                None => !draft.is_empty(),
-            };
-            ui.horizontal(|ui| {
-                if ui.add_enabled(changed && problem.is_none(), egui::Button::new("💾 Save for this rifle")).clicked() {
-                    actions.push(Action::SaveLoad(draft.clone()));
-                }
-                if changed && ui.button("Undo changes").clicked() {
-                    *draft = saved.cloned().unwrap_or_else(|| RifleLoad::new(&rifle.id, &bullet.id));
-                }
-                if let Some(saved) = saved
-                    && confirm_button(ui, "remove-load", "Reset to the bullet's data")
-                {
-                    actions.push(Action::DeleteLoad(saved.id.clone()));
-                }
-            });
-            if let Some(problem) = problem {
-                ui.colored_label(ui.visuals().warn_fg_color, problem);
-            } else if changed {
-                ui.weak("Used in the calculation now; save to keep it.");
+            ui.end_row();
+        });
+        let (Some(rifle), Some(bullet)) = (rifle, bullet) else {
+            return;
+        };
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 4.0;
+            ui.weak(crate::loads::summary(
+                &u,
+                bullet,
+                load,
+                &self.inputs.conditions(),
+            ));
+            if ui
+                .link("Load setup…")
+                .on_hover_text(
+                    "Measured velocities, point of impact, zero weather and truing for this \
+                     bullet in this rifle",
+                )
+                .clicked()
+            {
+                actions.push(Action::EditLoad(rifle.id.clone(), bullet.id.clone()));
             }
         });
     }
 
-    #[allow(clippy::too_many_arguments)]
+    /// Range, angle, wind and target: the inputs that change every shot,
+    /// each opening its picker.
+    pub(super) fn tiles(&mut self, ui: &mut egui::Ui, aim: &Aim) {
+        let u = units::prefs(ui.ctx());
+        let gap = 8.0;
+        let width = (ui.available_width() - gap) / 2.0;
+        let fields = [
+            (
+                phone::Picker::Range,
+                "Range".to_owned(),
+                u.format(Quantity::Distance, self.inputs.target_range_m),
+            ),
+            (
+                phone::Picker::Angle,
+                if self.inputs.cant_degrees == 0.0 {
+                    "Angle".to_owned()
+                } else {
+                    format!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
+                },
+                format!("{:+.0}°", self.inputs.inclination_degrees),
+            ),
+            (
+                phone::Picker::Wind,
+                format!("Wind · {}", phone::clock_text(self.inputs.wind_clock)),
+                u.format(Quantity::WindSpeed, self.inputs.wind_speed),
+            ),
+            (
+                phone::Picker::Target,
+                match aim.vital_diameter_cm {
+                    Some(zone) => format!("Target · {}", u.format(Quantity::ShortLength, zone)),
+                    None => "Target".to_owned(),
+                },
+                aim.name().to_owned(),
+            ),
+        ];
+        for pair in fields.chunks(2) {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = gap;
+                for (picker, label, value) in pair {
+                    if phone::quick_field(ui, width, label, value).clicked() {
+                        self.picker = Some(*picker);
+                    }
+                }
+            });
+            ui.add_space(gap - ui.spacing().item_spacing.y);
+        }
+    }
+
+    /// Everything else about the shot, folded with a summary each: the
+    /// weather, the fine corrections and the target's own numbers.
     fn conditions(
         &mut self,
         ui: &mut egui::Ui,
         data: &Data,
         aim: &Aim,
-        rifle: Option<&Rifle>,
         bullet: Option<&Bullet>,
-        optics: Option<&(Scope, Reticle)>,
         actions: &mut Vec<Action>,
     ) {
+        let u = units::prefs(ui.ctx());
         let inputs = &mut self.inputs;
         let weather = &mut self.weather;
-        section(ui, "Weather", |ui| {
+        ui.horizontal(|ui| {
+            ui.label(if data.hunting {
+                "Animal crossing at"
+            } else {
+                "Target moving at"
+            });
+            units::drag(
+                ui,
+                &mut inputs.target_speed,
+                Quantity::WindSpeed,
+                0.0..=15.0,
+                0.1,
+            )
+            .on_hover_text(if data.hunting {
+                "Walking moose ≈ 1.5, trotting ≈ 4, running ≈ 8 m/s; 0 for a still animal"
+            } else {
+                "Sideways speed of a moving target; 0 for a still one"
+            });
+        });
+        ui.add_space(4.0);
+
+        let pressure = match inputs.pressure_source {
+            PressureSource::Station => u.format(Quantity::Pressure, inputs.station_pressure_hpa),
+            PressureSource::SeaLevelAndAltitude => format!(
+                "{} · {}",
+                u.format(Quantity::Pressure, inputs.sea_level_pressure_hpa),
+                u.format(Quantity::Altitude, inputs.altitude_m)
+            ),
+        };
+        let mut summary = format!(
+            "{} · {pressure}",
+            u.format(Quantity::Temperature, inputs.temperature_c)
+        );
+        if let Some(place) = &inputs.place {
+            summary.push_str(" · ");
+            summary.push_str(place.name.split(',').next().unwrap_or(&place.name));
+        }
+        fold(ui, "fold-weather", "Weather", &summary, |ui| {
             weather.panel(ui, inputs, data.country);
             ui.add_space(4.0);
             grid(ui, "weather", |ui| {
@@ -1165,130 +866,115 @@ impl CalculatorPage {
                     -45.0..=50.0,
                     0.5,
                 );
-                ui.label("Pressure from");
-                ui.vertical(|ui| {
-                    ui.radio_value(
-                        &mut inputs.pressure_source,
-                        PressureSource::SeaLevelAndAltitude,
-                        "Weather report + altitude",
-                    );
-                    ui.radio_value(
-                        &mut inputs.pressure_source,
-                        PressureSource::Station,
-                        "Barometer (station)",
-                    );
-                });
-                ui.end_row();
+            });
+            let air = format!(
+                "{} · {} % · powder {}",
                 match inputs.pressure_source {
-                    PressureSource::Station => {
-                        quantity(
-                            ui,
-                            "Station pressure",
-                            &mut inputs.station_pressure_hpa,
-                            Quantity::Pressure,
-                            500.0..=1100.0,
-                            1.0,
-                        );
-                    }
-                    PressureSource::SeaLevelAndAltitude => {
-                        quantity(
-                            ui,
-                            "Sea-level pressure",
-                            &mut inputs.sea_level_pressure_hpa,
-                            Quantity::Pressure,
-                            900.0..=1100.0,
-                            1.0,
-                        );
-                        quantity(
-                            ui,
-                            "Altitude",
-                            &mut inputs.altitude_m,
-                            Quantity::Altitude,
-                            -400.0..=5000.0,
-                            10.0,
-                        );
-                    }
+                    PressureSource::Station => "barometer",
+                    PressureSource::SeaLevelAndAltitude => "forecast",
+                },
+                inputs.humidity_percent.round(),
+                if inputs.powder_follows_air {
+                    "as the air".to_owned()
+                } else {
+                    u.format(Quantity::Temperature, inputs.powder_temperature_c)
                 }
-                number(
-                    ui,
-                    "Humidity",
-                    &mut inputs.humidity_percent,
-                    0.0..=100.0,
-                    1.0,
-                    " %",
-                );
-                ui.label("Powder temperature");
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut inputs.powder_follows_air, "same as air");
-                    if !inputs.powder_follows_air {
-                        units::drag(
-                            ui,
-                            &mut inputs.powder_temperature_c,
-                            Quantity::Temperature,
-                            -45.0..=60.0,
-                            0.5,
+            );
+            fold(ui, "fold-air", "Air details", &air, |ui| {
+                grid(ui, "air", |ui| {
+                    ui.label("Air pressure");
+                    ui.vertical(|ui| {
+                        ui.radio_value(
+                            &mut inputs.pressure_source,
+                            PressureSource::SeaLevelAndAltitude,
+                            "Sea-level, from the forecast",
                         );
+                        ui.radio_value(
+                            &mut inputs.pressure_source,
+                            PressureSource::Station,
+                            "Barometer at your spot",
+                        );
+                    });
+                    ui.end_row();
+                    match inputs.pressure_source {
+                        PressureSource::Station => {
+                            quantity(
+                                ui,
+                                "Barometer",
+                                &mut inputs.station_pressure_hpa,
+                                Quantity::Pressure,
+                                500.0..=1100.0,
+                                1.0,
+                            );
+                        }
+                        PressureSource::SeaLevelAndAltitude => {
+                            quantity(
+                                ui,
+                                "Sea-level pressure",
+                                &mut inputs.sea_level_pressure_hpa,
+                                Quantity::Pressure,
+                                900.0..=1100.0,
+                                1.0,
+                            );
+                            quantity(
+                                ui,
+                                "Altitude",
+                                &mut inputs.altitude_m,
+                                Quantity::Altitude,
+                                -400.0..=5000.0,
+                                10.0,
+                            );
+                        }
                     }
-                });
-                ui.end_row();
-                quantity(
-                    ui,
-                    "Wind speed",
-                    &mut inputs.wind_speed,
-                    Quantity::WindSpeed,
-                    0.0..=30.0,
-                    0.1,
-                );
-                ui.label("Wind from");
-                ui.horizontal(|ui| {
-                    ui.add(
-                        egui::DragValue::new(&mut inputs.wind_clock)
-                            .range(0.0..=12.0)
-                            .speed(0.05)
-                            .fixed_decimals(1)
-                            .suffix(" o'clock"),
+                    number(
+                        ui,
+                        "Humidity",
+                        &mut inputs.humidity_percent,
+                        0.0..=100.0,
+                        1.0,
+                        " %",
                     );
-                    ui.weak(wind_description(inputs.wind_clock));
+                    ui.label("Powder temperature");
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut inputs.powder_follows_air, "same as air");
+                        if !inputs.powder_follows_air {
+                            units::drag(
+                                ui,
+                                &mut inputs.powder_temperature_c,
+                                Quantity::Temperature,
+                                -45.0..=60.0,
+                                0.5,
+                            );
+                        }
+                    });
+                    ui.end_row();
                 });
-                ui.end_row();
             });
         });
 
-        section(ui, "Shot", |ui| {
-            grid(ui, "shot", |ui| {
-                quantity(
-                    ui,
-                    "Range (rangefinder)",
-                    &mut inputs.target_range_m,
-                    Quantity::Distance,
-                    5.0..=MAX_RANGE_M,
-                    1.0,
-                );
-                number(
-                    ui,
-                    "Shot angle",
-                    &mut inputs.inclination_degrees,
-                    -60.0..=60.0,
-                    0.5,
-                    "°",
-                );
-                ui.label("");
-                ui.weak("positive uphill, negative downhill");
-                ui.end_row();
+        let mut on = Vec::new();
+        if inputs.spin_drift {
+            on.push("spin drift");
+        }
+        if inputs.aerodynamic_jump {
+            on.push("aero jump");
+        }
+        if inputs.coriolis {
+            on.push("Coriolis");
+        }
+        let mut summary = if on.is_empty() {
+            "none".to_owned()
+        } else {
+            on.join(", ")
+        };
+        if inputs.cant_degrees != 0.0 {
+            summary.push_str(&format!(" · cant {:+.1}°", inputs.cant_degrees));
+        }
+        fold(ui, "fold-fine", "Fine corrections", &summary, |ui| {
+            grid(ui, "fine", |ui| {
                 number(ui, "Cant", &mut inputs.cant_degrees, -30.0..=30.0, 0.5, "°");
                 ui.label("");
-                ui.weak("the rifle tilted: positive with the scope's top to the right");
-                ui.end_row();
-                quantity(
-                    ui,
-                    "Animal crossing at",
-                    &mut inputs.target_speed,
-                    Quantity::WindSpeed,
-                    0.0..=15.0,
-                    0.1,
-                );
-                ui.label("");
-                ui.weak("walking moose ≈ 1.5, trotting ≈ 4, running ≈ 8");
+                ui.weak("the rifle tilted: + with the scope's top to the right");
                 ui.end_row();
                 ui.label("Spin drift");
                 ui.checkbox(&mut inputs.spin_drift, "include");
@@ -1297,8 +983,8 @@ impl CalculatorPage {
                 ui.checkbox(&mut inputs.aerodynamic_jump, "include")
                     .on_hover_text(
                         "A crosswind throws a spinning bullet a little up or down as it leaves \
-                     the muzzle (with a right-hand twist, wind from the left lifts it). Needs \
-                     the bullet's length.",
+                         the muzzle (with a right-hand twist, wind from the left lifts it). \
+                         Needs the bullet's length.",
                     );
                 ui.end_row();
                 ui.label("Coriolis");
@@ -1325,39 +1011,39 @@ impl CalculatorPage {
             });
         });
 
-        if let Some((scope, _)) = optics {
-            section(ui, "Scope", |ui| {
-                ui.checkbox(
-                    &mut inputs.dial_elevation,
-                    "Dial the elevation (otherwise hold over)",
-                );
-                if scope.illuminated {
-                    ui.checkbox(&mut inputs.illumination, "Illumination on");
-                }
-            });
+        let Some(target) = &aim.target else {
+            return;
+        };
+        let mut summary = aim
+            .vital_diameter_cm
+            .map_or(String::new(), |cm| u.format(Quantity::ShortLength, cm));
+        if let Some(energy) = aim.min_energy_j {
+            summary.push_str(&format!(
+                " · {} · {}",
+                u.format(Quantity::Energy, energy),
+                u.format(
+                    Quantity::Speed,
+                    aim.min_velocity_mps
+                        .unwrap_or_else(|| bullet.map_or(inputs.min_velocity, |bullet| {
+                            ballistics_shot::min_velocity(bullet, inputs.min_velocity)
+                        }))
+                )
+            ));
         }
-
-        let mut locate_here = false;
-        section(ui, "Target and ethics", |ui| {
-            if target_picker(ui, "calculator-target", data, &mut inputs.target_id) {
-                // A new target brings its own zone and energy.
-                inputs.vital_override_cm = None;
-                inputs.min_energy_override_j = None;
-                inputs.min_velocity_override_mps = None;
-            }
-            let Some(target) = &aim.target else {
-                ui.small("No target: just the reticle and where the bullet lands, without a vital zone or energy limits.");
-                if ui
-                    .button("Targets…")
-                    .on_hover_text("See the targets or make your own")
-                    .clicked()
-                {
-                    actions.push(Action::Goto(Page::Targets));
-                }
-                return;
-            };
+        let changed = inputs.vital_override_cm.is_some()
+            || inputs.min_energy_override_j.is_some()
+            || inputs.min_velocity_override_mps.is_some();
+        if changed {
+            summary.push_str(" · changed");
+        }
+        let title = if aim.is_game() {
+            "Target limits"
+        } else {
+            "Target"
+        };
+        fold(ui, "fold-target", title, &summary, |ui| {
             grid(ui, "ethics", |ui| {
-                let zone_label = if target.is_game() {
+                let zone_label = if aim.is_game() {
                     "Vital zone diameter"
                 } else {
                     "Hit zone diameter"
@@ -1371,7 +1057,7 @@ impl CalculatorPage {
                     1.0..=200.0,
                     0.5,
                 );
-                if target.is_game() {
+                if aim.is_game() {
                     overridable(
                         ui,
                         "Minimum energy",
@@ -1398,7 +1084,7 @@ impl CalculatorPage {
                             ui.label("Minimum velocity");
                             ui.label(format!(
                                 "{} (bullet data)",
-                                units::prefs(ui.ctx()).format(Quantity::Speed, expansion)
+                                u.format(Quantity::Speed, expansion)
                             ));
                             ui.end_row();
                         }
@@ -1413,26 +1099,11 @@ impl CalculatorPage {
                     }
                 }
             });
-            if !target.notes.is_empty() {
-                ui.small(&target.notes);
-            }
-            if target.is_game() {
-                ui.small(
-                    "Check your bullet maker's expansion data and your country's legal energy rules.",
+            if aim.is_game() {
+                ui.weak(
+                    "Check your bullet maker's expansion data and your country's legal energy \
+                     rules.",
                 );
-                if let Some(country) = data.country {
-                    ui.add_space(4.0);
-                    locate_here |= crate::hunting::today_block(
-                        ui,
-                        country,
-                        target.catalog_id.as_deref().unwrap_or(&target.id),
-                        &target.name,
-                        &mut inputs.region,
-                        inputs.place.as_ref(),
-                    );
-                }
-            } else {
-                ui.small("A sport target: no energy or velocity limits apply.");
             }
             if ui
                 .button("Targets…")
@@ -1442,25 +1113,6 @@ impl CalculatorPage {
                 actions.push(Action::Goto(Page::Targets));
             }
         });
-
-        if locate_here {
-            weather.locate_here(ui.ctx());
-        }
-        if let Some(rifle) = rifle {
-            section(ui, "Dope table", |ui| {
-                let table = rifle.table;
-                let u = units::prefs(ui.ctx());
-                ui.label(format!(
-                    "{}–{} every {}, set for this rifle.",
-                    u.format(Quantity::Distance, table.start_m),
-                    u.format(Quantity::Distance, table.end_m),
-                    u.format(Quantity::Distance, table.step_m)
-                ));
-                if ui.button("Edit table").clicked() {
-                    actions.push(Action::EditRifle(rifle.id.clone()));
-                }
-            });
-        }
     }
 }
 
@@ -1483,15 +1135,6 @@ pub fn clicks_text(clicks: i64) -> String {
     } else {
         format!("{clicks} clicks")
     }
-}
-
-/// A velocity spread (SD, ES) with a decimal: they are small numbers.
-fn spread_text(u: &units::UnitPrefs, mps: f64) -> String {
-    format!(
-        "{:.1} {}",
-        u.show(Quantity::Speed, mps),
-        u.label(Quantity::Speed)
-    )
 }
 
 /// "100 m" for a plain zero, "100 m, 4.0 cm high" for one above it.
@@ -1569,15 +1212,6 @@ fn overridable(
     ui.end_row();
 }
 
-/// Whether two rifle loads hold the same data, ignoring when they were saved.
-fn same_content(a: &RifleLoad, b: &RifleLoad) -> bool {
-    a.velocities == b.velocities
-        && a.impact_offset_mrad == b.impact_offset_mrad
-        && a.zero == b.zero
-        && a.notes == b.notes
-        && a.truing == b.truing
-}
-
 /// View settings changed in the results, applied by the page.
 #[derive(Default)]
 struct ViewRequests {
@@ -1585,6 +1219,14 @@ struct ViewRequests {
     trajectory_3d: Option<bool>,
     /// Make this height at the reference range the rifle's zero, metres.
     zero_height: Option<f64>,
+    dial_elevation: Option<bool>,
+    illumination: Option<bool>,
+    /// The range table's ranges or columns changed.
+    table: Option<TableSettings>,
+    /// The hunter chose their county or region.
+    region: Option<Option<String>>,
+    /// Find the hunter's position, for the shooting light.
+    locate: bool,
 }
 
 impl ViewRequests {
@@ -1601,9 +1243,19 @@ impl ViewRequests {
     }
 }
 
+/// The go/no-go facts of a hunt: legal class, season and light.
+struct Statuses {
+    country: ballistics_store::Country,
+    pills: Vec<crate::hunting::Pill>,
+    /// The hunter's region, found from their place if not chosen.
+    region: Option<String>,
+}
+
 struct ResultsView<'a> {
     inputs: &'a Inputs,
     rifle: &'a Rifle,
+    /// The range table's settings: the rifle's, or as being changed.
+    table: TableSettings,
     optics: Option<&'a (Scope, Reticle)>,
     aim: &'a Aim,
     min_velocity: f64,
@@ -1635,6 +1287,83 @@ impl ResultsView<'_> {
         }
     }
 
+    /// The legal class, the season and the light, for a game target when
+    /// the hunter's country is set.
+    fn statuses(&self) -> Option<Statuses> {
+        let target = self.aim.target.as_ref().filter(|_| self.aim.is_game())?;
+        let assessment = self.assessment.as_ref()?;
+        let country = assessment.country;
+        let species = target.catalog_id.as_deref().unwrap_or(&target.id);
+        let mut region = self.inputs.region.clone();
+        crate::hunting::resolve_region(country, &mut region, self.inputs.place.as_ref());
+        let mut pills = Vec::new();
+        if let Some(needed) = target.ammunition_level(country) {
+            let (allowed, text) = assessment.short_verdict(needed);
+            let (_, full) = assessment.verdict(needed, &target.name);
+            let tone = match allowed {
+                ballistics_shot::Allowed::Yes => crate::hunting::Tone::Open,
+                ballistics_shot::Allowed::IfExpanding => crate::hunting::Tone::Warn,
+                ballistics_shot::Allowed::No => crate::hunting::Tone::Closed,
+            };
+            pills.push(crate::hunting::Pill {
+                what: "class",
+                text,
+                tone,
+                detail: format!("{full}\n\n{}", country.rules().help()),
+                needs_position: false,
+            });
+        }
+        for pill in crate::hunting::pills(
+            country,
+            species,
+            &target.name,
+            region.as_deref(),
+            self.inputs.place.as_ref(),
+        ) {
+            pills.push(pill);
+        }
+        Some(Statuses {
+            country,
+            pills,
+            region,
+        })
+    }
+
+    /// The statuses as pills, with the region to choose and a way to find
+    /// the hunter's position.
+    fn go_no_go(&self, ui: &mut egui::Ui, statuses: &Statuses, requested: &mut ViewRequests) {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(6.0, 6.0);
+            crate::flags::show(ui, statuses.country, 11.0);
+            for pill in &statuses.pills {
+                if pill.what == "season" {
+                    // Without a region the drop-down asks for it instead.
+                    if statuses.region.is_some() {
+                        crate::hunting::pill(ui, &pill.text, pill.tone, &pill.detail);
+                    }
+                    let mut region = statuses.region.clone();
+                    crate::hunting::region_menu(ui, statuses.country, &mut region);
+                    if region != statuses.region {
+                        requested.region = Some(region);
+                    }
+                } else if pill.needs_position && crate::sensors::can_locate() {
+                    if ui
+                        .button("Shooting light: use my position")
+                        .on_hover_text(&pill.detail)
+                        .clicked()
+                    {
+                        requested.locate = true;
+                    }
+                } else {
+                    crate::hunting::pill(ui, &pill.text, pill.tone, &pill.detail);
+                }
+            }
+        });
+        if statuses.region != self.inputs.region && requested.region.is_none() {
+            requested.region = Some(statuses.region.clone());
+        }
+    }
+
     /// Returns the view settings the hunter changed.
     fn show(
         &self,
@@ -1662,15 +1391,19 @@ impl ResultsView<'_> {
                         );
                     }
                 }
-                ui.add_space(6.0);
+                ui.add_space(4.0);
+                if let Some(statuses) = self.statuses() {
+                    self.go_no_go(ui, &statuses, &mut requested);
+                    ui.add_space(4.0);
+                }
                 self.warnings(ui, solution);
-                ui.separator();
+                ui.add_space(6.0);
                 requested.zero_height = self.limits(ui, solution, optimal, ethical, point_blank);
             });
             ui.add_space(24.0);
             ui.vertical(|ui| {
                 ui.set_width(PICTURE);
-                requested.magnification = self.sight_picture(ui, solution, PICTURE);
+                self.sight_picture(ui, solution, PICTURE, &mut requested);
             });
         });
 
@@ -1701,11 +1434,49 @@ impl ResultsView<'_> {
         }
 
         ui.separator();
-        ui.heading("Dope table");
-        self.table(ui, solution, ethical);
+        self.table_heading(ui, &mut requested);
+        self.table(ui, solution, ethical, None);
         requested
     }
 
+    /// "Range table  100–400 m every 25 m  [Columns…]", the button opening
+    /// the table's ranges and columns.
+    fn table_heading(&self, ui: &mut egui::Ui, requested: &mut ViewRequests) {
+        let u = units::prefs(ui.ctx());
+        let table = self.table;
+        ui.horizontal(|ui| {
+            ui.heading("Range table");
+            ui.weak(format!(
+                "{}–{} every {}",
+                u.format(Quantity::Distance, table.start_m),
+                u.format(Quantity::Distance, table.end_m),
+                u.format(Quantity::Distance, table.step_m)
+            ));
+            let button = ui
+                .button("Columns…")
+                .on_hover_text("The table's ranges and columns, kept for this rifle");
+            let popup = ui.make_persistent_id("table-columns");
+            if button.clicked() {
+                ui.memory_mut(|memory| memory.toggle_popup(popup));
+            }
+            let mut changed = table;
+            egui::popup_below_widget(
+                ui,
+                popup,
+                &button,
+                egui::PopupCloseBehavior::CloseOnClickOutside,
+                |ui| {
+                    ui.set_min_width(280.0);
+                    table_settings(ui, &mut changed, self.rifle.click_unit);
+                },
+            );
+            if changed != table {
+                requested.table = Some(changed);
+            }
+        });
+    }
+
+    /// The limits that matter at a glance, and the rest folded.
     fn limits(
         &self,
         ui: &mut egui::Ui,
@@ -1719,124 +1490,114 @@ impl ResultsView<'_> {
         let reference = zeros.reference;
         let mut use_zero = None;
         let narrow = mobile::is_narrow(ui.ctx());
-        // On a phone the fold it sits in is titled already.
-        if !narrow {
-            ui.heading(if self.aim.is_game() {
-                "Hunting limits"
-            } else {
-                "Limits"
+        let fact = |ui: &mut egui::Ui, label: &str, value: String, note: String| {
+            ui.vertical(|ui| {
+                ui.spacing_mut().item_spacing.y = 1.0;
+                ui.weak(label);
+                ui.label(RichText::new(value).size(17.0));
+                if !note.is_empty() {
+                    ui.weak(RichText::new(note).small());
+                }
+            });
+        };
+        let facts = |ui: &mut egui::Ui| {
+            if let Some(min_energy) = self.aim.min_energy_j {
+                let value = match ethical {
+                    Some(range) => u.format(Quantity::Distance, range),
+                    None => format!(
+                        "beyond {}",
+                        u.format(
+                            Quantity::Distance,
+                            solution.samples.last().map_or(0.0, |sample| sample.range)
+                        )
+                    ),
+                };
+                let note = if self.min_velocity > 0.0 {
+                    format!(
+                        "≥ {}, ≥ {}",
+                        u.format(Quantity::Energy, min_energy),
+                        u.format(Quantity::Speed, self.min_velocity)
+                    )
+                } else {
+                    format!("≥ {}", u.format(Quantity::Energy, min_energy))
+                };
+                fact(ui, "Ethical max", value, note);
+            }
+            if self.aim.vital_diameter_cm.is_some() {
+                fact(
+                    ui,
+                    "Dead-on hold",
+                    point_blank_short(&u, point_blank, self.aim),
+                    "with your zero".to_owned(),
+                );
+            }
+        };
+        if narrow {
+            facts(ui);
+        } else {
+            ui.horizontal_top(|ui| {
+                ui.spacing_mut().item_spacing.x = 28.0;
+                facts(ui);
             });
         }
-        let width = ui.available_width();
-        egui::Grid::new("limits")
-            .num_columns(2)
-            .spacing([16.0, 4.0])
-            .max_col_width(if narrow { width * 0.6 } else { width * 0.7 })
-            .show(ui, |ui| {
-                if let Some(min_energy) = self.aim.min_energy_j {
-                    ui.label("Ethical maximum range");
-                    ui.label(match ethical {
-                        Some(range) if self.min_velocity > 0.0 => format!(
-                            "{} (≥ {} and ≥ {})",
-                            u.format(Quantity::Distance, range),
-                            u.format(Quantity::Energy, min_energy),
-                            u.format(Quantity::Speed, self.min_velocity)
-                        ),
-                        Some(range) => format!(
-                            "{} (≥ {})",
-                            u.format(Quantity::Distance, range),
-                            u.format(Quantity::Energy, min_energy)
-                        ),
-                        None => format!(
-                            "beyond {}",
-                            u.format(
-                                Quantity::Distance,
-                                solution.samples.last().map_or(0.0, |sample| sample.range)
-                            )
-                        ),
-                    });
-                    ui.end_row();
-                }
-                if let Some(figure) = zeros.figure {
-                    ui.label("Your zero");
-                    ui.label(zero_figure_text(&u, &figure));
-                    ui.end_row();
-                }
-                if self.aim.vital_diameter_cm.is_some() {
-                    ui.label("Dead-on hold, your zero");
-                    ui.label(point_blank_text(&u, point_blank, self.aim));
-                    ui.end_row();
-                    ui.label("Best point-blank zero");
-                    match optimal {
-                        Some(best) => {
-                            ui.horizontal_wrapped(|ui| {
-                                ui.label(format!(
-                                    "{}: {}; highest at {}",
-                                    match zeros.best_height {
-                                        Some(height) => format!(
-                                            "{} {} at {} (zero at {})",
-                                            u.format(Quantity::ShortLength, height.abs() * 100.0),
-                                            if height >= 0.0 { "high" } else { "low" },
-                                            u.format(Quantity::Distance, reference),
-                                            u.format(Quantity::Distance, best.zero_range),
-                                        ),
-                                        None => format!(
-                                            "zero at {}",
-                                            u.format(Quantity::Distance, best.zero_range)
-                                        ),
-                                    },
-                                    point_blank_text(&u, Some(best.point_blank), self.aim),
-                                    u.format(Quantity::Distance, best.peak_range)
-                                ));
-                                if let Some(height) = zeros.best_height
-                                    && ui
-                                        .small_button("Make it my zero")
-                                        .on_hover_text({
-                                            let told = |height: f64| {
-                                                format!(
-                                                    "{} {}",
-                                                    u.format(
-                                                        Quantity::ShortLength,
-                                                        height.abs() * 100.0
-                                                    ),
-                                                    if height >= 0.0 { "high" } else { "low" }
-                                                )
-                                            };
-                                            let rifle = height - zeros.offset_up * reference;
-                                            if zeros.offset_up == 0.0 {
-                                                format!(
-                                                    "After you have zeroed the rifle {} at {}: \
-                                                     saves it as the rifle's zero.",
-                                                    told(height),
-                                                    u.format(Quantity::Distance, reference),
-                                                )
-                                            } else {
-                                                format!(
-                                                    "This bullet hits {} at {} with the rifle \
-                                                     zeroed {} with its zero load. After zeroing \
-                                                     like that, saves it as the rifle's zero.",
-                                                    told(height),
-                                                    u.format(Quantity::Distance, reference),
-                                                    told(rifle),
-                                                )
-                                            }
-                                        })
-                                        .clicked()
-                                {
-                                    use_zero = Some(height);
-                                }
-                            });
-                        }
-                        None => {
-                            ui.label("not found");
-                        }
-                    }
-                    ui.end_row();
-                }
-                ui.label("Muzzle velocity today");
-                ui.label(u.format(Quantity::Speed, solution.muzzle_velocity));
+        let row = |ui: &mut egui::Ui, label: &str, add: &mut dyn FnMut(&mut egui::Ui)| {
+            if narrow {
+                ui.weak(label);
+                add(ui);
+                ui.add_space(2.0);
+            } else {
+                ui.label(label);
+                add(ui);
                 ui.end_row();
-                ui.label("Stability (Miller Sg)");
+            }
+        };
+        let mut details = |ui: &mut egui::Ui| {
+            if let Some(figure) = zeros.figure {
+                row(ui, "Your zero", &mut |ui| {
+                    ui.label(zero_figure_text(&u, &figure));
+                });
+            }
+            if self.aim.vital_diameter_cm.is_some() {
+                row(ui, "Best point-blank zero", &mut |ui| match optimal {
+                    Some(best) => {
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(format!(
+                                "{}: {}; highest at {}",
+                                match zeros.best_height {
+                                    Some(height) => format!(
+                                        "{} {} at {} (zero at {})",
+                                        u.format(Quantity::ShortLength, height.abs() * 100.0),
+                                        if height >= 0.0 { "high" } else { "low" },
+                                        u.format(Quantity::Distance, reference),
+                                        u.format(Quantity::Distance, best.zero_range),
+                                    ),
+                                    None => format!(
+                                        "zero at {}",
+                                        u.format(Quantity::Distance, best.zero_range)
+                                    ),
+                                },
+                                point_blank_text(&u, Some(best.point_blank), self.aim),
+                                u.format(Quantity::Distance, best.peak_range)
+                            ));
+                            if let Some(height) = zeros.best_height
+                                && ui
+                                    .small_button("Make it my zero")
+                                    .on_hover_text(make_zero_hint(&u, &zeros, height))
+                                    .clicked()
+                            {
+                                use_zero = Some(height);
+                            }
+                        });
+                    }
+                    None => {
+                        ui.label("not found");
+                    }
+                });
+            }
+            row(ui, "Muzzle velocity today", &mut |ui| {
+                ui.label(u.format(Quantity::Speed, solution.muzzle_velocity));
+            });
+            row(ui, "Stability (Miller Sg)", &mut |ui| {
                 ui.label(
                     solution
                         .stability
@@ -1844,19 +1605,42 @@ impl ResultsView<'_> {
                             format!("{sg:.2}")
                         }),
                 );
-                ui.end_row();
+            });
+        };
+        egui::CollapsingHeader::new("Details")
+            .id_salt("limit-details")
+            .show(ui, |ui| {
+                if narrow {
+                    details(ui);
+                } else {
+                    let width = ui.available_width();
+                    egui::Grid::new("limits")
+                        .num_columns(2)
+                        .spacing([16.0, 4.0])
+                        .max_col_width(width * 0.7)
+                        .show(ui, details);
+                }
             });
         use_zero
     }
 
-    /// Returns the magnification the hunter moved to, if any.
-    fn sight_picture(&self, ui: &mut egui::Ui, solution: &Solution, size: f32) -> Option<f64> {
+    /// The view through the scope, with its magnification and what it
+    /// shows: held or dialled, lit or not.
+    fn sight_picture(
+        &self,
+        ui: &mut egui::Ui,
+        solution: &Solution,
+        size: f32,
+        requested: &mut ViewRequests,
+    ) {
         ui.heading("Through the scope");
         let Some((scope, reticle)) = self.optics else {
             ui.weak("Choose a scope and reticle for this rifle (Rifles page) to see the sight picture here.");
-            return None;
+            return;
         };
-        let row = solution.at(self.inputs.target_range_m)?;
+        let Some(row) = solution.at(self.inputs.target_range_m) else {
+            return;
+        };
         let magnification =
             scope.clamp_magnification(self.inputs.magnification.unwrap_or(scope.magnification_max));
         let click_mrad = match self.rifle.click_unit {
@@ -1876,9 +1660,10 @@ impl ResultsView<'_> {
         };
         let drawn = picture.show(ui, size);
         let mut chosen = magnification;
-        let requested = magnification_slider(ui, &mut chosen, scope, size)
-            .changed()
-            .then_some(chosen);
+        if magnification_slider(ui, &mut chosen, scope, size).changed() {
+            requested.magnification = Some(chosen);
+        }
+        view_toggles(ui, self.inputs, scope, requested);
         ui.label(RichText::new(format!(
             "{} · {:.1} mrad across ({:.1} m at 100 m)",
             magnification_text(magnification),
@@ -1930,7 +1715,6 @@ impl ResultsView<'_> {
                 drawn.field_of_view_mrad
             ));
         }
-        requested
     }
 
     fn unit(&self) -> ClickUnit {
@@ -2019,30 +1803,6 @@ impl ResultsView<'_> {
                 ),
             );
         }
-        if let Some(assessment) = &self.assessment
-            && let Some(needed) = self
-                .aim
-                .target
-                .as_ref()
-                .and_then(|target| target.ammunition_level(assessment.country))
-        {
-            let name = self.aim.name();
-            let (allowed, text) = assessment.verdict(needed, name);
-            let text = match allowed {
-                ballistics_shot::Allowed::Yes => format!("✔ {text}"),
-                _ => format!("⚠ {text}"),
-            };
-            let colour = match allowed {
-                ballistics_shot::Allowed::Yes => ui.visuals().text_color(),
-                ballistics_shot::Allowed::IfExpanding => ui.visuals().warn_fg_color,
-                ballistics_shot::Allowed::No => ui.visuals().error_fg_color,
-            };
-            ui.horizontal_top(|ui| {
-                crate::flags::show(ui, assessment.country, 11.0);
-                ui.add(egui::Label::new(RichText::new(text).color(colour)).wrap())
-                    .on_hover_text(assessment.country.rules().help());
-            });
-        }
         match solution.stability {
             Some(sg) if sg < 1.0 => {
                 ui.colored_label(
@@ -2080,7 +1840,7 @@ impl ResultsView<'_> {
         let u = units::prefs(ui.ctx());
         let x = |metres: f64| u.show(Quantity::Distance, metres);
         let y = |metres: f64| u.show(Quantity::ShortLength, metres * 100.0);
-        let max_range = self.rifle.table.end_m.max(self.inputs.target_range_m);
+        let max_range = self.table.end_m.max(self.inputs.target_range_m);
         let path: Vec<[f64; 2]> = solution
             .samples
             .iter()
@@ -2193,8 +1953,16 @@ impl ResultsView<'_> {
             });
     }
 
-    fn table(&self, ui: &mut egui::Ui, solution: &Solution, ethical: Option<f64>) {
-        let settings = self.rifle.table;
+    /// The range table, with at most `limit` columns besides the range.
+    /// Returns true when some were left out.
+    fn table(
+        &self,
+        ui: &mut egui::Ui,
+        solution: &Solution,
+        ethical: Option<f64>,
+        limit: Option<usize>,
+    ) -> bool {
+        let settings = self.table;
         let u = units::prefs(ui.ctx());
         let header = |name: &str, quantity: Quantity| format!("{name} {}", u.label(quantity));
         let (range_header, drop_header, wind_header, speed_header, energy_header, lead_header) = (
@@ -2225,6 +1993,17 @@ impl ResultsView<'_> {
                 Box::new(|row| u.number(Quantity::ShortLength, row.drop * 100.0, true)),
             ),
             (
+                show.drop_clicks,
+                "Elev clicks",
+                true,
+                Box::new(|row| {
+                    format!(
+                        "{:+}",
+                        self.clicks(from_radians(self.unit(), row.elevation_correction))
+                    )
+                }),
+            ),
+            (
                 show.drop_mil,
                 "Elev mil",
                 true,
@@ -2237,21 +2016,21 @@ impl ResultsView<'_> {
                 Box::new(move |row| angle(ClickUnit::Moa, row.elevation_correction)),
             ),
             (
-                show.drop_clicks,
-                "Elev clicks",
-                true,
-                Box::new(|row| {
-                    format!(
-                        "{:+}",
-                        self.clicks(from_radians(self.unit(), row.elevation_correction))
-                    )
-                }),
-            ),
-            (
                 show.wind_length,
                 &wind_header,
                 false,
                 Box::new(|row| u.number(Quantity::ShortLength, row.windage * 100.0, true)),
+            ),
+            (
+                show.wind_clicks,
+                "Wind clicks",
+                true,
+                Box::new(|row| {
+                    format!(
+                        "{:+}",
+                        self.clicks(from_radians(self.unit(), row.windage_correction))
+                    )
+                }),
             ),
             (
                 show.wind_mil,
@@ -2264,17 +2043,6 @@ impl ResultsView<'_> {
                 "Wind MOA",
                 true,
                 Box::new(move |row| angle(ClickUnit::Moa, row.windage_correction)),
-            ),
-            (
-                show.wind_clicks,
-                "Wind clicks",
-                true,
-                Box::new(|row| {
-                    format!(
-                        "{:+}",
-                        self.clicks(from_radians(self.unit(), row.windage_correction))
-                    )
-                }),
             ),
             (
                 show.velocity,
@@ -2307,11 +2075,42 @@ impl ResultsView<'_> {
                 }),
             ),
         ];
-        let columns: Vec<(&str, bool, Cell<'_>)> = candidates
+        let mut columns: Vec<(&str, bool, Cell<'_>)> = candidates
             .into_iter()
             .filter(|column| column.0)
             .map(|(_, header, correction, cell)| (header, correction, cell))
             .collect();
+        let left_out = limit.is_some_and(|limit| columns.len() > limit + 1);
+        if let Some(limit) = limit
+            && left_out
+        {
+            // Keep the columns that matter most for a shot: the clicks, the
+            // angles in the scope's unit, the lead, the energy.
+            let (own, other) = match self.unit() {
+                ClickUnit::Mil => ("mil", "MOA"),
+                ClickUnit::Moa => ("MOA", "mil"),
+            };
+            let rank = |header: &str| match header {
+                "Elev clicks" => 0,
+                _ if header == format!("Elev {own}") => 1,
+                _ if header == format!("Wind {own}") => 2,
+                _ if header == lead_header => 3,
+                _ if header == energy_header => 4,
+                "Wind clicks" => 5,
+                _ if header == drop_header => 6,
+                _ if header == format!("Elev {other}") => 7,
+                _ => 8,
+            };
+            let mut order: Vec<usize> = (1..columns.len()).collect();
+            order.sort_by_key(|&index| rank(columns[index].0));
+            order.truncate(limit);
+            columns = columns
+                .into_iter()
+                .enumerate()
+                .filter(|(index, _)| *index == 0 || order.contains(index))
+                .map(|(_, column)| column)
+                .collect();
+        }
 
         egui::Grid::new("dope")
             .striped(true)
@@ -2340,7 +2139,14 @@ impl ResultsView<'_> {
                 }
             });
         ui.add_space(4.0);
-        ui.small("Elevation and wind are corrections: up/right positive. Red rows are past your ethical range. Confirm your dope on paper at real distances before hunting.");
+        ui.small(if ethical.is_some() {
+            "Elevation and wind are corrections: up and right positive. Red rows are past your \
+             ethical range. Confirm the table on paper at real distances before hunting."
+        } else {
+            "Elevation and wind are corrections: up and right positive. Confirm the table on \
+             paper at real distances."
+        });
+        left_out
     }
 }
 
@@ -2447,6 +2253,162 @@ fn point_blank_text(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) -
     }
 }
 
+/// "to 305 m (±15 cm)", "25–262 m (±15 cm)".
+fn point_blank_short(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) -> String {
+    let distance = |metres: f64| u.format(Quantity::Distance, metres);
+    let zone = u.format(
+        Quantity::ShortLength,
+        aim.vital_diameter_cm.unwrap_or_default() / 2.0,
+    );
+    match point_blank {
+        Some(PointBlank {
+            near_limit,
+            far_limit,
+        }) if near_limit > 0.5 => {
+            format!("{}–{} (±{zone})", distance(near_limit), distance(far_limit))
+        }
+        Some(PointBlank { far_limit, .. }) => format!("to {} (±{zone})", distance(far_limit)),
+        None => format!("never inside the {}", aim.zone_name()),
+    }
+}
+
+/// What "Make it my zero" does, for its hover text.
+fn make_zero_hint(u: &UnitPrefs, zeros: &Zeros, height: f64) -> String {
+    let told = |height: f64| {
+        format!(
+            "{} {}",
+            u.format(Quantity::ShortLength, height.abs() * 100.0),
+            if height >= 0.0 { "high" } else { "low" }
+        )
+    };
+    let reference = zeros.reference;
+    let rifle = height - zeros.offset_up * reference;
+    if zeros.offset_up == 0.0 {
+        format!(
+            "After you have zeroed the rifle {} at {}: saves it as the rifle's zero.",
+            told(height),
+            u.format(Quantity::Distance, reference),
+        )
+    } else {
+        format!(
+            "This bullet hits {} at {} with the rifle zeroed {} with its zero load. After \
+             zeroing like that, saves it as the rifle's zero.",
+            told(height),
+            u.format(Quantity::Distance, reference),
+            told(rifle),
+        )
+    }
+}
+
+/// Dial or hold, and the reticle lit: how the sight picture shows the shot.
+fn view_toggles(ui: &mut egui::Ui, inputs: &Inputs, scope: &Scope, requested: &mut ViewRequests) {
+    ui.horizontal_wrapped(|ui| {
+        let mut dial = inputs.dial_elevation;
+        if ui
+            .checkbox(&mut dial, "Dial the elevation")
+            .on_hover_text("Otherwise the picture shows the hold over")
+            .changed()
+        {
+            requested.dial_elevation = Some(dial);
+        }
+        if scope.illuminated {
+            let mut lit = inputs.illumination;
+            if ui.checkbox(&mut lit, "Illumination").changed() {
+                requested.illumination = Some(lit);
+            }
+        }
+    });
+}
+
+/// The range table's ranges and columns.
+fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit) {
+    grid(ui, "table-range", |ui| {
+        quantity(
+            ui,
+            "From",
+            &mut table.start_m,
+            Quantity::Distance,
+            0.0..=2900.0,
+            5.0,
+        );
+        quantity(
+            ui,
+            "To",
+            &mut table.end_m,
+            Quantity::Distance,
+            10.0..=3000.0,
+            10.0,
+        );
+        ui.label("Every");
+        ui.horizontal_wrapped(|ui| {
+            let u = units::prefs(ui.ctx());
+            let distance = u.unit(Quantity::Distance);
+            for every in [10.0, 25.0, 50.0, 100.0] {
+                let metres = distance.base(every);
+                if ui
+                    .selectable_label((table.step_m - metres).abs() < 0.01, format!("{every:.0}"))
+                    .clicked()
+                {
+                    table.step_m = metres;
+                }
+            }
+            units::drag(ui, &mut table.step_m, Quantity::Distance, 1.0..=500.0, 1.0);
+        });
+        ui.end_row();
+    });
+    ui.separator();
+    let columns = &mut table.columns;
+    let length = units::prefs(ui.ctx())
+        .label(Quantity::ShortLength)
+        .to_owned();
+    let (angle, other) = match unit {
+        ClickUnit::Mil => ("mil", "MOA"),
+        ClickUnit::Moa => ("MOA", "mil"),
+    };
+    grid(ui, "table-columns", |ui| {
+        ui.label("Elevation");
+        ui.horizontal_wrapped(|ui| {
+            ui.checkbox(&mut columns.drop_clicks, "clicks");
+            match unit {
+                ClickUnit::Mil => {
+                    ui.checkbox(&mut columns.drop_mil, angle);
+                    ui.checkbox(&mut columns.drop_moa, other);
+                }
+                ClickUnit::Moa => {
+                    ui.checkbox(&mut columns.drop_moa, angle);
+                    ui.checkbox(&mut columns.drop_mil, other);
+                }
+            }
+            ui.checkbox(&mut columns.drop_length, &length)
+                .on_hover_text("Where a dead-on hold hits: + above the aim, − below");
+        });
+        ui.end_row();
+        ui.label("Wind");
+        ui.horizontal_wrapped(|ui| {
+            ui.checkbox(&mut columns.wind_clicks, "clicks");
+            match unit {
+                ClickUnit::Mil => {
+                    ui.checkbox(&mut columns.wind_mil, angle);
+                    ui.checkbox(&mut columns.wind_moa, other);
+                }
+                ClickUnit::Moa => {
+                    ui.checkbox(&mut columns.wind_moa, angle);
+                    ui.checkbox(&mut columns.wind_mil, other);
+                }
+            }
+            ui.checkbox(&mut columns.wind_length, &length);
+        });
+        ui.end_row();
+        ui.label("Also");
+        ui.horizontal_wrapped(|ui| {
+            ui.checkbox(&mut columns.velocity, "speed");
+            ui.checkbox(&mut columns.energy, "energy");
+            ui.checkbox(&mut columns.time, "time of flight");
+        });
+        ui.end_row();
+    });
+}
+
 fn wind_description(clock: f64) -> &'static str {
     let hour = clock.rem_euclid(12.0);
     match hour {
@@ -2465,7 +2427,7 @@ fn wind_description(clock: f64) -> &'static str {
 mod tests {
     use super::*;
     use ballistics_core::DragModel;
-    use ballistics_store::ZeroWeather;
+    use ballistics_store::{VelocityPoint, ZeroWeather};
 
     #[test]
     fn velocity_measured_in_the_rifle_overrides_the_box() {
@@ -2554,6 +2516,25 @@ mod tests {
             .drag_curve
             .expect("the curve reaches the engine");
         assert_eq!(curve.points(), [(0.5, 0.2), (2.0, 0.3)]);
+    }
+
+    #[test]
+    fn target_shooting_has_no_ethical_limits() {
+        let inputs = Inputs::default();
+        let hunting = Data {
+            hunting: true,
+            ..Data::default()
+        };
+        let aim = Aim::new(&inputs, &hunting);
+        assert!(aim.is_game() && aim.min_energy_j.is_some());
+        assert_eq!(aim.zone_name(), "vital zone");
+        let shooting = Data::default();
+        let aim = Aim::new(&inputs, &shooting);
+        assert!(!aim.is_game());
+        assert_eq!(aim.min_energy_j, None);
+        assert_eq!(aim.min_velocity_mps, None);
+        assert_eq!(aim.zone_name(), "hit zone");
+        assert!(aim.vital_diameter_cm.is_some(), "the hit zone stays");
     }
 
     #[test]

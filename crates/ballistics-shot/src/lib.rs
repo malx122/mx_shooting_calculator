@@ -469,6 +469,45 @@ impl Assessment {
 /// the muzzle and at 100 m, whether it expands and whether it is lead-free.
 /// When the construction is unknown it is assumed to expand, and the
 /// assessment says so.
+impl Assessment {
+    /// The verdict in a few words, for a pill: "Class 1: allowed",
+    /// "Not allowed: needs Class 1".
+    pub fn short_verdict(&self, needed: u8) -> (Allowed, String) {
+        let rules = self.country.rules();
+        let level = self.level.map(|level| rules.level_name(level));
+        match (
+            self.level.is_some_and(|level| level <= needed),
+            self.assumes_expanding,
+        ) {
+            (true, false) => (
+                Allowed::Yes,
+                format!("{}: allowed", level.unwrap_or_default()),
+            ),
+            (true, true) => (
+                Allowed::IfExpanding,
+                format!("{}: if it expands", level.unwrap_or_default()),
+            ),
+            (false, _) => (
+                Allowed::No,
+                format!("Not allowed: needs {}", rules.requirement_text(needed)),
+            ),
+        }
+    }
+}
+
+/// The level of `country`'s rules a bullet meets out of any rifle of its
+/// caliber, in standard weather: for lists of ammunition. `None` when it
+/// meets none, or has no velocity to tell from.
+pub fn level_of(bullet: &Bullet, country: Country) -> Option<u8> {
+    if bullet.muzzle_velocity_mps <= 0.0 {
+        return None;
+    }
+    let rifle = Rifle::new("", &bullet.caliber, 10.0);
+    let scenario = scenario(&rifle, bullet, None, &Conditions::default());
+    let solution = solver::solve(&scenario, 110.0).ok()?;
+    assess(bullet, &solution, country).level
+}
+
 pub fn assess(bullet: &Bullet, solution: &Solution, country: Country) -> Assessment {
     let energy_at = |range: f64| solution.at(range).map_or(0.0, |row| row.energy_j);
     let expanding = bullet.construction.expanding();
@@ -536,6 +575,32 @@ mod tests {
             solver::solve(&scenario(&rifle, &bullet(), None, &conditions), 400.0).unwrap();
         let hold = Hold::new(&rifle, &solution.at(300.0).unwrap());
         assert!(hold.windage > 0.0 && hold.drift_m < 0.0, "{hold:?}");
+    }
+
+    #[test]
+    fn pills_say_the_verdict_short_and_lists_tell_the_class() {
+        let rifle = rifle();
+        let mut bullet = bullet();
+        bullet.construction = ballistics_store::Construction::Bonded;
+        let solution = solver::solve(
+            &scenario(&rifle, &bullet, None, &Conditions::default()),
+            400.0,
+        )
+        .unwrap();
+        let sweden = assess(&bullet, &solution, Country::Sweden);
+        assert_eq!(
+            sweden.short_verdict(1),
+            (Allowed::Yes, "Class 1: allowed".to_owned())
+        );
+        bullet.construction = ballistics_store::Construction::Fmj;
+        let fmj = assess(&bullet, &solution, Country::Sweden);
+        assert_eq!(fmj.short_verdict(1).0, Allowed::No);
+        assert!(fmj.short_verdict(1).1.starts_with("Not allowed: needs"));
+        // Out of any rifle, as in the catalog's list.
+        bullet.construction = ballistics_store::Construction::Bonded;
+        assert_eq!(level_of(&bullet, Country::Sweden), Some(1));
+        bullet.muzzle_velocity_mps = 0.0;
+        assert_eq!(level_of(&bullet, Country::Sweden), None);
     }
 
     #[test]

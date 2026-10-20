@@ -594,6 +594,19 @@ impl Sync {
         }
     }
 
+    /// A word for the header, next to the dot.
+    pub fn short_status(&self) -> &'static str {
+        if self.signing_in.is_some() || matches!(self.phase, Phase::Reading | Phase::Writing) {
+            "syncing"
+        } else if !self.is_on() {
+            "sync off"
+        } else if self.error.is_some() {
+            "not synced"
+        } else {
+            "synced"
+        }
+    }
+
     /// The colour of the header's sync dot.
     pub fn colour(&self) -> egui::Color32 {
         if !self.is_on() {

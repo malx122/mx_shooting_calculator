@@ -10,6 +10,7 @@ mod google;
 mod http;
 mod hunting;
 mod import;
+mod loads;
 mod mobile;
 mod rifles;
 mod sensors;
