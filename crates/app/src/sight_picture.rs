@@ -104,7 +104,8 @@ impl SightPicture<'_> {
 /// A typical scope's field of view at this magnification: the view still
 /// narrows as the hunter zooms when the maker publishes no field.
 pub fn estimated_field_of_view_mrad(magnification: f64) -> f64 {
-    TYPICAL_FIELD_TIMES_MAGNIFICATION / magnification.max(1.0)
+    // Driven-hunt scopes start below 1× (Swarovski's Z8i+ at 0.75×).
+    TYPICAL_FIELD_TIMES_MAGNIFICATION / magnification.max(0.5)
 }
 
 /// The scope's magnification range as a slider. On a second-focal-plane
