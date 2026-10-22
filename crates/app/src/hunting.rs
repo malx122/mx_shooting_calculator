@@ -8,15 +8,37 @@ use ballistics_store::sun::{self, Date};
 use ballistics_store::{Country, model::now_ms};
 use eframe::egui::{self, RichText};
 
+use crate::i18n::{self, tr, trf};
 use crate::weather::Place;
 
-const MONTHS: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-/// "8 Oct".
+/// "8 Oct", in the current language.
 pub fn day_text(date: Date) -> String {
-    format!("{} {}", date.day, MONTHS[(date.month - 1) as usize])
+    let months = [
+        tr("Jan"),
+        tr("Feb"),
+        tr("Mar"),
+        tr("Apr"),
+        tr("May"),
+        tr("Jun"),
+        tr("Jul"),
+        tr("Aug"),
+        tr("Sep"),
+        tr("Oct"),
+        tr("Nov"),
+        tr("Dec"),
+    ];
+    trf!(
+        "{day} {month}",
+        day = date.day,
+        month = months[(date.month - 1) as usize]
+    )
+}
+
+/// Whether a season line tells when a closed season opens ("Opens 8 Oct
+/// – 31 Jan."), in the current language.
+fn is_opening(text: &str) -> bool {
+    let opens = tr("Opens {} – {}{}.").split('{').next().unwrap_or("");
+    !opens.is_empty() && text.starts_with(opens)
 }
 
 /// The law's region for a place, from the region the place search gave
@@ -70,7 +92,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
     let mut lines = Vec::new();
     if season.decree_expired_on(date) {
         lines.push((
-            format!(
+            trf!(
                 "The decree this season hangs on ran out ({}): check the current rules.",
                 season
                     .decree
@@ -82,7 +104,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
     }
     if season.licence_only {
         lines.push((
-            "No general season: licence or protective hunting by decision only, or protected."
+            tr("No general season: licence or protective hunting by decision only, or protected.")
                 .into(),
             Tone::Closed,
         ));
@@ -90,7 +112,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
     let Some(region) = region else {
         if !season.licence_only {
             lines.push((
-                "Choose your county or region to see the season there.".into(),
+                tr("Choose your county or region to see the season there.").into(),
                 Tone::Plain,
             ));
         }
@@ -103,7 +125,10 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
         .collect();
     if rows.is_empty() {
         if !season.licence_only {
-            lines.push((format!("No season in {region}."), Tone::Closed));
+            lines.push((
+                trf!("No season in {region}.", region = region),
+                Tone::Closed,
+            ));
         }
         return lines;
     }
@@ -121,7 +146,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
             format!(" ({})", row.applies_to)
         };
         let (text, tone) = if row.closed() {
-            (format!("No hunting{who}."), Tone::Closed)
+            (trf!("No hunting{}.", who), Tone::Closed)
         } else {
             let Some((start, end)) = row.span_around(date) else {
                 continue;
@@ -131,7 +156,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
                     .method_on(date)
                     .map_or(String::new(), |method| format!(", {method}"));
                 let opening = match &row.from_time {
-                    Some(time) if start == date => format!(" from {time}"),
+                    Some(time) if start == date => trf!(" from {}", time),
                     _ => String::new(),
                 };
                 let closing = match &row.to_time {
@@ -139,15 +164,19 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
                     None => String::new(),
                 };
                 (
-                    format!(
-                        "Open{opening}, until {}{closing}{who}{method}.",
-                        day_text(end)
+                    trf!(
+                        "Open{}, until {}{}{}{}.",
+                        opening,
+                        day_text(end),
+                        closing,
+                        who,
+                        method
                     ),
                     Tone::Open,
                 )
             } else {
                 (
-                    format!("Opens {} – {}{who}.", day_text(start), day_text(end)),
+                    trf!("Opens {} – {}{}.", day_text(start), day_text(end), who),
                     Tone::Closed,
                 )
             }
@@ -166,7 +195,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
     // on the Targets page has them.
     let open = told.iter().any(|(_, tone, ..)| *tone == Tone::Open);
     if open {
-        told.retain(|(text, ..)| !text.starts_with("Opens"));
+        told.retain(|(text, ..)| !is_opening(text));
     }
     for (text, tone, part, count) in told {
         let text = match part {
@@ -177,7 +206,12 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
                 } else {
                     area
                 };
-                format!("{text} In part of {region}: {area}")
+                trf!(
+                    "{text} In part of {region}: {area}",
+                    text = text,
+                    region = region,
+                    area = area
+                )
             }
             _ => text,
         };
@@ -185,7 +219,7 @@ pub fn season_lines(season: &Season, region: Option<&str>, date: Date) -> Vec<(S
     }
     if season.permit_needed {
         lines.push((
-            "A permit (pyyntilupa) is needed as well.".into(),
+            tr("A permit (pyyntilupa) is needed as well.").into(),
             Tone::Plain,
         ));
     }
@@ -221,9 +255,9 @@ pub fn light_line(
     let (today, clock) = now(law);
     if law.daily_rule(species, today).is_none() {
         return Some((
-            format!(
+            trf!(
                 "{} law sets no time of day for {}.",
-                country.adjective(),
+                i18n::country_adjective(country),
                 name.to_lowercase()
             ),
             Tone::Plain,
@@ -232,9 +266,9 @@ pub fn light_line(
     let Some(place) = place else {
         return Some((
             if crate::sensors::can_locate() {
-                "Shooting light: needs your position.".into()
+                tr("Shooting light: needs your position.").into()
             } else {
-                "Shooting light: search for your place under Weather.".into()
+                tr("Shooting light: search for your place under Weather.").into()
             },
             Tone::Plain,
         ));
@@ -248,14 +282,16 @@ pub fn light_line(
         .to_owned();
     Some(match light {
         Light::MidnightSun => (
-            format!(
-                "Midnight sun at {short_place}: the law counts from a sunset that doesn't happen today."
+            trf!(
+                "Midnight sun at {short_place}: the law counts from a sunset that doesn't happen today.",
+                short_place = short_place
             ),
             Tone::Warn,
         ),
         Light::PolarNight => (
-            format!(
-                "Polar night at {short_place}: the law counts from a sunrise that doesn't happen today."
+            trf!(
+                "Polar night at {short_place}: the law counts from a sunrise that doesn't happen today.",
+                short_place = short_place
             ),
             Tone::Warn,
         ),
@@ -264,30 +300,28 @@ pub fn light_line(
             end,
             restricted,
         } => {
-            let mut text = format!(
-                "Shooting light at {short_place} today: {}–{}{}",
+            let mut text = trf!(
+                "Shooting light at {} today: {}–{}{}",
+                short_place,
                 sun::clock(start),
                 sun::clock(end),
                 if end >= 1440.0 {
-                    " (after midnight)"
+                    tr(" (after midnight)")
                 } else {
                     ""
                 }
             );
             if let Some((from, what)) = &restricted {
-                text.push_str(&format!("; from {} {what}", sun::clock(*from)));
+                text.push_str(&trf!("; from {} {}", sun::clock(*from), what));
             }
             let (now_text, tone) = if clock < start {
-                (format!("starts in {}", span(start - clock)), Tone::Closed)
+                (trf!("starts in {}", span(start - clock)), Tone::Closed)
             } else if clock > end {
-                ("over for today".to_owned(), Tone::Closed)
+                (tr("over for today").to_owned(), Tone::Closed)
             } else if restricted.as_ref().is_some_and(|(from, _)| clock >= *from) {
-                ("now in the restricted part".to_owned(), Tone::Warn)
+                (tr("now in the restricted part").to_owned(), Tone::Warn)
             } else {
-                (
-                    format!("allowed now, {} left", span(end - clock)),
-                    Tone::Open,
-                )
+                (trf!("allowed now, {} left", span(end - clock)), Tone::Open)
             };
             (format!("{text}. {} {now_text}.", sun::clock(clock)), tone)
         }
@@ -315,13 +349,25 @@ pub struct Pill {
     pub needs_position: bool,
 }
 
+impl Pill {
+    /// `what`, for the hunter to read.
+    pub fn what_text(&self) -> &'static str {
+        match self.what {
+            "class" => tr("class"),
+            "season" => tr("season"),
+            "light" => tr("shooting light"),
+            other => other,
+        }
+    }
+}
+
 /// The season in a few words: "Open until 31 Jan", "Closed · opens 8 Oct".
 pub fn season_short(season: &Season, region: Option<&str>, date: Date) -> (String, Tone) {
     let Some(region) = region else {
         return if season.licence_only {
-            ("Licence only".into(), Tone::Closed)
+            (tr("Licence only").into(), Tone::Closed)
         } else {
-            ("Season: choose your county".into(), Tone::Plain)
+            (tr("Season: choose your county").into(), Tone::Plain)
         };
     };
     let rows: Vec<&SeasonRow> = season
@@ -331,7 +377,7 @@ pub fn season_short(season: &Season, region: Option<&str>, date: Date) -> (Strin
         .collect();
     let part = |row: &SeasonRow| {
         if row.in_region(region) == Coverage::Part || row.applies_to != "all" {
-            " (in part)"
+            tr(" (in part)")
         } else {
             ""
         }
@@ -343,7 +389,7 @@ pub fn season_short(season: &Season, region: Option<&str>, date: Date) -> (Strin
         .max_by_key(|(_, (_, end))| *end)
     {
         return (
-            format!("Open until {}{}", day_text(end), part(row)),
+            trf!("Open until {}{}", day_text(end), part(row)),
             Tone::Open,
         );
     }
@@ -353,9 +399,9 @@ pub fn season_short(season: &Season, region: Option<&str>, date: Date) -> (Strin
         .map(|(start, _)| start)
         .min()
     {
-        Some(start) => (format!("Closed · opens {}", day_text(start)), Tone::Closed),
-        None if season.licence_only => ("Licence only".into(), Tone::Closed),
-        None => ("No season here".into(), Tone::Closed),
+        Some(start) => (trf!("Closed · opens {}", day_text(start)), Tone::Closed),
+        None if season.licence_only => (tr("Licence only").into(), Tone::Closed),
+        None => (tr("No season here").into(), Tone::Closed),
     }
 }
 
@@ -364,28 +410,31 @@ fn light_short(law: &HuntingLaw, species: &str, place: Option<&Place>) -> Option
     let (today, clock) = now(law);
     law.daily_rule(species, today)?;
     let Some(place) = place else {
-        return Some(("Light: set your place under Weather".into(), Tone::Plain));
+        return Some((
+            tr("Light: set your place under Weather").into(),
+            Tone::Plain,
+        ));
     };
     Some(
         match law.light(species, today, place.latitude, place.longitude)? {
-            Light::MidnightSun => ("Light: midnight sun".into(), Tone::Warn),
-            Light::PolarNight => ("Light: polar night".into(), Tone::Warn),
+            Light::MidnightSun => (tr("Light: midnight sun").into(), Tone::Warn),
+            Light::PolarNight => (tr("Light: polar night").into(), Tone::Warn),
             Light::Window {
                 start,
                 end,
                 restricted,
             } => {
-                let window = format!("Light {}–{}", sun::clock(start), sun::clock(end));
+                let window = trf!("Light {}–{}", sun::clock(start), sun::clock(end));
                 let (now_text, tone) = if clock < start {
-                    (format!("starts in {}", span(start - clock)), Tone::Closed)
+                    (trf!("starts in {}", span(start - clock)), Tone::Closed)
                 } else if clock > end {
-                    ("over for today".to_owned(), Tone::Closed)
+                    (tr("over for today").to_owned(), Tone::Closed)
                 } else if let Some((_, what)) =
                     restricted.as_ref().filter(|(from, _)| clock >= *from)
                 {
                     (what.clone(), Tone::Warn)
                 } else {
-                    ("allowed now".to_owned(), Tone::Open)
+                    (tr("allowed now").to_owned(), Tone::Open)
                 };
                 (format!("{window} · {now_text}"), tone)
             }
@@ -495,7 +544,7 @@ pub fn region_menu(ui: &mut egui::Ui, country: Country, region: &mut Option<Stri
 
 fn region_picker(ui: &mut egui::Ui, law: &HuntingLaw, region: &mut Option<String>) {
     egui::ComboBox::from_id_salt("hunting-region")
-        .selected_text(region.as_deref().unwrap_or("choose county"))
+        .selected_text(region.as_deref().unwrap_or(tr("choose county")))
         .show_ui(ui, |ui| {
             for name in &law.regions {
                 ui.selectable_value(region, Some(name.clone()), name);
@@ -510,16 +559,19 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
     let (today, _) = now(law);
     ui.horizontal(|ui| {
         crate::flags::show(ui, country, 11.0);
-        ui.strong(format!("{} seasons and hours", country.adjective()));
+        ui.strong(trf!(
+            "{} seasons and hours",
+            i18n::country_adjective(country)
+        ));
     });
     match law.season(species) {
         None => {
-            ui.weak("Not in the law's lists.");
+            ui.weak(tr("Not in the law's lists."));
         }
         Some(season) => {
             // What holds now; the table below has the rest.
             for (text, tone) in season_lines(season, region, today) {
-                if tone != Tone::Closed || !text.starts_with("Opens") {
+                if tone != Tone::Closed || !is_opening(&text) {
                     ui.label(coloured(ui, &text, tone));
                 }
             }
@@ -534,7 +586,7 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
                     Some((start, end)) if !row.closed() => {
                         format!("{} – {}", day_text(start), day_text(end))
                     }
-                    _ => "no hunting".to_owned(),
+                    _ => tr("no hunting").to_owned(),
                 };
                 let mut detail = if row.applies_to == "all" {
                     String::new()
@@ -575,7 +627,7 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
                     show(ui, row, false);
                 }
             } else if !elsewhere.is_empty() {
-                egui::CollapsingHeader::new(format!("Other areas ({})", elsewhere.len()))
+                egui::CollapsingHeader::new(trf!("Other areas ({})", elsewhere.len()))
                     .id_salt(format!("season-others-{species}"))
                     .show(ui, |ui| {
                         for row in &elsewhere {
@@ -584,10 +636,10 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
                     });
             }
             if let Some(change) = &season.change {
-                ui.weak(format!("The seasons change from {}.", change.from));
+                ui.weak(trf!("The seasons change from {}.", change.from));
             }
             if let Some(note) = &season.note {
-                ui.collapsing("What the law says", |ui| {
+                ui.collapsing(tr("What the law says"), |ui| {
                     ui.add(egui::Label::new(RichText::new(note).small()).wrap());
                 });
             }
@@ -595,17 +647,17 @@ pub fn species_section(ui: &mut egui::Ui, country: Country, species: &str, regio
     }
     if let Some(rule) = law.daily_rule(species, today) {
         ui.label(&rule.rule);
-        ui.collapsing(format!("{} (the text)", rule.law), |ui| {
+        ui.collapsing(trf!("{} (the text)", rule.law), |ui| {
             ui.add(egui::Label::new(RichText::new(&rule.quote).italics().small()).wrap());
-            ui.hyperlink_to("Source", &rule.url);
+            ui.hyperlink_to(tr("Source"), &rule.url);
         });
     }
     for note in law.notes_for(species) {
         ui.add(egui::Label::new(RichText::new(&note.text).small()).wrap())
             .on_hover_text(&note.law);
     }
-    ui.collapsing("Sources", |ui| {
-        ui.weak(format!("As of {}. {}", law.as_of, law.version));
+    ui.collapsing(tr("Sources"), |ui| {
+        ui.weak(trf!("As of {}. {}", law.as_of, law.version));
         for source in &law.sources {
             ui.hyperlink_to(&source.name, &source.url);
         }

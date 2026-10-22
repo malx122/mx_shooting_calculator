@@ -50,8 +50,12 @@ pub fn send(
     context: egui::Context,
     done: impl FnOnce(Result<Response, String>) + Send + 'static,
 ) {
+    // The job's messages in the hunter's language: it is kept per thread.
+    #[cfg(not(target_arch = "wasm32"))]
+    let language = crate::i18n::current();
     #[cfg(not(target_arch = "wasm32"))]
     std::thread::spawn(move || {
+        crate::i18n::set(language);
         done(blocking(request));
         context.request_repaint();
     });
@@ -76,7 +80,12 @@ impl<F: Future<Output = ()> + 'static> Job for F {}
 /// Runs a job of several requests in the background.
 pub fn spawn(job: impl Job) {
     #[cfg(not(target_arch = "wasm32"))]
-    std::thread::spawn(move || block_on(job));
+    let language = crate::i18n::current();
+    #[cfg(not(target_arch = "wasm32"))]
+    std::thread::spawn(move || {
+        crate::i18n::set(language);
+        block_on(job);
+    });
     #[cfg(target_arch = "wasm32")]
     wasm_bindgen_futures::spawn_local(job);
 }
@@ -201,7 +210,7 @@ fn blocking(request: Request) -> Result<Response, String> {
 async fn browser_fetch(request: Request) -> Result<Response, String> {
     use wasm_bindgen::JsCast;
     use wasm_bindgen_futures::JsFuture;
-    let fail = |what: &str| format!("no connection ({what})");
+    let fail = |what: &str| crate::i18n::trf!("no connection ({what})", what = what);
     let init = web_sys::RequestInit::new();
     init.set_method(request.method.as_str());
     let headers = web_sys::Headers::new().map_err(|_| fail("headers"))?;

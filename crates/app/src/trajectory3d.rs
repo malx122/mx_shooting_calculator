@@ -11,6 +11,7 @@ use ballistics_core::solver::Sample;
 use eframe::egui::{self, Color32, Pos2, Rect, Shape, Stroke, pos2, vec2};
 
 use crate::figure::Figure;
+use crate::i18n::{tr, trf};
 use crate::theme;
 
 /// Height of the scope above the hunter's feet.
@@ -417,18 +418,18 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
         .map_or_else(|| frame.view(View::Overview), |s| s.0);
     ui.horizontal(|ui| {
         for (label, view) in [
-            ("Overview", View::Overview),
-            ("Behind the shooter", View::Behind),
-            ("From the side", View::Side),
-            ("At the target", View::Target),
-            ("From above", View::Above),
+            (tr("Overview"), View::Overview),
+            (tr("Behind the shooter"), View::Behind),
+            (tr("From the side"), View::Side),
+            (tr("At the target"), View::Target),
+            (tr("From above"), View::Above),
         ] {
             if ui.button(label).clicked() {
                 camera = frame.view(view);
             }
         }
     });
-    ui.weak("Drag to orbit · right-drag to pan · ⌘/Ctrl + scroll or pinch to zoom · double-click to reset");
+    ui.weak(tr("Drag to orbit · right-drag to pan · ⌘/Ctrl + scroll or pinch to zoom · double-click to reset"));
 
     let (rect, response) = ui.allocate_exact_size(
         vec2(ui.available_width(), height),
@@ -630,7 +631,7 @@ fn paint_wind(painter: &egui::Painter, projector: &Projector, frame: &Frame, sce
         painter.text(
             segment[0] + vec2(0.0, 4.0),
             egui::Align2::CENTER_TOP,
-            format!("wind {:.1} m/s", scene.wind_speed),
+            trf!("wind {:.1} m/s", scene.wind_speed),
             egui::FontId::proportional(12.0),
             theme::BONE,
         );

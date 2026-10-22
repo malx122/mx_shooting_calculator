@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::google;
 use crate::http::{self, Method, Request};
+use crate::i18n::{tr, trf};
 use crate::theme;
 use crate::widgets::confirm_button;
 
@@ -408,7 +409,7 @@ impl Sync {
                 if self.conflicts < MAX_CONFLICTS {
                     self.read(context);
                 } else {
-                    self.failed(now, "other devices keep writing; will try again".into());
+                    self.failed(now, tr("other devices keep writing; will try again").into());
                 }
                 None
             }
@@ -431,13 +432,15 @@ impl Sync {
                     Ok(()) | Err(Failure::Gone) => {
                         self.turn_off(store);
                         Some(Event::Stopped(
-                            "The synced copy is deleted and sync is off. Your data on this \
-                             device is kept."
-                                .into(),
+                            tr(
+                                "The synced copy is deleted and sync is off. Your data on this \
+                                device is kept.",
+                            )
+                            .into(),
                         ))
                     }
                     Err(_) => {
-                        self.error = Some("could not delete the synced copy; try again".into());
+                        self.error = Some(tr("could not delete the synced copy; try again").into());
                         None
                     }
                 }
@@ -448,9 +451,11 @@ impl Sync {
     fn stopped_elsewhere(&mut self, store: &Store) -> Option<Event> {
         self.turn_off(store);
         Some(Event::Stopped(
-            "The synced copy was deleted on another device, so sync is off here. Your data \
-             on this device is kept."
-                .into(),
+            tr(
+                "The synced copy was deleted on another device, so sync is off here. Your data \
+                on this device is kept.",
+            )
+            .into(),
         ))
     }
 
@@ -571,34 +576,34 @@ impl Sync {
     /// One line on how sync is doing.
     pub fn status(&self, now: f64) -> String {
         if self.signing_in.is_some() {
-            return "Signing in to Google…".into();
+            return tr("Signing in to Google…").into();
         }
         if !self.is_on() {
-            return "Off".into();
+            return tr("Off").into();
         }
         match (self.phase, &self.error, self.last_ok) {
-            (Phase::Reading | Phase::Writing, _, _) => "Syncing…".into(),
-            (Phase::Deleting, _, _) => "Deleting the synced copy…".into(),
-            (_, Some(error), _) => format!("Not synced: {error}"),
+            (Phase::Reading | Phase::Writing, _, _) => tr("Syncing…").into(),
+            (Phase::Deleting, _, _) => tr("Deleting the synced copy…").into(),
+            (_, Some(error), _) => trf!("Not synced: {error}", error = error),
             (_, None, Some(at)) => match ((now - at) / 60.0).floor() as i64 {
-                0 => "Synced just now".into(),
-                1 => "Synced a minute ago".into(),
-                minutes => format!("Synced {minutes} minutes ago"),
+                0 => tr("Synced just now").into(),
+                1 => tr("Synced a minute ago").into(),
+                minutes => trf!("Synced {minutes} minutes ago", minutes = minutes),
             },
-            (_, None, None) => "Waiting to sync".into(),
+            (_, None, None) => tr("Waiting to sync").into(),
         }
     }
 
     /// A word for the header, next to the dot.
     pub fn short_status(&self) -> &'static str {
         if self.signing_in.is_some() || matches!(self.phase, Phase::Reading | Phase::Writing) {
-            "syncing"
+            tr("syncing")
         } else if !self.is_on() {
-            "sync off"
+            tr("sync off")
         } else if self.error.is_some() {
-            "not synced"
+            tr("not synced")
         } else {
-            "synced"
+            tr("synced")
         }
     }
 
@@ -619,10 +624,12 @@ impl Sync {
         let now = ui.ctx().input(|input| input.time);
         let context = ui.ctx().clone();
         if let Some(url) = self.signing_in.as_ref().map(|s| s.url.clone()) {
-            ui.label("Finish signing in to Google in your browser; this updates by itself.");
+            ui.label(tr(
+                "Finish signing in to Google in your browser; this updates by itself.",
+            ));
             ui.horizontal(|ui| {
-                ui.hyperlink_to("Open the sign-in page again", url);
-                if ui.button("Cancel").clicked() {
+                ui.hyperlink_to(tr("Open the sign-in page again"), url);
+                if ui.button(tr("Cancel")).clicked() {
                     self.signing_in = None;
                 }
             });
@@ -632,39 +639,41 @@ impl Sync {
             None => self.off_panel(ui, store, &context),
             Some(Target::Key(key)) => {
                 self.status_line(ui, now);
-                ui.label(
+                ui.label(tr(
                     "To sync another device, scan this with its camera, or enter the key there:",
-                );
+                ));
                 let link = format!("{APP_URL}#sync={}", key.compact());
                 qr_code(ui, &link, 168.0);
                 ui.label(RichText::new(key.to_string()).monospace().strong());
                 ui.horizontal(|ui| {
-                    if ui.button("Copy key").clicked() {
+                    if ui.button(tr("Copy key")).clicked() {
                         ui.ctx().copy_text(key.to_string());
                     }
-                    if ui.button("Copy link").clicked() {
+                    if ui.button(tr("Copy link")).clicked() {
                         ui.ctx().copy_text(link.clone());
                     }
                 });
                 ui.add_space(4.0);
-                ui.weak(
+                ui.weak(tr(
                     "Keep the key to yourself: anyone with it can read and change your synced \
                      data. If you lose every device and the key, the synced copy can't be \
                      recovered, so export a backup now and then.",
-                );
+                ));
                 ui.add_space(8.0);
                 self.buttons(ui, store, &context, now);
             }
             Some(Target::Google(_)) => {
                 self.status_line(ui, now);
-                ui.label("Syncing through Google Drive.");
-                ui.weak(
+                ui.label(tr("Syncing through Google Drive."));
+                ui.weak(tr(
                     "Your data is kept in a hidden folder in your own Google Drive that only \
                      this app can reach. Use the same Google account on every device: each \
                      account keeps a copy of its own.",
-                );
+                ));
                 if self.needs_sign_in
-                    && ui.button(RichText::new("Sign in again").strong()).clicked()
+                    && ui
+                        .button(RichText::new(tr("Sign in again")).strong())
+                        .clicked()
                 {
                     self.sign_in(&context);
                 }
@@ -688,22 +697,27 @@ impl Sync {
         ui.horizontal_wrapped(|ui| {
             let busy = self.phase != Phase::Idle;
             if ui
-                .add_enabled(!busy && !self.needs_sign_in, egui::Button::new("Sync now"))
+                .add_enabled(
+                    !busy && !self.needs_sign_in,
+                    egui::Button::new(tr("Sync now")),
+                )
                 .clicked()
             {
                 self.due_at = now;
                 context.request_repaint();
             }
             if ui
-                .button("Stop syncing here")
-                .on_hover_text("This device keeps its data; the other devices go on syncing")
+                .button(tr("Stop syncing here"))
+                .on_hover_text(tr(
+                    "This device keeps its data; the other devices go on syncing",
+                ))
                 .clicked()
             {
                 self.turn_off(store);
             }
             if !busy
                 && !self.needs_sign_in
-                && confirm_button(ui, "delete-synced-copy", "Delete the synced copy")
+                && confirm_button(ui, "delete-synced-copy", tr("Delete the synced copy"))
             {
                 self.delete_shared(context);
             }
@@ -711,48 +725,48 @@ impl Sync {
     }
 
     fn off_panel(&mut self, ui: &mut egui::Ui, store: &Store, context: &egui::Context) {
-        ui.label(
+        ui.label(tr(
             "Keep your rifles, bullets, scopes, targets and shot log the same on your phone \
              and computer.",
-        );
+        ));
         ui.add_space(8.0);
-        ui.label(RichText::new("With Google Drive").strong());
-        ui.label(
+        ui.label(RichText::new(tr("With Google Drive")).strong());
+        ui.label(tr(
             "Kept in a hidden folder in your own Drive. Sign in on each device, with the \
              same Google account on all of them.",
-        );
-        if ui.button("Sign in with Google").clicked() {
+        ));
+        if ui.button(tr("Sign in with Google")).clicked() {
             self.sign_in(context);
         }
         ui.add_space(10.0);
-        ui.label(RichText::new("With a sync key, no account").strong());
-        ui.label(
+        ui.label(RichText::new(tr("With a sync key, no account")).strong());
+        ui.label(tr(
             "Encrypted on this device before it is sent; the sync server can't read it. \
              Pair other devices with a QR code.",
-        );
+        ));
         if ui
-            .button("Start syncing with a key")
-            .on_hover_text("Makes a new sync key for your devices")
+            .button(tr("Start syncing with a key"))
+            .on_hover_text(tr("Makes a new sync key for your devices"))
             .clicked()
             && let Err(error) = self.turn_on(store, SyncKey::generate())
         {
             self.join_error = Some(error);
         }
         ui.add_space(6.0);
-        ui.label("Already syncing with a key on another device? Scan its code, open its link, or type its key:");
+        ui.label(tr("Already syncing with a key on another device? Scan its code, open its link, or type its key:"));
         ui.horizontal(|ui| {
             ui.add(
                 egui::TextEdit::singleline(&mut self.join_text)
                     .hint_text("XXXX-XXXX-…")
                     .desired_width(240.0),
             );
-            if ui.button("Join").clicked() {
+            if ui.button(tr("Join")).clicked() {
                 match SyncKey::parse(&self.join_text) {
                     Some(key) => {
                         self.join_text.clear();
                         self.join_error = self.turn_on(store, key).err();
                     }
-                    None => self.join_error = Some("that is not a sync key".into()),
+                    None => self.join_error = Some(tr("that is not a sync key").into()),
                 }
             }
         });
@@ -767,7 +781,8 @@ impl Sync {
             return;
         };
         let mut open = true;
-        egui::Window::new("Sync this device?")
+        egui::Window::new(tr("Sync this device?"))
+            .id(egui::Id::new("sync-offer"))
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
@@ -775,29 +790,29 @@ impl Sync {
             .show(context, |ui| {
                 ui.set_max_width(360.0);
                 if self.key() == Some(&key) {
-                    ui.label("This device already syncs with that key.");
-                    if ui.button("OK").clicked() {
+                    ui.label(tr("This device already syncs with that key."));
+                    if ui.button(tr("OK")).clicked() {
                         self.offered = None;
                     }
                     return;
                 }
-                ui.label(
+                ui.label(tr(
                     "The link holds a sync key. This device's rifles, bullets, scopes, targets \
                      and shot log will be merged with the other devices' and kept the same \
                      from now on.",
-                );
+                ));
                 if self.is_on() {
                     ui.colored_label(
                         ui.visuals().warn_fg_color,
-                        "This device syncs another way now; it will switch.",
+                        tr("This device syncs another way now; it will switch."),
                     );
                 }
                 ui.horizontal(|ui| {
-                    if ui.button(RichText::new("Sync").strong()).clicked() {
+                    if ui.button(RichText::new(tr("Sync")).strong()).clicked() {
                         self.join_error = self.turn_on(store, key.clone()).err();
                         self.offered = None;
                     }
-                    if ui.button("Not now").clicked() {
+                    if ui.button(tr("Not now")).clicked() {
                         self.offered = None;
                     }
                 });
@@ -817,8 +832,8 @@ fn failure(status: u16) -> Failure {
     match status {
         412 => Failure::Conflict,
         410 => Failure::Gone,
-        413 => Failure::Other("your data is too large for the sync server".into()),
-        status => Failure::Other(format!("the sync server answered {status}")),
+        413 => Failure::Other(tr("your data is too large for the sync server").into()),
+        status => Failure::Other(trf!("the sync server answered {status}", status = status)),
     }
 }
 

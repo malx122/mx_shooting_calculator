@@ -8,6 +8,8 @@ use std::ops::RangeInclusive;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 
+use crate::i18n::tr;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Quantity {
     /// Ranges and distances; base metres.
@@ -85,21 +87,21 @@ impl Quantity {
 
     pub fn name(self) -> &'static str {
         match self {
-            Quantity::Distance => "Distance",
-            Quantity::ShortLength => "Drop, drift, target size",
-            Quantity::SightHeight => "Sight height",
-            Quantity::Speed => "Bullet velocity",
-            Quantity::WindSpeed => "Wind and game speed",
-            Quantity::Temperature => "Temperature",
-            Quantity::Sensitivity => "Temperature sensitivity",
-            Quantity::Pressure => "Air pressure",
-            Quantity::Altitude => "Altitude",
-            Quantity::Energy => "Energy",
-            Quantity::BulletMass => "Bullet weight",
-            Quantity::BulletLength => "Bullet length",
-            Quantity::BulletDiameter => "Bullet diameter",
-            Quantity::BarrelLength => "Barrel length",
-            Quantity::Twist => "Twist",
+            Quantity::Distance => tr("Distance"),
+            Quantity::ShortLength => tr("Drop, drift, target size"),
+            Quantity::SightHeight => tr("Sight height"),
+            Quantity::Speed => tr("Bullet velocity"),
+            Quantity::WindSpeed => tr("Wind and game speed"),
+            Quantity::Temperature => tr("Temperature"),
+            Quantity::Sensitivity => tr("Temperature sensitivity"),
+            Quantity::Pressure => tr("Air pressure"),
+            Quantity::Altitude => tr("Altitude"),
+            Quantity::Energy => tr("Energy"),
+            Quantity::BulletMass => tr("Bullet weight"),
+            Quantity::BulletLength => tr("Bullet length"),
+            Quantity::BulletDiameter => tr("Bullet diameter"),
+            Quantity::BarrelLength => tr("Barrel length"),
+            Quantity::Twist => tr("Twist"),
         }
     }
 
@@ -317,7 +319,7 @@ pub fn optional_quantity(
                 drag(ui, number, quantity, range, speed);
             }
             None => {
-                ui.weak("unknown");
+                ui.weak(tr("unknown"));
             }
         }
     });
@@ -329,10 +331,10 @@ pub fn optional_quantity(
 pub fn menu(ui: &mut egui::Ui, prefs: &mut UnitPrefs) -> bool {
     let before = prefs.clone();
     ui.horizontal(|ui| {
-        if ui.button("Metric").clicked() {
+        if ui.button(tr("Metric")).clicked() {
             *prefs = UnitPrefs::metric();
         }
-        if ui.button("Imperial").clicked() {
+        if ui.button(tr("Imperial")).clicked() {
             *prefs = UnitPrefs::imperial();
         }
     });

@@ -7,6 +7,7 @@ use eframe::egui::{
     self, Align2, Color32, CornerRadius, Id, Order, Pos2, RichText, Sense, Stroke, Ui, pos2, vec2,
 };
 
+use crate::i18n::tr;
 use crate::theme;
 
 /// Below this width (in points) the phone layout is used.
@@ -215,7 +216,7 @@ pub fn sheet<R>(
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let done = ui.add(
                                 egui::Button::new(
-                                    RichText::new("Done").color(theme::FOREST_900).strong(),
+                                    RichText::new(tr("Done")).color(theme::FOREST_900).strong(),
                                 )
                                 .fill(theme::BLAZE)
                                 .min_size(vec2(72.0, TOUCH)),

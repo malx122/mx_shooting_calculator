@@ -6,6 +6,7 @@ use eframe::egui::{self, Color32, Pos2, RichText, pos2, vec2};
 
 use crate::app::{Action, Data};
 use crate::figure::Figure;
+use crate::i18n::{self, target_name, tr, tr_data, trf};
 use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
@@ -57,7 +58,7 @@ impl TargetsPage {
                 if matches!(self.showing, Showing::Nothing) {
                     egui::ScrollArea::vertical().show(ui, |ui| self.phone_list(ui, data));
                 } else {
-                    if mobile::back_button(ui, "Targets") {
+                    if mobile::back_button(ui, tr("Targets")) {
                         self.showing = Showing::Nothing;
                         return;
                     }
@@ -83,7 +84,7 @@ impl TargetsPage {
     fn detail(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
         match &mut self.showing {
             Showing::Nothing => {
-                ui.weak("Choose a target, or make your own.");
+                ui.weak(tr("Choose a target, or make your own."));
             }
             Showing::Catalog(id) => {
                 if let Some(target) = Catalog::builtin().target(id)
@@ -103,8 +104,8 @@ impl TargetsPage {
     /// The phone's list: own targets, then the catalog's by group.
     fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data) {
         search_field(ui, &mut self.search);
-        ui.heading("My targets");
-        if ui.button("+ New target").clicked() {
+        ui.heading(tr("My targets"));
+        if ui.button(tr("+ New target")).clicked() {
             self.showing = Showing::Custom(Box::new(Target::new_custom()));
         }
         for target in data.targets.iter().filter(|t| t.matches(&self.search)) {
@@ -115,13 +116,18 @@ impl TargetsPage {
             }
         }
         if data.targets.is_empty() {
-            ui.weak("None yet: copy one below or make a new one.");
+            ui.weak(tr("None yet: copy one below or make a new one."));
         }
         ui.add_space(10.0);
         let mut chosen = None;
         catalog_groups(ui, &self.search, |ui, target| {
-            if mobile::list_row(ui, &target.name, &summary(ui, target, data.hunting), false)
-                .clicked()
+            if mobile::list_row(
+                ui,
+                target_name(target),
+                &summary(ui, target, data.hunting),
+                false,
+            )
+            .clicked()
             {
                 chosen = Some(target.id.clone());
             }
@@ -133,8 +139,8 @@ impl TargetsPage {
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data) {
         search_field(ui, &mut self.search);
-        ui.heading("My targets");
-        if ui.button("➕ New target").clicked() {
+        ui.heading(tr("My targets"));
+        if ui.button(tr("➕ New target")).clicked() {
             self.showing = Showing::Custom(Box::new(Target::new_custom()));
         }
         ui.add_space(4.0);
@@ -146,7 +152,7 @@ impl TargetsPage {
             }
         }
         if data.targets.is_empty() {
-            ui.weak("None yet: copy one below or make a new one.");
+            ui.weak(tr("None yet: copy one below or make a new one."));
         }
         ui.separator();
         let showing = match &self.showing {
@@ -156,7 +162,7 @@ impl TargetsPage {
         let mut chosen = None;
         catalog_groups(ui, &self.search, |ui, target| {
             let selected = showing.as_deref() == Some(target.id.as_str());
-            if ui.selectable_label(selected, &target.name).clicked() {
+            if ui.selectable_label(selected, target_name(target)).clicked() {
                 chosen = Some(target.id.clone());
             }
         });
@@ -169,7 +175,7 @@ impl TargetsPage {
 fn search_field(ui: &mut egui::Ui, search: &mut String) {
     ui.add(
         egui::TextEdit::singleline(search)
-            .hint_text("Search, also Swedish or Finnish names")
+            .hint_text(tr("Search, also Swedish or Finnish names"))
             .desired_width(f32::INFINITY),
     );
     ui.add_space(4.0);
@@ -195,7 +201,7 @@ pub fn catalog_groups(
         }
         found = true;
         egui::CollapsingHeader::new(
-            RichText::new(format!("{} ({})", group.label(), targets.len())).strong(),
+            RichText::new(format!("{} ({})", tr_data(group.label()), targets.len())).strong(),
         )
         .id_salt(("target-group", group.label()))
         .open(searching.then_some(true))
@@ -206,7 +212,7 @@ pub fn catalog_groups(
         });
     }
     if !found {
-        ui.weak("Nothing in the catalog matches.");
+        ui.weak(tr("Nothing in the catalog matches."));
     }
 }
 
@@ -241,10 +247,10 @@ fn preview_size(ui: &egui::Ui) -> egui::Vec2 {
 /// their own copy.
 fn catalog_view(ui: &mut egui::Ui, target: &Target, data: &Data, region: Option<&str>) -> bool {
     let country = data.country;
-    ui.heading(&target.name);
+    ui.heading(target_name(target));
     ui.weak(match target.kind {
-        TargetKind::Game => "Game, from the catalog",
-        TargetKind::Sport => "Sport target, from the catalog",
+        TargetKind::Game => tr("Game, from the catalog"),
+        TargetKind::Sport => tr("Sport target, from the catalog"),
     });
     ui.add_space(6.0);
     let size = preview_size(ui);
@@ -261,8 +267,8 @@ fn catalog_view(ui: &mut egui::Ui, target: &Target, data: &Data, region: Option<
             crate::hunting::species_section(ui, country, &target.id, region);
             ui.add_space(6.0);
         }
-        ui.button("Make my own copy")
-            .on_hover_text("An editable copy under My targets")
+        ui.button(tr("Make my own copy"))
+            .on_hover_text(tr("An editable copy under My targets"))
             .clicked()
     };
     if wide(ui) {
@@ -290,12 +296,12 @@ fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>, hunting: 
     let short = |cm: f64| u.format(Quantity::ShortLength, cm);
     grid(ui, "target-facts", |ui| {
         if !target.other_names.is_empty() {
-            ui.label("Also called");
+            ui.label(tr("Also called"));
             ui.label(target.other_names.join(", "));
             ui.end_row();
         }
-        ui.label("Group");
-        ui.label(target.group().label());
+        ui.label(tr("Group"));
+        ui.label(tr_data(target.group().label()));
         ui.end_row();
         match &target.shape {
             TargetShape::Animal {
@@ -305,7 +311,7 @@ fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>, hunting: 
                 ..
             } => {
                 let drawing = Catalog::builtin().drawing(silhouette);
-                ui.label("Drawn as");
+                ui.label(tr("Drawn as"));
                 ui.label(&drawing.name);
                 ui.end_row();
                 let (height_label, length_label) = size_labels(drawing);
@@ -320,62 +326,66 @@ fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>, hunting: 
                 count, black_mm, ..
             } => {
                 let rings = target.shape.ring_diameters_mm();
-                ui.label("Rings");
-                ui.label(format!(
-                    "{count}, from {} mm to {} mm",
+                ui.label(tr("Rings"));
+                ui.label(trf!(
+                    "{}, from {} mm to {} mm",
+                    count,
                     rings.first().copied().unwrap_or(0.0),
                     rings.last().copied().unwrap_or(0.0)
                 ));
                 ui.end_row();
-                ui.label("Black");
+                ui.label(tr("Black"));
                 ui.label(format!("{black_mm} mm"));
                 ui.end_row();
             }
             TargetShape::Plate { diameter_mm } => {
-                ui.label("Plate");
+                ui.label(tr("Plate"));
                 ui.label(format!("{diameter_mm} mm"));
                 ui.end_row();
             }
         }
         ui.label(if target.is_game() && hunting {
-            "Vital zone"
+            tr("Vital zone")
         } else {
-            "Hit zone"
+            tr("Hit zone")
         });
         ui.label(short(target.vital_diameter_cm));
         ui.end_row();
         if target.is_game() && hunting {
-            ui.label("Minimum energy");
-            ui.label(target.min_energy_j.map_or("none".to_owned(), |energy| {
+            ui.label(tr("Minimum energy"));
+            ui.label(target.min_energy_j.map_or(tr("none").to_owned(), |energy| {
                 u.format(Quantity::Energy, energy)
             }));
             ui.end_row();
-            ui.label("Minimum velocity");
+            ui.label(tr("Minimum velocity"));
             ui.label(match target.min_velocity_mps {
                 Some(velocity) if velocity > 0.0 => u.format(Quantity::Speed, velocity),
-                Some(_) => "none (no expansion needed)".to_owned(),
-                None => "the bullet's or your general one".to_owned(),
+                Some(_) => tr("none (no expansion needed)").to_owned(),
+                None => tr("the bullet's or your general one").to_owned(),
             });
             ui.end_row();
             if let Some(country) = country {
                 let rules = country.rules();
                 ui.horizontal(|ui| {
                     crate::flags::show(ui, country, 11.0);
-                    ui.label(format!("{} rules", country.adjective()))
-                        .on_hover_text(rules.help());
+                    ui.label(trf!("{} rules", i18n::country_adjective(country)))
+                        .on_hover_text(i18n::rules_help(rules));
                 });
                 let mut text = match target.ammunition_level(country) {
                     Some(level) => {
-                        format!("Rifle: {}", rules.requirement_text(level).to_lowercase())
+                        trf!(
+                            "Rifle: {}",
+                            i18n::requirement_text(rules, level).to_lowercase()
+                        )
                     }
-                    None => "No rifle level known".to_owned(),
+                    None => tr("No rifle level known").to_owned(),
                 };
                 if let Some(notes) = target.rules_notes.get(&country) {
                     text.push_str(". ");
                     text.push_str(notes);
                 }
                 ui.add(egui::Label::new(text).wrap())
-                    .on_hover_text(rules.help());
+                    .on_hover_text(i18n::rules_help(rules));
                 ui.end_row();
             }
         }
@@ -385,13 +395,17 @@ fn facts(ui: &mut egui::Ui, target: &Target, country: Option<Country>, hunting: 
 /// The editor for the hunter's own target. Returns true to close it.
 fn editor(ui: &mut egui::Ui, target: &mut Target, data: &Data, actions: &mut Vec<Action>) -> bool {
     let stored = data.targets.iter().any(|stored| stored.id == target.id);
-    ui.heading(if stored { "Edit target" } else { "New target" });
+    ui.heading(if stored {
+        tr("Edit target")
+    } else {
+        tr("New target")
+    });
     if let Some(source) = target
         .catalog_id
         .as_deref()
         .and_then(|id| Catalog::builtin().target(id))
     {
-        ui.weak(format!("Copied from the catalog's {}", source.name));
+        ui.weak(trf!("Copied from the catalog's {}", target_name(source)));
     }
     ui.add_space(4.0);
     let size = preview_size(ui);
@@ -426,25 +440,25 @@ fn editor_fields(
     fields(ui, target, data.country, data.hunting);
     ui.add_space(8.0);
     ui.horizontal(|ui| {
-        if ui.button("Save").clicked() {
+        if ui.button(tr("Save")).clicked() {
             actions.push(Action::SaveTarget(target.clone()));
         }
-        if stored && confirm_button(ui, "delete-target", "Delete") {
+        if stored && confirm_button(ui, "delete-target", tr("Delete")) {
             actions.push(Action::DeleteTarget(target.id.clone()));
         }
-        ui.button("Close").clicked()
+        ui.button(tr("Close")).clicked()
     })
     .inner
 }
 
 fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunting: bool) {
     grid(ui, "target-editor", |ui| {
-        text(ui, "Name", &mut target.name);
-        ui.label("Kind");
+        text(ui, tr("Name"), &mut target.name);
+        ui.label(tr("Kind"));
         ui.horizontal(|ui| {
             let before = target.kind;
-            ui.selectable_value(&mut target.kind, TargetKind::Game, "Game");
-            ui.selectable_value(&mut target.kind, TargetKind::Sport, "Sport");
+            ui.selectable_value(&mut target.kind, TargetKind::Game, tr("Game"));
+            ui.selectable_value(&mut target.kind, TargetKind::Sport, tr("Sport"));
             if target.kind != before {
                 target.min_energy_j = match target.kind {
                     TargetKind::Game => Some(1400.0),
@@ -454,23 +468,27 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
         });
         ui.end_row();
 
-        ui.label("Group");
+        ui.label(tr("Group"));
         let mut group = target.group();
         egui::ComboBox::from_id_salt("target-group")
-            .selected_text(group.label())
+            .selected_text(tr_data(group.label()))
             .show_ui(ui, |ui| {
                 for option in TargetGroup::ALL {
-                    ui.selectable_value(&mut group, option, option.label());
+                    ui.selectable_value(&mut group, option, tr_data(option.label()));
                 }
             });
         target.group = Some(group);
         ui.end_row();
 
-        ui.label("Shape");
+        ui.label(tr("Shape"));
         ui.horizontal(|ui| {
             let current = shape_name(&target.shape);
-            for name in ["Animal", "Rings", "Plate"] {
-                if ui.selectable_label(current == name, name).clicked() && current != name {
+            for (name, label) in [
+                ("Animal", tr("Animal")),
+                ("Rings", tr("Rings")),
+                ("Plate", tr("Plate")),
+            ] {
+                if ui.selectable_label(current == name, label).clicked() && current != name {
                     target.shape = default_shape(name);
                     if let TargetShape::Plate { diameter_mm } = target.shape {
                         target.vital_diameter_cm = diameter_mm / 10.0;
@@ -488,7 +506,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                 antlers,
             } => {
                 let drawing = Catalog::builtin().drawing(silhouette);
-                ui.label("Drawn as");
+                ui.label(tr("Drawn as"));
                 egui::ComboBox::from_id_salt("silhouette")
                     .selected_text(&drawing.name)
                     .height(320.0)
@@ -524,7 +542,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                     1.0,
                 );
                 if drawing.has_antlers() {
-                    ui.label("Antlers");
+                    ui.label(tr("Antlers"));
                     ui.checkbox(antlers, "");
                     ui.end_row();
                 }
@@ -535,18 +553,25 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                 count,
                 black_mm,
             } => {
-                number(ui, "Innermost ring", inner_mm, 0.1..=2000.0, 0.1, " mm");
-                number(ui, "Each ring wider by", step_mm, 0.0..=1000.0, 0.1, " mm");
-                ui.label("Rings");
+                number(ui, tr("Innermost ring"), inner_mm, 0.1..=2000.0, 0.1, " mm");
+                number(
+                    ui,
+                    tr("Each ring wider by"),
+                    step_mm,
+                    0.0..=1000.0,
+                    0.1,
+                    " mm",
+                );
+                ui.label(tr("Rings"));
                 ui.add(egui::DragValue::new(count).range(1..=20));
                 ui.end_row();
-                number(ui, "Black", black_mm, 0.0..=5000.0, 0.5, " mm");
+                number(ui, tr("Black"), black_mm, 0.0..=5000.0, 0.5, " mm");
             }
             TargetShape::Plate { diameter_mm } => {
                 let mut diameter_cm = *diameter_mm / 10.0;
                 quantity(
                     ui,
-                    "Plate diameter",
+                    tr("Plate diameter"),
                     &mut diameter_cm,
                     Quantity::ShortLength,
                     1.0..=200.0,
@@ -562,9 +587,9 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
             quantity(
                 ui,
                 if target.is_game() && hunting {
-                    "Vital zone diameter"
+                    tr("Vital zone diameter")
                 } else {
-                    "Hit zone diameter"
+                    tr("Hit zone diameter")
                 },
                 &mut target.vital_diameter_cm,
                 Quantity::ShortLength,
@@ -575,7 +600,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
         if target.is_game() && hunting {
             optional_quantity(
                 ui,
-                "Minimum energy",
+                tr("Minimum energy"),
                 &mut target.min_energy_j,
                 1400.0,
                 Quantity::Energy,
@@ -584,7 +609,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
             );
             optional_quantity(
                 ui,
-                "Own minimum velocity",
+                tr("Own minimum velocity"),
                 &mut target.min_velocity_mps,
                 0.0,
                 Quantity::Speed,
@@ -595,23 +620,23 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                 let rules = country.rules();
                 ui.horizontal(|ui| {
                     crate::flags::show(ui, country, 11.0);
-                    ui.label(format!("{} rifle level", country.adjective()))
-                        .on_hover_text(rules.help());
+                    ui.label(trf!("{} rifle level", i18n::country_adjective(country)))
+                        .on_hover_text(i18n::rules_help(rules));
                 });
                 let mut level = target.ammunition_level(country);
                 egui::ComboBox::from_id_salt("ammunition-level")
-                    .selected_text(
-                        level.map_or("None".to_owned(), |level| rules.requirement_text(level)),
-                    )
+                    .selected_text(level.map_or(tr("None").to_owned(), |level| {
+                        i18n::requirement_text(rules, level)
+                    }))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut level, None, "None");
+                        ui.selectable_value(&mut level, None, tr("None"));
                         for option in rules.levels {
                             ui.selectable_value(
                                 &mut level,
                                 Some(option.number),
-                                rules.requirement_text(option.number),
+                                i18n::requirement_text(rules, option.number),
                             )
-                            .on_hover_text(option.needs);
+                            .on_hover_text(tr_data(option.needs));
                         }
                     });
                 if level != target.ammunition_level(country) {
@@ -620,7 +645,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                 ui.end_row();
             }
         }
-        ui.label("Notes");
+        ui.label(tr("Notes"));
         ui.text_edit_multiline(&mut target.notes);
         ui.end_row();
     });
@@ -629,11 +654,11 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
 /// What an animal's two sizes measure.
 fn size_labels(drawing: &Drawing) -> (&'static str, &'static str) {
     if drawing.bird {
-        ("Height to the back", "Beak to tail")
+        (tr("Height to the back"), tr("Beak to tail"))
     } else if drawing.shoulder_height_m < 0.45 {
-        ("Height to the back", "Body length")
+        (tr("Height to the back"), tr("Body length"))
     } else {
-        ("Shoulder height", "Body length")
+        (tr("Shoulder height"), tr("Body length"))
     }
 }
 
@@ -699,7 +724,7 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
     painter.text(
         rect.left_top() + vec2(8.0, 6.0),
         egui::Align2::LEFT_TOP,
-        format!(
+        trf!(
             "{} tall · drawn to scale",
             u.format(Quantity::ShortLength, height * 100.0)
         ),
@@ -708,9 +733,11 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
     );
     ui.add_space(2.0);
     let key = match (figure.zones.is_empty(), figure.rings.is_some()) {
-        (true, _) => "Green: where a shot must land.",
-        (false, true) => "Green: the hit area, where a shot must land, with the moose test figure's rings.",
-        (false, false) => "Green: the hit area, where a shot must land.",
+        (true, _) => tr("Green: where a shot must land."),
+        (false, true) => {
+            tr("Green: the hit area, where a shot must land, with the moose test figure's rings.")
+        }
+        (false, false) => tr("Green: the hit area, where a shot must land."),
     };
     ui.label(RichText::new(key).small());
 }

@@ -10,6 +10,7 @@ use ballistics_store::{
 use eframe::egui::{self, RichText};
 
 use crate::app::Action;
+use crate::i18n::{tr, trf};
 use crate::units::{self, Quantity, quantity};
 use crate::widgets::{confirm_button, grid, number};
 
@@ -90,21 +91,22 @@ pub fn summary(
         _ => 1.0,
     };
     let source = match (load.velocities.len(), bullet.kind) {
-        (0, BulletKind::Factory) => "from the box".to_owned(),
-        (0, BulletKind::Handload) => "from your load data".to_owned(),
-        (1, _) => "measured".to_owned(),
-        (count, _) => format!("measured {count} times"),
+        (0, BulletKind::Factory) => tr("from the box").to_owned(),
+        (0, BulletKind::Handload) => tr("from your load data").to_owned(),
+        (1, _) => tr("measured").to_owned(),
+        (count, _) => trf!("measured {count} times", count = count),
     };
-    let mut parts = vec![format!(
-        "{} at {}, {source}",
-        u.format(Quantity::Speed, model.velocity_at(powder) * factor),
-        u.format(Quantity::Temperature, powder),
+    let mut parts = vec![trf!(
+        "{speed} at {temperature}, {source}",
+        speed = u.format(Quantity::Speed, model.velocity_at(powder) * factor),
+        temperature = u.format(Quantity::Temperature, powder),
+        source = source,
     )];
     if load.truing.is_some() {
-        parts.push("trued".to_owned());
+        parts.push(tr("trued").to_owned());
     }
     if load.impact_offset_mrad != [0.0, 0.0] {
-        parts.push("own point of impact".to_owned());
+        parts.push(tr("own point of impact").to_owned());
     }
     parts.join(" · ")
 }
@@ -171,15 +173,15 @@ impl LoadEditor {
         };
         let u = units::prefs(ui.ctx());
         ui.label(summary(&u, bullet, Some(draft), today))
-            .on_hover_text("The muzzle velocity in the weather set on Calculate");
+            .on_hover_text(tr("The muzzle velocity in the weather set on Calculate"));
         ui.add_space(4.0);
 
         let model = draft.velocity_model(bullet);
-        panel(ui, "Measured velocities", |ui| {
-            ui.weak(
+        panel(ui, tr("Measured velocities"), |ui| {
+            ui.weak(tr(
                 "Chronograph averages. Two or more at different temperatures give this rifle's \
                  own temperature sensitivity.",
-            );
+            ));
             let mut remove = None;
             egui::Grid::new("velocities")
                 .num_columns(3)
@@ -202,14 +204,14 @@ impl LoadEditor {
                         );
                         ui.horizontal(|ui| {
                             if let Some(shots) = point.shots {
-                                ui.weak(format!(
+                                ui.weak(trf!(
                                     "{} shots, SD {}, ES {}",
                                     shots.count,
                                     spread_text(&u, shots.sd_mps),
                                     spread_text(&u, shots.es_mps)
                                 ));
                             }
-                            if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                            if ui.small_button("✖").on_hover_text(tr("Remove")).clicked() {
                                 remove = Some(index);
                             }
                         });
@@ -220,7 +222,7 @@ impl LoadEditor {
                 draft.velocities.remove(index);
             }
             ui.horizontal_wrapped(|ui| {
-                if draft.velocities.len() < 10 && ui.button("+ Add a reading").clicked() {
+                if draft.velocities.len() < 10 && ui.button(tr("+ Add a reading")).clicked() {
                     let velocity_mps = model.velocity_at(air).round();
                     draft.velocities.push(VelocityPoint {
                         temperature_c: air.round(),
@@ -230,15 +232,15 @@ impl LoadEditor {
                 }
                 if draft.velocities.len() < 10
                     && ui
-                        .button("From a chronograph file…")
-                        .on_hover_text(
+                        .button(tr("From a chronograph file…"))
+                        .on_hover_text(tr(
                             "Garmin Xero (ShotView CSV), LabRadar (SR…Report.csv) or \
                              MagnetoSpeed (LOG.CSV)",
-                        )
+                        ))
                         .clicked()
                 {
                     self.chrono_file
-                        .pick(ui.ctx(), "Chronograph files", &["csv", "CSV"]);
+                        .pick(ui.ctx(), tr("Chronograph files"), &["csv", "CSV"]);
                 }
             });
             if let Some(error) = self.chrono_error.clone() {
@@ -260,7 +262,7 @@ impl LoadEditor {
                             .selected_text(session.name.clone().unwrap_or_default())
                             .show_ui(ui, |ui| {
                                 for (index, session) in import.sessions.iter().enumerate() {
-                                    let label = format!(
+                                    let label = trf!(
                                         "{} ({} shots)",
                                         session.name.clone().unwrap_or_default(),
                                         session.velocities_mps.len()
@@ -273,28 +275,40 @@ impl LoadEditor {
                     }
                     let session = &import.sessions[import.chosen];
                     let stats = session.stats();
-                    ui.label(format!(
-                        "{} shot{}{}: average {}, SD {}, ES {}",
-                        stats.count,
-                        if stats.count == 1 { "" } else { "s" },
-                        if session.missed > 0 {
-                            format!(" ({} not read, left out)", session.missed)
-                        } else {
-                            String::new()
-                        },
-                        u.format(Quantity::Speed, session.average_mps()),
-                        spread_text(&u, stats.sd_mps),
-                        spread_text(&u, stats.es_mps),
-                    ))
-                    .on_hover_text(
+                    let missed = if session.missed > 0 {
+                        trf!(" ({} not read, left out)", session.missed)
+                    } else {
+                        String::new()
+                    };
+                    let average = u.format(Quantity::Speed, session.average_mps());
+                    let (sd, es) = (spread_text(&u, stats.sd_mps), spread_text(&u, stats.es_mps));
+                    ui.label(if stats.count == 1 {
+                        trf!(
+                            "1 shot{missed}: average {average}, SD {sd}, ES {es}",
+                            missed = missed,
+                            average = average,
+                            sd = sd,
+                            es = es,
+                        )
+                    } else {
+                        trf!(
+                            "{count} shots{missed}: average {average}, SD {sd}, ES {es}",
+                            count = stats.count,
+                            missed = missed,
+                            average = average,
+                            sd = sd,
+                            es = es,
+                        )
+                    })
+                    .on_hover_text(tr(
                         "Worked out from the shots; the SD is a sample's (n − 1), a little \
                          larger than some chronograph apps show.",
-                    );
+                    ));
                     let expected = model.velocity_at(import.temperature_c);
                     if (session.average_mps() / expected - 1.0).abs() > 0.15 {
                         ui.colored_label(
                             ui.visuals().warn_fg_color,
-                            format!(
+                            trf!(
                                 "That is far from the {} expected for this bullet: is it the \
                                  right file?",
                                 u.format(Quantity::Speed, expected)
@@ -302,7 +316,7 @@ impl LoadEditor {
                         );
                     }
                     ui.horizontal(|ui| {
-                        ui.label("The cartridges were at");
+                        ui.label(tr("The cartridges were at"));
                         units::drag(
                             ui,
                             &mut import.temperature_c,
@@ -312,7 +326,7 @@ impl LoadEditor {
                         );
                     });
                     ui.horizontal(|ui| {
-                        if ui.button("Add the average").clicked() {
+                        if ui.button(tr("Add the average")).clicked() {
                             draft.velocities.push(VelocityPoint {
                                 temperature_c: import.temperature_c,
                                 velocity_mps: session.average_mps(),
@@ -320,7 +334,7 @@ impl LoadEditor {
                             });
                             close = true;
                         }
-                        if ui.button("Cancel").clicked() {
+                        if ui.button(tr("Cancel")).clicked() {
                             close = true;
                         }
                     });
@@ -329,26 +343,28 @@ impl LoadEditor {
             if close {
                 self.chrono = None;
             }
-            ui.weak(format!(
+            ui.weak(trf!(
                 "Temperature sensitivity {} ({:+.1} % per 15 °C), {}.",
                 u.format_signed(Quantity::Sensitivity, model.per_degree),
                 model.percent_per_15c(),
                 if model.fitted {
-                    "from your measurements"
+                    tr("from your measurements")
                 } else if draft.velocities.len() >= 2 {
-                    "from the bullet data (your measurements need to be at least 2 °C apart)"
+                    tr("from the bullet data (your measurements need to be at least 2 °C apart)")
                 } else {
-                    "from the bullet data"
+                    tr("from the bullet data")
                 }
             ));
         });
 
-        panel(ui, "In this rifle", |ui| {
-            ui.strong("Point of impact at the zero range");
-            ui.weak("Where this load hits compared with the load the rifle was zeroed with.");
+        panel(ui, tr("In this rifle"), |ui| {
+            ui.strong(tr("Point of impact at the zero range"));
+            ui.weak(tr(
+                "Where this load hits compared with the load the rifle was zeroed with.",
+            ));
             let unit = rifle.click_unit;
             grid(ui, "impact-offset", |ui| {
-                for (label, index) in [("Up", 1), ("Right", 0)] {
+                for (label, index) in [(tr("Up"), 1), (tr("Right"), 0)] {
                     ui.label(label);
                     let mut value = from_radians(unit, draft.impact_offset_mrad[index] / 1000.0);
                     let response = ui.add(
@@ -363,7 +379,7 @@ impl LoadEditor {
                     }
                     // 1 mrad is 10 cm at 100 m.
                     let centimetres = draft.impact_offset_mrad[index] * rifle.zero_range_m / 10.0;
-                    ui.weak(format!(
+                    ui.weak(trf!(
                         "{} at {}",
                         u.format_signed(Quantity::ShortLength, centimetres),
                         u.format(Quantity::Distance, rifle.zero_range_m)
@@ -373,15 +389,15 @@ impl LoadEditor {
             });
 
             ui.add_space(4.0);
-            ui.strong("Zeroed in");
+            ui.strong(tr("Zeroed in"));
             let mut mode = match draft.zero {
                 LoadZero::Rifle => 0,
                 LoadZero::SameAsShot => 1,
                 LoadZero::Recorded(_) => 2,
             };
-            ui.radio_value(&mut mode, 0, "The rifle's zero weather");
-            ui.radio_value(&mut mode, 1, "The same weather as the shot");
-            ui.radio_value(&mut mode, 2, "This weather:");
+            ui.radio_value(&mut mode, 0, tr("The rifle's zero weather"));
+            ui.radio_value(&mut mode, 1, tr("The same weather as the shot"));
+            ui.radio_value(&mut mode, 2, tr("This weather:"));
             draft.zero = match (mode, draft.zero) {
                 (0, _) => LoadZero::Rifle,
                 (1, _) => LoadZero::SameAsShot,
@@ -392,7 +408,7 @@ impl LoadEditor {
                 grid(ui, "load-zero", |ui| {
                     quantity(
                         ui,
-                        "Air",
+                        tr("Air"),
                         &mut weather.temperature_c,
                         Quantity::Temperature,
                         -45.0..=50.0,
@@ -400,7 +416,7 @@ impl LoadEditor {
                     );
                     quantity(
                         ui,
-                        "Powder",
+                        tr("Powder"),
                         &mut weather.powder_temperature_c,
                         Quantity::Temperature,
                         -45.0..=60.0,
@@ -408,7 +424,7 @@ impl LoadEditor {
                     );
                     quantity(
                         ui,
-                        "Barometer at the range",
+                        tr("Barometer at the range"),
                         &mut weather.pressure_hpa,
                         Quantity::Pressure,
                         500.0..=1100.0,
@@ -416,7 +432,7 @@ impl LoadEditor {
                     );
                     number(
                         ui,
-                        "Humidity",
+                        tr("Humidity"),
                         &mut weather.humidity_percent,
                         0.0..=100.0,
                         1.0,
@@ -429,11 +445,11 @@ impl LoadEditor {
             self.truing_open |= draft.truing.is_some();
             if !self.truing_open {
                 if ui
-                    .button("Shot long and missed? True the calculation…")
-                    .on_hover_text(
+                    .button(tr("Shot long and missed? True the calculation…"))
+                    .on_hover_text(tr(
                         "Enter what it took to hit at a long range, and the calculation is \
                          adjusted to match",
-                    )
+                    ))
                     .clicked()
                 {
                     self.truing_open = true;
@@ -461,19 +477,19 @@ impl LoadEditor {
             if ui
                 .add_enabled(
                     changed && problem.is_none(),
-                    egui::Button::new(RichText::new("Save").strong()),
+                    egui::Button::new(RichText::new(tr("Save")).strong()),
                 )
                 .clicked()
             {
                 actions.push(Action::SaveLoad(draft.clone()));
             }
-            if changed && ui.button("Undo changes").clicked() {
+            if changed && ui.button(tr("Undo changes")).clicked() {
                 *draft = saved
                     .cloned()
                     .unwrap_or_else(|| RifleLoad::new(&rifle.id, &bullet.id));
             }
             if let Some(saved) = saved
-                && confirm_button(ui, "remove-load", "Reset to the bullet's data")
+                && confirm_button(ui, "remove-load", tr("Reset to the bullet's data"))
             {
                 actions.push(Action::DeleteLoad(saved.id.clone()));
             }
@@ -481,7 +497,7 @@ impl LoadEditor {
         if let Some(problem) = problem {
             ui.colored_label(ui.visuals().warn_fg_color, problem);
         } else if changed {
-            ui.weak("Unsaved changes: Calculate uses this once saved.");
+            ui.weak(tr("Unsaved changes: Calculate uses this once saved."));
         }
     }
 }
@@ -510,8 +526,8 @@ fn truing(
 ) {
     let u = units::prefs(ui.ctx());
     let model = draft.velocity_model(bullet);
-    ui.strong("Truing");
-    ui.weak(format!(
+    ui.strong(tr("Truing"));
+    ui.weak(trf!(
         "Shot far and found the calculation off? Enter what it took to hit centre. The shot is \
          taken to be in the weather set on Calculate ({}, {}). The longest range you've shot \
          works best (300 m or more).",
@@ -519,45 +535,49 @@ fn truing(
         match conditions.pressure {
             ballistics_shot::Pressure::Station(hpa) => u.format(Quantity::Pressure, hpa),
             ballistics_shot::Pressure::SeaLevel { hpa, .. } =>
-                format!("{} at sea level", u.format(Quantity::Pressure, hpa)),
+                trf!("{} at sea level", u.format(Quantity::Pressure, hpa)),
         }
     ));
     if let Some(truing) = draft.truing {
         let what = match truing.method {
-            TruingMethod::Velocity => format!(
+            TruingMethod::Velocity => trf!(
                 "velocity ×{:.3} ({} instead of {})",
                 truing.factor,
                 u.format(Quantity::Speed, model.velocity_at(powder) * truing.factor),
                 u.format(Quantity::Speed, model.velocity_at(powder)),
             ),
-            TruingMethod::Drag => format!(
+            TruingMethod::Drag => trf!(
                 "drag ×{:.3}{}",
                 truing.factor,
                 bullet
                     .ballistic_coefficient()
-                    .map_or(String::new(), |bc| format!(
-                        " (BC {:.3} instead of {bc:.3})",
-                        bc / truing.factor
+                    .map_or(String::new(), |bc| trf!(
+                        " (BC {:.3} instead of {:.3})",
+                        bc / truing.factor,
+                        bc
                     )),
             ),
         };
         ui.horizontal_wrapped(|ui| {
-            ui.label(format!(
-                "Trued to {}, {:.2} {} up, at {}: {what}.",
+            ui.label(trf!(
+                "Trued to {}, {:.2} {} up, at {}: {}.",
                 u.format(Quantity::Distance, truing.range_m),
                 from_radians(rifle.click_unit, truing.elevation_mrad / 1000.0),
                 unit_label(rifle.click_unit),
                 u.format(Quantity::Temperature, truing.weather.temperature_c),
+                what,
             ));
-            if ui.small_button("Remove").clicked() {
+            if ui.small_button(tr("Remove")).clicked() {
                 draft.truing = None;
             }
         });
         if (truing.factor - 1.0).abs() > 0.1 {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                "That's a large correction. Check the range, the zero and the clicks before \
-                 trusting it.",
+                tr(
+                    "That's a large correction. Check the range, the zero and the clicks before \
+                     trusting it.",
+                ),
             );
         }
     }
@@ -571,13 +591,13 @@ fn truing(
     grid(ui, "truing", |ui| {
         quantity(
             ui,
-            "Range",
+            tr("Range"),
             &mut form.range_m,
             Quantity::Distance,
             50.0..=2000.0,
             5.0,
         );
-        ui.label("It took");
+        ui.label(tr("It took"));
         ui.horizontal(|ui| {
             ui.add(
                 egui::DragValue::new(&mut form.elevation)
@@ -585,32 +605,36 @@ fn truing(
                     .fixed_decimals(2)
                     .suffix(format!(" {}", unit_label(unit))),
             );
-            ui.label("up to hit centre");
+            ui.label(tr("up to hit centre"));
             ui.weak(format!(
                 "({})",
                 crate::calculator::clicks_text((form.elevation / rifle.click_value).round() as i64)
             ));
         });
         ui.end_row();
-        ui.label("Adjust");
+        ui.label(tr("Adjust"));
         ui.vertical(|ui| {
             let mut chosen = method;
-            ui.radio_value(&mut chosen, TruingMethod::Velocity, "the velocity")
-                .on_hover_text("When the velocity is from the box or a guess: no chronograph");
-            ui.radio_value(&mut chosen, TruingMethod::Drag, "the drag (BC)")
-                .on_hover_text("When the velocity was measured, so the BC is what's uncertain");
+            ui.radio_value(&mut chosen, TruingMethod::Velocity, tr("the velocity"))
+                .on_hover_text(tr(
+                    "When the velocity is from the box or a guess: no chronograph",
+                ));
+            ui.radio_value(&mut chosen, TruingMethod::Drag, tr("the drag (BC)"))
+                .on_hover_text(tr(
+                    "When the velocity was measured, so the BC is what's uncertain",
+                ));
             if chosen != method {
                 form.method = Some(chosen);
             }
             ui.weak(if measured {
-                "Your velocity is measured, so the drag is the likely culprit."
+                tr("Your velocity is measured, so the drag is the likely culprit.")
             } else {
-                "Without a measured velocity, the velocity is the likely culprit."
+                tr("Without a measured velocity, the velocity is the likely culprit.")
             });
         });
         ui.end_row();
     });
-    if ui.button("Calculate the truing").clicked() {
+    if ui.button(tr("Calculate the truing")).clicked() {
         let mut base = draft.clone();
         base.truing = None;
         let elevation_mrad = to_radians(unit, form.elevation) * 1000.0;

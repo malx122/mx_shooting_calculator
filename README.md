@@ -20,6 +20,8 @@ gives:
   came of them and, after a shot at game, the way to where the animal
   stood.
 
+It is in English, Swedish and Finnish.
+
 ## Install
 
 Each release on [GitHub](https://github.com/malx122/mx_shooting_calculator/releases)
@@ -101,9 +103,9 @@ switches to a one-column layout with bigger text and touch targets
 (`mobile.rs`, `calculator/phone.rs`):
 
 - **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets,
-  Cards) and a compact header whose menu holds the Shot log, Units, what
-  the app is used for, Hunting rules, Sync, Import, Export, Load demo data,
-  Install and the version.
+  Cards) and a compact header whose menu holds the Shot log, Units, Language,
+  what the app is used for, Hunting rules, Sync, Import, Export, Load demo
+  data, Install and the version.
 - **Calculate, results first:**
   - The rifle and bullet line opens a page with the rest of the inputs,
     each group folded with a summary.
@@ -476,6 +478,14 @@ pressure (hPa, mmHg or inHg), altitude, energy, bullet weight, length,
 diameter, barrel length and twist can each be set. Values are always stored
 in metric, so changing units never changes your data.
 
+**Language** (in the menu): English, Svenska or Suomi, or **System** to
+follow the device (the browser's language on the web, the system's on the
+desktop; English when it is neither Swedish nor Finnish). The catalog's game
+species then go by their Swedish or Finnish names, and the cards print in the
+chosen language. Numbers keep the decimal point for now; decimal commas come
+later. The catalog's notes, the hunting-season notes and What's new stay in
+English.
+
 **Export backup / Import backup…** (in the menu) save and merge your rifles,
 bullets, rifle loads, custom scopes, custom targets and shot log as JSON. **Import
 backup…** also reads **Strelok Pro backups
@@ -569,7 +579,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 |---|---|
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, cant, spin drift, aerodynamic jump, Coriolis and the hunting analyses. No dependencies, no I/O. |
 | `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, the sync merge and encryption (`sync.rs`), and the shot log with its great-circle sums for the animal's spot (`shots.rs`). No UI, no networking. |
-| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. `cards/` lays out the printable cards once, in millimetres, for both the preview and a hand-written PDF (Helvetica, nothing embedded). |
+| `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. `cards/` lays out the printable cards once, in millimetres, for both the preview and a hand-written PDF (Helvetica, nothing embedded). `i18n.rs` shows the texts in Swedish and Finnish from `i18n/*.json` (see Translating). |
 | `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
 | `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
 | `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |
@@ -593,6 +603,39 @@ server, which checks versions so two devices writing at once can't overwrite
 each other; plain in Google Drive, which can't check versions, but a device
 whose write is overwritten still has its records and puts them back on its
 next round.
+
+## Translating
+
+The app's texts are looked up by their English (`crates/app/src/i18n.rs`):
+
+```rust
+ui.label(tr("Range"));
+ui.label(trf!("Saved {}", rifle.name));
+ui.label(trf!("{count} rifles", count = rifles.len()));
+```
+
+`trf!` is `format!` for texts the hunter reads: `{}`, `{0}` and `{name}`
+placeholders, with a sign and decimals (`{:+.1}`) and nothing else. The
+English must be a literal inside `tr(`/`trf!(` so the checks can find it.
+Texts from the data go through `tr_data` (target groups, rules levels) and
+`target_name` (a catalog target's Swedish or Finnish name).
+
+The translations are data: `crates/app/i18n/sv.json` and `fi.json` map the
+English to the translation, sorted. A text with no translation (or an empty
+one) shows in English, so new code works before anyone translates it.
+
+1. Wrap the new texts in `tr` or `trf!`.
+2. `cargo test -p mxsc i18n -- --nocapture` lists the texts each language
+   still lacks. `MXSC_I18N_UPDATE=1 cargo test -p mxsc i18n` adds them to the
+   files with an empty translation and takes out the ones the app no longer
+   has.
+3. Fill in the empty translations. A translation keeps the English's
+   placeholders: the `{}` ones in the same order (give them names if a
+   language needs another order), the named ones anywhere.
+
+The tests fail when a file has a text the app no longer shows, or a
+translation that lost a placeholder. Numbers keep the decimal point in every
+language for now; decimal commas come later.
 
 ## Scopes and reticles
 

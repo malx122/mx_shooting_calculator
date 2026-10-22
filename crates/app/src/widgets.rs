@@ -5,6 +5,8 @@ use std::ops::RangeInclusive;
 use ballistics_store::{Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, Scope, UserScope};
 use eframe::egui::{self, RichText};
 
+use crate::i18n::{tr, trf};
+
 /// A folded section whose header also tells what is inside, so it needs
 /// opening only to change it: "Weather   3.6 °C · 1013 hPa · Mora".
 pub fn fold<R>(
@@ -103,7 +105,7 @@ pub fn optional_number(
                 );
             }
             None => {
-                ui.weak("unknown");
+                ui.weak(tr("unknown"));
             }
         }
     });
@@ -133,7 +135,7 @@ pub fn caliber_picker(
     let catalog = Catalog::builtin();
     let mut chosen = None;
     let label = if selected.is_empty() {
-        "Choose caliber".to_owned()
+        tr("Choose caliber").to_owned()
     } else {
         caliber_name(selected)
     };
@@ -144,7 +146,7 @@ pub fn caliber_picker(
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
         .show_ui(ui, |ui| {
             let field =
-                ui.add(egui::TextEdit::singleline(search).hint_text("Search, e.g. 6.5 swe"));
+                ui.add(egui::TextEdit::singleline(search).hint_text(tr("Search, e.g. 6.5 swe")));
             field.request_focus();
             for caliber in catalog.search_calibers(search) {
                 let response = ui.selectable_label(caliber.key == selected, &caliber.name);
@@ -171,11 +173,11 @@ pub fn confirm_button(ui: &mut egui::Ui, id: &str, label: &str) -> bool {
     if armed {
         let confirmed = ui
             .button(
-                RichText::new(format!("Really {}?", label.to_lowercase()))
+                RichText::new(trf!("Really {}?", label.to_lowercase()))
                     .color(ui.visuals().error_fg_color),
             )
             .clicked();
-        if ui.button("Cancel").clicked() || confirmed {
+        if ui.button(tr("Cancel")).clicked() || confirmed {
             ui.data_mut(|data| data.insert_temp(id, false));
         }
         confirmed
@@ -204,13 +206,13 @@ pub fn scope_picker(
 ) -> Option<ScopeChoice> {
     let catalog = Catalog::builtin();
     let label = match selected {
-        None => "No scope".to_owned(),
+        None => tr("No scope").to_owned(),
         Some(id) => own
             .iter()
             .find(|scope| scope.id == id)
             .map(UserScope::display_name)
             .or_else(|| catalog.scope(id).map(Scope::display_name))
-            .unwrap_or_else(|| "Unknown scope".to_owned()),
+            .unwrap_or_else(|| tr("Unknown scope").to_owned()),
     };
     let mut choice = None;
     egui::ComboBox::from_id_salt(id_salt)
@@ -219,10 +221,12 @@ pub fn scope_picker(
         .height(360.0)
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
         .show_ui(ui, |ui| {
-            ui.add(egui::TextEdit::singleline(search).hint_text("Search maker, model or reticle"))
-                .request_focus();
+            ui.add(
+                egui::TextEdit::singleline(search).hint_text(tr("Search maker, model or reticle")),
+            )
+            .request_focus();
             if ui
-                .selectable_label(selected.is_none(), "No scope")
+                .selectable_label(selected.is_none(), tr("No scope"))
                 .clicked()
             {
                 choice = Some(ScopeChoice::Removed);
@@ -238,7 +242,7 @@ pub fn scope_picker(
                 .collect();
             if !mine.is_empty() {
                 ui.separator();
-                ui.weak("My scopes");
+                ui.weak(tr("My scopes"));
                 for scope in mine {
                     if ui
                         .selectable_label(selected == Some(scope.id.as_str()), scope.display_name())
@@ -248,7 +252,7 @@ pub fn scope_picker(
                     }
                 }
                 ui.separator();
-                ui.weak("Catalog");
+                ui.weak(tr("Catalog"));
             }
             // Catalog scopes are also found by any name of their reticles.
             let by_reticle = |scope: &Scope| {
@@ -293,10 +297,13 @@ pub fn reticle_name(id: &str) -> String {
 /// "2.5–15×56 · first focal plane · 0.1 mrad clicks · illuminated"
 pub fn scope_summary(scope: &Scope) -> String {
     let plane = match scope.focal_plane {
-        FocalPlane::Ffp => "first focal plane".to_owned(),
+        FocalPlane::Ffp => tr("first focal plane").to_owned(),
         FocalPlane::Sfp => match scope.reticle_reference_magnification {
-            Some(reference) => format!("second focal plane (marks true at {reference}×)"),
-            None => "second focal plane".to_owned(),
+            Some(reference) => trf!(
+                "second focal plane (marks true at {reference}×)",
+                reference = reference
+            ),
+            None => tr("second focal plane").to_owned(),
         },
     };
     let mut parts = vec![
@@ -310,15 +317,23 @@ pub fn scope_summary(scope: &Scope) -> String {
         },
         plane,
         match scope.click_value {
-            Some(value) => format!("{value} {} clicks", scope.click_unit.label()),
-            None => "click value not published".to_owned(),
+            Some(value) => trf!(
+                "{value} {unit} clicks",
+                value = value,
+                unit = scope.click_unit.label()
+            ),
+            None => tr("click value not published").to_owned(),
         },
     ];
     if let Some(travel) = scope.elevation_travel {
-        parts.push(format!("{travel} {} elevation", scope.click_unit.label()));
+        parts.push(trf!(
+            "{travel} {unit} elevation",
+            travel = travel,
+            unit = scope.click_unit.label()
+        ));
     }
     if scope.illuminated {
-        parts.push("illuminated".to_owned());
+        parts.push(tr("illuminated").to_owned());
     }
     parts.join(" · ")
 }

@@ -18,6 +18,7 @@ use eframe::egui::{self, Color32, RichText};
 use serde::{Deserialize, Serialize};
 
 use crate::app::{Action, Page};
+use crate::i18n::{tr, trf};
 use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, UnitPrefs};
@@ -69,7 +70,7 @@ impl CardSize {
 
     pub fn name(self) -> &'static str {
         match self {
-            CardSize::Card => "Card",
+            CardSize::Card => tr("Card"),
             CardSize::A7 => "A7",
             CardSize::A6 => "A6",
             CardSize::A5 => "A5",
@@ -79,11 +80,11 @@ impl CardSize {
 
     pub fn hint(self) -> &'static str {
         match self {
-            CardSize::Card => "86 × 54 mm, a bank card: a wallet or a stock pouch",
-            CardSize::A7 => "74 × 105 mm: a shirt pocket",
-            CardSize::A6 => "105 × 148 mm: a postcard, a binocular harness",
-            CardSize::A5 => "148 × 210 mm: half a sheet",
-            CardSize::A4 => "210 × 297 mm: a whole sheet",
+            CardSize::Card => tr("86 × 54 mm, a bank card: a wallet or a stock pouch"),
+            CardSize::A7 => tr("74 × 105 mm: a shirt pocket"),
+            CardSize::A6 => tr("105 × 148 mm: a postcard, a binocular harness"),
+            CardSize::A5 => tr("148 × 210 mm: half a sheet"),
+            CardSize::A4 => tr("210 × 297 mm: a whole sheet"),
         }
     }
 }
@@ -261,12 +262,12 @@ impl CardsPage {
         }
         let Some(subject) = subject else {
             egui::CentralPanel::default().show(context, |ui| {
-                ui.heading("Cards");
-                ui.label(
+                ui.heading(tr("Cards"));
+                ui.label(tr(
                     "Dope cards and stand cards are made for a rifle and a bullet. Add a rifle \
                      and a bullet for it first.",
-                );
-                if ui.button("Go to Rifles").clicked() {
+                ));
+                if ui.button(tr("Go to Rifles")).clicked() {
                     actions.push(Action::Goto(Page::Rifles));
                 }
             });
@@ -313,9 +314,9 @@ impl CardsPage {
             ui.horizontal_wrapped(|ui| {
                 self.save_button(ui, &subject);
                 ui.separator();
-                ui.selectable_value(&mut self.true_size, false, "Fit");
-                ui.selectable_value(&mut self.true_size, true, "Printed size")
-                    .on_hover_text("About the size it prints, on a typical screen");
+                ui.selectable_value(&mut self.true_size, false, tr("Fit"));
+                ui.selectable_value(&mut self.true_size, true, tr("Printed size"))
+                    .on_hover_text(tr("About the size it prints, on a typical screen"));
             });
             self.fit_meter(ui);
             ui.add_space(4.0);
@@ -332,18 +333,18 @@ impl CardsPage {
             for (kind, label, hint) in [
                 (
                     Kind::Dope,
-                    "Dope card",
-                    "What to dial or hold at each range, for the rifle",
+                    tr("Dope card"),
+                    tr("What to dial or hold at each range, for the rifle"),
                 ),
                 (
                     Kind::Stand,
-                    "Stand card",
-                    "A map of a stand: rings with holds, limits, landmarks",
+                    tr("Stand card"),
+                    tr("A map of a stand: rings with holds, limits, landmarks"),
                 ),
                 (
                     Kind::Turret,
-                    "Turret label",
-                    "A strip for the elevation turret with the ranges at their clicks",
+                    tr("Turret label"),
+                    tr("A strip for the elevation turret with the ranges at their clicks"),
                 ),
             ] {
                 if kind == Kind::Stand && !self.hunting {
@@ -368,7 +369,7 @@ impl CardsPage {
 
     fn subject_line(&self, ui: &mut egui::Ui, subject: &Subject, actions: &mut Vec<Action>) {
         ui.horizontal_wrapped(|ui| {
-            ui.weak(format!(
+            ui.weak(trf!(
                 "For {} with {}{}, in today's weather, level and in calm air (Calculate also counts today's wind, angle and cant).",
                 subject.rifle.name,
                 subject.bullet.display_name(),
@@ -381,8 +382,8 @@ impl CardsPage {
                     ))
             ));
             if ui
-                .small_button("Change…")
-                .on_hover_text("Choose in Calculate")
+                .small_button(tr("Change…"))
+                .on_hover_text(tr("Choose in Calculate"))
                 .clicked()
             {
                 actions.push(Action::Goto(Page::Calculate));
@@ -434,19 +435,20 @@ impl CardsPage {
                     let mut notes = Vec::new();
                     let crowded = plan.marks.iter().filter(|mark| mark.crowded).count();
                     if crowded > 0 {
-                        notes.push(format!(
+                        notes.push(trf!(
                             "{crowded} marks left off where they would overlap (they are in the \
-                             table on the sheet)."
+                             table on the sheet).",
+                            crowded = crowded
                         ));
                     }
                     if let Some(range) = plan.out_of_travel.first() {
-                        notes.push(format!(
+                        notes.push(trf!(
                             "From {} the scope runs out of elevation.",
                             u.format(Quantity::Distance, *range)
                         ));
                     }
                     if plan.turns > 1 {
-                        notes.push(format!(
+                        notes.push(trf!(
                             "{} turns of the turret: a band for each, the first at the bottom.",
                             plan.turns
                         ));
@@ -479,7 +481,10 @@ impl CardsPage {
         let preview = match result {
             Ok(preview) => preview,
             Err(error) => {
-                ui.colored_label(ui.visuals().error_fg_color, format!("No card: {error}"));
+                ui.colored_label(
+                    ui.visuals().error_fg_color,
+                    trf!("No card: {error}", error = error),
+                );
                 return;
             }
         };
@@ -490,26 +495,34 @@ impl CardsPage {
             return;
         };
         let (colour, verdict) = if size >= 6.5 {
-            (theme::MEADOW, "easy to read")
+            (theme::MEADOW, tr("easy to read"))
         } else if size >= 5.0 {
-            (theme::AMBER, "small, but readable")
+            (theme::AMBER, tr("small, but readable"))
         } else {
-            (theme::ALARM, "too small to read")
+            (theme::ALARM, tr("too small to read"))
         };
         ui.horizontal_wrapped(|ui| {
             let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
             ui.painter().circle_filled(rect.center(), 5.0, colour);
-            ui.label(RichText::new(format!("Text {size:.1} pt: {verdict}")).color(colour));
-            ui.weak(format!(
+            ui.label(
+                RichText::new(trf!(
+                    "Text {size:.1} pt: {verdict}",
+                    size = size,
+                    verdict = verdict
+                ))
+                .color(colour),
+            );
+            ui.weak(trf!(
                 "· {} ranges, {} columns",
-                preview.rows, preview.columns
+                preview.rows,
+                preview.columns
             ));
         });
         if size < 5.0 {
-            ui.weak(
+            ui.weak(tr(
                 "Fewer ranges (a longer step), fewer columns or temperatures, or a bigger card \
                  make the text bigger.",
-            );
+            ));
         }
     }
 
@@ -540,26 +553,29 @@ impl CardsPage {
         ui.horizontal_wrapped(|ui| {
             let ready = matches!(self.current(), Some(Ok(_)));
             if ui
-                .add_enabled(ready, egui::Button::new(RichText::new("Save PDF").strong()))
-                .on_hover_text("A PDF to print or keep on the phone")
+                .add_enabled(
+                    ready,
+                    egui::Button::new(RichText::new(tr("Save PDF")).strong()),
+                )
+                .on_hover_text(tr("A PDF to print or keep on the phone"))
                 .clicked()
                 && let Some(Ok(preview)) = self.current()
             {
                 let (file, title) = match self.settings.kind {
                     Kind::Dope => (
                         format!("dope-card-{}.pdf", file_part(&subject.rifle.name)),
-                        format!("Dope card, {}", subject.rifle.name),
+                        trf!("Dope card, {}", subject.rifle.name),
                     ),
                     Kind::Stand => {
                         let stand = &self.settings.stands[self.settings.stand_index];
                         (
                             format!("stand-card-{}.pdf", file_part(&stand.name)),
-                            format!("Stand card, {}", stand.name),
+                            trf!("Stand card, {}", stand.name),
                         )
                     }
                     Kind::Turret => (
                         format!("turret-label-{}.pdf", file_part(&subject.rifle.name)),
-                        format!("Turret label, {}", subject.rifle.name),
+                        trf!("Turret label, {}", subject.rifle.name),
                     ),
                 };
                 let bytes = pdf::write(&preview.pages, &title);
@@ -572,7 +588,7 @@ impl CardsPage {
                     .first()
                     .is_some_and(|page| page.width != preview.card.width)
             {
-                ui.weak(format!(
+                ui.weak(trf!(
                     "{} cards on an A4 sheet; print at actual size (100 %)",
                     cards_on_a4(&preview.card)
                 ));
@@ -633,31 +649,31 @@ impl CardsPage {
             .entry(rifle.id.clone())
             .or_insert(fallback);
 
-        let summary = format!(
+        let summary = trf!(
             "{:.1} mm × {:.1} mm · {} clicks · {}",
             turret.diameter_mm,
             turret.height_mm,
             turret.clicks_per_turn,
             if turret.clockwise {
-                "clockwise"
+                tr("clockwise")
             } else {
-                "anticlockwise"
+                tr("anticlockwise")
             }
         );
         fold_with(
             ui,
             "turret-yours",
-            "Your turret",
+            tr("Your turret"),
             &summary,
             !measured,
             |ui| {
-                ui.weak(
+                ui.weak(tr(
                     "Measure the elevation turret's cap with a caliper where the label goes: over \
              the ridges if it is knurled, as the label sits on them. The height is the band \
              the label will cover. Kept for this rifle.",
-                );
+                ));
                 grid(ui, "turret-size", |ui| {
-                    ui.label("Diameter");
+                    ui.label(tr("Diameter"));
                     ui.add(
                         egui::DragValue::new(&mut turret.diameter_mm)
                             .range(10.0..=80.0)
@@ -666,7 +682,7 @@ impl CardsPage {
                             .suffix(" mm"),
                     );
                     ui.end_row();
-                    ui.label("Height");
+                    ui.label(tr("Height"));
                     ui.add(
                         egui::DragValue::new(&mut turret.height_mm)
                             .range(5.0..=40.0)
@@ -675,28 +691,32 @@ impl CardsPage {
                             .suffix(" mm"),
                     );
                     ui.end_row();
-                    ui.label("Label");
+                    ui.label(tr("Label"));
                     ui.horizontal(|ui| {
-                        const MATERIALS: [(&str, f64, &str); 4] = [
-                            ("Paper", 0.1, "Ordinary printer paper, about 0.1 mm"),
+                        let materials: [(&str, f64, &str); 4] = [
+                            (tr("Paper"), 0.1, tr("Ordinary printer paper, about 0.1 mm")),
                             (
-                                "Sticker",
+                                tr("Sticker"),
                                 0.15,
-                                "Printable vinyl or sticker paper with its glue",
+                                tr("Printable vinyl or sticker paper with its glue"),
                             ),
-                            ("Photo paper", 0.25, "Photo paper or thin card"),
-                            ("Laminated", 0.3, "Paper laminated before it is wrapped"),
+                            (tr("Photo paper"), 0.25, tr("Photo paper or thin card")),
+                            (
+                                tr("Laminated"),
+                                0.3,
+                                tr("Paper laminated before it is wrapped"),
+                            ),
                         ];
-                        let chosen = MATERIALS
+                        let chosen = materials
                             .iter()
                             .find(|(_, thickness, _)| {
                                 (turret.thickness_mm - thickness).abs() < 1e-6
                             })
-                            .map_or("Your own", |(name, _, _)| name);
+                            .map_or(tr("Your own"), |(name, _, _)| name);
                         egui::ComboBox::from_id_salt("turret-material")
                             .selected_text(chosen)
                             .show_ui(ui, |ui| {
-                                for (name, thickness, hint) in MATERIALS {
+                                for (name, thickness, hint) in materials {
                                     ui.selectable_value(&mut turret.thickness_mm, thickness, name)
                                         .on_hover_text(hint);
                                 }
@@ -706,43 +726,45 @@ impl CardsPage {
                                 .range(0.0..=1.0)
                                 .speed(0.01)
                                 .max_decimals(2)
-                                .suffix(" mm thick"),
+                                .suffix(tr(" mm thick")),
                         )
-                        .on_hover_text(
+                        .on_hover_text(tr(
                             "It wraps round its middle, so the strip is made π × thickness longer. \
                      Tape over it afterwards doesn't count.",
-                        );
+                        ));
                     });
                     ui.end_row();
-                    ui.label("Clicks a turn");
+                    ui.label(tr("Clicks a turn"));
                     ui.horizontal(|ui| {
                         ui.add(
                             egui::DragValue::new(&mut turret.clicks_per_turn)
                                 .range(10..=400)
                                 .speed(1.0),
                         );
-                        ui.weak(format!(
-                            "= {:.1} {unit} a turn",
-                            f64::from(turret.clicks_per_turn) * rifle.click_value
+                        ui.weak(trf!(
+                            "= {turn:.1} {unit} a turn",
+                            turn = f64::from(turret.clicks_per_turn) * rifle.click_value,
+                            unit = unit
                         ));
                     });
                     ui.end_row();
-                    ui.label("Dialling up turns");
+                    ui.label(tr("Dialling up turns"));
                     ui.horizontal(|ui| {
-                        ui.selectable_value(&mut turret.clockwise, false, "anticlockwise")
-                            .on_hover_text("Seen from above; most scopes");
-                        ui.selectable_value(&mut turret.clockwise, true, "clockwise");
+                        ui.selectable_value(&mut turret.clockwise, false, tr("anticlockwise"))
+                            .on_hover_text(tr("Seen from above; most scopes"));
+                        ui.selectable_value(&mut turret.clockwise, true, tr("clockwise"));
                     });
                     ui.end_row();
                 });
-                ui.weak(format!(
+                ui.weak(trf!(
                     "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
-             clicks of {} {unit}.",
+             clicks of {} {}.",
                     turret.circumference_mm(),
                     turret.height_mm,
                     std::f64::consts::PI * turret.thickness_mm,
                     turret.clicks_per_turn,
-                    rifle.click_value
+                    rifle.click_value,
+                    unit
                 ));
             },
         );
@@ -750,27 +772,27 @@ impl CardsPage {
 
         let options = &mut self.settings.turret;
         ui.add_space(6.0);
-        ui.strong("Ranges");
+        ui.strong(tr("Ranges"));
         grid(ui, "turret-ranges", |ui| {
-            ui.label("From");
+            ui.label(tr("From"));
             ui.weak(if rifle.zero_height_cm.abs() < 0.05 {
-                format!(
+                trf!(
                     "the zero, {}",
                     u.format(Quantity::Distance, rifle.zero_range_m)
                 )
             } else {
-                "where the bullet comes down to the line of sight (the turret's 0)".to_owned()
+                tr("where the bullet comes down to the line of sight (the turret's 0)").to_owned()
             });
             ui.end_row();
             units::quantity(
                 ui,
-                "To",
+                tr("To"),
                 &mut options.end_m,
                 Quantity::Distance,
                 100.0..=2000.0,
                 5.0,
             );
-            ui.label("Numbers every");
+            ui.label(tr("Numbers every"));
             ui.horizontal_wrapped(|ui| {
                 for every in [10.0, 25.0, 50.0, 100.0] {
                     ui.selectable_value(
@@ -781,9 +803,9 @@ impl CardsPage {
                 }
             });
             ui.end_row();
-            ui.label("Marks between");
+            ui.label(tr("Marks between"));
             ui.horizontal_wrapped(|ui| {
-                ui.selectable_value(&mut options.marks_every, 0.0, "none");
+                ui.selectable_value(&mut options.marks_every, 0.0, tr("none"));
                 for every in [5.0, 10.0, 25.0, 50.0] {
                     let divides = (options.numbers_every / every).fract().abs() < 1e-9;
                     if every < options.numbers_every && divides {
@@ -792,12 +814,12 @@ impl CardsPage {
                 }
             });
             ui.end_row();
-            ui.label("Numbers as");
+            ui.label(tr("Numbers as"));
             ui.horizontal_wrapped(|ui| {
                 ui.selectable_value(&mut options.numbers, Numbers::Hundreds, "1 2 3")
-                    .on_hover_text("In hundreds: 1.1 for 110, 1.25 for 125");
+                    .on_hover_text(tr("In hundreds: 1.1 for 110, 1.25 for 125"));
                 ui.selectable_value(&mut options.numbers, Numbers::Tens, "10 11 12")
-                    .on_hover_text("In tens: 11 for 110");
+                    .on_hover_text(tr("In tens: 11 for 110"));
                 ui.selectable_value(&mut options.numbers, Numbers::Full, "100 110 120");
             });
             ui.end_row();
@@ -807,9 +829,9 @@ impl CardsPage {
             options.marks_every = 0.0;
         }
         ui.horizontal_wrapped(|ui| {
-            ui.weak("Quick:");
+            ui.weak(tr("Quick:"));
             if let Some(limit) = ethical
-                && ui.small_button("To the limit").clicked()
+                && ui.small_button(tr("To the limit")).clicked()
             {
                 options.end_m = (limit / 25.0).floor() * 25.0;
             }
@@ -821,62 +843,66 @@ impl CardsPage {
         });
         if self.hunting {
             ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
-                ui.checkbox(&mut options.stop_at_limit, "End at the ethical limit")
-                    .on_hover_text("Otherwise the ranges beyond it get their own colour");
+                ui.checkbox(&mut options.stop_at_limit, tr("End at the ethical limit"))
+                    .on_hover_text(tr("Otherwise the ranges beyond it get their own colour"));
             });
         }
 
         ui.add_space(6.0);
-        ui.strong("Temperature");
+        ui.strong(tr("Temperature"));
         ui.horizontal_wrapped(|ui| {
             let today = subject.conditions.temperature_c;
             ui.selectable_value(
                 &mut options.temperature,
                 Temperature::Today,
-                format!("Today ({})", u.format(Quantity::Temperature, today)),
+                trf!("Today ({})", u.format(Quantity::Temperature, today)),
             );
             match subject.zero_weather {
                 Some(zero) => {
                     ui.selectable_value(
                         &mut options.temperature,
                         Temperature::Zero,
-                        format!(
+                        trf!(
                             "Zeroing ({})",
                             u.format(Quantity::Temperature, zero.temperature_c)
                         ),
                     )
-                    .on_hover_text("The weather the rifle (or this bullet) was zeroed in");
+                    .on_hover_text(tr("The weather the rifle (or this bullet) was zeroed in"));
                 }
                 None => {
-                    ui.add_enabled(false, egui::Button::new("Zeroing"))
-                        .on_disabled_hover_text("This bullet is zeroed in the shot's own weather");
+                    ui.add_enabled(false, egui::Button::new(tr("Zeroing")))
+                        .on_disabled_hover_text(tr(
+                            "This bullet is zeroed in the shot's own weather",
+                        ));
                 }
             }
             let chosen = matches!(options.temperature, Temperature::Chosen(_));
-            if ui.selectable_label(chosen, "Chosen").clicked() && !chosen {
+            if ui.selectable_label(chosen, tr("Chosen")).clicked() && !chosen {
                 options.temperature = Temperature::Chosen(today.round());
             }
             if let Temperature::Chosen(temperature) = &mut options.temperature {
                 units::drag(ui, temperature, Quantity::Temperature, -40.0..=50.0, 1.0);
             }
         });
-        ui.weak("Cold air and cartridges need more clicks: a label for the season.");
+        ui.weak(tr(
+            "Cold air and cartridges need more clicks: a label for the season.",
+        ));
 
         ui.add_space(6.0);
-        let look = format!(
+        let look = trf!(
             "{} · numbers {:.0} % · {}",
             options.font.name(),
             options.number_size * 100.0,
             match options.marker {
-                Marker::None => "no marker",
-                Marker::Tick => "ticks",
-                Marker::Triangle => "triangles",
+                Marker::None => tr("no marker"),
+                Marker::Tick => tr("ticks"),
+                Marker::Triangle => tr("triangles"),
             }
         );
-        fold_with(ui, "turret-look", "Look", &look, false, |ui| {
-            ui.strong("Lettering");
+        fold_with(ui, "turret-look", tr("Look"), &look, false, |ui| {
+            ui.strong(tr("Lettering"));
             grid(ui, "turret-lettering", |ui| {
-                ui.label("Font");
+                ui.label(tr("Font"));
                 egui::ComboBox::from_id_salt("turret-font")
                     .selected_text(RichText::new(options.font.name()).family(options.font.family()))
                     .show_ui(ui, |ui| {
@@ -892,7 +918,7 @@ impl CardsPage {
                         }
                     });
                 ui.end_row();
-                ui.label("Number size");
+                ui.label(tr("Number size"));
                 ui.add(
                     egui::Slider::new(&mut options.number_size, 0.35..=0.9)
                         .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
@@ -903,30 +929,30 @@ impl CardsPage {
                                 .map(|value| value / 100.0)
                         }),
                 )
-                .on_hover_text("Of the band's height");
+                .on_hover_text(tr("Of the band's height"));
                 ui.end_row();
-                ui.label("Under the numbers");
+                ui.label(tr("Under the numbers"));
                 ui.horizontal(|ui| {
-                    ui.selectable_value(&mut options.marker, Marker::None, "nothing");
-                    ui.selectable_value(&mut options.marker, Marker::Tick, "a tick");
-                    ui.selectable_value(&mut options.marker, Marker::Triangle, "a triangle");
+                    ui.selectable_value(&mut options.marker, Marker::None, tr("nothing"));
+                    ui.selectable_value(&mut options.marker, Marker::Tick, tr("a tick"));
+                    ui.selectable_value(&mut options.marker, Marker::Triangle, tr("a triangle"));
                 })
                 .response
-                .on_hover_text("A small mark at the number's exact click");
+                .on_hover_text(tr("A small mark at the number's exact click"));
                 ui.end_row();
-                ui.label("Show");
+                ui.label(tr("Show"));
                 ui.horizontal_wrapped(|ui| {
-                    toggle(ui, &mut options.ruler, "click ruler");
-                    toggle(ui, &mut options.description, "description line");
+                    toggle(ui, &mut options.ruler, tr("click ruler"));
+                    toggle(ui, &mut options.description, tr("description line"));
                 });
                 ui.end_row();
             });
 
             ui.add_space(6.0);
-            ui.strong("Colours");
+            ui.strong(tr("Colours"));
             ui.horizontal_wrapped(|ui| {
                 for (name, background, ink, beyond) in turret::SCHEMES {
-                    let text = RichText::new(name)
+                    let text = RichText::new(turret::scheme_name(name))
                         .color(Color32::from_rgb(ink[0], ink[1], ink[2]))
                         .background_color(Color32::from_rgb(
                             background[0],
@@ -944,22 +970,22 @@ impl CardsPage {
                 }
             });
             grid(ui, "turret-colours", |ui| {
-                ui.label("Label");
+                ui.label(tr("Label"));
                 ui.horizontal(|ui| {
                     egui::color_picker::color_edit_button_srgb(ui, &mut options.background)
-                        .on_hover_text("Background");
+                        .on_hover_text(tr("Background"));
                     egui::color_picker::color_edit_button_srgb(ui, &mut options.ink)
-                        .on_hover_text("Marks and text");
-                    ui.weak("background, marks");
+                        .on_hover_text(tr("Marks and text"));
+                    ui.weak(tr("background, marks"));
                 });
                 ui.end_row();
                 if hunting {
-                    ui.label("Beyond the limit");
+                    ui.label(tr("Beyond the limit"));
                     egui::color_picker::color_edit_button_srgb(ui, &mut options.beyond);
                     ui.end_row();
                 }
                 if options.description {
-                    ui.label("Description");
+                    ui.label(tr("Description"));
                     part_colours(
                         ui,
                         &mut options.description_colours,
@@ -972,13 +998,13 @@ impl CardsPage {
                     if options.bands.len() <= turn {
                         options.bands.resize(turn + 1, turret::Colours::default());
                     }
-                    ui.label(format!("Turn {}", turn + 1));
+                    ui.label(trf!("Turn {}", turn + 1));
                     let (background, ink) = (options.background, options.ink);
                     part_colours(ui, &mut options.bands[turn], background, ink);
                     ui.end_row();
                 }
                 if options.ruler {
-                    ui.label("Ruler");
+                    ui.label(tr("Ruler"));
                     part_colours(
                         ui,
                         &mut options.ruler_colours,
@@ -988,10 +1014,12 @@ impl CardsPage {
                     ui.end_row();
                 }
             });
-            egui::CollapsingHeader::new("Colours of single ranges")
+            egui::CollapsingHeader::new(tr("Colours of single ranges"))
                 .id_salt("turret-range-colours")
                 .show(ui, |ui| {
-                    ui.weak("Give a range a colour of its own, say the ones you shoot most.");
+                    ui.weak(tr(
+                        "Give a range a colour of its own, say the ones you shoot most.",
+                    ));
                     egui::Grid::new("turret-range-colour-grid")
                         .num_columns(3)
                         .spacing([10.0, 3.0])
@@ -1002,9 +1030,9 @@ impl CardsPage {
                                 let mut colour = options.mark_colour(mark, turn);
                                 ui.label(u.format(Quantity::Distance, mark.range_m));
                                 ui.weak(if mark.crowded {
-                                    format!("{} clicks, left off", mark.clicks)
+                                    trf!("{} clicks, left off", mark.clicks)
                                 } else {
-                                    format!("{} clicks", mark.clicks)
+                                    trf!("{} clicks", mark.clicks)
                                 });
                                 ui.horizontal(|ui| {
                                     if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
@@ -1015,7 +1043,7 @@ impl CardsPage {
                                     if options.range_colours.contains_key(&key)
                                         && ui
                                             .small_button("↺")
-                                            .on_hover_text("Back to its band's")
+                                            .on_hover_text(tr("Back to its band's"))
                                             .clicked()
                                     {
                                         options.range_colours.remove(&key);
@@ -1028,7 +1056,7 @@ impl CardsPage {
         });
         ui.add_space(6.0);
         ui.horizontal(|ui| {
-            ui.label("Copies on the sheet");
+            ui.label(tr("Copies on the sheet"));
             ui.add(egui::DragValue::new(&mut options.copies).range(1..=8));
         });
     }
@@ -1043,23 +1071,23 @@ impl CardsPage {
         let u = units::prefs(ui.ctx());
         let options = &mut self.settings.dope;
 
-        ui.strong("Size");
+        ui.strong(tr("Size"));
         size_tiles(ui, &mut options.size, options.landscape, &CardSize::ALL);
         ui.horizontal_wrapped(|ui| {
-            ui.selectable_value(&mut options.landscape, false, "Portrait");
-            ui.selectable_value(&mut options.landscape, true, "Landscape");
+            ui.selectable_value(&mut options.landscape, false, tr("Portrait"));
+            ui.selectable_value(&mut options.landscape, true, tr("Landscape"));
             if options.size != CardSize::A4 {
-                ui.checkbox(&mut options.on_a4, "Several on an A4 sheet")
-                    .on_hover_text("With cut lines, for an ordinary printer");
+                ui.checkbox(&mut options.on_a4, tr("Several on an A4 sheet"))
+                    .on_hover_text(tr("With cut lines, for an ordinary printer"));
             }
         });
 
         ui.add_space(6.0);
-        ui.strong("Ranges");
+        ui.strong(tr("Ranges"));
         grid(ui, "card-ranges", |ui| {
             units::quantity(
                 ui,
-                "From",
+                tr("From"),
                 &mut options.start_m,
                 Quantity::Distance,
                 0.0..=2900.0,
@@ -1067,7 +1095,7 @@ impl CardsPage {
             );
             units::quantity(
                 ui,
-                "To",
+                tr("To"),
                 &mut options.end_m,
                 Quantity::Distance,
                 10.0..=3000.0,
@@ -1075,7 +1103,7 @@ impl CardsPage {
             );
             units::quantity(
                 ui,
-                "Every",
+                tr("Every"),
                 &mut options.step_m,
                 Quantity::Distance,
                 5.0..=500.0,
@@ -1086,11 +1114,11 @@ impl CardsPage {
             options.end_m = options.start_m + options.step_m;
         }
         ui.horizontal_wrapped(|ui| {
-            ui.weak("Quick:");
+            ui.weak(tr("Quick:"));
             if let Some(limit) = ethical
                 && ui
-                    .small_button("To the limit")
-                    .on_hover_text("From 50 m to the ethical limit, every 25 m")
+                    .small_button(tr("To the limit"))
+                    .on_hover_text(tr("From 50 m to the ethical limit, every 25 m"))
                     .clicked()
             {
                 options.start_m = 50.0;
@@ -1098,9 +1126,21 @@ impl CardsPage {
                 options.step_m = 25.0;
             }
             for (label, hint, start, end, step) in [
-                ("Driven hunt", "25 to 150 m every 25 m", 25.0, 150.0, 25.0),
-                ("Stand", "50 to 300 m every 50 m", 50.0, 300.0, 50.0),
-                ("Long", "100 to 600 m every 50 m", 100.0, 600.0, 50.0),
+                (
+                    tr("Driven hunt"),
+                    tr("25 to 150 m every 25 m"),
+                    25.0,
+                    150.0,
+                    25.0,
+                ),
+                (tr("Stand"), tr("50 to 300 m every 50 m"), 50.0, 300.0, 50.0),
+                (
+                    tr("Long"),
+                    tr("100 to 600 m every 50 m"),
+                    100.0,
+                    600.0,
+                    50.0,
+                ),
             ] {
                 if ui.small_button(label).on_hover_text(hint).clicked() {
                     options.start_m = start;
@@ -1115,20 +1155,24 @@ impl CardsPage {
                 ui.checkbox(
                     &mut options.stop_at_limit,
                     match ethical {
-                        Some(limit) => format!(
+                        Some(limit) => trf!(
                             "End at the ethical limit ({})",
                             u.format(Quantity::Distance, limit)
                         ),
-                        None => "End at the ethical limit".to_owned(),
+                        None => tr("End at the ethical limit").to_owned(),
                     },
                 )
-                .on_hover_text("Otherwise the ranges beyond it are greyed below a red line");
+                .on_hover_text(tr(
+                    "Otherwise the ranges beyond it are greyed below a red line",
+                ));
             },
         );
 
         ui.add_space(6.0);
-        ui.strong("Temperatures");
-        ui.weak("An elevation column for each; the cartridges at the same temperature.");
+        ui.strong(tr("Temperatures"));
+        ui.weak(tr(
+            "An elevation column for each; the cartridges at the same temperature.",
+        ));
         let mut temperatures = options.temperatures(today);
         if chips(
             ui,
@@ -1142,33 +1186,30 @@ impl CardsPage {
             options.temperatures = temperatures;
         }
         ui.horizontal_wrapped(|ui| {
-            ui.weak("Quick:");
+            ui.weak(tr("Quick:"));
             if ui
-                .small_button(format!(
-                    "Today ({})",
-                    u.format(Quantity::Temperature, today)
-                ))
+                .small_button(trf!("Today ({})", u.format(Quantity::Temperature, today)))
                 .clicked()
             {
                 options.temperatures.clear();
             }
             if ui
-                .small_button("Autumn")
-                .on_hover_text("−5, +5 and +15 °C")
+                .small_button(tr("Autumn"))
+                .on_hover_text(tr("−5, +5 and +15 °C"))
                 .clicked()
             {
                 options.temperatures = vec![-5.0, 5.0, 15.0];
             }
             if ui
-                .small_button("Winter")
-                .on_hover_text("−20, −10 and 0 °C")
+                .small_button(tr("Winter"))
+                .on_hover_text(tr("−20, −10 and 0 °C"))
                 .clicked()
             {
                 options.temperatures = vec![-20.0, -10.0, 0.0];
             }
             if ui
-                .small_button("All year")
-                .on_hover_text("−20, 0 and +20 °C")
+                .small_button(tr("All year"))
+                .on_hover_text(tr("−20, 0 and +20 °C"))
                 .clicked()
             {
                 options.temperatures = vec![-20.0, 0.0, 20.0];
@@ -1176,14 +1217,14 @@ impl CardsPage {
         });
 
         ui.add_space(6.0);
-        ui.strong("Elevation as");
+        ui.strong(tr("Elevation as"));
         ui.horizontal_wrapped(|ui| {
-            toggle(ui, &mut options.clicks, "clicks");
+            toggle(ui, &mut options.clicks, tr("clicks"));
             toggle(ui, &mut options.angle, angle);
             toggle(
                 ui,
                 &mut options.drop,
-                &format!("{} (dead-on hold)", u.label(Quantity::ShortLength)),
+                &trf!("{} (dead-on hold)", u.label(Quantity::ShortLength)),
             );
         });
         if !(options.clicks || options.angle || options.drop) {
@@ -1191,8 +1232,10 @@ impl CardsPage {
         }
 
         ui.add_space(6.0);
-        ui.strong("Wind");
-        ui.weak("Full value, from 3 or 9 o'clock: a column for each speed.");
+        ui.strong(tr("Wind"));
+        ui.weak(tr(
+            "Full value, from 3 or 9 o'clock: a column for each speed.",
+        ));
         chips(
             ui,
             "card-winds",
@@ -1203,13 +1246,13 @@ impl CardsPage {
             |last| last + 2.0,
         );
         ui.horizontal_wrapped(|ui| {
-            ui.weak("Quick:");
-            if ui.small_button("None").clicked() {
+            ui.weak(tr("Quick:"));
+            if ui.small_button(tr("None")).clicked() {
                 options.winds.clear();
             }
             if ui
-                .small_button("Per 1 m/s")
-                .on_hover_text("Multiply by the wind")
+                .small_button(tr("Per 1 m/s"))
+                .on_hover_text(tr("Multiply by the wind"))
                 .clicked()
             {
                 options.winds = vec![1.0];
@@ -1220,8 +1263,8 @@ impl CardsPage {
         });
         if !options.winds.is_empty() {
             ui.horizontal_wrapped(|ui| {
-                ui.label("as");
-                ui.selectable_value(&mut options.wind_as, Measure::Clicks, "clicks");
+                ui.label(tr("as"));
+                ui.selectable_value(&mut options.wind_as, Measure::Clicks, tr("clicks"));
                 ui.selectable_value(&mut options.wind_as, Measure::Angle, angle);
                 ui.selectable_value(
                     &mut options.wind_as,
@@ -1232,18 +1275,18 @@ impl CardsPage {
         }
 
         ui.add_space(6.0);
-        ui.strong("Also");
+        ui.strong(tr("Also"));
         ui.horizontal_wrapped(|ui| {
-            toggle(ui, &mut options.velocity, "speed");
-            toggle(ui, &mut options.energy, "energy");
-            toggle(ui, &mut options.time, "time of flight");
+            toggle(ui, &mut options.velocity, tr("speed"));
+            toggle(ui, &mut options.energy, tr("energy"));
+            toggle(ui, &mut options.time, tr("time of flight"));
         });
-        ui.checkbox(&mut options.legend, "Explain the marks at the foot");
+        ui.checkbox(&mut options.legend, tr("Explain the marks at the foot"));
         ui.horizontal(|ui| {
-            ui.label("Note");
+            ui.label(tr("Note"));
             ui.add(
                 egui::TextEdit::singleline(&mut options.note)
-                    .hint_text("e.g. Moose hunt 2026, tower 4")
+                    .hint_text(tr("e.g. Moose hunt 2026, tower 4"))
                     .desired_width(f32::INFINITY),
             );
         });
@@ -1260,29 +1303,29 @@ impl CardsPage {
                         ui.selectable_value(&mut chosen, index, &stand.name);
                     }
                 });
-            if ui.button("New stand").clicked() {
+            if ui.button(tr("New stand")).clicked() {
                 settings.stands.push(Stand {
-                    name: format!("Stand {}", settings.stands.len() + 1),
+                    name: trf!("Stand {}", settings.stands.len() + 1),
                     ..Stand::default()
                 });
                 chosen = settings.stands.len() - 1;
             }
-            if settings.stands.len() > 1 && confirm_button(ui, "delete-stand", "Delete") {
+            if settings.stands.len() > 1 && confirm_button(ui, "delete-stand", tr("Delete")) {
                 settings.stands.remove(chosen);
                 chosen = chosen.saturating_sub(1);
             }
         });
         settings.stand_index = chosen.min(settings.stands.len() - 1);
-        ui.weak("Stands are kept on this device.");
+        ui.weak(tr("Stands are kept on this device."));
         let stand = &mut settings.stands[settings.stand_index];
         let compass = crate::sensors::has_compass();
         let mut wanted = None;
 
         grid(ui, "stand-main", |ui| {
-            ui.label("Name");
+            ui.label(tr("Name"));
             ui.text_edit_singleline(&mut stand.name);
             ui.end_row();
-            ui.label("Faces");
+            ui.label(tr("Faces"));
             ui.horizontal(|ui| {
                 bearing(ui, &mut stand.facing_degrees);
                 if compass && compass_button(ui) {
@@ -1290,17 +1333,17 @@ impl CardsPage {
                 }
             });
             ui.end_row();
-            ui.label("Map");
+            ui.label(tr("Map"));
             ui.horizontal(|ui| {
                 for view in [View::Quarter, View::Half, View::Full] {
                     ui.selectable_value(&mut stand.view, view, view.name());
                 }
             });
             ui.end_row();
-            ui.label("Note");
+            ui.label(tr("Note"));
             ui.add(
                 egui::TextEdit::singleline(&mut stand.note)
-                    .hint_text("e.g. Shoot only towards the ridge")
+                    .hint_text(tr("e.g. Shoot only towards the ridge"))
                     .desired_width(f32::INFINITY),
             );
             ui.end_row();
@@ -1309,8 +1352,8 @@ impl CardsPage {
         ui.add_space(6.0);
         let mut has_sector = stand.sector.is_some();
         if ui
-            .checkbox(&mut has_sector, "Shooting sector")
-            .on_hover_text("The edges the hunt leader gave; outside is greyed")
+            .checkbox(&mut has_sector, tr("Shooting sector"))
+            .on_hover_text(tr("The edges the hunt leader gave; outside is greyed"))
             .changed()
         {
             stand.sector = has_sector.then(|| {
@@ -1320,7 +1363,7 @@ impl CardsPage {
         }
         if let Some([left, right]) = &mut stand.sector {
             grid(ui, "stand-sector", |ui| {
-                ui.label("Left edge");
+                ui.label(tr("Left edge"));
                 ui.horizontal(|ui| {
                     bearing(ui, left);
                     if compass && compass_button(ui) {
@@ -1328,7 +1371,7 @@ impl CardsPage {
                     }
                 });
                 ui.end_row();
-                ui.label("Right edge");
+                ui.label(tr("Right edge"));
                 ui.horizontal(|ui| {
                     bearing(ui, right);
                     if compass && compass_button(ui) {
@@ -1340,8 +1383,10 @@ impl CardsPage {
         }
 
         ui.add_space(6.0);
-        ui.strong("Landmarks");
-        ui.weak("What you see from the stand, with its range (a rangefinder) and direction.");
+        ui.strong(tr("Landmarks"));
+        ui.weak(tr(
+            "What you see from the stand, with its range (a rangefinder) and direction.",
+        ));
         let mut remove = None;
         egui::Grid::new("stand-landmarks")
             .num_columns(4)
@@ -1350,7 +1395,8 @@ impl CardsPage {
                 for (index, landmark) in stand.landmarks.iter_mut().enumerate() {
                     ui.add_sized(
                         [110.0, 20.0],
-                        egui::TextEdit::singleline(&mut landmark.name).hint_text("e.g. Big rock"),
+                        egui::TextEdit::singleline(&mut landmark.name)
+                            .hint_text(tr("e.g. Big rock")),
                     );
                     units::drag(
                         ui,
@@ -1365,7 +1411,7 @@ impl CardsPage {
                             wanted = Some(Heading::Landmark(index));
                         }
                     });
-                    if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                    if ui.small_button("✖").on_hover_text(tr("Remove")).clicked() {
                         remove = Some(index);
                     }
                     ui.end_row();
@@ -1374,7 +1420,7 @@ impl CardsPage {
         if let Some(index) = remove {
             stand.landmarks.remove(index);
         }
-        if ui.button("+ Landmark").clicked() {
+        if ui.button(tr("+ Landmark")).clicked() {
             let previous = stand.landmarks.last();
             stand.landmarks.push(Landmark {
                 name: String::new(),
@@ -1386,8 +1432,10 @@ impl CardsPage {
         }
 
         ui.add_space(6.0);
-        ui.strong("Never shoot towards");
-        ui.weak("Roads, houses, the next stand: clockwise from one direction to the other.");
+        ui.strong(tr("Never shoot towards"));
+        ui.weak(tr(
+            "Roads, houses, the next stand: clockwise from one direction to the other.",
+        ));
         let mut remove = None;
         egui::Grid::new("stand-no-shoot")
             .num_columns(4)
@@ -1396,11 +1444,11 @@ impl CardsPage {
                 for (index, no) in stand.no_shoot.iter_mut().enumerate() {
                     ui.add_sized(
                         [110.0, 20.0],
-                        egui::TextEdit::singleline(&mut no.name).hint_text("e.g. Road"),
+                        egui::TextEdit::singleline(&mut no.name).hint_text(tr("e.g. Road")),
                     );
                     bearing(ui, &mut no.from_degrees);
                     bearing(ui, &mut no.to_degrees);
-                    if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                    if ui.small_button("✖").on_hover_text(tr("Remove")).clicked() {
                         remove = Some(index);
                     }
                     ui.end_row();
@@ -1409,7 +1457,7 @@ impl CardsPage {
         if let Some(index) = remove {
             stand.no_shoot.remove(index);
         }
-        if ui.button("+ Direction").clicked() {
+        if ui.button(tr("+ Direction")).clicked() {
             stand.no_shoot.push(NoShoot {
                 name: String::new(),
                 from_degrees: (stand.facing_degrees + 60.0).rem_euclid(360.0),
@@ -1420,10 +1468,10 @@ impl CardsPage {
         ui.add_space(6.0);
         let u = units::prefs(ui.ctx());
         let options = &mut settings.stand;
-        ui.strong("Rings");
+        ui.strong(tr("Rings"));
         ui.horizontal_wrapped(|ui| {
-            ui.label("Every");
-            ui.selectable_value(&mut options.ring_step_m, None, "auto");
+            ui.label(tr("Every"));
+            ui.selectable_value(&mut options.ring_step_m, None, tr("auto"));
             for step in [25.0, 50.0, 100.0] {
                 ui.selectable_value(
                     &mut options.ring_step_m,
@@ -1434,7 +1482,7 @@ impl CardsPage {
         });
         ui.horizontal_wrapped(|ui| {
             let mut fixed = options.max_range_m.is_some();
-            if ui.checkbox(&mut fixed, "Out to").changed() {
+            if ui.checkbox(&mut fixed, tr("Out to")).changed() {
                 options.max_range_m = fixed.then_some(300.0);
             }
             match &mut options.max_range_m {
@@ -1442,14 +1490,14 @@ impl CardsPage {
                     units::drag(ui, range, Quantity::Distance, 50.0..=2000.0, 5.0);
                 }
                 None => {
-                    ui.weak("past the landmarks and the limit");
+                    ui.weak(tr("past the landmarks and the limit"));
                 }
             }
         });
         ui.horizontal_wrapped(|ui| {
-            ui.label("Hold as");
-            ui.selectable_value(&mut options.hold_as, Measure::Clicks, "clicks");
-            ui.selectable_value(&mut options.hold_as, Measure::Angle, "mil or MOA");
+            ui.label(tr("Hold as"));
+            ui.selectable_value(&mut options.hold_as, Measure::Clicks, tr("clicks"));
+            ui.selectable_value(&mut options.hold_as, Measure::Angle, tr("mil or MOA"));
             ui.selectable_value(
                 &mut options.hold_as,
                 Measure::Length,
@@ -1457,7 +1505,7 @@ impl CardsPage {
             );
         });
         ui.add_space(6.0);
-        ui.strong("Size");
+        ui.strong(tr("Size"));
         size_tiles(
             ui,
             &mut options.size,
@@ -1465,8 +1513,8 @@ impl CardsPage {
             &[CardSize::A6, CardSize::A5, CardSize::A4],
         );
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut options.landscape, false, "Portrait");
-            ui.selectable_value(&mut options.landscape, true, "Landscape");
+            ui.selectable_value(&mut options.landscape, false, tr("Portrait"));
+            ui.selectable_value(&mut options.landscape, true, tr("Landscape"));
         });
         if options.size == CardSize::Card || options.size == CardSize::A7 {
             options.size = CardSize::A6;
@@ -1477,7 +1525,9 @@ impl CardsPage {
             self.heading = Some(wanted);
         }
         if self.heading.is_some() {
-            ui.weak("🧭 Hold the phone flat, its top edge towards the place…");
+            ui.weak(tr(
+                "🧭 Hold the phone flat, its top edge towards the place…",
+            ));
             ui.ctx().request_repaint();
         }
     }
@@ -1595,13 +1645,13 @@ fn chips(
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 2.0;
                             units::drag(ui, value, quantity, range.clone(), speed);
-                            if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                            if ui.small_button("✖").on_hover_text(tr("Remove")).clicked() {
                                 remove = Some(index);
                             }
                         });
                     });
             }
-            if values.len() < 6 && ui.button("+").on_hover_text("Add one").clicked() {
+            if values.len() < 6 && ui.button("+").on_hover_text(tr("Add one")).clicked() {
                 let value = values
                     .last()
                     .map_or(range.start().max(0.0), |last| next(*last));
@@ -1624,8 +1674,8 @@ fn part_colours(
 ) {
     ui.horizontal(|ui| {
         for (value, fallback, hint) in [
-            (&mut colours.background, background, "Background"),
-            (&mut colours.ink, ink, "Marks and text"),
+            (&mut colours.background, background, tr("Background")),
+            (&mut colours.ink, ink, tr("Marks and text")),
         ] {
             let mut colour = value.unwrap_or(fallback);
             if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
@@ -1638,7 +1688,7 @@ fn part_colours(
         if (colours.background.is_some() || colours.ink.is_some())
             && ui
                 .small_button("↺")
-                .on_hover_text("The label's colours")
+                .on_hover_text(tr("The label's colours"))
                 .clicked()
         {
             *colours = turret::Colours::default();
@@ -1672,7 +1722,7 @@ fn bearing(ui: &mut egui::Ui, degrees: &mut f64) {
 
 fn compass_button(ui: &mut egui::Ui) -> bool {
     ui.small_button("🧭")
-        .on_hover_text("Point the phone's top edge that way")
+        .on_hover_text(tr("Point the phone's top edge that way"))
         .clicked()
 }
 
@@ -1719,7 +1769,7 @@ fn tile(card: &Sheet, options: &DopeOptions) -> Vec<Sheet> {
     }
     page.text(
         [A4[0] / 2.0, A4[1] - 4.0],
-        "Print at actual size (100 %). Cut along the thin grey frames.",
+        tr("Print at actual size (100 %). Cut along the thin grey frames."),
         7.0,
         false,
         sheet::Align::Center,
@@ -1758,21 +1808,21 @@ fn save(context: &egui::Context, file: &str, bytes: &[u8]) -> (String, bool) {
             .add_filter("PDF", &["pdf"])
             .save_file()
         else {
-            return ("Not saved".into(), false);
+            return (tr("Not saved").into(), false);
         };
         match std::fs::write(&path, bytes) {
             Ok(()) => {
                 crate::http::open_in_browser(context, &path.to_string_lossy());
-                (format!("Saved {}", path.display()), false)
+                (trf!("Saved {}", path.display()), false)
             }
-            Err(error) => (format!("Could not save {}: {error}", path.display()), true),
+            Err(error) => (trf!("Could not save {}: {}", path.display(), error), true),
         }
     }
     #[cfg(target_arch = "wasm32")]
     {
         let _ = context;
         match crate::web::download_bytes(file, bytes, "application/pdf") {
-            Ok(()) => (format!("Saved {file} in your downloads"), false),
+            Ok(()) => (trf!("Saved {} in your downloads", file), false),
             Err(error) => (error, true),
         }
     }

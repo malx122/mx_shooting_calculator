@@ -17,6 +17,7 @@ use super::{
 };
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
+use crate::i18n::{tr, trf};
 use crate::mobile::{self, TOUCH};
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
@@ -55,13 +56,15 @@ pub(super) struct PhoneFrame<'a> {
 }
 
 /// Preset wind speeds (m/s) and what they feel like.
-const WIND_PRESETS: [(f64, &str); 5] = [
-    (0.0, "calm"),
-    (2.0, "light"),
-    (3.0, "gentle"),
-    (6.0, "fresh"),
-    (10.0, "strong"),
-];
+fn wind_presets() -> [(f64, &'static str); 5] {
+    [
+        (0.0, tr("calm")),
+        (2.0, tr("light")),
+        (3.0, tr("gentle")),
+        (6.0, tr("fresh")),
+        (10.0, tr("strong")),
+    ]
+}
 
 const ANGLE_PRESETS: [f64; 7] = [-30.0, -20.0, -10.0, 0.0, 10.0, 20.0, 30.0];
 
@@ -75,7 +78,7 @@ impl CalculatorPage {
     ) {
         egui::CentralPanel::default().show(context, |ui| match self.phone_view {
             PhoneView::Conditions => {
-                if mobile::back_button(ui, "Calculate") {
+                if mobile::back_button(ui, tr("Calculate")) {
                     self.phone_view = PhoneView::Results;
                 }
                 egui::ScrollArea::vertical().show(ui, |ui| {
@@ -128,20 +131,20 @@ impl CalculatorPage {
         let u = units::prefs(context);
         let (ethical, point_blank) = self.limits;
         match (ethical, point_blank) {
-            (Some(limit), _) if self.inputs.target_range_m > limit => Some(format!(
+            (Some(limit), _) if self.inputs.target_range_m > limit => Some(trf!(
                 "Beyond the ethical range ({})",
                 u.format(Quantity::Distance, limit)
             )),
-            (Some(limit), Some(blank)) => Some(format!(
+            (Some(limit), Some(blank)) => Some(trf!(
                 "Inside the ethical range ({}) · dead-on hold to {}",
                 u.format(Quantity::Distance, limit),
                 u.format(Quantity::Distance, blank)
             )),
-            (Some(limit), None) => Some(format!(
+            (Some(limit), None) => Some(trf!(
                 "Inside the ethical range ({})",
                 u.format(Quantity::Distance, limit)
             )),
-            (None, Some(blank)) => Some(format!(
+            (None, Some(blank)) => Some(trf!(
                 "Dead-on hold to {}",
                 u.format(Quantity::Distance, blank)
             )),
@@ -154,7 +157,7 @@ impl CalculatorPage {
         let u = units::prefs(ui.ctx());
         // The setup: tapping it opens all the inputs.
         let title = frame.rifle.map_or_else(
-            || "Choose a rifle".to_owned(),
+            || tr("Choose a rifle").to_owned(),
             |rifle| format!("{} · {}", rifle.name, caliber_name(&rifle.caliber)),
         );
         let pressure = match self.inputs.pressure_source {
@@ -178,20 +181,20 @@ impl CalculatorPage {
             ui.add_space(8.0);
             match frame.rifle {
                 None => {
-                    ui.heading("Add a rifle to start");
-                    if ui.button("Go to Rifles").clicked() {
+                    ui.heading(tr("Add a rifle to start"));
+                    if ui.button(tr("Go to Rifles")).clicked() {
                         actions.push(Action::Goto(Page::Rifles));
                     }
-                    if ui.button("Load demo data").clicked() {
+                    if ui.button(tr("Load demo data")).clicked() {
                         actions.push(Action::LoadDemo);
                     }
                 }
                 Some(rifle) => {
-                    ui.heading(format!(
+                    ui.heading(trf!(
                         "No {} bullets in your collection",
                         caliber_name(&rifle.caliber)
                     ));
-                    if ui.button("Go to Bullets").clicked() {
+                    if ui.button(tr("Go to Bullets")).clicked() {
                         actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                     }
                 }
@@ -237,7 +240,7 @@ impl CalculatorPage {
                     view.show_phone(ui, solution, computed.optimal.as_ref())
                 }
                 Err(error) => {
-                    ui.heading("No solution");
+                    ui.heading(tr("No solution"));
                     ui.colored_label(ui.visuals().error_fg_color, error.to_string());
                     ViewRequests::default()
                 }
@@ -252,8 +255,12 @@ impl CalculatorPage {
         rifle: Option<&Rifle>,
         note: Option<String>,
     ) {
+        let beyond = self
+            .limits
+            .0
+            .is_some_and(|limit| self.inputs.target_range_m > limit);
         let inputs = &mut self.inputs;
-        let shown = mobile::sheet(context, "range-picker", "Range", |ui| {
+        let shown = mobile::sheet(context, "range-picker", tr("Range"), |ui| {
             let u = units::prefs(ui.ctx());
             let unit = u.unit(Quantity::Distance);
             ui.vertical_centered(|ui| {
@@ -267,9 +274,9 @@ impl CalculatorPage {
                         1.0,
                     );
                 });
-                ui.weak("Tap the number to type an exact range");
+                ui.weak(tr("Tap the number to type an exact range"));
                 if let Some(note) = &note {
-                    let colour = if note.starts_with("Beyond") {
+                    let colour = if beyond {
                         ui.visuals().warn_fg_color
                     } else {
                         theme::MEADOW
@@ -319,7 +326,7 @@ impl CalculatorPage {
                     presets.push(*recent);
                 }
             }
-            ui.weak("From your range table, and recent");
+            ui.weak(tr("From your range table, and recent"));
             ui.horizontal_wrapped(|ui| {
                 for preset in presets {
                     let selected = (preset - inputs.target_range_m).abs() < 0.5;
@@ -350,11 +357,11 @@ impl CalculatorPage {
 
     fn angle_sheet(&mut self, context: &egui::Context) {
         let inputs = &mut self.inputs;
-        let shown = mobile::sheet(context, "angle-picker", "Shot angle", |ui| {
+        let shown = mobile::sheet(context, "angle-picker", tr("Shot angle"), |ui| {
             ui.horizontal(|ui| {
                 inclinometer(ui, &mut inputs.inclination_degrees);
                 ui.vertical(|ui| {
-                    ui.weak("Angle to the target");
+                    ui.weak(tr("Angle to the target"));
                     ui.scope(|ui| {
                         ui.style_mut().override_font_id = Some(FontId::proportional(36.0));
                         ui.add(
@@ -367,21 +374,21 @@ impl CalculatorPage {
                     });
                     let angle = inputs.inclination_degrees;
                     let (text, colour) = if angle > 0.5 {
-                        ("uphill", theme::AMBER)
+                        (tr("uphill"), theme::AMBER)
                     } else if angle < -0.5 {
-                        ("downhill", theme::AMBER)
+                        (tr("downhill"), theme::AMBER)
                     } else {
-                        ("level", theme::BONE_MUTED)
+                        (tr("level"), theme::BONE_MUTED)
                     };
                     ui.colored_label(colour, text);
-                    ui.weak("The holds take the angle into account.");
+                    ui.weak(tr("The holds take the angle into account."));
                 });
             });
             #[cfg(target_arch = "wasm32")]
             measure_with_phone(ui, &mut inputs.inclination_degrees);
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                ui.label("Cant");
+                ui.label(tr("Cant"));
                 ui.add(
                     egui::DragValue::new(&mut inputs.cant_degrees)
                         .range(-30.0..=30.0)
@@ -389,7 +396,7 @@ impl CalculatorPage {
                         .max_decimals(1)
                         .suffix("°"),
                 );
-                ui.weak("rifle tilted; + with the scope's top to the right");
+                ui.weak(tr("rifle tilted; + with the scope's top to the right"));
             });
             ui.add_space(6.0);
             let width = (ui.available_width() - 6.0 * 6.0) / 7.0;
@@ -419,13 +426,15 @@ impl CalculatorPage {
     fn wind_sheet(&mut self, context: &egui::Context) {
         let inputs = &mut self.inputs;
         let report = self.weather.report.clone();
-        let shown = mobile::sheet(context, "wind-picker", "Wind", |ui| {
+        let shown = mobile::sheet(context, "wind-picker", tr("Wind"), |ui| {
             let u = units::prefs(ui.ctx());
             ui.vertical_centered(|ui| {
-                ui.weak("Tap where the wind comes from · 12 is towards the target");
+                ui.weak(tr(
+                    "Tap where the wind comes from · 12 is towards the target",
+                ));
                 wind_clock(ui, &mut inputs.wind_clock);
                 ui.label(
-                    RichText::new(format!(
+                    RichText::new(trf!(
                         "From {} · {}",
                         clock_text(inputs.wind_clock),
                         wind_description(inputs.wind_clock)
@@ -467,7 +476,7 @@ impl CalculatorPage {
             let width = (ui.available_width() - 4.0 * 6.0) / 5.0;
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                for (speed, feel) in WIND_PRESETS {
+                for (speed, feel) in wind_presets() {
                     let selected = (inputs.wind_speed - speed).abs() < 0.05;
                     let label = format!("{:.0}\n{feel}", unit.show(speed));
                     if ui
@@ -487,7 +496,7 @@ impl CalculatorPage {
                 let speed = crate::weather::shooting_height_speed(report);
                 let clock =
                     crate::weather::wind_clock(report.wind_from_degrees, inputs.azimuth_degrees);
-                ui.weak(format!(
+                ui.weak(trf!(
                     "Forecast: {} from {} at {}, shooting towards {:.0}° {} (set under Conditions)",
                     u.format(Quantity::WindSpeed, report.wind_speed_mps),
                     crate::weather::compass_point(report.wind_from_degrees),
@@ -497,7 +506,7 @@ impl CalculatorPage {
                 ));
                 if ui
                     .add(
-                        egui::Button::new(format!(
+                        egui::Button::new(trf!(
                             "Use the forecast: {} from {}",
                             u.format(Quantity::WindSpeed, speed),
                             clock_text(clock)
@@ -521,10 +530,10 @@ impl CalculatorPage {
         let current = self.inputs.target_id.clone();
         let recent = self.inputs.recent_targets.clone();
         let search = &mut self.target_search;
-        let shown = mobile::sheet(context, "target-picker", "Target", |ui| {
+        let shown = mobile::sheet(context, "target-picker", tr("Target"), |ui| {
             ui.add(
                 egui::TextEdit::singleline(search)
-                    .hint_text("Search: roe, rådjur, fox, ISSF…")
+                    .hint_text(tr("Search: roe, rådjur, fox, ISSF…"))
                     .desired_width(f32::INFINITY)
                     .min_size(vec2(0.0, 40.0)),
             );
@@ -532,7 +541,7 @@ impl CalculatorPage {
             let row = |ui: &mut Ui, target: &Target| {
                 mobile::list_row(
                     ui,
-                    &target.name,
+                    crate::i18n::target_name(target),
                     &target_summary(ui, target, data.hunting),
                     current.as_deref() == Some(target.id.as_str()),
                 )
@@ -542,8 +551,8 @@ impl CalculatorPage {
             if query.is_empty() {
                 if mobile::list_row(
                     ui,
-                    "No target",
-                    "Just the reticle and the impact point",
+                    tr("No target"),
+                    tr("Just the reticle and the impact point"),
                     current.is_none(),
                 )
                 .clicked()
@@ -553,7 +562,7 @@ impl CalculatorPage {
                 let recent: Vec<Target> = recent.iter().filter_map(|id| data.target(id)).collect();
                 if !recent.is_empty() {
                     ui.add_space(6.0);
-                    ui.weak("RECENT");
+                    ui.weak(tr("RECENT"));
                     for target in &recent {
                         if row(ui, target) {
                             chosen = Some(Some(target.id.clone()));
@@ -564,7 +573,7 @@ impl CalculatorPage {
             let mine: Vec<&Target> = data.targets.iter().filter(|t| t.matches(&query)).collect();
             if !mine.is_empty() {
                 ui.add_space(6.0);
-                ui.weak("MY TARGETS");
+                ui.weak(tr("MY TARGETS"));
                 for target in mine {
                     if row(ui, target) {
                         chosen = Some(Some(target.id.clone()));
@@ -612,7 +621,7 @@ impl ResultsView<'_> {
             None => {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
-                    "The bullet does not reach this range.",
+                    tr("The bullet does not reach this range."),
                 );
             }
         }
@@ -630,7 +639,7 @@ impl ResultsView<'_> {
                     crate::hunting::Tone::Plain => ("·", theme::BONE_MUTED),
                 };
                 job.append(
-                    &format!("{mark} {}", pill.what),
+                    &format!("{mark} {}", pill.what_text()),
                     if index == 0 { 0.0 } else { 14.0 },
                     egui::TextFormat::simple(egui::TextStyle::Body.resolve(ui.style()), colour),
                 );
@@ -645,14 +654,14 @@ impl ResultsView<'_> {
         ui.add_space(6.0);
 
         let limits_title = if self.aim.is_game() {
-            "Hunting limits"
+            tr("Hunting limits")
         } else {
-            "Limits"
+            tr("Limits")
         };
         let u = units::prefs(ui.ctx());
         let summary = match (ethical, point_blank) {
-            (Some(limit), _) => format!("{} max", u.format(Quantity::Distance, limit)),
-            (None, Some(blank)) => format!(
+            (Some(limit), _) => trf!("{} max", u.format(Quantity::Distance, limit)),
+            (None, Some(blank)) => trf!(
                 "dead-on to {}",
                 u.format(Quantity::Distance, blank.far_limit)
             ),
@@ -665,7 +674,7 @@ impl ResultsView<'_> {
         {
             requests.zero_height = Some(height);
         }
-        egui::CollapsingHeader::new(RichText::new("Range table").strong())
+        egui::CollapsingHeader::new(RichText::new(tr("Range table")).strong())
             .id_salt("phone-table")
             .show(ui, |ui| {
                 self.table_heading_phone(ui, &mut requests);
@@ -681,16 +690,16 @@ impl ResultsView<'_> {
                     .inner;
                 if left_out || all {
                     let label = if all {
-                        "Fewer columns"
+                        tr("Fewer columns")
                     } else {
-                        "Show all columns"
+                        tr("Show all columns")
                     };
                     if ui.button(label).clicked() {
                         ui.data_mut(|data| data.insert_temp(all_id, !all));
                     }
                 }
             });
-        egui::CollapsingHeader::new(RichText::new("Trajectory · 2D / 3D").strong())
+        egui::CollapsingHeader::new(RichText::new(tr("Trajectory · 2D / 3D")).strong())
             .id_salt("phone-trajectory")
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
@@ -730,19 +739,19 @@ impl ResultsView<'_> {
         let table = self.table;
         let id = ui.id().with("columns-open");
         ui.horizontal(|ui| {
-            ui.weak(format!(
+            ui.weak(trf!(
                 "{}–{} every {}",
                 u.format(Quantity::Distance, table.start_m),
                 u.format(Quantity::Distance, table.end_m),
                 u.format(Quantity::Distance, table.step_m)
             ));
-            if ui.button("Columns…").clicked() {
+            if ui.button(tr("Columns…")).clicked() {
                 ui.data_mut(|data| data.insert_temp(id, true));
             }
         });
         if ui.data(|data| data.get_temp::<bool>(id)).unwrap_or(false) {
             let mut changed = table;
-            let shown = mobile::sheet(ui.ctx(), "table-columns", "Range table", |ui| {
+            let shown = mobile::sheet(ui.ctx(), "table-columns", tr("Range table"), |ui| {
                 super::table_settings(ui, &mut changed, self.rifle.click_unit);
             });
             if changed != table {
@@ -784,7 +793,11 @@ impl ResultsView<'_> {
                         if elevation >= 0.0 { "⬆" } else { "⬇" },
                         elevation,
                         self.clicks(elevation),
-                        if elevation >= 0.0 { "up" } else { "down" },
+                        if elevation >= 0.0 {
+                            tr("up")
+                        } else {
+                            tr("down")
+                        },
                     );
                     columns[1].with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
                         hold(
@@ -792,7 +805,11 @@ impl ResultsView<'_> {
                             if windage >= 0.0 { "➡" } else { "⬅" },
                             windage,
                             self.clicks(windage),
-                            if windage >= 0.0 { "right" } else { "left" },
+                            if windage >= 0.0 {
+                                tr("right")
+                            } else {
+                                tr("left")
+                            },
                         );
                     });
                 });
@@ -807,7 +824,7 @@ impl ResultsView<'_> {
                         row,
                         self.inputs.target_speed,
                     );
-                    ui.label(format!(
+                    ui.label(trf!(
                         "Lead {} ({:.2} {})",
                         u.format(Quantity::ShortLength, lead.distance * 100.0),
                         from_radians(unit, lead.angle),
@@ -815,7 +832,10 @@ impl ResultsView<'_> {
                     ));
                 }
                 if ethical.is_some_and(|limit| row.range > limit) {
-                    ui.colored_label(ui.visuals().error_fg_color, "⚠ Beyond your ethical range");
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        tr("⚠ Beyond your ethical range"),
+                    );
                 }
             });
     }
@@ -824,9 +844,9 @@ impl ResultsView<'_> {
     /// slider, and whether the shot is dialled or held.
     fn phone_scope(&self, ui: &mut Ui, solution: &Solution, requests: &mut ViewRequests) {
         let Some((scope, reticle)) = self.optics else {
-            ui.weak(
+            ui.weak(tr(
                 "Choose a scope and reticle for this rifle (Rifles) to see the view through it.",
-            );
+            ));
             return;
         };
         let Some(row) = solution.at(self.inputs.target_range_m) else {
@@ -872,7 +892,7 @@ impl ResultsView<'_> {
         });
         // The magnification and the view's width, under the slider.
         ui.vertical_centered(|ui| {
-            ui.small(format!(
+            ui.small(trf!(
                 "{} · {:.1} m across at 100 m",
                 magnification_text(magnification),
                 drawn.field_of_view_mrad / 10.0
@@ -880,13 +900,17 @@ impl ResultsView<'_> {
         });
         super::view_toggles(ui, self.inputs, scope, requests);
         if self.inputs.dial_elevation {
-            ui.small(format!(
+            ui.small(trf!(
                 "Dial {} {}, then hold the orange dot on the target.",
                 super::clicks_text(dialled_clicks.abs() as i64),
-                if dialled_clicks >= 0.0 { "up" } else { "down" }
+                if dialled_clicks >= 0.0 {
+                    tr("up")
+                } else {
+                    tr("down")
+                }
             ));
         } else {
-            ui.small("Hold the orange dot on the target.");
+            ui.small(tr("Hold the orange dot on the target."));
         }
         if let Some(hits) = self.hits {
             ui.label(format!(
@@ -899,7 +923,7 @@ impl ResultsView<'_> {
         if !drawn.impact_in_view {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                "The impact is outside the view: zoom out or dial.",
+                tr("The impact is outside the view: zoom out or dial."),
             );
         }
     }
@@ -1003,7 +1027,11 @@ impl Glyph<'_> {
                 let scale = (rect.width() as f64 / w).min(rect.height() as f64 / h);
                 let centre = [(low[0] + high[0]) / 2.0, (low[1] + high[1]) / 2.0];
                 let at = |[x, y]: [f64; 2]| {
-                    rect.center() + vec2(((x - centre[0]) * scale) as f32, -((y - centre[1]) * scale) as f32)
+                    rect.center()
+                        + vec2(
+                            ((x - centre[0]) * scale) as f32,
+                            -((y - centre[1]) * scale) as f32,
+                        )
                 };
                 for part in &figure.parts {
                     painter.add(part.shape(part.points.iter().map(|&p| at(p)).collect()));
@@ -1013,7 +1041,14 @@ impl Glyph<'_> {
     }
 }
 
-fn dashed(painter: &egui::Painter, from: egui::Pos2, to: egui::Pos2, stroke: Stroke, dash: f32, gap: f32) {
+fn dashed(
+    painter: &egui::Painter,
+    from: egui::Pos2,
+    to: egui::Pos2,
+    stroke: Stroke,
+    dash: f32,
+    gap: f32,
+) {
     let length = (to - from).length();
     let dir = (to - from) / length.max(1e-6);
     let mut t = 0.0;
@@ -1094,7 +1129,11 @@ pub(super) fn quick_field(
         FontId::proportional(12.0),
         theme::BONE_MUTED,
     );
-    let value_bottom = if strip { rect.bottom() - 9.0 - 22.0 - 4.0 } else { rect.bottom() - 9.0 };
+    let value_bottom = if strip {
+        rect.bottom() - 9.0 - 22.0 - 4.0
+    } else {
+        rect.bottom() - 9.0
+    };
     painter.text(
         egui::pos2(rect.left() + 10.0, value_bottom),
         Align2::LEFT_BOTTOM,
@@ -1110,7 +1149,7 @@ pub(super) fn clock_text(clock: f64) -> String {
     let hour = clock.rem_euclid(12.0);
     let hour = if hour < 0.25 { 12.0 } else { hour };
     if (hour - hour.round()).abs() < 0.01 {
-        format!("{:.0} o'clock", hour.round())
+        trf!("{:.0} o'clock", hour.round())
     } else {
         format!(
             "{}:{:02.0}",
@@ -1128,7 +1167,7 @@ fn target_summary(ui: &Ui, target: &Target, hunting: bool) -> String {
             format!("{zone} · {}", u.format(Quantity::Energy, energy))
         }
         _ if target.is_game() => zone,
-        _ => format!("{zone} · sport"),
+        _ => trf!("{zone} · sport", zone = zone),
     }
 }
 
@@ -1275,9 +1314,9 @@ fn measure_with_phone(ui: &mut Ui, degrees: &mut f64) {
     ui.add_space(6.0);
     match crate::web::tilt() {
         None => {
-            let button = egui::Button::new(
+            let button = egui::Button::new(tr(
                 "Measure with the phone\nHold it flat, screen up, top edge towards the target",
-            )
+            ))
             .min_size(vec2(ui.available_width(), 56.0));
             if ui.add(button).clicked() {
                 crate::web::start_tilt(ui.ctx().clone());
@@ -1285,7 +1324,7 @@ fn measure_with_phone(ui: &mut Ui, degrees: &mut f64) {
         }
         Some(tilt) => {
             let tilt = (tilt * 2.0).round() / 2.0;
-            let button = egui::Button::new(format!("Use {tilt:+.1}° (measured now)"))
+            let button = egui::Button::new(trf!("Use {tilt:+.1}° (measured now)", tilt = tilt))
                 .fill(theme::BLAZE_DEEP)
                 .min_size(vec2(ui.available_width(), 56.0));
             if ui.add(button).clicked() {
