@@ -6,6 +6,28 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-22
+
+### Changed
+
+- **The range table comes first** on a computer: right under the hold,
+  with the trajectory graph and 3D view as tabs. The ethical range, hit
+  chance and dead-on hold sit in a rail on the right, above the view
+  through the scope, so the page has less empty space. What to dial or
+  hold stands out in large clicks; the row for your shot is outlined (or,
+  between two rows, an orange line marks where it falls), the dead-on
+  ranges are marked green, past the ethical limit is red, and a
+  hit-chance column (one of the choices under *Columns…*) shows how sure
+  each range is. Click a row to shoot at that range. New rifles show the
+  drop and the wind drift in cm by default.
+
+- The view through the scope has a faint grid on the ground, in
+  perspective, so the field reads as depth up to the target.
+- The stand card (a range card) is there for target shooting too, without
+  the ethical limits; it was hidden outside hunting.
+- Calculate shows *Target limits* only for game: for a sport target, or in
+  target shooting, it had nothing left in it.
+
 ## [0.8.0] - 2026-10-22
 
 ### Added
@@ -351,7 +373,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.0...v0.7.1
