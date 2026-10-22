@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-22
+
 ### Added
 
 - **Hit chance and wind bracket.** Under *Your precision*: your group, the
@@ -349,7 +351,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.6.0...v0.7.0
