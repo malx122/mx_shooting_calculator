@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::bullets::BulletsPage;
 use crate::calculator::{CalculatorPage, Inputs};
 use crate::cards::{CardSettings, CardsPage};
+use crate::i18n::{self, Language, tr, trf};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
 use crate::rifles::RiflesPage;
@@ -26,6 +27,8 @@ const CARD_SETTINGS: &str = "cards";
 /// Whose hunting rules to check: a country, or `null` for none. Absent
 /// until the hunter chooses; then the device's language decides.
 const COUNTRY_SETTING: &str = "country";
+/// The language the app is shown in, or `null` for the device's.
+const LANGUAGE_SETTING: &str = "language";
 /// What the app is used for: hunting or target shooting. Absent until asked.
 const PURPOSE_SETTING: &str = "purpose";
 /// The version the hunter last used, to mention an update once.
@@ -44,15 +47,15 @@ pub enum Purpose {
 impl Purpose {
     pub fn name(self) -> &'static str {
         match self {
-            Purpose::Hunting => "Hunting",
-            Purpose::Shooting => "Target shooting",
+            Purpose::Hunting => tr("Hunting"),
+            Purpose::Shooting => tr("Target shooting"),
         }
     }
 
     fn detail(self) -> &'static str {
         match self {
-            Purpose::Hunting => "Ethical range, legal ammo, seasons, light",
-            Purpose::Shooting => "Just the ballistics: holds, tables, cards",
+            Purpose::Hunting => tr("Ethical range, legal ammo, seasons, light"),
+            Purpose::Shooting => tr("Just the ballistics: holds, tables, cards"),
         }
     }
 }
@@ -138,6 +141,7 @@ impl Data {
 enum MenuSheet {
     Main,
     Units,
+    Language,
     Country,
     Purpose,
     Sync,
@@ -149,6 +153,7 @@ enum MenuSheet {
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
 enum MenuChoice {
     Units,
+    Language,
     Country,
     Purpose,
     Sync,
@@ -180,6 +185,8 @@ pub struct App {
     saved_cards: CardSettings,
     saved_inputs: Inputs,
     units: UnitPrefs,
+    /// The language chosen in the menu; `None` follows the device.
+    language: Option<Language>,
     status: Option<Status>,
     /// An import being previewed.
     import: Option<ImportPreview>,
@@ -235,6 +242,12 @@ impl App {
                 .and_then(Country::from_locale),
         };
         let purpose = store.setting::<Purpose>(PURPOSE_SETTING).ok().flatten();
+        let language = store
+            .setting::<Option<Language>>(LANGUAGE_SETTING)
+            .ok()
+            .flatten()
+            .flatten();
+        i18n::set(Language::chosen(language));
         let mut app = Self {
             sync,
             country,
@@ -255,6 +268,7 @@ impl App {
             saved_cards: cards,
             saved_inputs: inputs,
             units,
+            language,
             status: None,
             import: None,
             menu: None,
@@ -278,7 +292,7 @@ impl App {
         let used_before = seen.is_some() || !self.data.rifles.is_empty();
         if used_before {
             self.status = Some(Status {
-                text: format!(
+                text: trf!(
                     "Updated to version {}. What's new: click the version number (on a phone, \
                      in the menu).",
                     crate::VERSION
@@ -357,7 +371,7 @@ impl App {
             }
             Action::SaveRifle(mut rifle) => self.store.save_rifle(&mut rifle).map(|()| {
                 self.rifles.saved(&rifle);
-                format!("Saved {}", rifle.name)
+                trf!("Saved {}", rifle.name)
             }),
             Action::SaveTable(mut rifle) => {
                 let result = self.store.save_rifle(&mut rifle);
@@ -373,43 +387,43 @@ impl App {
             }
             Action::DeleteRifle(id) => self.store.delete_rifle(&id).map(|()| {
                 self.rifles.deleted(&id);
-                "Rifle deleted".to_owned()
+                tr("Rifle deleted").to_owned()
             }),
             Action::SaveBullet(mut bullet) => self.store.save_bullet(&mut bullet).map(|()| {
                 self.bullets.saved(&bullet);
-                format!("Saved {}", bullet.display_name())
+                trf!("Saved {}", bullet.display_name())
             }),
             Action::DeleteBullet(id) => self.store.delete_bullet(&id).map(|()| {
                 self.bullets.deleted(&id);
-                "Bullet deleted".to_owned()
+                tr("Bullet deleted").to_owned()
             }),
             Action::SaveLoad(mut load) => self
                 .store
                 .save_rifle_load(&mut load)
-                .map(|()| "Saved this bullet's data for the rifle".to_owned()),
+                .map(|()| tr("Saved this bullet's data for the rifle").to_owned()),
             Action::SaveScope(mut scope) => self.store.save_scope(&mut scope).map(|()| {
                 self.rifles.scope_saved(&scope);
-                format!("Saved {}", scope.display_name())
+                trf!("Saved {}", scope.display_name())
             }),
             Action::DeleteScope(id) => self.store.delete_scope(&id).map(|()| {
                 self.rifles.scope_deleted(&id);
-                "Scope deleted; rifles that had it now have none".to_owned()
+                tr("Scope deleted; rifles that had it now have none").to_owned()
             }),
             Action::SaveTarget(mut target) => self.store.save_target(&mut target).map(|()| {
                 self.targets.saved(&target);
-                format!("Saved {}", target.name)
+                trf!("Saved {}", target.name)
             }),
             Action::DeleteTarget(id) => self.store.delete_target(&id).map(|()| {
                 self.targets.deleted(&id);
-                "Target deleted".to_owned()
+                tr("Target deleted").to_owned()
             }),
             Action::LoadDemo => self.store.load_demo().map(|report| {
                 self.page = Page::Calculate;
-                format!("Demo data: {}", import::summary(&report))
+                trf!("Demo data: {}", import::summary(&report))
             }),
             Action::DeleteLoad(id) => self.store.delete_rifle_load(&id).map(|()| {
                 self.rifles.forget_load_draft();
-                "Using the bullet's own data again".to_owned()
+                tr("Using the bullet's own data again").to_owned()
             }),
         };
         self.data_changed |= result.is_ok();
@@ -432,16 +446,16 @@ impl App {
                 return;
             };
             let result = std::fs::write(&path, json)
-                .map(|()| format!("Exported to {}", path.display()))
+                .map(|()| trf!("Exported to {}", path.display()))
                 .map_err(|error| {
-                    StoreError::Invalid(format!("could not write {}: {error}", path.display()))
+                    StoreError::Invalid(trf!("could not write {}: {}", path.display(), error))
                 });
             self.report(result);
         }
         #[cfg(target_arch = "wasm32")]
         self.report(
             crate::web::download("mxsc-backup.json", &json)
-                .map(|()| "Exported: saved as mxsc-backup.json in your downloads".to_owned())
+                .map(|()| tr("Exported: saved as mxsc-backup.json in your downloads").to_owned())
                 .map_err(StoreError::Invalid),
         );
     }
@@ -451,7 +465,7 @@ impl App {
     #[cfg(not(target_arch = "wasm32"))]
     fn import(&mut self, _context: &egui::Context) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("Backups", &["json", "srl"])
+            .add_filter(tr("Backups"), &["json", "srl"])
             .add_filter("MX Shooting Calculator (JSON)", &["json"])
             .add_filter("Strelok Pro (.srl)", &["srl"])
             .pick_file()
@@ -503,7 +517,7 @@ impl App {
                     self.calculator.inputs.bullet_id = bullet_id;
                     self.page = Page::Calculate;
                 }
-                self.report(Ok(format!("Imported: {}", import::summary(&report))));
+                self.report(Ok(trf!("Imported: {}", import::summary(&report))));
             }
             Err(error) => {
                 self.import = None;
@@ -619,16 +633,18 @@ impl App {
             Some(sync::Event::Merged(report)) => {
                 self.reload();
                 let changes = report.added + report.updated + report.deleted;
-                self.report(Ok(format!(
-                    "Synced: {changes} change{} from your other devices",
-                    if changes == 1 { "" } else { "s" }
-                )));
+                self.report(Ok(if changes == 1 {
+                    tr("Synced: 1 change from your other devices").to_owned()
+                } else {
+                    trf!("Synced: {} changes from your other devices", changes)
+                }));
             }
             Some(sync::Event::Stopped(message)) => self.report(Ok(message)),
             None => {}
         }
         let mut open = self.whats_new_open;
-        egui::Window::new("What's new")
+        egui::Window::new(tr("What's new"))
+            .id(egui::Id::new("whats-new"))
             .open(&mut open)
             .collapsible(false)
             .default_size([520.0, 560.0])
@@ -639,7 +655,8 @@ impl App {
             });
         self.whats_new_open = open;
         let mut open = self.about_open;
-        egui::Window::new("About")
+        egui::Window::new(tr("About"))
+            .id(egui::Id::new("about"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -647,20 +664,21 @@ impl App {
             .show(context, |ui| {
                 ui.label(RichText::new(crate::APP_NAME).strong().size(16.0));
                 ui.label(if crate::COMMIT.is_empty() {
-                    format!("Version {}", crate::VERSION)
+                    trf!("Version {}", crate::VERSION)
                 } else {
-                    format!("Version {} ({})", crate::VERSION, crate::COMMIT)
+                    trf!("Version {} ({})", crate::VERSION, crate::COMMIT)
                 });
                 ui.add_space(4.0);
-                ui.label("Free software under the MIT or Apache-2.0 licence.");
-                ui.weak(
+                ui.label(tr("Free software under the MIT or Apache-2.0 licence."));
+                ui.weak(tr(
                     "Your rifles, bullets and targets stay on this device, and on your other \
                      devices if you sync them.",
-                );
+                ));
             });
         self.about_open = open;
         let mut open = self.sync.window_open;
-        egui::Window::new("Sync")
+        egui::Window::new(tr("Sync"))
+            .id(egui::Id::new("sync"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -686,11 +704,11 @@ impl App {
                     }
                     ui.add_space(28.0);
                     for (page, label) in [
-                        (Page::Calculate, "Calculate"),
-                        (Page::Rifles, "Rifles"),
-                        (Page::Bullets, "Bullets"),
-                        (Page::Targets, "Targets"),
-                        (Page::Cards, "Cards"),
+                        (Page::Calculate, tr("Calculate")),
+                        (Page::Rifles, tr("Rifles")),
+                        (Page::Bullets, tr("Bullets")),
+                        (Page::Targets, tr("Targets")),
+                        (Page::Cards, tr("Cards")),
                     ] {
                         ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
                     }
@@ -737,9 +755,9 @@ impl App {
                                 egui::Sense::hover(),
                             );
                             crate::flags::paint(ui.painter(), rect.left_center(), country, height);
-                            response.on_hover_text(format!(
+                            response.on_hover_text(trf!(
                                 "{} hunting rules: legal ammunition, seasons and shooting light",
-                                country.adjective()
+                                i18n::country_adjective(country)
                             ));
                         }
                     });
@@ -758,13 +776,15 @@ impl App {
             // Choices open a sheet: submenus would have no room to open at
             // the window's right edge and would cover this menu instead.
             let purpose = self.purpose.unwrap_or(Purpose::Hunting).name();
+            let language = self.language.map_or(tr("System"), Language::own_name);
             let mut rows = vec![
-                ("Units…".to_owned(), MenuSheet::Units),
-                (format!("Use for: {purpose}…"), MenuSheet::Purpose),
+                (tr("Units…").to_owned(), MenuSheet::Units),
+                (trf!("Language: {}…", language), MenuSheet::Language),
+                (trf!("Use for: {}…", purpose), MenuSheet::Purpose),
             ];
             if self.hunting() {
-                let country = self.country.map_or("none", Country::name);
-                rows.push((format!("Hunting rules: {country}…"), MenuSheet::Country));
+                let country = self.country.map_or(tr("none"), i18n::country_name);
+                rows.push((trf!("Hunting rules: {}…", country), MenuSheet::Country));
             }
             for (label, sheet) in rows {
                 if ui.button(label).clicked() {
@@ -774,7 +794,7 @@ impl App {
             }
             let now = ui.ctx().input(|input| input.time);
             if ui
-                .button("Sync…")
+                .button(tr("Sync…"))
                 .on_hover_text(self.sync.status(now))
                 .clicked()
             {
@@ -783,41 +803,43 @@ impl App {
             }
             ui.separator();
             if ui
-                .button("Import backup…")
-                .on_hover_text("From this app or Strelok Pro; merged into this device's data")
+                .button(tr("Import backup…"))
+                .on_hover_text(tr(
+                    "From this app or Strelok Pro; merged into this device's data",
+                ))
                 .clicked()
             {
                 import = true;
                 ui.close_menu();
             }
             if ui
-                .button("Export backup")
-                .on_hover_text("Your rifles, bullets, scopes and targets, as JSON")
+                .button(tr("Export backup"))
+                .on_hover_text(tr("Your rifles, bullets, scopes and targets, as JSON"))
                 .clicked()
             {
                 export = true;
                 ui.close_menu();
             }
             if ui
-                .button("Load demo data")
-                .on_hover_text("Three rifles with bullets, a scope and a target")
+                .button(tr("Load demo data"))
+                .on_hover_text(tr("Three rifles with bullets, a scope and a target"))
                 .clicked()
             {
                 demo = true;
                 ui.close_menu();
             }
             ui.separator();
-            if ui.button("What's new").clicked() {
+            if ui.button(tr("What's new")).clicked() {
                 self.whats_new_open = true;
                 ui.close_menu();
             }
-            if ui.button("About").clicked() {
+            if ui.button(tr("About")).clicked() {
                 self.about_open = true;
                 ui.close_menu();
             }
         })
         .response
-        .on_hover_text("Menu");
+        .on_hover_text(tr("Menu"));
         if sync {
             self.sync.window_open = true;
         }
@@ -843,16 +865,19 @@ impl App {
         let modal = egui::Modal::new(egui::Id::new("welcome")).show(context, |ui| {
             ui.set_width(width);
             if self.asking_country {
-                ui.heading("Where do you hunt?");
-                ui.label(
+                ui.heading(tr("Where do you hunt?"));
+                ui.label(tr(
                     "For the legal ammunition, the seasons and the shooting light. You can \
                      change it later in the menu.",
-                );
+                ));
                 ui.add_space(8.0);
                 for country in Country::ALL.map(Some).into_iter().chain([None]) {
                     let (title, detail) = match country {
-                        Some(country) => (country.name(), country.rules().law),
-                        None => ("Elsewhere", "No legal checks, just the ethical limits"),
+                        Some(country) => (i18n::country_name(country), country.rules().law),
+                        None => (
+                            tr("Elsewhere"),
+                            tr("No legal checks, just the ethical limits"),
+                        ),
                     };
                     let row = mobile::list_row(ui, title, detail, self.country == country);
                     if let Some(country) = country {
@@ -863,8 +888,10 @@ impl App {
                     }
                 }
             } else {
-                ui.heading(format!("Welcome to {}", crate::APP_NAME));
-                ui.label("What will you use it for? You can change it later in the menu.");
+                ui.heading(trf!("Welcome to {}", crate::APP_NAME));
+                ui.label(tr(
+                    "What will you use it for? You can change it later in the menu.",
+                ));
                 ui.add_space(8.0);
                 for purpose in [Purpose::Hunting, Purpose::Shooting] {
                     if mobile::list_row(ui, purpose.name(), purpose.detail(), false).clicked() {
@@ -892,6 +919,15 @@ impl App {
         self.country = country;
         self.data.country = self.rules_country();
         if let Err(error) = self.store.set_setting(COUNTRY_SETTING, &country) {
+            self.report(Err(error));
+        }
+    }
+
+    /// Shows the app in `language`, or in the device's for `None`.
+    fn set_language(&mut self, language: Option<Language>) {
+        self.language = language;
+        i18n::set(Language::chosen(language));
+        if let Err(error) = self.store.set_setting(LANGUAGE_SETTING, &language) {
             self.report(Err(error));
         }
     }
@@ -930,7 +966,7 @@ impl App {
                             egui::Button::new(RichText::new("•••").color(theme::BONE))
                                 .min_size(egui::vec2(mobile::TOUCH, mobile::TOUCH)),
                         );
-                        if menu.on_hover_text("Menu").clicked() {
+                        if menu.on_hover_text(tr("Menu")).clicked() {
                             self.menu = Some(MenuSheet::Main);
                         }
                     });
@@ -953,11 +989,11 @@ impl App {
             .frame(frame)
             .show(context, |ui| {
                 let tabs = [
-                    (Page::Calculate, "Calculate"),
-                    (Page::Rifles, "Rifles"),
-                    (Page::Bullets, "Bullets"),
-                    (Page::Targets, "Targets"),
-                    (Page::Cards, "Cards"),
+                    (Page::Calculate, tr("Calculate")),
+                    (Page::Rifles, tr("Rifles")),
+                    (Page::Bullets, tr("Bullets")),
+                    (Page::Targets, tr("Targets")),
+                    (Page::Cards, tr("Cards")),
                 ];
                 let width = ui.available_width() / tabs.len() as f32;
                 ui.horizontal(|ui| {
@@ -998,22 +1034,32 @@ impl App {
         };
         match sheet {
             MenuSheet::Main => {
-                let shown = mobile::sheet(context, "menu", "Menu", |ui| {
+                let shown = mobile::sheet(context, "menu", tr("Menu"), |ui| {
                     let mut choice = None;
-                    if mobile::list_row(ui, "Units", "Metric or imperial, per quantity", false)
-                        .clicked()
+                    if mobile::list_row(
+                        ui,
+                        tr("Units"),
+                        tr("Metric or imperial, per quantity"),
+                        false,
+                    )
+                    .clicked()
                     {
                         choice = Some(MenuChoice::Units);
                     }
+                    let language = self.language.map_or(tr("System"), Language::own_name);
+                    if mobile::list_row(ui, tr("Language"), language, false).clicked() {
+                        choice = Some(MenuChoice::Language);
+                    }
                     let purpose = self.purpose.unwrap_or(Purpose::Hunting);
-                    if mobile::list_row(ui, "Use for", purpose.name(), false).clicked() {
+                    if mobile::list_row(ui, tr("Use for"), purpose.name(), false).clicked() {
                         choice = Some(MenuChoice::Purpose);
                     }
                     if self.hunting() {
                         let row = mobile::list_row(
                             ui,
-                            "Hunting rules",
-                            self.country.map_or("None: no legal checks", Country::name),
+                            tr("Hunting rules"),
+                            self.country
+                                .map_or(tr("None: no legal checks"), i18n::country_name),
                             false,
                         );
                         if let Some(country) = self.country {
@@ -1024,18 +1070,23 @@ impl App {
                         }
                     }
                     let status = self.sync.status(ui.ctx().input(|input| input.time));
-                    if mobile::list_row(ui, "Sync", &status, false).clicked() {
+                    if mobile::list_row(ui, tr("Sync"), &status, false).clicked() {
                         choice = Some(MenuChoice::Sync);
                     }
-                    if mobile::list_row(ui, "Import backup…", "From this app or Strelok Pro", false)
-                        .clicked()
+                    if mobile::list_row(
+                        ui,
+                        tr("Import backup…"),
+                        tr("From this app or Strelok Pro"),
+                        false,
+                    )
+                    .clicked()
                     {
                         choice = Some(MenuChoice::Import);
                     }
                     if mobile::list_row(
                         ui,
-                        "Export backup",
-                        "Your rifles, bullets, scopes and targets",
+                        tr("Export backup"),
+                        tr("Your rifles, bullets, scopes and targets"),
                         false,
                     )
                     .clicked()
@@ -1044,8 +1095,8 @@ impl App {
                     }
                     if mobile::list_row(
                         ui,
-                        "Load demo data",
-                        "Three rifles with bullets, a scope and a target",
+                        tr("Load demo data"),
+                        tr("Three rifles with bullets, a scope and a target"),
                         false,
                     )
                     .clicked()
@@ -1056,8 +1107,8 @@ impl App {
                     if crate::web::install_state() != crate::web::Install::Installed
                         && mobile::list_row(
                             ui,
-                            "Install on home screen",
-                            "Opens like an app and works offline",
+                            tr("Install on home screen"),
+                            tr("Opens like an app and works offline"),
                             false,
                         )
                         .clicked()
@@ -1066,8 +1117,8 @@ impl App {
                     }
                     if mobile::list_row(
                         ui,
-                        "What's new",
-                        &format!("Version {} and earlier", crate::VERSION),
+                        tr("What's new"),
+                        &trf!("Version {} and earlier", crate::VERSION),
                         false,
                     )
                     .clicked()
@@ -1077,9 +1128,9 @@ impl App {
                     ui.add_space(8.0);
                     ui.label(RichText::new(crate::APP_NAME).strong());
                     let version = if crate::COMMIT.is_empty() {
-                        format!("Version {}", crate::VERSION)
+                        trf!("Version {}", crate::VERSION)
                     } else {
-                        format!("Version {} ({})", crate::VERSION, crate::COMMIT)
+                        trf!("Version {} ({})", crate::VERSION, crate::COMMIT)
                     };
                     ui.weak(version);
                     choice
@@ -1089,6 +1140,7 @@ impl App {
                 }
                 match shown.inner {
                     Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
+                    Some(MenuChoice::Language) => self.menu = Some(MenuSheet::Language),
                     Some(MenuChoice::Country) => self.menu = Some(MenuSheet::Country),
                     Some(MenuChoice::Purpose) => self.menu = Some(MenuSheet::Purpose),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
@@ -1118,25 +1170,27 @@ impl App {
                 }
             }
             MenuSheet::Install => {
-                let shown = mobile::sheet(context, "install", "Install on home screen", |ui| {
-                    ui.label(RichText::new("iPhone and iPad (Safari)").strong());
-                    ui.label("Tap the Share button, then Add to Home Screen.");
+                let shown = mobile::sheet(context, "install", tr("Install on home screen"), |ui| {
+                    ui.label(RichText::new(tr("iPhone and iPad (Safari)")).strong());
+                    ui.label(tr("Tap the Share button, then Add to Home Screen."));
                     ui.add_space(8.0);
                     ui.label(RichText::new("Android (Chrome)").strong());
-                    ui.label("Open the menu (⋮), then Install app or Add to Home screen.");
+                    ui.label(tr(
+                        "Open the menu (⋮), then Install app or Add to Home screen.",
+                    ));
                     ui.add_space(8.0);
-                    ui.weak(
+                    ui.weak(tr(
                         "The app then opens full screen from its icon, works without a \
                          connection and keeps your data on this device. Export a backup now \
                          and then.",
-                    );
+                    ));
                 });
                 if shown.closed {
                     self.menu = None;
                 }
             }
             MenuSheet::Sync => {
-                let shown = mobile::sheet(context, "sync", "Sync", |ui| {
+                let shown = mobile::sheet(context, "sync", tr("Sync"), |ui| {
                     self.sync.panel(ui, &self.store)
                 });
                 if shown.closed {
@@ -1145,7 +1199,7 @@ impl App {
             }
             MenuSheet::Country => {
                 let current = self.country;
-                let shown = mobile::sheet(context, "country", "Hunting rules", |ui| {
+                let shown = mobile::sheet(context, "country", tr("Hunting rules"), |ui| {
                     let mut chosen = None;
                     for country in Country::ALL.map(Some).into_iter().chain([None]) {
                         let (title, detail) = country_choice(country);
@@ -1168,7 +1222,7 @@ impl App {
             }
             MenuSheet::Purpose => {
                 let current = self.purpose.unwrap_or(Purpose::Hunting);
-                let shown = mobile::sheet(context, "purpose", "Use for", |ui| {
+                let shown = mobile::sheet(context, "purpose", tr("Use for"), |ui| {
                     let mut chosen = None;
                     for purpose in [Purpose::Hunting, Purpose::Shooting] {
                         if mobile::list_row(
@@ -1192,20 +1246,52 @@ impl App {
                 }
             }
             MenuSheet::WhatsNew => {
-                let shown =
-                    mobile::sheet(context, "whats-new", "What's new", crate::changelog::show);
+                let shown = mobile::sheet(
+                    context,
+                    "whats-new",
+                    tr("What's new"),
+                    crate::changelog::show,
+                );
                 if shown.closed {
                     self.menu = None;
                 }
             }
             MenuSheet::Units => {
-                let shown = mobile::sheet(context, "units", "Units", |ui| {
+                let shown = mobile::sheet(context, "units", tr("Units"), |ui| {
                     units::menu(ui, &mut self.units)
                 });
                 if shown.inner {
                     self.units_changed(context);
                 }
                 if shown.closed {
+                    self.menu = None;
+                }
+            }
+            MenuSheet::Language => {
+                let current = self.language;
+                let shown = mobile::sheet(context, "language", tr("Language"), |ui| {
+                    let mut chosen = None;
+                    let system = Language::system().own_name();
+                    if mobile::list_row(ui, tr("System"), system, current.is_none()).clicked() {
+                        chosen = Some(None);
+                    }
+                    for language in Language::ALL {
+                        let row = mobile::list_row(
+                            ui,
+                            language.own_name(),
+                            "",
+                            current == Some(language),
+                        );
+                        if row.clicked() {
+                            chosen = Some(Some(language));
+                        }
+                    }
+                    chosen
+                });
+                if let Some(language) = shown.inner {
+                    self.set_language(language);
+                    self.menu = None;
+                } else if shown.closed {
                     self.menu = None;
                 }
             }
@@ -1228,8 +1314,11 @@ fn flag_in_row(ui: &egui::Ui, row: &egui::Response, country: Country) {
 /// A country choice's name and what it means.
 fn country_choice(country: Option<Country>) -> (&'static str, &'static str) {
     match country {
-        Some(country) => (country.name(), country.rules().law),
-        None => ("None", "No legal checks, just the ethical guidelines"),
+        Some(country) => (i18n::country_name(country), country.rules().law),
+        None => (
+            tr("None"),
+            tr("No legal checks, just the ethical guidelines"),
+        ),
     }
 }
 
@@ -1317,9 +1406,9 @@ fn brand(ui: &mut egui::Ui) -> bool {
                 )
                 .on_hover_cursor(egui::CursorIcon::PointingHand);
             let hover = if crate::COMMIT.is_empty() {
-                format!("Version {}. Click for what's new.", crate::VERSION)
+                trf!("Version {}. Click for what's new.", crate::VERSION)
             } else {
-                format!(
+                trf!(
                     "Version {}, built from commit {}. Click for what's new.",
                     crate::VERSION,
                     crate::COMMIT

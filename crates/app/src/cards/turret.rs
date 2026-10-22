@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use super::Subject;
 use super::fonts::Font;
 use super::sheet::{Align, Ink, PT, Sheet, arc, fit_font};
+use crate::i18n::{tr, trf};
 use crate::units::{Quantity, UnitPrefs};
 
 /// A rifle's elevation turret, as measured.
@@ -124,6 +125,18 @@ pub const SCHEMES: [(&str, Rgb, Rgb, Rgb); 5] = [
         [255, 59, 48],
     ),
 ];
+
+/// A colour scheme's name in the current language.
+pub fn scheme_name(name: &str) -> &str {
+    match name {
+        "Black on white" => tr("Black on white"),
+        "White on black" => tr("White on black"),
+        "Black on yellow" => tr("Black on yellow"),
+        "White on olive" => tr("White on olive"),
+        "Orange on black" => tr("Orange on black"),
+        other => other,
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -420,7 +433,7 @@ pub fn strip(
         }
         let size = description_height * 0.72 / PT;
         let rifle = &subject.rifle;
-        let text = format!(
+        let text = trf!(
             "{} · {} · {} · zero {}",
             subject.bullet.display_name(),
             u.format(Quantity::Speed, plan.muzzle_velocity),
@@ -605,7 +618,7 @@ pub fn page(
     let mut y = margin;
     page.text(
         [margin, y + 5.0],
-        format!("Turret label · {}", subject.rifle.name),
+        trf!("Turret label · {}", subject.rifle.name),
         14.0,
         true,
         Align::Left,
@@ -613,21 +626,21 @@ pub fn page(
     );
     y += 9.0;
     for line in [
-        format!(
+        trf!(
             "{} · {} · zero {}",
             subject.bullet.display_name(),
             u.format(Quantity::Temperature, plan.temperature_c),
             crate::calculator::zero_text(u, &subject.rifle),
         ),
-        format!(
+        trf!(
             "Turret {:.1} mm across, label {:.2} mm thick, {} clicks a turn, dialled {}",
             turret.diameter_mm,
             turret.thickness_mm,
             turret.clicks_per_turn,
             if turret.clockwise {
-                "clockwise"
+                tr("clockwise")
             } else {
-                "anticlockwise"
+                tr("anticlockwise")
             }
         ),
     ] {
@@ -659,7 +672,7 @@ pub fn page(
     }
     page.text(
         [margin + 55.0, y + 1.2],
-        "This bar is 50 mm. If not, print at actual size (100 %, no fitting to the page).",
+        tr("This bar is 50 mm. If not, print at actual size (100 %, no fitting to the page)."),
         8.0,
         false,
         Align::Left,
@@ -667,10 +680,16 @@ pub fn page(
     );
     y += 9.0;
     let steps = [
-        "Cut on the corner marks. The strip is as long as the turret is round, at the label's middle.",
-        "Ends overlapping? Make the label thinner (or the diameter smaller) and print again; a gap: thicker.",
-        "Set the turret to zero. Wrap the strip with the ruler's 0 at the index line and the numbers",
-        "running the way the turret turns when dialling up. Clear tape over it keeps it dry.",
+        tr(
+            "Cut on the corner marks. The strip is as long as the turret is round, at the label's middle.",
+        ),
+        tr(
+            "Ends overlapping? Make the label thinner (or the diameter smaller) and print again; a gap: thicker.",
+        ),
+        tr(
+            "Set the turret to zero. Wrap the strip with the ruler's 0 at the index line and the numbers",
+        ),
+        tr("running the way the turret turns when dialling up. Clear tape over it keeps it dry."),
     ];
     for text in steps {
         page.text([margin, y], text, 8.0, false, Align::Left, Ink::Black);
@@ -679,10 +698,10 @@ pub fn page(
     y += 5.0;
 
     // The clicks for each range, as on the label.
-    page.text([margin, y], "Range", 8.0, true, Align::Left, Ink::Black);
+    page.text([margin, y], tr("Range"), 8.0, true, Align::Left, Ink::Black);
     page.text(
         [margin + 30.0, y],
-        "Clicks",
+        tr("Clicks"),
         8.0,
         true,
         Align::Right,
@@ -690,7 +709,7 @@ pub fn page(
     );
     page.text(
         [margin + 48.0, y],
-        "Turn",
+        tr("Turn"),
         8.0,
         true,
         Align::Right,
@@ -735,7 +754,7 @@ pub fn page(
         if mark.crowded {
             page.text(
                 [margin + column + 52.0, y],
-                "not on the label (crowded)",
+                tr("not on the label (crowded)"),
                 7.0,
                 false,
                 Align::Left,
@@ -748,7 +767,7 @@ pub fn page(
         y += 3.0;
         page.text(
             [margin + column, y],
-            format!(
+            trf!(
                 "Red: beyond the ethical limit for {} ({}).",
                 target.to_lowercase(),
                 u.format(Quantity::Distance, limit)

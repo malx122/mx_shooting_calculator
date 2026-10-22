@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::calculator::{Inputs, PressureSource};
 use crate::http::{self, Method, Request};
+use crate::i18n::{tr, trf};
 use crate::units::{self, Quantity};
 
 const FORECAST: &str = "https://api.open-meteo.com/v1/forecast";
@@ -130,10 +131,10 @@ async fn fetch_json<T: serde::de::DeserializeOwned>(url: String) -> Result<T, St
     })
     .await?;
     if response.status != 200 {
-        return Err(format!("the weather service answered {}", response.status));
+        return Err(trf!("the weather service answered {}", response.status));
     }
     serde_json::from_slice(&response.body)
-        .map_err(|_| "the weather service's answer was garbled".into())
+        .map_err(|_| tr("the weather service's answer was garbled").into())
 }
 
 async fn forecast(place: Place) -> Result<Report, String> {
@@ -213,7 +214,7 @@ impl Weather {
     }
 
     fn fetch(&mut self, context: &egui::Context, place: Place) {
-        self.busy = Some("Getting the weather…");
+        self.busy = Some(tr("Getting the weather…"));
         self.error = None;
         let reply = self.send(context);
         http::spawn(async move { reply(Reply::Weather(forecast(place).await)) });
@@ -233,7 +234,7 @@ impl Weather {
                 Reply::Places(Ok(places)) => {
                     self.busy = None;
                     if places.is_empty() {
-                        self.error = Some("no place by that name".into());
+                        self.error = Some(tr("no place by that name").into());
                     }
                     self.found = places;
                 }
@@ -252,7 +253,7 @@ impl Weather {
     /// came, and the forecast wind for this shot.
     /// Finds where the device is and fetches the weather there.
     pub fn locate_here(&mut self, context: &egui::Context) {
-        self.busy = Some("Finding where you are…");
+        self.busy = Some(tr("Finding where you are…"));
         self.error = None;
         let reply = self.send(context);
         crate::sensors::locate(move |place| reply(Reply::Located(place)));
@@ -268,20 +269,20 @@ impl Weather {
         ui.horizontal_wrapped(|ui| {
             if crate::sensors::can_locate()
                 && ui
-                    .button("📍 Weather here")
-                    .on_hover_text("From your position (the browser asks first)")
+                    .button(tr("📍 Weather here"))
+                    .on_hover_text(tr("From your position (the browser asks first)"))
                     .clicked()
             {
                 self.locate_here(&context);
             }
             let field = ui.add(
                 egui::TextEdit::singleline(&mut self.search)
-                    .hint_text("or a place: Mora, Kuopio…")
+                    .hint_text(tr("or a place: Mora, Kuopio…"))
                     .desired_width(150.0),
             );
             let enter = field.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
-            if (ui.button("Search").clicked() || enter) && !self.search.trim().is_empty() {
-                self.busy = Some("Searching…");
+            if (ui.button(tr("Search")).clicked() || enter) && !self.search.trim().is_empty() {
+                self.busy = Some(tr("Searching…"));
                 self.error = None;
                 self.found.clear();
                 let reply = self.send(&context);
@@ -293,7 +294,10 @@ impl Weather {
                 http::spawn(async move { reply(Reply::Places(search(name, home).await)) });
             }
             if let Some(report) = &self.report
-                && ui.small_button("↻").on_hover_text("Get it again").clicked()
+                && ui
+                    .small_button("↻")
+                    .on_hover_text(tr("Get it again"))
+                    .clicked()
             {
                 let place = report.place.clone();
                 self.fetch(&context, place);
@@ -324,7 +328,7 @@ impl Weather {
         };
         let u = units::prefs(ui.ctx());
         ui.label(
-            RichText::new(format!(
+            RichText::new(trf!(
                 "{} at {}: {}, {}, {:.0} %, ground {}",
                 report.place.name,
                 report.time.rsplit(' ').next().unwrap_or(&report.time),
@@ -336,7 +340,7 @@ impl Weather {
             .small(),
         );
         ui.label(
-            RichText::new(format!(
+            RichText::new(trf!(
                 "Wind {} from {} ({:.0}°), gusts {}, 10 m above open ground",
                 u.format(Quantity::WindSpeed, report.wind_speed_mps),
                 compass_point(report.wind_from_degrees),
@@ -347,7 +351,7 @@ impl Weather {
         );
         self.wind_for_shot(ui, inputs, &report);
         ui.hyperlink_to(
-            RichText::new("Weather by Open-Meteo.com").small(),
+            RichText::new(tr("Weather by Open-Meteo.com")).small(),
             "https://open-meteo.com/",
         );
     }
@@ -356,7 +360,7 @@ impl Weather {
     fn wind_for_shot(&mut self, ui: &mut egui::Ui, inputs: &mut Inputs, report: &Report) {
         let u = units::prefs(ui.ctx());
         ui.horizontal_wrapped(|ui| {
-            ui.label("Shooting towards");
+            ui.label(tr("Shooting towards"));
             ui.add(
                 egui::DragValue::new(&mut inputs.azimuth_degrees)
                     .range(0.0..=359.0)
@@ -368,20 +372,20 @@ impl Weather {
                 if self.compass {
                     match crate::sensors::heading() {
                         Some(heading) => {
-                            ui.label(format!("phone: {heading:.0}°"));
-                            if ui.button("Use").clicked() {
+                            ui.label(trf!("phone: {heading:.0}°", heading = heading));
+                            if ui.button(tr("Use")).clicked() {
                                 inputs.azimuth_degrees = heading.round().rem_euclid(360.0);
                                 self.compass = false;
                             }
                         }
                         None => {
-                            ui.weak("waiting for the compass…");
+                            ui.weak(tr("waiting for the compass…"));
                         }
                     }
                     ui.ctx().request_repaint();
                 } else if ui
-                    .button("🧭 Point the phone")
-                    .on_hover_text("Hold the phone flat, its top edge towards the target")
+                    .button(tr("🧭 Point the phone"))
+                    .on_hover_text(tr("Hold the phone flat, its top edge towards the target"))
                     .clicked()
                 {
                     crate::sensors::start_compass(ui.ctx().clone());
@@ -393,15 +397,15 @@ impl Weather {
         let speed = shooting_height_speed(report);
         ui.horizontal_wrapped(|ui| {
             if ui
-                .button(format!(
+                .button(trf!(
                     "Use the wind: {} from {}",
                     u.format(Quantity::WindSpeed, speed),
                     clock_text(clock)
                 ))
-                .on_hover_text(
+                .on_hover_text(tr(
                     "The forecast wind brought down to shooting height over open ground \
                      (about 70 % of the 10 m wind). In forest it is usually less: adjust it.",
-                )
+                ))
                 .clicked()
             {
                 inputs.wind_speed = (speed * 10.0).round() / 10.0;
@@ -436,7 +440,7 @@ pub fn wind_clock(from: f64, towards: f64) -> f64 {
 
 fn clock_text(clock: f64) -> String {
     if clock.fract() == 0.0 {
-        format!("{clock:.0} o'clock")
+        trf!("{clock:.0} o'clock", clock = clock)
     } else {
         format!("{:.0}:30", clock.floor())
     }
@@ -444,11 +448,25 @@ fn clock_text(clock: f64) -> String {
 
 /// "SW" for 225°.
 pub fn compass_point(degrees: f64) -> &'static str {
-    const POINTS: [&str; 16] = [
-        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW",
-        "NW", "NNW",
+    let points = [
+        tr("N"),
+        tr("NNE"),
+        tr("NE"),
+        tr("ENE"),
+        tr("E"),
+        tr("ESE"),
+        tr("SE"),
+        tr("SSE"),
+        tr("S"),
+        tr("SSW"),
+        tr("SW"),
+        tr("WSW"),
+        tr("W"),
+        tr("WNW"),
+        tr("NW"),
+        tr("NNW"),
     ];
-    POINTS[((degrees.rem_euclid(360.0) / 22.5).round() as usize) % 16]
+    points[((degrees.rem_euclid(360.0) / 22.5).round() as usize) % 16]
 }
 
 #[cfg(test)]

@@ -8,6 +8,8 @@ use ballistics_store::Store;
 use eframe::egui;
 use wasm_bindgen::JsCast;
 
+use crate::i18n::{tr, trf};
+
 /// The database's name in the browser's storage.
 const DATABASE: &str = "mxsc.sqlite";
 
@@ -29,7 +31,7 @@ pub fn download(file_name: &str, text: &str) -> Result<(), String> {
 
 /// Saves bytes as a file in the browser's downloads.
 pub fn download_bytes(file_name: &str, bytes: &[u8], mime: &str) -> Result<(), String> {
-    let fail = |what: &str| format!("could not save the file ({what})");
+    let fail = |what: &str| trf!("could not save the file ({what})", what = what);
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let options = web_sys::BlobPropertyBag::new();
     options.set_type(mime);
@@ -56,7 +58,7 @@ pub fn download_bytes(file_name: &str, bytes: &[u8], mime: &str) -> Result<(), S
 pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
     wasm_bindgen_futures::spawn_local(async move {
         let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter("Backups", &["json", "srl"])
+            .add_filter(tr("Backups"), &["json", "srl"])
             .pick_file()
             .await
         else {
@@ -100,9 +102,12 @@ async fn open_store() -> Result<Store, String> {
     install::<sqlite_wasm_rs::WasmOsCallback>(&RelaxedIdbCfg::default(), true)
         .await
         .map_err(|error| {
-            format!("this browser does not allow the app to store data ({error:?})")
+            trf!(
+                "this browser does not allow the app to store data ({})",
+                format!("{error:?}")
+            )
         })?;
-    Store::open(DATABASE).map_err(|error| format!("could not open the database: {error}"))
+    Store::open(DATABASE).map_err(|error| trf!("could not open the database: {}", error))
 }
 
 /// Opens the database, then starts the app in the page's
@@ -126,9 +131,10 @@ pub fn start(make_app: fn(Result<Store, String>) -> eframe::AppCreator<'static>)
         if let Some(loading) = document.get_element_by_id("loading") {
             match started {
                 Ok(()) => loading.remove(),
-                Err(error) => {
-                    loading.set_text_content(Some(&format!("The app could not start: {error:?}")))
-                }
+                Err(error) => loading.set_text_content(Some(&trf!(
+                    "The app could not start: {}",
+                    format!("{error:?}")
+                ))),
             }
         }
     });
@@ -249,7 +255,7 @@ pub fn can_locate() -> bool {
 /// gets latitude and longitude, or why not.
 pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
     let Some(geolocation) = geolocation() else {
-        return done(Err("this browser can't tell where you are".into()));
+        return done(Err(tr("this browser can't tell where you are").into()));
     };
     let done = std::rc::Rc::new(done);
     let found = {
@@ -264,7 +270,7 @@ pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
             done(
                 coordinate("latitude")
                     .zip(coordinate("longitude"))
-                    .ok_or_else(|| "the browser gave no position".to_owned()),
+                    .ok_or_else(|| tr("the browser gave no position").to_owned()),
             );
         })
     };
@@ -275,9 +281,9 @@ pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
                 .ok()
                 .and_then(|code| code.as_f64());
             done(Err(match code {
-                Some(1.0) => "the browser wasn't allowed to tell where you are".into(),
-                Some(3.0) => "finding your position took too long".into(),
-                _ => "your position couldn't be found".into(),
+                Some(1.0) => tr("the browser wasn't allowed to tell where you are").into(),
+                Some(3.0) => tr("finding your position took too long").into(),
+                _ => tr("your position couldn't be found").into(),
             }));
         })
     };
@@ -289,7 +295,7 @@ pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
         .and_then(|function| function.dyn_into::<js_sys::Function>().ok())
         .map(|function| function.call3(&geolocation, &found, &failed, &options));
     if !matches!(started, Some(Ok(_))) {
-        done(Err("this browser can't tell where you are".into()));
+        done(Err(tr("this browser can't tell where you are").into()));
     }
 }
 

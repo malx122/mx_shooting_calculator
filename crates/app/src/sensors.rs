@@ -19,7 +19,11 @@ pub fn locate(done: impl Fn(Result<Place, String>) + 'static) {
     #[cfg(target_arch = "wasm32")]
     crate::web::locate(move |position| {
         done(position.map(|(latitude, longitude)| Place {
-            name: format!("Your position ({latitude:.2}° N, {longitude:.2}° E)"),
+            name: crate::i18n::trf!(
+                "Your position ({latitude:.2}° N, {longitude:.2}° E)",
+                latitude = latitude,
+                longitude = longitude
+            ),
             latitude,
             longitude,
             region: None,
@@ -27,9 +31,10 @@ pub fn locate(done: impl Fn(Result<Place, String>) + 'static) {
         }))
     });
     #[cfg(not(target_arch = "wasm32"))]
-    done(Err(
-        "this device can't tell where it is; search for a place".into(),
-    ));
+    done(Err(crate::i18n::tr(
+        "this device can't tell where it is; search for a place",
+    )
+    .into()));
 }
 
 /// Whether the device has a compass (a phone in the browser).

@@ -81,5 +81,5 @@ pub fn show(ui: &mut egui::Ui, country: Country, height: f32) -> egui::Response 
     let (rect, response) =
         ui.allocate_exact_size(vec2(width(country, height), height), egui::Sense::hover());
     paint(ui.painter(), rect.left_center(), country, height);
-    response.on_hover_text(country.name())
+    response.on_hover_text(crate::i18n::country_name(country))
 }

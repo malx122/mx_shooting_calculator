@@ -95,12 +95,16 @@ pub fn show(ui: &mut egui::Ui) {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(
-                RichText::new(format!("Version {}", release.version))
+                RichText::new(crate::i18n::trf!("Version {}", release.version))
                     .heading()
                     .color(theme::BLAZE),
             );
             if release.version == crate::VERSION {
-                ui.label(RichText::new("this version").small().color(theme::MEADOW));
+                ui.label(
+                    RichText::new(crate::i18n::tr("this version"))
+                        .small()
+                        .color(theme::MEADOW),
+                );
             }
         });
         if !release.date.is_empty() {

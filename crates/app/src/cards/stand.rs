@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use super::dope::Measure;
 use super::sheet::{Align, Ink, PT, Sheet, arc, fit, text_width};
 use super::{CardSize, Subject};
+use crate::i18n::{tr, trf};
 use crate::units::{Quantity, UnitPrefs};
 use crate::weather::compass_point;
 
@@ -98,7 +99,7 @@ pub struct Stand {
 impl Default for Stand {
     fn default() -> Self {
         Stand {
-            name: "Stand 1".into(),
+            name: trf!("Stand {}", 1),
             facing_degrees: 0.0,
             view: View::Half,
             sector: None,
@@ -239,10 +240,19 @@ pub fn layout(
         };
         let hold = Hold::new(rifle, &row);
         match options.hold_as {
-            Measure::Clicks => format!("{:+} clicks", hold.elevation_clicks)
-                .replace("+0 ", "0 ")
-                .replace("+1 clicks", "+1 click")
-                .replace("-1 clicks", "-1 click"),
+            Measure::Clicks => {
+                let clicks = hold.elevation_clicks;
+                let number = if clicks == 0 {
+                    "0".to_owned()
+                } else {
+                    format!("{clicks:+}")
+                };
+                if clicks.abs() == 1 {
+                    trf!("{} click", number)
+                } else {
+                    trf!("{} clicks", number)
+                }
+            }
             Measure::Angle => format!(
                 "{:+.1} {}",
                 hold.elevation,
@@ -257,32 +267,32 @@ pub fn layout(
     let inner = width - 2.0 * margin;
     let mut landmarks: Vec<&Landmark> = stand.landmarks.iter().collect();
     landmarks.sort_by(|a, b| a.range_m.total_cmp(&b.range_m));
-    let mut legend = vec![format!(
+    let mut legend = vec![trf!(
         "Rings every {}: range, and the hold{}.",
         u.format(Quantity::Distance, step),
         match options.hold_as {
-            Measure::Length => " (where a dead-on hold hits)",
-            _ => " up",
+            Measure::Length => tr(" (where a dead-on hold hits)"),
+            _ => tr(" up"),
         }
     )];
     if let Some(dead_on) = dead_on {
-        legend.push(format!(
+        legend.push(trf!(
             "Green: hold dead on, out to {}.",
             u.format(Quantity::Distance, dead_on.far_limit)
         ));
     }
     if let (Some(limit), Some(target)) = (ethical_m, &subject.target) {
-        legend.push(format!(
+        legend.push(trf!(
             "Red: beyond the ethical limit for {} ({}).",
             target.to_lowercase(),
             u.format(Quantity::Distance, limit)
         ));
     }
     if stand.sector.is_some() {
-        legend.push("Grey: outside the shooting sector.".into());
+        legend.push(tr("Grey: outside the shooting sector.").into());
     }
     if !stand.no_shoot.is_empty() {
-        legend.push("Dark, hatched: never shoot this way.".into());
+        legend.push(tr("Dark, hatched: never shoot this way.").into());
     }
     // Shrink the text until the map keeps at least 40 % of the card.
     let (header, table, footer) = loop {
@@ -336,7 +346,7 @@ pub fn layout(
     line(
         &mut sheet,
         &mut y,
-        &format!(
+        &trf!(
             "Faces {} ({:.0}°) · {} · zero {} · holds for level shots in calm air",
             compass_point(stand.facing_degrees),
             stand.facing_degrees.rem_euclid(360.0),
@@ -438,7 +448,7 @@ pub fn layout(
                 let [x, y] = at(mid, outer_m as f32 * 0.82);
                 sheet.text(
                     [x, y],
-                    format!("No shot: {}", no.name),
+                    trf!("No shot: {}", no.name),
                     s * 0.8,
                     true,
                     Align::Center,
@@ -548,7 +558,7 @@ pub fn layout(
             half >= 180.0,
         );
         let [x, y] = at(0.0, limit as f32);
-        let text = format!("limit {}", u.format(Quantity::Distance, limit));
+        let text = trf!("limit {}", u.format(Quantity::Distance, limit));
         let w = text_width(&text, s * 0.75, true) + 1.2;
         sheet.rect(
             x - w / 2.0,
@@ -559,7 +569,7 @@ pub fn layout(
         );
         sheet.text(
             [x, y + s * 0.75 * PT * 0.35],
-            format!("limit {}", u.format(Quantity::Distance, limit)),
+            trf!("limit {}", u.format(Quantity::Distance, limit)),
             s * 0.75,
             true,
             Align::Center,
@@ -567,7 +577,7 @@ pub fn layout(
         );
     }
     if let Some([left, right]) = stand.sector {
-        for (bearing, name) in [(left, "left edge"), (right, "right edge")] {
+        for (bearing, name) in [(left, tr("left edge")), (right, tr("right edge"))] {
             let angle = on_card(stand, bearing) as f32;
             if angle.abs() <= half {
                 let end = at(angle, outer_m as f32);
@@ -662,7 +672,13 @@ pub fn layout(
     if !landmarks.is_empty() {
         y += 2.0;
         let row = s * PT * 1.5;
-        let heads = ["Landmark", "Range", "Direction", "Hold", "Note"];
+        let heads = [
+            tr("Landmark"),
+            tr("Range"),
+            tr("Direction"),
+            tr("Hold"),
+            tr("Note"),
+        ];
         let rows: Vec<[String; 5]> =
             landmarks
                 .iter()
@@ -672,17 +688,17 @@ pub fn layout(
                         if stand.no_shoot.iter().any(|no| {
                             between(landmark.bearing_degrees, no.from_degrees, no.to_degrees)
                         }) {
-                            "never shoot this way"
+                            tr("never shoot this way")
                         } else if stand.sector.is_some_and(|[left, right]| {
                             !between(landmark.bearing_degrees, left, right)
                         }) {
-                            "outside the sector"
+                            tr("outside the sector")
                         } else if ethical_m.is_some_and(|limit| range > limit) {
-                            "beyond the limit"
+                            tr("beyond the limit")
                         } else if dead_on.is_some_and(|dead_on| {
                             range <= dead_on.far_limit && range >= dead_on.near_limit
                         }) {
-                            "hold dead on"
+                            tr("hold dead on")
                         } else {
                             ""
                         };
@@ -738,7 +754,7 @@ pub fn layout(
             }
             for (column, cell) in cells.iter().enumerate() {
                 let ink = match (column, cell.as_str()) {
-                    (4, "hold dead on") => Ink::Green,
+                    (4, note) if note == tr("hold dead on") => Ink::Green,
                     (4, "") => Ink::Black,
                     (4, _) => Ink::Red,
                     _ => Ink::Black,
@@ -763,7 +779,7 @@ pub fn layout(
         y += spacing;
         sheet.text(
             [margin, y],
-            "Notes",
+            tr("Notes"),
             s * 0.85,
             false,
             Align::Left,

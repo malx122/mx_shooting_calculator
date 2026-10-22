@@ -9,6 +9,7 @@ use ballistics_store::model::now_ms;
 use serde::Deserialize;
 
 use crate::http::{self, Method, Request};
+use crate::i18n::{tr, trf};
 
 const DRIVE: &str = "https://www.googleapis.com/drive/v3/files";
 const UPLOAD: &str = "https://www.googleapis.com/upload/drive/v3/files";
@@ -42,8 +43,12 @@ pub type Shared = Arc<Mutex<Account>>;
 /// The permission the app needs: its own hidden folder in Drive.
 const DRIVE_SCOPE: &str = "https://www.googleapis.com/auth/drive.appdata";
 /// What to tell the hunter when Google's sign-in left Drive out.
-pub const NO_DRIVE_ACCESS: &str = "Google gave the app no access to your Drive. Sign in again \
-     and tick the box that lets the app keep its data in your Google Drive.";
+fn no_drive_access() -> &'static str {
+    tr(
+        "Google gave the app no access to your Drive. Sign in again and tick the box that lets \
+        the app keep its data in your Google Drive.",
+    )
+}
 
 /// Why a Drive request failed.
 pub enum Trouble {
@@ -95,29 +100,34 @@ pub async fn finish_sign_in(server: String, session: String) -> Result<Account, 
         match response {
             Ok(response) if response.status == 200 => {
                 let tokens: Tokens = serde_json::from_slice(&response.body)
-                    .map_err(|_| "the sign-in answer was garbled".to_owned())?;
+                    .map_err(|_| tr("the sign-in answer was garbled").to_owned())?;
                 if tokens
                     .scope
                     .as_deref()
                     .is_some_and(|scope| !scope.split(' ').any(|s| s == DRIVE_SCOPE))
                 {
-                    return Err(NO_DRIVE_ACCESS.into());
+                    return Err(no_drive_access().into());
                 }
                 let refresh_token = tokens
                     .refresh_token
-                    .ok_or_else(|| "Google sent no lasting sign-in".to_owned())?;
+                    .ok_or_else(|| tr("Google sent no lasting sign-in").to_owned())?;
                 let mut account = Account::new(refresh_token);
                 account.access_token = Some(tokens.access_token);
                 account.expires_at_ms = now_ms() + tokens.expires_in.unwrap_or(3600) * 1000;
                 return Ok(account);
             }
             Ok(response) if response.status == 404 => {}
-            Ok(response) => return Err(format!("the sync server answered {}", response.status)),
+            Ok(response) => {
+                return Err(trf!(
+                    "the sync server answered {status}",
+                    status = response.status
+                ));
+            }
             // No connection for a moment: keep waiting.
             Err(_) => {}
         }
     }
-    Err("signing in took too long".into())
+    Err(tr("signing in took too long").into())
 }
 
 /// The app's file: its bytes and its Drive id, or `None` before any device
@@ -177,7 +187,7 @@ async fn find(server: &str, account: &Shared) -> Result<Option<String>, Trouble>
     );
     let response = drive(server, account, Method::Get, url, None, None).await?;
     let list: FileList = serde_json::from_slice(&response.body)
-        .map_err(|_| Trouble::Other("Google Drive's answer was garbled".into()))?;
+        .map_err(|_| Trouble::Other(tr("Google Drive's answer was garbled").into()))?;
     Ok(list.files.into_iter().next().map(|file| file.id))
 }
 
@@ -197,7 +207,7 @@ async fn create(server: &str, account: &Shared) -> Result<String, Trouble> {
     )
     .await?;
     let file: File = serde_json::from_slice(&response.body)
-        .map_err(|_| Trouble::Other("Google Drive's answer was garbled".into()))?;
+        .map_err(|_| Trouble::Other(tr("Google Drive's answer was garbled").into()))?;
     Ok(file.id)
 }
 
@@ -228,12 +238,17 @@ async fn drive(
         match response.status {
             200..=299 => return Ok(response),
             401 if attempt == 0 => continue,
-            401 => return Err(Trouble::SignIn("sign in to Google again".into())),
+            401 => return Err(Trouble::SignIn(tr("sign in to Google again").into())),
             403 => return Err(refused(&response.body)),
-            status => return Err(Trouble::Other(format!("Google Drive answered {status}"))),
+            status => {
+                return Err(Trouble::Other(trf!(
+                    "Google Drive answered {status}",
+                    status = status
+                )));
+            }
         }
     }
-    Err(Trouble::SignIn("sign in to Google again".into()))
+    Err(Trouble::SignIn(tr("sign in to Google again").into()))
 }
 
 /// Why Drive refused (403), from its answer.
@@ -253,7 +268,7 @@ fn refused(body: &[u8]) -> Trouble {
         reason: Option<String>,
     }
     let Ok(answer) = serde_json::from_slice::<Answer>(body) else {
-        return Trouble::Other("Google Drive refused".into());
+        return Trouble::Other(tr("Google Drive refused").into());
     };
     let reason = answer
         .error
@@ -263,12 +278,14 @@ fn refused(body: &[u8]) -> Trouble {
         .unwrap_or_default();
     let message = answer.error.message.unwrap_or_default();
     match reason.as_str() {
-        "insufficientPermissions" | "insufficientScopes" => Trouble::SignIn(NO_DRIVE_ACCESS.into()),
-        _ if message.contains("scope") => Trouble::SignIn(NO_DRIVE_ACCESS.into()),
-        "accessNotConfigured" => {
-            Trouble::Other("the Google Drive API isn't enabled for the app".into())
+        "insufficientPermissions" | "insufficientScopes" => {
+            Trouble::SignIn(no_drive_access().into())
         }
-        _ => Trouble::Other(format!("Google Drive refused: {message}")),
+        _ if message.contains("scope") => Trouble::SignIn(no_drive_access().into()),
+        "accessNotConfigured" => {
+            Trouble::Other(tr("the Google Drive API isn't enabled for the app").into())
+        }
+        _ => Trouble::Other(trf!("Google Drive refused: {message}", message = message)),
     }
 }
 
@@ -301,14 +318,17 @@ async fn access_token(server: &str, account: &Shared, renew: bool) -> Result<Str
     match response.status {
         200 => {
             let tokens: Tokens = serde_json::from_slice(&response.body)
-                .map_err(|_| Trouble::Other("the sync server's answer was garbled".into()))?;
+                .map_err(|_| Trouble::Other(tr("the sync server's answer was garbled").into()))?;
             let mut account = account.lock().expect("not poisoned");
             account.access_token = Some(tokens.access_token.clone());
             account.expires_at_ms = now_ms() + tokens.expires_in.unwrap_or(3600) * 1000;
             Ok(tokens.access_token)
         }
-        401 | 400 => Err(Trouble::SignIn("sign in to Google again".into())),
-        status => Err(Trouble::Other(format!("the sync server answered {status}"))),
+        401 | 400 => Err(Trouble::SignIn(tr("sign in to Google again").into())),
+        status => Err(Trouble::Other(trf!(
+            "the sync server answered {status}",
+            status = status
+        ))),
     }
 }
 

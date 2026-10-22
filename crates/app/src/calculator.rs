@@ -17,6 +17,7 @@ use ballistics_shot::{from_radians, unit_label};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
+use crate::i18n::{target_name, tr, trf};
 use crate::mobile;
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
@@ -225,17 +226,15 @@ impl Aim {
 
     /// The target's name, or "No target".
     pub fn name(&self) -> &str {
-        self.target
-            .as_ref()
-            .map_or("No target", |target| target.name.as_str())
+        self.target.as_ref().map_or(tr("No target"), target_name)
     }
 
     /// "vital zone" on game, "hit zone" on sport targets.
     pub fn zone_name(&self) -> &'static str {
         if self.target.is_some() && !self.is_game() {
-            "hit zone"
+            tr("hit zone")
         } else {
-            "vital zone"
+            tr("vital zone")
         }
     }
 }
@@ -328,7 +327,10 @@ impl CalculatorPage {
                 .iter()
                 .find(|load| load.rifle_id == rifle.id && load.bullet_id == bullet.id)
                 .cloned(),
-            target: aim.target.as_ref().map(|target| target.name.clone()),
+            target: aim
+                .target
+                .as_ref()
+                .map(|target| target_name(target).to_owned()),
             vital_cm: aim.vital_diameter_cm,
             min_energy_j: aim.min_energy_j,
             min_velocity_mps: aim
@@ -504,17 +506,19 @@ impl CalculatorPage {
 
         egui::CentralPanel::default().show(context, |ui| match (&rifle, &bullet) {
             (None, _) => {
-                ui.heading("Add a rifle to start");
-                ui.label("Rifles and the bullets you shoot in them are kept in your own database.");
+                ui.heading(tr("Add a rifle to start"));
+                ui.label(tr(
+                    "Rifles and the bullets you shoot in them are kept in your own database.",
+                ));
                 ui.horizontal(|ui| {
-                    if ui.button("Go to Rifles").clicked() {
+                    if ui.button(tr("Go to Rifles")).clicked() {
                         actions.push(Action::Goto(Page::Rifles));
                     }
                     if ui
-                        .button("Load demo data")
-                        .on_hover_text(
+                        .button(tr("Load demo data"))
+                        .on_hover_text(tr(
                             "Three rifles with bullets, a scope and a target, to try the app",
-                        )
+                        ))
                         .clicked()
                     {
                         actions.push(Action::LoadDemo);
@@ -522,14 +526,14 @@ impl CalculatorPage {
                 });
             }
             (Some(rifle), None) => {
-                ui.heading(format!(
+                ui.heading(trf!(
                     "No {} bullets in your collection",
                     caliber_name(&rifle.caliber)
                 ));
-                ui.label(
+                ui.label(tr(
                     "Add factory ammunition or a handload from the catalog, or enter one by hand.",
-                );
-                if ui.button("Go to Bullets").clicked() {
+                ));
+                if ui.button(tr("Go to Bullets")).clicked() {
                     actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                 }
             }
@@ -571,7 +575,7 @@ impl CalculatorPage {
                         self.apply_requests(requested, rifle, context, &mut actions);
                     }
                     Err(error) => {
-                        ui.heading("No solution");
+                        ui.heading(tr("No solution"));
                         ui.colored_label(ui.visuals().error_fg_color, error.to_string());
                     }
                 }
@@ -658,13 +662,15 @@ impl CalculatorPage {
         actions: &mut Vec<Action>,
     ) {
         let u = units::prefs(ui.ctx());
-        ui.heading("Calculate");
+        ui.heading(tr("Calculate"));
         ui.add_space(4.0);
         grid(ui, "equipment", |ui| {
-            ui.label("Rifle");
+            ui.label(tr("Rifle"));
             let combo = egui::ComboBox::from_id_salt("rifle")
                 .width(240.0)
-                .selected_text(rifle.map_or("None".to_owned(), |rifle| shortened(&rifle.name, 40)))
+                .selected_text(
+                    rifle.map_or(tr("None").to_owned(), |rifle| shortened(&rifle.name, 40)),
+                )
                 .show_ui(ui, |ui| {
                     for candidate in &data.rifles {
                         let text =
@@ -677,26 +683,26 @@ impl CalculatorPage {
                     }
                 });
             if let Some(rifle) = rifle {
-                combo.response.on_hover_text(format!(
-                    "{} · zero {} · sight {} · 1:{} {} twist · clicks {} {}",
+                combo.response.on_hover_text(trf!(
+                    "{} · zero {} · sight {} · 1:{} {} · clicks {} {}",
                     caliber_name(&rifle.caliber),
                     zero_text(&u, rifle),
                     u.format(Quantity::SightHeight, rifle.sight_height_cm),
                     u.format(Quantity::Twist, rifle.twist_in),
                     if rifle.right_hand_twist {
-                        "right"
+                        tr("right twist")
                     } else {
-                        "left"
+                        tr("left twist")
                     },
                     rifle.click_value,
                     unit_label(rifle.click_unit),
                 ));
             }
             ui.end_row();
-            ui.label("Bullet");
+            ui.label(tr("Bullet"));
             let combo = egui::ComboBox::from_id_salt("bullet")
                 .width(240.0)
-                .selected_text(bullet.map_or("None".to_owned(), |bullet| {
+                .selected_text(bullet.map_or(tr("None").to_owned(), |bullet| {
                     shortened(&bullet.display_name(), 40)
                 }))
                 .show_ui(ui, |ui| {
@@ -713,7 +719,7 @@ impl CalculatorPage {
             if let Some(bullet) = bullet {
                 let drag = match bullet.drag_model {
                     BcModel::Custom => {
-                        format!("own drag curve ({} points)", bullet.drag_curve.len())
+                        trf!("own drag curve ({} points)", bullet.drag_curve.len())
                     }
                     model => format!(
                         "BC {model:?} {:.3}",
@@ -722,9 +728,12 @@ impl CalculatorPage {
                 };
                 combo.response.on_hover_text(format!(
                     "{drag} · {}",
-                    bullet.length_mm.map_or("length unknown".to_owned(), |mm| u
-                        .format(Quantity::BulletLength, mm)
-                        + " long"),
+                    bullet
+                        .length_mm
+                        .map_or(tr("length unknown").to_owned(), |mm| trf!(
+                            "{} long",
+                            u.format(Quantity::BulletLength, mm)
+                        )),
                 ));
             }
             ui.end_row();
@@ -741,11 +750,11 @@ impl CalculatorPage {
                 &self.inputs.conditions(),
             ));
             if ui
-                .link("Load setup…")
-                .on_hover_text(
+                .link(tr("Load setup…"))
+                .on_hover_text(tr(
                     "Measured velocities, point of impact, zero weather and truing for this \
                      bullet in this rifle",
-                )
+                ))
                 .clicked()
             {
                 actions.push(Action::EditLoad(rifle.id.clone(), bullet.id.clone()));
@@ -764,23 +773,23 @@ impl CalculatorPage {
         let fields = [
             (
                 phone::Picker::Range,
-                "Range".to_owned(),
+                tr("Range").to_owned(),
                 u.format(Quantity::Distance, self.inputs.target_range_m),
                 phone::Glyph::Range((self.inputs.target_range_m / 500.0) as f32),
             ),
             (
                 phone::Picker::Angle,
                 if self.inputs.cant_degrees == 0.0 {
-                    "Angle".to_owned()
+                    tr("Angle").to_owned()
                 } else {
-                    format!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
+                    trf!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
                 },
                 format!("{:+.0}°", self.inputs.inclination_degrees),
                 phone::Glyph::Angle(self.inputs.inclination_degrees as f32),
             ),
             (
                 phone::Picker::Wind,
-                format!("Wind · {}", phone::clock_text(self.inputs.wind_clock)),
+                trf!("Wind · {}", phone::clock_text(self.inputs.wind_clock)),
                 u.format(Quantity::WindSpeed, self.inputs.wind_speed),
                 phone::Glyph::Wind {
                     clock: self.inputs.wind_clock as f32,
@@ -790,8 +799,8 @@ impl CalculatorPage {
             (
                 phone::Picker::Target,
                 match aim.vital_diameter_cm {
-                    Some(zone) => format!("Target · {}", u.format(Quantity::ShortLength, zone)),
-                    None => "Target".to_owned(),
+                    Some(zone) => trf!("Target · {}", u.format(Quantity::ShortLength, zone)),
+                    None => tr("Target").to_owned(),
                 },
                 aim.name().to_owned(),
                 phone::Glyph::Figure(aim.figure.as_ref()),
@@ -826,9 +835,9 @@ impl CalculatorPage {
         let weather = &mut self.weather;
         ui.horizontal(|ui| {
             ui.label(if data.hunting {
-                "Animal crossing at"
+                tr("Animal crossing at")
             } else {
-                "Target moving at"
+                tr("Target moving at")
             });
             units::drag(
                 ui,
@@ -838,9 +847,9 @@ impl CalculatorPage {
                 0.1,
             )
             .on_hover_text(if data.hunting {
-                "Walking moose ≈ 1.5, trotting ≈ 4, running ≈ 8 m/s; 0 for a still animal"
+                tr("Walking moose ≈ 1.5, trotting ≈ 4, running ≈ 8 m/s; 0 for a still animal")
             } else {
-                "Sideways speed of a moving target; 0 for a still one"
+                tr("Sideways speed of a moving target; 0 for a still one")
             });
         });
         ui.add_space(4.0);
@@ -861,45 +870,45 @@ impl CalculatorPage {
             summary.push_str(" · ");
             summary.push_str(place.name.split(',').next().unwrap_or(&place.name));
         }
-        fold(ui, "fold-weather", "Weather", &summary, |ui| {
+        fold(ui, "fold-weather", tr("Weather"), &summary, |ui| {
             weather.panel(ui, inputs, data.country);
             ui.add_space(4.0);
             grid(ui, "weather", |ui| {
                 quantity(
                     ui,
-                    "Temperature",
+                    tr("Temperature"),
                     &mut inputs.temperature_c,
                     Quantity::Temperature,
                     -45.0..=50.0,
                     0.5,
                 );
             });
-            let air = format!(
+            let air = trf!(
                 "{} · {} % · powder {}",
                 match inputs.pressure_source {
-                    PressureSource::Station => "barometer",
-                    PressureSource::SeaLevelAndAltitude => "forecast",
+                    PressureSource::Station => tr("barometer"),
+                    PressureSource::SeaLevelAndAltitude => tr("forecast"),
                 },
                 inputs.humidity_percent.round(),
                 if inputs.powder_follows_air {
-                    "as the air".to_owned()
+                    tr("as the air").to_owned()
                 } else {
                     u.format(Quantity::Temperature, inputs.powder_temperature_c)
                 }
             );
-            fold(ui, "fold-air", "Air details", &air, |ui| {
+            fold(ui, "fold-air", tr("Air details"), &air, |ui| {
                 grid(ui, "air", |ui| {
-                    ui.label("Air pressure");
+                    ui.label(tr("Air pressure"));
                     ui.vertical(|ui| {
                         ui.radio_value(
                             &mut inputs.pressure_source,
                             PressureSource::SeaLevelAndAltitude,
-                            "Sea-level, from the forecast",
+                            tr("Sea-level, from the forecast"),
                         );
                         ui.radio_value(
                             &mut inputs.pressure_source,
                             PressureSource::Station,
-                            "Barometer at your spot",
+                            tr("Barometer at your spot"),
                         );
                     });
                     ui.end_row();
@@ -907,7 +916,7 @@ impl CalculatorPage {
                         PressureSource::Station => {
                             quantity(
                                 ui,
-                                "Barometer",
+                                tr("Barometer"),
                                 &mut inputs.station_pressure_hpa,
                                 Quantity::Pressure,
                                 500.0..=1100.0,
@@ -917,7 +926,7 @@ impl CalculatorPage {
                         PressureSource::SeaLevelAndAltitude => {
                             quantity(
                                 ui,
-                                "Sea-level pressure",
+                                tr("Sea-level pressure"),
                                 &mut inputs.sea_level_pressure_hpa,
                                 Quantity::Pressure,
                                 900.0..=1100.0,
@@ -925,7 +934,7 @@ impl CalculatorPage {
                             );
                             quantity(
                                 ui,
-                                "Altitude",
+                                tr("Altitude"),
                                 &mut inputs.altitude_m,
                                 Quantity::Altitude,
                                 -400.0..=5000.0,
@@ -935,15 +944,15 @@ impl CalculatorPage {
                     }
                     number(
                         ui,
-                        "Humidity",
+                        tr("Humidity"),
                         &mut inputs.humidity_percent,
                         0.0..=100.0,
                         1.0,
                         " %",
                     );
-                    ui.label("Powder temperature");
+                    ui.label(tr("Powder temperature"));
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut inputs.powder_follows_air, "same as air");
+                        ui.checkbox(&mut inputs.powder_follows_air, tr("same as air"));
                         if !inputs.powder_follows_air {
                             units::drag(
                                 ui,
@@ -961,46 +970,53 @@ impl CalculatorPage {
 
         let mut on = Vec::new();
         if inputs.spin_drift {
-            on.push("spin drift");
+            on.push(tr("spin drift"));
         }
         if inputs.aerodynamic_jump {
-            on.push("aero jump");
+            on.push(tr("aero jump"));
         }
         if inputs.coriolis {
             on.push("Coriolis");
         }
         let mut summary = if on.is_empty() {
-            "none".to_owned()
+            tr("none").to_owned()
         } else {
             on.join(", ")
         };
         if inputs.cant_degrees != 0.0 {
-            summary.push_str(&format!(" · cant {:+.1}°", inputs.cant_degrees));
+            summary.push_str(&trf!(" · cant {:+.1}°", inputs.cant_degrees));
         }
-        fold(ui, "fold-fine", "Fine corrections", &summary, |ui| {
+        fold(ui, "fold-fine", tr("Fine corrections"), &summary, |ui| {
             grid(ui, "fine", |ui| {
-                number(ui, "Cant", &mut inputs.cant_degrees, -30.0..=30.0, 0.5, "°");
+                number(
+                    ui,
+                    tr("Cant"),
+                    &mut inputs.cant_degrees,
+                    -30.0..=30.0,
+                    0.5,
+                    "°",
+                );
                 ui.label("");
-                ui.weak("the rifle tilted: + with the scope's top to the right");
+                ui.weak(tr("the rifle tilted: + with the scope's top to the right"));
                 ui.end_row();
-                ui.label("Spin drift");
-                ui.checkbox(&mut inputs.spin_drift, "include");
+                ui.label(tr("Spin drift"));
+                ui.checkbox(&mut inputs.spin_drift, tr("include"));
                 ui.end_row();
-                ui.label("Aerodynamic jump");
-                ui.checkbox(&mut inputs.aerodynamic_jump, "include")
-                    .on_hover_text(
+                ui.label(tr("Aerodynamic jump"));
+                ui.checkbox(&mut inputs.aerodynamic_jump, tr("include"))
+                    .on_hover_text(tr(
                         "A crosswind throws a spinning bullet a little up or down as it leaves \
                          the muzzle (with a right-hand twist, wind from the left lifts it). \
                          Needs the bullet's length.",
-                    );
+                    ));
                 ui.end_row();
                 ui.label("Coriolis");
-                ui.checkbox(&mut inputs.coriolis, "include");
+                ui.checkbox(&mut inputs.coriolis, tr("include"));
                 ui.end_row();
                 if inputs.coriolis {
                     number(
                         ui,
-                        "  latitude",
+                        tr("  latitude"),
                         &mut inputs.latitude_degrees,
                         -90.0..=90.0,
                         0.1,
@@ -1008,11 +1024,11 @@ impl CalculatorPage {
                     );
                     number(
                         ui,
-                        "  shooting towards",
+                        tr("  shooting towards"),
                         &mut inputs.azimuth_degrees,
                         0.0..=360.0,
                         1.0,
-                        "° (0 = north)",
+                        tr("° (0 = north)"),
                     );
                 }
             });
@@ -1037,22 +1053,22 @@ impl CalculatorPage {
                 )
             ));
         }
-        let changed = inputs.min_energy_override_j.is_some()
-            || inputs.min_velocity_override_mps.is_some();
+        let changed =
+            inputs.min_energy_override_j.is_some() || inputs.min_velocity_override_mps.is_some();
         if changed {
-            summary.push_str(" · changed");
+            summary.push_str(tr(" · changed"));
         }
         let title = if aim.is_game() {
-            "Target limits"
+            tr("Target limits")
         } else {
-            "Target"
+            tr("Target")
         };
         fold(ui, "fold-target", title, &summary, |ui| {
             grid(ui, "ethics", |ui| {
                 if aim.is_game() {
                     overridable(
                         ui,
-                        "Minimum energy",
+                        tr("Minimum energy"),
                         &mut inputs.min_energy_override_j,
                         target.min_energy_j.unwrap_or(0.0),
                         Quantity::Energy,
@@ -1065,7 +1081,7 @@ impl CalculatorPage {
                     ) {
                         (Some(velocity), _) => overridable(
                             ui,
-                            "Minimum velocity",
+                            tr("Minimum velocity"),
                             &mut inputs.min_velocity_override_mps,
                             velocity,
                             Quantity::Speed,
@@ -1073,8 +1089,8 @@ impl CalculatorPage {
                             5.0,
                         ),
                         (None, Some(expansion)) => {
-                            ui.label("Minimum velocity");
-                            ui.label(format!(
+                            ui.label(tr("Minimum velocity"));
+                            ui.label(trf!(
                                 "{} (bullet data)",
                                 u.format(Quantity::Speed, expansion)
                             ));
@@ -1082,7 +1098,7 @@ impl CalculatorPage {
                         }
                         (None, None) => quantity(
                             ui,
-                            "Minimum velocity",
+                            tr("Minimum velocity"),
                             &mut inputs.min_velocity,
                             Quantity::Speed,
                             0.0..=900.0,
@@ -1092,14 +1108,14 @@ impl CalculatorPage {
                 }
             });
             if aim.is_game() {
-                ui.weak(
+                ui.weak(tr(
                     "Check your bullet maker's expansion data and your country's legal energy \
                      rules.",
-                );
+                ));
             }
             if ui
-                .button("Targets…")
-                .on_hover_text("See the targets or make your own")
+                .button(tr("Targets…"))
+                .on_hover_text(tr("See the targets or make your own"))
                 .clicked()
             {
                 actions.push(Action::Goto(Page::Targets));
@@ -1123,9 +1139,9 @@ pub const MAX_RANGE_M: f64 = 2000.0;
 /// "1 click", "3 clicks".
 pub fn clicks_text(clicks: i64) -> String {
     if clicks.abs() == 1 {
-        format!("{clicks} click")
+        trf!("{} click", clicks)
     } else {
-        format!("{clicks} clicks")
+        trf!("{} clicks", clicks)
     }
 }
 
@@ -1135,13 +1151,14 @@ pub fn zero_text(u: &units::UnitPrefs, rifle: &Rifle) -> String {
     if rifle.zero_height_cm.abs() < 0.05 {
         range
     } else {
-        format!(
-            "{range}, {} {}",
+        trf!(
+            "{}, {} {}",
+            range,
             u.format(Quantity::ShortLength, rifle.zero_height_cm.abs()),
             if rifle.zero_height_cm > 0.0 {
-                "high"
+                tr("high")
             } else {
-                "low"
+                tr("low")
             }
         )
     }
@@ -1150,21 +1167,26 @@ pub fn zero_text(u: &units::UnitPrefs, rifle: &Rifle) -> String {
 /// "4.0 cm high at 100 m, on the line of sight again at 213 m".
 pub fn zero_figure_text(u: &units::UnitPrefs, figure: &ZeroFigure) -> String {
     let at = if figure.height.abs() < 0.0005 {
-        format!(
+        trf!(
             "on the line of sight at {}",
             u.format(Quantity::Distance, figure.reference_range)
         )
     } else {
-        format!(
+        trf!(
             "{} {} at {}",
             u.format(Quantity::ShortLength, figure.height.abs() * 100.0),
-            if figure.height > 0.0 { "high" } else { "low" },
+            if figure.height > 0.0 {
+                tr("high")
+            } else {
+                tr("low")
+            },
             u.format(Quantity::Distance, figure.reference_range)
         )
     };
     match figure.far_zero {
-        Some(far) if (far - figure.reference_range).abs() > 1.0 => format!(
-            "{at}, on the line of sight again at {}",
+        Some(far) if (far - figure.reference_range).abs() > 1.0 => trf!(
+            "{}, on the line of sight again at {}",
+            at,
             u.format(Quantity::Distance, far)
         ),
         _ => at,
@@ -1192,13 +1214,13 @@ fn overridable(
             let text = units::prefs(ui.ctx()).format(quantity, target_value);
             if ui
                 .small_button("↺")
-                .on_hover_text(format!("Back to the target's {text}"))
+                .on_hover_text(trf!("Back to the target's {}", text))
                 .clicked()
             {
                 *value = None;
             }
         } else {
-            ui.weak("target's");
+            ui.weak(tr("target's"));
         }
     });
     ui.end_row();
@@ -1274,8 +1296,8 @@ impl ResultsView<'_> {
     fn title(&self, ui: &egui::Ui) -> String {
         let range = units::prefs(ui.ctx()).format(Quantity::Distance, self.inputs.target_range_m);
         match &self.aim.target {
-            Some(target) => format!("{} at {range}", target.name),
-            None => format!("Shot at {range}"),
+            Some(target) => trf!("{} at {}", target_name(target), range),
+            None => trf!("Shot at {}", range),
         }
     }
 
@@ -1290,8 +1312,8 @@ impl ResultsView<'_> {
         crate::hunting::resolve_region(country, &mut region, self.inputs.place.as_ref());
         let mut pills = Vec::new();
         if let Some(needed) = target.ammunition_level(country) {
-            let (allowed, text) = assessment.short_verdict(needed);
-            let (_, full) = assessment.verdict(needed, &target.name);
+            let (allowed, text) = crate::i18n::short_verdict(assessment, needed);
+            let full = crate::i18n::verdict(assessment, needed, target_name(target));
             let tone = match allowed {
                 ballistics_shot::Allowed::Yes => crate::hunting::Tone::Open,
                 ballistics_shot::Allowed::IfExpanding => crate::hunting::Tone::Warn,
@@ -1301,14 +1323,14 @@ impl ResultsView<'_> {
                 what: "class",
                 text,
                 tone,
-                detail: format!("{full}\n\n{}", country.rules().help()),
+                detail: format!("{full}\n\n{}", crate::i18n::rules_help(country.rules())),
                 needs_position: false,
             });
         }
         for pill in crate::hunting::pills(
             country,
             species,
-            &target.name,
+            target_name(target),
             region.as_deref(),
             self.inputs.place.as_ref(),
         ) {
@@ -1340,7 +1362,7 @@ impl ResultsView<'_> {
                     }
                 } else if pill.needs_position && crate::sensors::can_locate() {
                     if ui
-                        .button("Shooting light: use my position")
+                        .button(tr("Shooting light: use my position"))
                         .on_hover_text(&pill.detail)
                         .clicked()
                     {
@@ -1379,7 +1401,7 @@ impl ResultsView<'_> {
                     None => {
                         ui.colored_label(
                             ui.visuals().error_fg_color,
-                            "The bullet does not reach this range.",
+                            tr("The bullet does not reach this range."),
                         );
                     }
                 }
@@ -1401,7 +1423,7 @@ impl ResultsView<'_> {
 
         ui.separator();
         ui.horizontal(|ui| {
-            ui.heading("Trajectory");
+            ui.heading(tr("Trajectory"));
             ui.add_space(12.0);
             let three_d = self.inputs.trajectory_3d;
             if ui.selectable_label(!three_d, "2D").clicked() {
@@ -1437,16 +1459,16 @@ impl ResultsView<'_> {
         let u = units::prefs(ui.ctx());
         let table = self.table;
         ui.horizontal(|ui| {
-            ui.heading("Range table");
-            ui.weak(format!(
+            ui.heading(tr("Range table"));
+            ui.weak(trf!(
                 "{}–{} every {}",
                 u.format(Quantity::Distance, table.start_m),
                 u.format(Quantity::Distance, table.end_m),
                 u.format(Quantity::Distance, table.step_m)
             ));
             let button = ui
-                .button("Columns…")
-                .on_hover_text("The table's ranges and columns, kept for this rifle");
+                .button(tr("Columns…"))
+                .on_hover_text(tr("The table's ranges and columns, kept for this rifle"));
             let popup = ui.make_persistent_id("table-columns");
             if button.clicked() {
                 ui.memory_mut(|memory| memory.toggle_popup(popup));
@@ -1496,7 +1518,7 @@ impl ResultsView<'_> {
             if let Some(min_energy) = self.aim.min_energy_j {
                 let value = match ethical {
                     Some(range) => u.format(Quantity::Distance, range),
-                    None => format!(
+                    None => trf!(
                         "beyond {}",
                         u.format(
                             Quantity::Distance,
@@ -1513,14 +1535,14 @@ impl ResultsView<'_> {
                 } else {
                     format!("≥ {}", u.format(Quantity::Energy, min_energy))
                 };
-                fact(ui, "Ethical max", value, note);
+                fact(ui, tr("Ethical max"), value, note);
             }
             if self.aim.vital_diameter_cm.is_some() {
                 fact(
                     ui,
-                    "Dead-on hold",
+                    tr("Dead-on hold"),
                     point_blank_short(&u, point_blank, self.aim),
-                    "with your zero".to_owned(),
+                    tr("with your zero").to_owned(),
                 );
             }
         };
@@ -1545,25 +1567,25 @@ impl ResultsView<'_> {
         };
         let mut details = |ui: &mut egui::Ui| {
             if let Some(figure) = zeros.figure {
-                row(ui, "Your zero", &mut |ui| {
+                row(ui, tr("Your zero"), &mut |ui| {
                     ui.label(zero_figure_text(&u, &figure));
                 });
             }
             if self.aim.vital_diameter_cm.is_some() {
-                row(ui, "Best point-blank zero", &mut |ui| match optimal {
+                row(ui, tr("Best point-blank zero"), &mut |ui| match optimal {
                     Some(best) => {
                         ui.horizontal_wrapped(|ui| {
-                            ui.label(format!(
+                            ui.label(trf!(
                                 "{}: {}; highest at {}",
                                 match zeros.best_height {
-                                    Some(height) => format!(
+                                    Some(height) => trf!(
                                         "{} {} at {} (zero at {})",
                                         u.format(Quantity::ShortLength, height.abs() * 100.0),
-                                        if height >= 0.0 { "high" } else { "low" },
+                                        if height >= 0.0 { tr("high") } else { tr("low") },
                                         u.format(Quantity::Distance, reference),
                                         u.format(Quantity::Distance, best.zero_range),
                                     ),
-                                    None => format!(
+                                    None => trf!(
                                         "zero at {}",
                                         u.format(Quantity::Distance, best.zero_range)
                                     ),
@@ -1573,7 +1595,7 @@ impl ResultsView<'_> {
                             ));
                             if let Some(height) = zeros.best_height
                                 && ui
-                                    .small_button("Make it my zero")
+                                    .small_button(tr("Make it my zero"))
                                     .on_hover_text(make_zero_hint(&u, &zeros, height))
                                     .clicked()
                             {
@@ -1582,24 +1604,24 @@ impl ResultsView<'_> {
                         });
                     }
                     None => {
-                        ui.label("not found");
+                        ui.label(tr("not found"));
                     }
                 });
             }
-            row(ui, "Muzzle velocity today", &mut |ui| {
+            row(ui, tr("Muzzle velocity today"), &mut |ui| {
                 ui.label(u.format(Quantity::Speed, solution.muzzle_velocity));
             });
-            row(ui, "Stability (Miller Sg)", &mut |ui| {
+            row(ui, tr("Stability (Miller Sg)"), &mut |ui| {
                 ui.label(
                     solution
                         .stability
-                        .map_or("unknown: enter the bullet length".to_owned(), |sg| {
+                        .map_or(tr("unknown: enter the bullet length").to_owned(), |sg| {
                             format!("{sg:.2}")
                         }),
                 );
             });
         };
-        egui::CollapsingHeader::new("Details")
+        egui::CollapsingHeader::new(tr("Details"))
             .id_salt("limit-details")
             .show(ui, |ui| {
                 if narrow {
@@ -1625,9 +1647,12 @@ impl ResultsView<'_> {
         size: f32,
         requested: &mut ViewRequests,
     ) {
-        ui.heading("Through the scope");
+        ui.heading(tr("Through the scope"));
         let Some((scope, reticle)) = self.optics else {
-            ui.weak("Choose a scope and reticle for this rifle (Rifles page) to see the sight picture here.");
+            ui.weak(tr(
+                "Choose a scope and reticle for this rifle (Rifles page) to see the sight picture \
+                 here.",
+            ));
             return;
         };
         let Some(row) = solution.at(self.inputs.target_range_m) else {
@@ -1656,7 +1681,7 @@ impl ResultsView<'_> {
             requested.magnification = Some(chosen);
         }
         view_toggles(ui, self.inputs, scope, requested);
-        ui.label(RichText::new(format!(
+        ui.label(RichText::new(trf!(
             "{} · {:.1} mrad across ({:.1} m at 100 m)",
             magnification_text(magnification),
             drawn.field_of_view_mrad,
@@ -1666,38 +1691,50 @@ impl ResultsView<'_> {
         ui.add_space(4.0);
         ui.label(RichText::new(format!("{} · {}", scope.display_name(), reticle.name)).small());
         if self.inputs.dial_elevation {
-            ui.small(format!(
+            ui.small(trf!(
                 "Dial {} {}, then hold the orange dot on the target.",
                 clicks_text(dialled_clicks.abs() as i64),
-                if dialled_clicks >= 0.0 { "up" } else { "down" }
+                if dialled_clicks >= 0.0 {
+                    tr("up")
+                } else {
+                    tr("down")
+                }
             ));
         } else {
-            ui.small("Hold the orange dot on the target: the crosshair then sits where the picture shows it.");
+            ui.small(tr(
+                "Hold the orange dot on the target: the crosshair then sits where the picture \
+                 shows it.",
+            ));
         }
         let u = units::prefs(ui.ctx());
         if let (Some(target), Some(zone)) = (&self.aim.target, self.aim.vital_diameter_cm) {
-            let zones = self.aim.figure.as_ref().filter(|figure| !figure.zones.is_empty());
+            let zones = self
+                .aim
+                .figure
+                .as_ref()
+                .filter(|figure| !figure.zones.is_empty());
             let key = match zones {
                 Some(figure) if figure.rings.is_some() => {
-                    "green: the hit area, with the moose test figure's rings".to_owned()
+                    tr("green: the hit area, with the moose test figure's rings").to_owned()
                 }
-                Some(_) => "green: the hit area".to_owned(),
-                None => format!(
-                    "green circle: the {} {}",
-                    u.format(Quantity::ShortLength, zone),
-                    self.aim.zone_name()
+                Some(_) => tr("green: the hit area").to_owned(),
+                None => trf!(
+                    "green circle: the {size} {zone}",
+                    size = u.format(Quantity::ShortLength, zone),
+                    zone = self.aim.zone_name()
                 ),
             };
-            ui.small(format!(
-                "{} at {}, true size; {key}.",
-                target.name,
+            ui.small(trf!(
+                "{} at {}, true size; {}.",
+                target_name(target),
                 u.format(Quantity::Distance, row.range),
+                key,
             ));
         }
         if !drawn.impact_in_view {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                "The impact is outside the view: zoom out or dial.",
+                tr("The impact is outside the view: zoom out or dial."),
             );
         }
         let scale = scope.reticle_scale(magnification);
@@ -1705,15 +1742,22 @@ impl ResultsView<'_> {
         if reticle.id != PLAIN_CROSSHAIR && (scale - 1.0).abs() > 0.01 {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                format!(
-                    "Second focal plane: the reticle's marks are true only at {}×. At {magnification:.1}× each mark spans {scale:.2}× its stated value; the picture accounts for this.",
-                    scope.reticle_reference_magnification.unwrap_or(scope.magnification_max),
+                trf!(
+                    "Second focal plane: the reticle's marks are true only at {reference}×. At \
+                     {magnification:.1}× each mark spans {scale:.2}× its stated value; the picture \
+                     accounts for this.",
+                    reference = scope
+                        .reticle_reference_magnification
+                        .unwrap_or(scope.magnification_max),
+                    magnification = magnification,
+                    scale = scale,
                 ),
             );
         }
         if !drawn.field_of_view_known {
-            ui.small(format!(
-                "Field of view not published; estimated as {:.0} mrad from the magnification. Enter the scope's field of view (Rifles, My scopes) for a true picture.",
+            ui.small(trf!(
+                "Field of view not published; estimated as {:.0} mrad from the magnification. \
+                 Enter the scope's field of view (Rifles, My scopes) for a true picture.",
                 drawn.field_of_view_mrad
             ));
         }
@@ -1736,9 +1780,9 @@ impl ResultsView<'_> {
             ui.label(big(format!(
                 "{} {:.2} {}",
                 if elevation >= 0.0 {
-                    "⬆ up"
+                    tr("⬆ up")
                 } else {
-                    "⬇ down"
+                    tr("⬇ down")
                 },
                 elevation.abs(),
                 unit_label(unit)
@@ -1748,9 +1792,9 @@ impl ResultsView<'_> {
             ui.label(big(format!(
                 "{} {:.2} {}",
                 if windage >= 0.0 {
-                    "➡ right"
+                    tr("➡ right")
                 } else {
-                    "⬅ left"
+                    tr("⬅ left")
                 },
                 windage.abs(),
                 unit_label(unit)
@@ -1758,31 +1802,50 @@ impl ResultsView<'_> {
             ui.weak(clicks_text(self.clicks(windage).abs()));
         });
         let u = units::prefs(ui.ctx());
-        ui.label(format!(
+        ui.label(trf!(
             "Dead-on hold hits {} {}, {} {}.  {}, {}, {:.3} s flight",
             u.format(Quantity::ShortLength, row.drop.abs() * 100.0),
-            if row.drop >= 0.0 { "high" } else { "low" },
+            if row.drop >= 0.0 {
+                tr("high")
+            } else {
+                tr("low")
+            },
             u.format(Quantity::ShortLength, row.windage.abs() * 100.0),
-            if row.windage >= 0.0 { "right" } else { "left" },
+            if row.windage >= 0.0 {
+                tr("right")
+            } else {
+                tr("left")
+            },
             u.format(Quantity::Speed, row.velocity),
             u.format(Quantity::Energy, row.energy_j),
             row.time
         ));
-        if let Some(figure) = self.aim.figure.as_ref().filter(|figure| !figure.zones.is_empty()) {
+        if let Some(figure) = self
+            .aim
+            .figure
+            .as_ref()
+            .filter(|figure| !figure.zones.is_empty())
+        {
             // The figure's x runs towards the head, to the right in the view.
             let hit = figure.hit([row.windage, row.drop]);
-            let ring = hit.score.map_or(String::new(), |score| format!(", ring {score}"));
+            let ring = hit
+                .score
+                .map_or(String::new(), |score| trf!(", ring {}", score));
             match hit.zone {
-                Some(zone) => ui.label(format!("A dead-on hold lands in the {zone}{ring}.")),
+                Some(zone) => ui.label(trf!(
+                    "A dead-on hold lands in the {zone}{ring}.",
+                    zone = crate::i18n::tr_data(&zone),
+                    ring = ring
+                )),
                 None => ui.colored_label(
                     ui.visuals().warn_fg_color,
-                    format!("A dead-on hold misses the hit area{ring}."),
+                    trf!("A dead-on hold misses the hit area{}.", ring),
                 ),
             };
         }
         if self.inputs.target_speed > 0.0 {
             let lead = analysis::moving_target_lead(row, self.inputs.target_speed);
-            ui.label(format!(
+            ui.label(trf!(
                 "Lead for a crossing animal: {} ({:.2} {}) ahead of the vital zone",
                 u.format(Quantity::ShortLength, lead.distance * 100.0),
                 from_radians(unit, lead.angle),
@@ -1792,7 +1855,10 @@ impl ResultsView<'_> {
         if ethical.is_some_and(|limit| row.range > limit) {
             ui.colored_label(
                 ui.visuals().error_fg_color,
-                "⚠ Beyond your ethical range: the bullet is too slow or has too little energy here.",
+                tr(
+                    "⚠ Beyond your ethical range: the bullet is too slow or has too little energy \
+                     here.",
+                ),
             );
         }
     }
@@ -1805,15 +1871,19 @@ impl ResultsView<'_> {
             let u = units::prefs(ui.ctx());
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                format!(
+                trf!(
                     "Canted {:.1}° {}: a dead-on hold lands {} {} and {} {} of a level one. \
                      The holds above are for the tilted reticle; better to hold the rifle level.",
                     cant.abs(),
-                    if cant > 0.0 { "right" } else { "left" },
+                    if cant > 0.0 { tr("right") } else { tr("left") },
                     u.format(Quantity::ShortLength, right.abs() * 100.0),
-                    if right >= 0.0 { "right" } else { "left" },
+                    if right >= 0.0 {
+                        tr("right")
+                    } else {
+                        tr("left")
+                    },
                     u.format(Quantity::ShortLength, up.abs() * 100.0),
-                    if up >= 0.0 { "higher" } else { "lower" },
+                    if up >= 0.0 { tr("higher") } else { tr("lower") },
                 ),
             );
         }
@@ -1821,15 +1891,19 @@ impl ResultsView<'_> {
             Some(sg) if sg < 1.0 => {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
-                    format!(
-                        "⚠ Sg {sg:.2}: this twist will not stabilise the bullet, so it may tumble."
+                    trf!(
+                        "⚠ Sg {sg:.2}: this twist will not stabilise the bullet, so it may tumble.",
+                        sg = sg
                     ),
                 );
             }
             Some(sg) if sg < 1.4 => {
                 ui.colored_label(
                     ui.visuals().warn_fg_color,
-                    format!("Sg {sg:.2} is marginal; BC and accuracy may suffer, especially in cold air."),
+                    trf!(
+                        "Sg {sg:.2} is marginal; BC and accuracy may suffer, especially in cold air.",
+                        sg = sg
+                    ),
                 );
             }
             _ => {}
@@ -1839,7 +1913,11 @@ impl ResultsView<'_> {
         {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                format!("Mach {:.2} at the target: near the sound barrier drag changes fast, so predictions get less certain.", row.mach),
+                trf!(
+                    "Mach {:.2} at the target: near the sound barrier drag changes fast, so \
+                     predictions get less certain.",
+                    row.mach
+                ),
             );
         }
     }
@@ -1873,36 +1951,38 @@ impl ResultsView<'_> {
         let mut command = None;
         ui.horizontal(|ui| {
             if ui
-                .button("Fit")
-                .on_hover_text("Show the whole trajectory (or double-click the graph)")
+                .button(tr("Fit"))
+                .on_hover_text(tr("Show the whole trajectory (or double-click the graph)"))
                 .clicked()
             {
                 command = Some(PlotCommand::Fit);
             }
-            if ui.button("Zoom in").clicked() {
+            if ui.button(tr("Zoom in")).clicked() {
                 command = Some(PlotCommand::ZoomIn);
             }
-            if ui.button("Zoom out").clicked() {
+            if ui.button(tr("Zoom out")).clicked() {
                 command = Some(PlotCommand::ZoomOut);
             }
             let to_target = ui.add_enabled(
                 target_drop_cm.is_some(),
-                egui::Button::new("Zoom to target"),
+                egui::Button::new(tr("Zoom to target")),
             );
             if to_target
-                .on_hover_text("Close-up of the bullet path around the target range")
+                .on_hover_text(tr("Close-up of the bullet path around the target range"))
                 .clicked()
             {
                 command = Some(PlotCommand::Target);
             }
-            ui.weak("Drag to pan · ⌘/Ctrl + scroll or pinch to zoom · double-click to fit");
+            ui.weak(tr(
+                "Drag to pan · ⌘/Ctrl + scroll or pinch to zoom · double-click to fit",
+            ));
         });
 
         Plot::new("hunting-trajectory")
             .height(280.0)
             .legend(Legend::default())
-            .x_axis_label(format!("Range ({})", u.label(Quantity::Distance)))
-            .y_axis_label(format!(
+            .x_axis_label(trf!("Range ({})", u.label(Quantity::Distance)))
+            .y_axis_label(trf!(
                 "Height above line of sight ({})",
                 u.label(Quantity::ShortLength)
             ))
@@ -1948,20 +2028,20 @@ impl ResultsView<'_> {
                 plot_ui.hline(
                     HLine::new(0.0)
                         .color(theme::BONE_MUTED)
-                        .name("Line of sight"),
+                        .name(tr("Line of sight")),
                 );
                 plot_ui.line(
                     Line::new(PlotPoints::from(path))
                         .width(2.0_f32)
                         .color(theme::BLAZE)
-                        .name("Bullet"),
+                        .name(tr("Bullet")),
                 );
-                plot_ui.vline(VLine::new(target).color(theme::BONE).name("Target"));
+                plot_ui.vline(VLine::new(target).color(theme::BONE).name(tr("Target")));
                 if let Some(limit) = ethical.filter(|limit| *limit <= max_range) {
                     plot_ui.vline(
                         VLine::new(x(limit))
                             .color(theme::ALARM)
-                            .name("Ethical limit"),
+                            .name(tr("Ethical limit")),
                     );
                 }
             });
@@ -1980,12 +2060,12 @@ impl ResultsView<'_> {
         let u = units::prefs(ui.ctx());
         let header = |name: &str, quantity: Quantity| format!("{name} {}", u.label(quantity));
         let (range_header, drop_header, wind_header, speed_header, energy_header, lead_header) = (
-            header("Range", Quantity::Distance),
-            header("Height", Quantity::ShortLength),
-            header("Wind", Quantity::ShortLength),
+            header(tr("Range"), Quantity::Distance),
+            header(tr("Height"), Quantity::ShortLength),
+            header(tr("Wind"), Quantity::ShortLength),
             u.label(Quantity::Speed).to_owned(),
-            header("Energy", Quantity::Energy),
-            header("Lead", Quantity::ShortLength),
+            header(tr("Energy"), Quantity::Energy),
+            header(tr("Lead"), Quantity::ShortLength),
         );
         let show = settings.columns;
         let target_speed = self.inputs.target_speed;
@@ -2008,7 +2088,7 @@ impl ResultsView<'_> {
             ),
             (
                 show.drop_clicks,
-                "Elev clicks",
+                tr("Elev clicks"),
                 true,
                 Box::new(|row| {
                     format!(
@@ -2019,13 +2099,13 @@ impl ResultsView<'_> {
             ),
             (
                 show.drop_mil,
-                "Elev mil",
+                tr("Elev mil"),
                 true,
                 Box::new(move |row| angle(ClickUnit::Mil, row.elevation_correction)),
             ),
             (
                 show.drop_moa,
-                "Elev MOA",
+                tr("Elev MOA"),
                 true,
                 Box::new(move |row| angle(ClickUnit::Moa, row.elevation_correction)),
             ),
@@ -2037,7 +2117,7 @@ impl ResultsView<'_> {
             ),
             (
                 show.wind_clicks,
-                "Wind clicks",
+                tr("Wind clicks"),
                 true,
                 Box::new(|row| {
                     format!(
@@ -2048,13 +2128,13 @@ impl ResultsView<'_> {
             ),
             (
                 show.wind_mil,
-                "Wind mil",
+                tr("Wind mil"),
                 true,
                 Box::new(move |row| angle(ClickUnit::Mil, row.windage_correction)),
             ),
             (
                 show.wind_moa,
-                "Wind MOA",
+                tr("Wind MOA"),
                 true,
                 Box::new(move |row| angle(ClickUnit::Moa, row.windage_correction)),
             ),
@@ -2072,7 +2152,7 @@ impl ResultsView<'_> {
             ),
             (
                 show.time,
-                "Time s",
+                tr("Time s"),
                 false,
                 Box::new(|row| format!("{:.3}", row.time)),
             ),
@@ -2100,19 +2180,19 @@ impl ResultsView<'_> {
         {
             // Keep the columns that matter most for a shot: the clicks, the
             // angles in the scope's unit, the lead, the energy.
-            let (own, other) = match self.unit() {
-                ClickUnit::Mil => ("mil", "MOA"),
-                ClickUnit::Moa => ("MOA", "mil"),
+            let (elevation, wind, other) = match self.unit() {
+                ClickUnit::Mil => (tr("Elev mil"), tr("Wind mil"), tr("Elev MOA")),
+                ClickUnit::Moa => (tr("Elev MOA"), tr("Wind MOA"), tr("Elev mil")),
             };
             let rank = |header: &str| match header {
-                "Elev clicks" => 0,
-                _ if header == format!("Elev {own}") => 1,
-                _ if header == format!("Wind {own}") => 2,
+                _ if header == tr("Elev clicks") => 0,
+                _ if header == elevation => 1,
+                _ if header == wind => 2,
                 _ if header == lead_header => 3,
                 _ if header == energy_header => 4,
-                "Wind clicks" => 5,
+                _ if header == tr("Wind clicks") => 5,
                 _ if header == drop_header => 6,
-                _ if header == format!("Elev {other}") => 7,
+                _ if header == other => 7,
                 _ => 8,
             };
             let mut order: Vec<usize> = (1..columns.len()).collect();
@@ -2154,11 +2234,15 @@ impl ResultsView<'_> {
             });
         ui.add_space(4.0);
         ui.small(if ethical.is_some() {
-            "Elevation and wind are corrections: up and right positive. Red rows are past your \
-             ethical range. Confirm the table on paper at real distances before hunting."
+            tr(
+                "Elevation and wind are corrections: up and right positive. Red rows are past \
+                 your ethical range. Confirm the table on paper at real distances before hunting.",
+            )
         } else {
-            "Elevation and wind are corrections: up and right positive. Confirm the table on \
-             paper at real distances."
+            tr(
+                "Elevation and wind are corrections: up and right positive. Confirm the table on \
+                 paper at real distances.",
+            )
         });
         left_out
     }
@@ -2243,6 +2327,15 @@ fn capitalised(text: &str) -> String {
         .unwrap_or_default()
 }
 
+/// "never inside the vital zone", or the hit zone on sport targets.
+fn never_inside(aim: &Aim) -> &'static str {
+    if aim.target.is_some() && !aim.is_game() {
+        tr("never inside the hit zone")
+    } else {
+        tr("never inside the vital zone")
+    }
+}
+
 fn point_blank_text(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) -> String {
     let distance = |metres: f64| u.format(Quantity::Distance, metres);
     let zone = u.format(
@@ -2254,16 +2347,17 @@ fn point_blank_text(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) -
             near_limit,
             far_limit,
         }) if near_limit > 0.5 => {
-            format!(
-                "{}–{} inside ±{zone}",
+            trf!(
+                "{}–{} inside ±{}",
                 distance(near_limit),
-                distance(far_limit)
+                distance(far_limit),
+                zone
             )
         }
         Some(PointBlank { far_limit, .. }) => {
-            format!("out to {} inside ±{zone}", distance(far_limit))
+            trf!("out to {} inside ±{}", distance(far_limit), zone)
         }
-        None => format!("never inside the {}", aim.zone_name()),
+        None => never_inside(aim).to_owned(),
     }
 }
 
@@ -2281,30 +2375,30 @@ fn point_blank_short(u: &UnitPrefs, point_blank: Option<PointBlank>, aim: &Aim) 
         }) if near_limit > 0.5 => {
             format!("{}–{} (±{zone})", distance(near_limit), distance(far_limit))
         }
-        Some(PointBlank { far_limit, .. }) => format!("to {} (±{zone})", distance(far_limit)),
-        None => format!("never inside the {}", aim.zone_name()),
+        Some(PointBlank { far_limit, .. }) => trf!("to {} (±{})", distance(far_limit), zone),
+        None => never_inside(aim).to_owned(),
     }
 }
 
 /// What "Make it my zero" does, for its hover text.
 fn make_zero_hint(u: &UnitPrefs, zeros: &Zeros, height: f64) -> String {
     let told = |height: f64| {
-        format!(
+        trf!(
             "{} {}",
             u.format(Quantity::ShortLength, height.abs() * 100.0),
-            if height >= 0.0 { "high" } else { "low" }
+            if height >= 0.0 { tr("high") } else { tr("low") }
         )
     };
     let reference = zeros.reference;
     let rifle = height - zeros.offset_up * reference;
     if zeros.offset_up == 0.0 {
-        format!(
+        trf!(
             "After you have zeroed the rifle {} at {}: saves it as the rifle's zero.",
             told(height),
             u.format(Quantity::Distance, reference),
         )
     } else {
-        format!(
+        trf!(
             "This bullet hits {} at {} with the rifle zeroed {} with its zero load. After \
              zeroing like that, saves it as the rifle's zero.",
             told(height),
@@ -2319,15 +2413,15 @@ fn view_toggles(ui: &mut egui::Ui, inputs: &Inputs, scope: &Scope, requested: &m
     ui.horizontal_wrapped(|ui| {
         let mut dial = inputs.dial_elevation;
         if ui
-            .checkbox(&mut dial, "Dial the elevation")
-            .on_hover_text("Otherwise the picture shows the hold over")
+            .checkbox(&mut dial, tr("Dial the elevation"))
+            .on_hover_text(tr("Otherwise the picture shows the hold over"))
             .changed()
         {
             requested.dial_elevation = Some(dial);
         }
         if scope.illuminated {
             let mut lit = inputs.illumination;
-            if ui.checkbox(&mut lit, "Illumination").changed() {
+            if ui.checkbox(&mut lit, tr("Illumination")).changed() {
                 requested.illumination = Some(lit);
             }
         }
@@ -2339,7 +2433,7 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
     grid(ui, "table-range", |ui| {
         quantity(
             ui,
-            "From",
+            tr("From"),
             &mut table.start_m,
             Quantity::Distance,
             0.0..=2900.0,
@@ -2347,13 +2441,13 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
         );
         quantity(
             ui,
-            "To",
+            tr("To"),
             &mut table.end_m,
             Quantity::Distance,
             10.0..=3000.0,
             10.0,
         );
-        ui.label("Every");
+        ui.label(tr("Every"));
         ui.horizontal_wrapped(|ui| {
             let u = units::prefs(ui.ctx());
             let distance = u.unit(Quantity::Distance);
@@ -2380,9 +2474,9 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
         ClickUnit::Moa => ("MOA", "mil"),
     };
     grid(ui, "table-columns", |ui| {
-        ui.label("Elevation");
+        ui.label(tr("Elevation"));
         ui.horizontal_wrapped(|ui| {
-            ui.checkbox(&mut columns.drop_clicks, "clicks");
+            ui.checkbox(&mut columns.drop_clicks, tr("clicks"));
             match unit {
                 ClickUnit::Mil => {
                     ui.checkbox(&mut columns.drop_mil, angle);
@@ -2394,12 +2488,12 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
                 }
             }
             ui.checkbox(&mut columns.drop_length, &length)
-                .on_hover_text("Where a dead-on hold hits: + above the aim, − below");
+                .on_hover_text(tr("Where a dead-on hold hits: + above the aim, − below"));
         });
         ui.end_row();
-        ui.label("Wind");
+        ui.label(tr("Wind"));
         ui.horizontal_wrapped(|ui| {
-            ui.checkbox(&mut columns.wind_clicks, "clicks");
+            ui.checkbox(&mut columns.wind_clicks, tr("clicks"));
             match unit {
                 ClickUnit::Mil => {
                     ui.checkbox(&mut columns.wind_mil, angle);
@@ -2413,11 +2507,11 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
             ui.checkbox(&mut columns.wind_length, &length);
         });
         ui.end_row();
-        ui.label("Also");
+        ui.label(tr("Also"));
         ui.horizontal_wrapped(|ui| {
-            ui.checkbox(&mut columns.velocity, "speed");
-            ui.checkbox(&mut columns.energy, "energy");
-            ui.checkbox(&mut columns.time, "time of flight");
+            ui.checkbox(&mut columns.velocity, tr("speed"));
+            ui.checkbox(&mut columns.energy, tr("energy"));
+            ui.checkbox(&mut columns.time, tr("time of flight"));
         });
         ui.end_row();
     });
@@ -2426,14 +2520,14 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
 fn wind_description(clock: f64) -> &'static str {
     let hour = clock.rem_euclid(12.0);
     match hour {
-        h if !(0.75..11.25).contains(&h) => "headwind",
-        h if h < 2.25 => "from front right",
-        h if h < 3.75 => "full value from right",
-        h if h < 5.25 => "from rear right",
-        h if h < 6.75 => "tailwind",
-        h if h < 8.25 => "from rear left",
-        h if h < 9.75 => "full value from left",
-        _ => "from front left",
+        h if !(0.75..11.25).contains(&h) => tr("headwind"),
+        h if h < 2.25 => tr("from front right"),
+        h if h < 3.75 => tr("full value from right"),
+        h if h < 5.25 => tr("from rear right"),
+        h if h < 6.75 => tr("tailwind"),
+        h if h < 8.25 => tr("from rear left"),
+        h if h < 9.75 => tr("full value from left"),
+        _ => tr("from front left"),
     }
 }
 

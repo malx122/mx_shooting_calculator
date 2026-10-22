@@ -6,6 +6,7 @@ use ballistics_store::{FocalPlane, Reticle, ReticleElement, Scope};
 use eframe::egui::{self, Color32, Pos2, Shape, Stroke, pos2, vec2};
 
 use crate::figure::Figure;
+use crate::i18n::{tr, trf};
 use crate::theme;
 
 const SCENE: Color32 = Color32::from_rgb(0xC9, 0xD2, 0xBE);
@@ -189,7 +190,7 @@ pub fn magnification_slider(
         format!(
             "{}{}",
             magnification_text(magnification),
-            if marks_true { " · true" } else { "" }
+            if marks_true { tr(" · true") } else { "" }
         )
     };
     let low_colour = if at_low { theme::AMBER } else { muted };
@@ -214,7 +215,7 @@ pub fn magnification_slider(
         && !at_low
         && !at_high
     {
-        let text = format!("true {}", magnification_text(reference));
+        let text = trf!("true {}", magnification_text(reference));
         painter.text(
             pos2(x_of(reference), label_y),
             egui::Align2::CENTER_TOP,
@@ -225,13 +226,13 @@ pub fn magnification_slider(
     }
 
     match true_at {
-        Some(reference) => response.on_hover_text(format!(
+        Some(reference) => response.on_hover_text(trf!(
             "Second focal plane: the reticle's marks are true at {}. Double-click to go there.",
             magnification_text(reference)
         )),
-        None if span > 0.0 => {
-            response.on_hover_text("First focal plane: the marks are true at every magnification.")
-        }
+        None if span > 0.0 => response.on_hover_text(tr(
+            "First focal plane: the marks are true at every magnification.",
+        )),
         None => response,
     }
 }

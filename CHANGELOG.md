@@ -8,6 +8,14 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Svenska and Suomi:** the app in Swedish and Finnish beside English,
+  with the hunter's own words: inskjutning, knäpp, vindavdrift, etiskt
+  skjutavstånd; kohdistus, naksu, osumaenergia, ampumaetäisyys. Choose
+  **Language** in the menu, or keep **System** to follow the device. The
+  game species go by their Swedish or Finnish names, and the cards print in
+  the chosen language. Numbers keep the decimal point for now; decimal
+  commas come later.
+
 - **Small drawings in the four input tiles** on the Calculate page, following
   the values: the range on a scale, the line of fire at its angle, the wind
   arrow on a clock face, and the chosen target's own silhouette. On a phone

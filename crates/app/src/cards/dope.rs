@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::sheet::{Align, Ink, PT, Sheet, fit, text_width};
 use super::{CardSize, Subject};
+use crate::i18n::{tr, trf};
 use crate::units::{Quantity, UnitPrefs};
 
 /// How a correction is written: in clicks, as an angle in the scope's unit
@@ -126,7 +127,7 @@ impl DopeTable {
         let temperatures = options.temperatures(subject.conditions.temperature_c);
         let mut ranges = options.ranges();
         if ranges.is_empty() {
-            return Err("no ranges: check From, To and Every".into());
+            return Err(tr("no ranges: check From, To and Every").into());
         }
         // Far enough to find the ethical limit beyond the table, too.
         let max_range = (ranges.last().copied().unwrap_or(100.0) + 10.0).max(1200.0);
@@ -145,7 +146,7 @@ impl DopeTable {
         {
             ranges.retain(|range| *range <= limit);
             if ranges.is_empty() {
-                return Err("every range is beyond the ethical limit".into());
+                return Err(tr("every range is beyond the ethical limit").into());
             }
         }
 
@@ -173,12 +174,12 @@ impl DopeTable {
         let several = temperatures.len() > 1;
         for (temperature, solution) in temperatures.iter().zip(&solutions) {
             let group = if several {
-                format!(
+                trf!(
                     "Elevation at {}",
                     whole(u, Quantity::Temperature, *temperature)
                 )
             } else {
-                "Elevation".to_owned()
+                tr("Elevation").to_owned()
             };
             let holds: Vec<Option<Hold>> = ranges
                 .iter()
@@ -202,7 +203,7 @@ impl DopeTable {
                 });
             };
             if options.clicks {
-                add("clicks", &|hold| hold.elevation_clicks.to_string());
+                add(tr("clicks"), &|hold| hold.elevation_clicks.to_string());
             }
             if options.angle {
                 add(angle_label, &|hold| number(hold.elevation, decimals));
@@ -216,9 +217,9 @@ impl DopeTable {
         if !options.winds.is_empty() {
             let still = &solutions[0];
             let group = match options.wind_as {
-                Measure::Clicks => "Wind, clicks".to_owned(),
-                Measure::Angle => format!("Wind, {angle_label}"),
-                Measure::Length => format!("Wind, {}", u.label(Quantity::ShortLength)),
+                Measure::Clicks => tr("Wind, clicks").to_owned(),
+                Measure::Angle => trf!("Wind, {}", angle_label),
+                Measure::Length => trf!("Wind, {}", u.label(Quantity::ShortLength)),
             };
             for &speed in &options.winds {
                 let windy = subject
@@ -279,17 +280,17 @@ impl DopeTable {
             };
         extra(
             options.velocity,
-            "Speed",
+            tr("Speed"),
             u.label(Quantity::Speed),
             &|velocity, _, _| u.number(Quantity::Speed, velocity, false),
         );
         extra(
             options.energy,
-            "Energy",
+            tr("Energy"),
             u.label(Quantity::Energy),
             &|_, energy, _| u.number(Quantity::Energy, energy, false),
         );
-        extra(options.time, "Time", "s", &|_, _, time| {
+        extra(options.time, tr("Time"), "s", &|_, _, time| {
             format!("{time:.2}")
         });
 
@@ -350,7 +351,7 @@ pub fn layout(
         rifle.name,
         crate::widgets::caliber_name(&rifle.caliber)
     );
-    let mut about = vec![format!(
+    let mut about = vec![trf!(
         "{} · {} · zero {}",
         subject.bullet.display_name(),
         u.format(Quantity::Speed, table.muzzle_velocity),
@@ -358,13 +359,13 @@ pub fn layout(
     )];
     let conditions = &subject.conditions;
     let mut weather = match conditions.pressure {
-        ballistics_shot::Pressure::SeaLevel { hpa, altitude_m } => format!(
+        ballistics_shot::Pressure::SeaLevel { hpa, altitude_m } => trf!(
             "{} at {} above sea level",
             u.format(Quantity::Pressure, hpa),
             u.format(Quantity::Altitude, altitude_m)
         ),
         ballistics_shot::Pressure::Station(hpa) => {
-            format!("{} at the stand", u.format(Quantity::Pressure, hpa))
+            trf!("{} at the stand", u.format(Quantity::Pressure, hpa))
         }
     };
     if let [temperature] = table.temperatures[..] {
@@ -378,11 +379,11 @@ pub fn layout(
         .as_ref()
         .is_some_and(|load| load.truing.is_some())
     {
-        weather.push_str(" · trued");
+        weather.push_str(tr(" · trued"));
     }
     // The app's own holds include today's wind, angle and cant; a card
     // can't know them.
-    weather.push_str(" · level, calm air");
+    weather.push_str(tr(" · level, calm air"));
     about.push(weather);
     if !options.note.trim().is_empty() {
         about.push(options.note.trim().to_owned());
@@ -392,20 +393,20 @@ pub fn layout(
         if let (Some(limit), Some(target)) = (table.ethical_m, &subject.target)
             && table.ranges.first().is_some_and(|first| limit < *first)
         {
-            legend.push(format!(
+            legend.push(trf!(
                 "Every range here is beyond the ethical limit for {} ({})",
                 target.to_lowercase(),
                 u.format(Quantity::Distance, limit)
             ));
         } else if let (Some(limit), Some(target)) = (table.ethical_m, &subject.target) {
-            legend.push(format!(
+            legend.push(trf!(
                 "Red line: ethical limit for {} at {}",
                 target.to_lowercase(),
                 u.format(Quantity::Distance, limit)
             ));
         }
         if let (Some(dead_on), Some(zone)) = (table.dead_on, subject.vital_cm) {
-            legend.push(format!(
+            legend.push(trf!(
                 "Green bar: hold dead on ({} zone) to {}",
                 u.format(Quantity::ShortLength, zone),
                 u.format(Quantity::Distance, dead_on.far_limit)
@@ -413,7 +414,7 @@ pub fn layout(
         }
         if !options.winds.is_empty() {
             legend.push(
-                "Wind full value from 3 or 9 o'clock; half from 1-2, 4-5, 7-8 or 10-11".into(),
+                tr("Wind full value from 3 or 9 o'clock; half from 1-2, 4-5, 7-8 or 10-11").into(),
             );
         }
     }

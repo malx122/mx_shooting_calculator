@@ -9,6 +9,7 @@ use ballistics_store::transfer::{PersonalData, read_export};
 use ballistics_store::{ImportReport, Store, StoreError};
 use eframe::egui::{self, RichText};
 
+use crate::i18n::{tr, trf};
 use crate::widgets::caliber_picker;
 
 pub enum Source {
@@ -43,7 +44,7 @@ impl ImportPreview {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn open(store: &mut Store, path: &std::path::Path) -> Result<ImportPreview, StoreError> {
         let text = std::fs::read_to_string(path).map_err(|error| {
-            StoreError::Invalid(format!("could not read {}: {error}", path.display()))
+            StoreError::Invalid(trf!("could not read {}: {}", path.display(), error))
         })?;
         let file_name = path.file_name().map_or_else(
             || path.display().to_string(),
@@ -117,7 +118,8 @@ impl ImportPreview {
         let mut decision = Decision::Undecided;
         let mut replan = false;
         let mut open = true;
-        egui::Window::new(format!("Import {}", self.file_name))
+        egui::Window::new(trf!("Import {}", self.file_name))
+            .id(egui::Id::new("import"))
             .collapsible(false)
             .resizable(true)
             .default_width(680.0)
@@ -126,7 +128,7 @@ impl ImportPreview {
             .show(context, |ui| {
                 egui::ScrollArea::vertical().max_height(520.0).show(ui, |ui| match &mut self.source {
                     Source::Export(data) => {
-                        ui.label(format!(
+                        ui.label(trf!(
                             "An MX Shooting Calculator backup with {} rifles, {} bullets, {} rifle loads, {} scopes and {} targets.",
                             data.rifles.len(),
                             data.bullets.len(),
@@ -143,18 +145,18 @@ impl ImportPreview {
                 ui.separator();
                 let report = self.report;
                 ui.label(RichText::new(summary(&report)).strong());
-                ui.weak(
+                ui.weak(tr(
                     "Records are recognised on every import, so importing the same backup again adds nothing, \
                      and anything you have changed here since is kept.",
-                );
+                ));
                 ui.add_space(6.0);
                 ui.horizontal(|ui| {
                     let changes = report.added + report.updated;
-                    let label = if changes == 0 { "Nothing to import".to_owned() } else { format!("Import {changes} change(s)") };
+                    let label = if changes == 0 { tr("Nothing to import").to_owned() } else { trf!("Import {changes} change(s)", changes = changes) };
                     if ui.add_enabled(changes > 0, egui::Button::new(label)).clicked() {
                         decision = Decision::Imported(ImportReport::default(), None);
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(tr("Cancel")).clicked() {
                         decision = Decision::Cancel;
                     }
                 });
@@ -186,23 +188,23 @@ fn strelok_details(
     searches: &mut HashMap<String, String>,
 ) -> bool {
     let mut changed = false;
-    ui.label(format!(
+    ui.label(trf!(
         "A Strelok Pro backup: {} rifles, {} bullets, {} scopes.",
         plan.data.rifles.len(),
         plan.data.bullets.len(),
         plan.data.scopes.len()
     ));
-    ui.weak("Check each rifle's caliber: only bullets of the rifle's caliber can be chosen when calculating.");
+    ui.weak(tr("Check each rifle's caliber: only bullets of the rifle's caliber can be chosen when calculating."));
     ui.add_space(4.0);
     egui::Grid::new("strelok-rifles")
         .num_columns(4)
         .striped(true)
         .spacing([12.0, 4.0])
         .show(ui, |ui| {
-            ui.strong("Rifle in Strelok");
-            ui.strong("Caliber");
+            ui.strong(tr("Rifle in Strelok"));
+            ui.strong(tr("Caliber"));
             ui.strong("");
-            ui.strong("Bullets");
+            ui.strong(tr("Bullets"));
             ui.end_row();
             for rifle in &plan.rifles {
                 ui.label(&rifle.strelok_name);
@@ -219,11 +221,11 @@ fn strelok_details(
                     changed = true;
                 }
                 let how = match rifle.caliber_source {
-                    CaliberSource::Chosen => "chosen by you",
-                    CaliberSource::Existing => "kept from your rifle",
-                    CaliberSource::Names => "from the names",
-                    CaliberSource::Diameter => "from the bullet diameter",
-                    CaliberSource::Guess => "a guess: please check",
+                    CaliberSource::Chosen => tr("chosen by you"),
+                    CaliberSource::Existing => tr("kept from your rifle"),
+                    CaliberSource::Names => tr("from the names"),
+                    CaliberSource::Diameter => tr("from the bullet diameter"),
+                    CaliberSource::Guess => tr("a guess: please check"),
                 };
                 if rifle.caliber_source.is_certain() {
                     ui.weak(how);
@@ -236,7 +238,7 @@ fn strelok_details(
         });
     if !plan.warnings.is_empty() {
         ui.add_space(6.0);
-        egui::CollapsingHeader::new(format!("{} note(s)", plan.warnings.len()))
+        egui::CollapsingHeader::new(trf!("{} note(s)", plan.warnings.len()))
             .default_open(plan.warnings.len() <= 6)
             .show(ui, |ui| {
                 for warning in &plan.warnings {
@@ -245,23 +247,23 @@ fn strelok_details(
             });
     }
     ui.add_space(4.0);
-    ui.weak(
+    ui.weak(tr(
         "Each rifle gets its own scope under My scopes (magnification, focal plane, clicks) with a plain crosshair; \
          pick a catalog reticle there if one matches. Strelok's own reticle numbers can't be used.",
-    );
+    ));
     changed
 }
 
 pub fn summary(report: &ImportReport) -> String {
     let mut parts = vec![
-        format!("{} new", report.added),
-        format!("{} updated", report.updated),
+        trf!("{} new", report.added),
+        trf!("{} updated", report.updated),
     ];
     if report.unchanged > 0 {
-        parts.push(format!("{} already here", report.unchanged));
+        parts.push(trf!("{} already here", report.unchanged));
     }
     if report.kept_local > 0 {
-        parts.push(format!("{} kept as you changed them", report.kept_local));
+        parts.push(trf!("{} kept as you changed them", report.kept_local));
     }
     parts.join(", ")
 }

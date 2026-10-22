@@ -7,6 +7,7 @@ use ballistics_store::{
 use eframe::egui::{self, RichText};
 
 use crate::app::{Action, Data};
+use crate::i18n::{tr, trf};
 use crate::loads::LoadEditor;
 use crate::mobile;
 use crate::sight_picture::reticle_preview;
@@ -106,7 +107,7 @@ impl RiflesPage {
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| self.phone_list(ui, data, &mut actions));
                 } else {
-                    let back = mobile::back_button(ui, "Rifles");
+                    let back = mobile::back_button(ui, tr("Rifles"));
                     let cancel = egui::ScrollArea::vertical()
                         .show(ui, |ui| self.editor(ui, data, &mut actions))
                         .inner;
@@ -138,7 +139,7 @@ impl RiflesPage {
     fn editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) -> bool {
         match &mut self.editing {
             Editing::Nothing => {
-                ui.weak("Choose a rifle or scope, or add a new one.");
+                ui.weak(tr("Choose a rifle or scope, or add a new one."));
                 false
             }
             Editing::Rifle(rifle) => rifle_editor(
@@ -157,8 +158,8 @@ impl RiflesPage {
 
     /// The phone's list: big rows for rifles and own scopes.
     fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
-        ui.heading("Rifles");
-        if ui.button("+ New rifle").clicked() {
+        ui.heading(tr("Rifles"));
+        if ui.button(tr("+ New rifle")).clicked() {
             self.new_rifle();
         }
         for rifle in &data.rifles {
@@ -174,19 +175,21 @@ impl RiflesPage {
             }
         }
         if data.rifles.is_empty() {
-            ui.weak("No rifles yet.");
+            ui.weak(tr("No rifles yet."));
             if ui
-                .button("Load demo data")
-                .on_hover_text("Three rifles with bullets, a scope and a target, to try the app")
+                .button(tr("Load demo data"))
+                .on_hover_text(tr(
+                    "Three rifles with bullets, a scope and a target, to try the app",
+                ))
                 .clicked()
             {
                 actions.push(Action::LoadDemo);
             }
         }
         ui.add_space(12.0);
-        ui.heading("My scopes");
-        ui.weak("For scopes that aren't in the catalog.");
-        if ui.button("+ New scope").clicked() {
+        ui.heading(tr("My scopes"));
+        ui.weak(tr("For scopes that aren't in the catalog."));
+        if ui.button(tr("+ New scope")).clicked() {
             self.editing = Editing::Scope(UserScope::new());
         }
         for scope in &data.scopes {
@@ -204,8 +207,8 @@ impl RiflesPage {
     }
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
-        ui.heading("Rifles");
-        if ui.button("+ New rifle").clicked() {
+        ui.heading(tr("Rifles"));
+        if ui.button(tr("+ New rifle")).clicked() {
             self.new_rifle();
         }
         ui.add_space(4.0);
@@ -218,10 +221,12 @@ impl RiflesPage {
             }
         }
         if data.rifles.is_empty() {
-            ui.weak("No rifles yet.");
+            ui.weak(tr("No rifles yet."));
             if ui
-                .button("Load demo data")
-                .on_hover_text("Three rifles with bullets, a scope and a target, to try the app")
+                .button(tr("Load demo data"))
+                .on_hover_text(tr(
+                    "Three rifles with bullets, a scope and a target, to try the app",
+                ))
                 .clicked()
             {
                 actions.push(Action::LoadDemo);
@@ -229,9 +234,9 @@ impl RiflesPage {
         }
 
         ui.separator();
-        ui.heading("My scopes");
-        ui.weak("For scopes that aren't in the catalog.");
-        if ui.button("+ New scope").clicked() {
+        ui.heading(tr("My scopes"));
+        ui.weak(tr("For scopes that aren't in the catalog."));
+        if ui.button(tr("+ New scope")).clicked() {
             self.editing = Editing::Scope(UserScope::new());
         }
         ui.add_space(4.0);
@@ -262,9 +267,9 @@ fn rifle_editor(
 ) -> bool {
     let stored = data.rifles.iter().find(|stored| stored.id == rifle.id);
     ui.heading(if stored.is_some() {
-        "Edit rifle"
+        tr("Edit rifle")
     } else {
-        "New rifle"
+        tr("New rifle")
     });
     ui.add_space(4.0);
     rifle_fields(ui, rifle, data, caliber_search, scope_search);
@@ -277,27 +282,27 @@ fn rifle_editor(
         if ui
             .add_enabled(
                 problem.is_none() && changed,
-                egui::Button::new(RichText::new("Save").strong()),
+                egui::Button::new(RichText::new(tr("Save")).strong()),
             )
             .clicked()
         {
             actions.push(Action::SaveRifle(rifle.clone()));
         }
         if let Some(stored) = stored {
-            if changed && ui.button("Undo changes").clicked() {
+            if changed && ui.button(tr("Undo changes")).clicked() {
                 *rifle = stored.clone();
             }
-            if confirm_button(ui, "delete-rifle", "Delete") {
+            if confirm_button(ui, "delete-rifle", tr("Delete")) {
                 actions.push(Action::DeleteRifle(stored.id.clone()));
             }
-        } else if ui.button("Cancel").clicked() {
+        } else if ui.button(tr("Cancel")).clicked() {
             cancel = true;
         }
     });
     if let Some(problem) = problem {
         ui.colored_label(ui.visuals().warn_fg_color, problem);
     } else if changed {
-        ui.weak("Unsaved changes");
+        ui.weak(tr("Unsaved changes"));
     }
 
     if let Some(stored) = stored {
@@ -317,7 +322,7 @@ fn loads_section(
     loads: &mut LoadEditor,
     actions: &mut Vec<Action>,
 ) {
-    ui.heading("Loads in this rifle");
+    ui.heading(tr("Loads in this rifle"));
     let bullets: Vec<_> = data
         .bullets
         .iter()
@@ -325,11 +330,11 @@ fn loads_section(
         .collect();
     if bullets.is_empty() {
         ui.horizontal_wrapped(|ui| {
-            ui.weak(format!(
+            ui.weak(trf!(
                 "No {} bullets in your collection yet.",
                 caliber_name(&rifle.caliber)
             ));
-            if ui.button("Add bullets").clicked() {
+            if ui.button(tr("Add bullets")).clicked() {
                 actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
             }
         });
@@ -358,16 +363,16 @@ fn loads_section(
             if ui
                 .add(egui::Button::new(text).selected(selected))
                 .on_hover_text(if set_up {
-                    "Set up for this rifle"
+                    tr("Set up for this rifle")
                 } else {
-                    "Using the bullet's own data"
+                    tr("Using the bullet's own data")
                 })
                 .clicked()
             {
                 *load_bullet = Some(bullet.id.clone());
             }
         }
-        if ui.small_button("+ Add bullets").clicked() {
+        if ui.small_button(tr("+ Add bullets")).clicked() {
             actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
         }
     });
@@ -390,8 +395,8 @@ fn rifle_fields(
 ) {
     let u = units::prefs(ui.ctx());
     grid(ui, "rifle-editor", |ui| {
-        text(ui, "Name", &mut rifle.name);
-        ui.label("Caliber");
+        text(ui, tr("Name"), &mut rifle.name);
+        ui.label(tr("Caliber"));
         if let Some(caliber) = caliber_picker(ui, "rifle-caliber", &rifle.caliber, caliber_search) {
             rifle.caliber = caliber.key.clone();
             rifle.twist_in = caliber.typical_twist_in;
@@ -401,13 +406,13 @@ fn rifle_fields(
         click_rows(ui, rifle, data);
         quantity(
             ui,
-            "Sight height",
+            tr("Sight height"),
             &mut rifle.sight_height_cm,
             Quantity::SightHeight,
             0.0..=15.0,
             0.1,
         );
-        ui.label("Zero");
+        ui.label(tr("Zero"));
         ui.horizontal(|ui| {
             units::drag(
                 ui,
@@ -416,7 +421,7 @@ fn rifle_fields(
                 10.0..=1000.0,
                 1.0,
             );
-            ui.label("hitting");
+            ui.label(tr("hitting"));
             units::drag(
                 ui,
                 &mut rifle.zero_height_cm,
@@ -424,8 +429,10 @@ fn rifle_fields(
                 -50.0..=50.0,
                 0.1,
             )
-            .on_hover_text("0 on the crosshair; + high, − low (\"4 cm high at 100 m\")");
-            ui.weak("above the aim");
+            .on_hover_text(tr(
+                "0 on the crosshair; + high, − low (\"4 cm high at 100 m\")",
+            ));
+            ui.weak(tr("above the aim"));
         });
         ui.end_row();
     });
@@ -440,22 +447,22 @@ fn rifle_fields(
         "{} · 1:{} {}",
         rifle
             .barrel_length_mm
-            .map_or("length unknown".to_owned(), |mm| short(
+            .map_or(tr("length unknown").to_owned(), |mm| short(
                 Quantity::BarrelLength,
                 mm
             )),
         short(Quantity::Twist, rifle.twist_in),
         if rifle.right_hand_twist {
-            "right"
+            tr("right twist")
         } else {
-            "left"
+            tr("left twist")
         }
     );
-    fold(ui, "rifle-barrel", "Barrel", &barrel, |ui| {
+    fold(ui, "rifle-barrel", tr("Barrel"), &barrel, |ui| {
         grid(ui, "rifle-barrel-grid", |ui| {
             optional_quantity(
                 ui,
-                "Barrel length",
+                tr("Barrel length"),
                 &mut rifle.barrel_length_mm,
                 560.0,
                 Quantity::BarrelLength,
@@ -464,19 +471,21 @@ fn rifle_fields(
             );
             quantity(
                 ui,
-                "Twist, 1 turn in",
+                tr("Twist, 1 turn in"),
                 &mut rifle.twist_in,
                 Quantity::Twist,
                 3.0..=40.0,
                 0.05,
             );
             ui.label("");
-            ui.weak("Set to a common value for the caliber; check your barrel's.");
+            ui.weak(tr(
+                "Set to a common value for the caliber; check your barrel's.",
+            ));
             ui.end_row();
-            ui.label("Twist direction");
+            ui.label(tr("Twist direction"));
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut rifle.right_hand_twist, true, "Right");
-                ui.selectable_value(&mut rifle.right_hand_twist, false, "Left");
+                ui.selectable_value(&mut rifle.right_hand_twist, true, tr("Right"));
+                ui.selectable_value(&mut rifle.right_hand_twist, false, tr("Left"));
             });
             ui.end_row();
         });
@@ -490,14 +499,14 @@ fn rifle_fields(
     fold(
         ui,
         "rifle-zero-weather",
-        "Zero conditions",
+        tr("Zero conditions"),
         &weather,
         |ui| {
-            ui.weak("The weather the rifle was zeroed in.");
+            ui.weak(tr("The weather the rifle was zeroed in."));
             grid(ui, "rifle-zero-grid", |ui| {
                 quantity(
                     ui,
-                    "Temperature",
+                    tr("Temperature"),
                     &mut rifle.zero_temperature_c,
                     Quantity::Temperature,
                     -40.0..=50.0,
@@ -505,7 +514,7 @@ fn rifle_fields(
                 );
                 quantity(
                     ui,
-                    "Barometer at the range",
+                    tr("Barometer at the range"),
                     &mut rifle.zero_pressure_hpa,
                     Quantity::Pressure,
                     500.0..=1100.0,
@@ -513,16 +522,16 @@ fn rifle_fields(
                 );
                 number(
                     ui,
-                    "Humidity",
+                    tr("Humidity"),
                     &mut rifle.zero_humidity_percent,
                     0.0..=100.0,
                     1.0,
                     " %",
                 );
-                ui.label("Powder temperature");
+                ui.label(tr("Powder temperature"));
                 ui.horizontal(|ui| {
                     let mut same = rifle.zero_powder_temperature_c.is_none();
-                    if ui.checkbox(&mut same, "same as air").changed() {
+                    if ui.checkbox(&mut same, tr("same as air")).changed() {
                         rifle.zero_powder_temperature_c =
                             (!same).then_some(rifle.zero_temperature_c);
                     }
@@ -538,7 +547,7 @@ fn rifle_fields(
     fold(
         ui,
         "rifle-notes",
-        "Notes",
+        tr("Notes"),
         &crate::calculator::shortened(&notes, 50),
         |ui| {
             ui.text_edit_multiline(&mut rifle.notes);
@@ -558,16 +567,16 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
     let own = ui
         .data(|data| data.get_temp::<bool>(own_id))
         .unwrap_or(false);
-    ui.label("Clicks");
+    ui.label(tr("Clicks"));
     match from_scope {
         Some(clicks) if !own && clicks == (rifle.click_unit, rifle.click_value) => {
             ui.horizontal(|ui| {
-                ui.label(format!(
+                ui.label(trf!(
                     "{} {} a click, from the scope",
                     rifle.click_value,
                     ballistics_shot::unit_label(rifle.click_unit)
                 ));
-                if ui.small_button("Change").clicked() {
+                if ui.small_button(tr("Change")).clicked() {
                     ui.data_mut(|data| data.insert_temp(own_id, true));
                 }
             });
@@ -587,13 +596,13 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
                     egui::DragValue::new(&mut rifle.click_value)
                         .range(0.01..=1.0)
                         .speed(0.005)
-                        .suffix(" a click"),
+                        .suffix(tr(" a click")),
                 );
                 if let Some(clicks) = from_scope
                     && clicks != (rifle.click_unit, rifle.click_value)
                     && ui
-                        .small_button("Use the scope's")
-                        .on_hover_text(format!(
+                        .small_button(tr("Use the scope's"))
+                        .on_hover_text(trf!(
                             "{} {} a click",
                             clicks.1,
                             ballistics_shot::unit_label(clicks.0)
@@ -612,7 +621,7 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
 /// Scope and reticle rows of the rifle editor. Choosing a scope also takes
 /// over its click unit and value.
 fn scope_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data, search: &mut String) {
-    ui.label("Scope");
+    ui.label(tr("Scope"));
     match scope_picker(
         ui,
         "rifle-scope",
@@ -640,13 +649,13 @@ fn scope_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data, search: &mut St
     ui.label("");
     ui.weak(scope_summary(&scope));
     ui.end_row();
-    ui.label("Reticle");
+    ui.label(tr("Reticle"));
     egui::ComboBox::from_id_salt("rifle-reticle")
         .selected_text(
             rifle
                 .reticle_id
                 .as_deref()
-                .map_or("Choose reticle".to_owned(), reticle_name),
+                .map_or(tr("Choose reticle").to_owned(), reticle_name),
         )
         .show_ui(ui, |ui| {
             for id in &scope.reticles {
@@ -674,15 +683,15 @@ fn scope_editor(
 ) -> bool {
     let stored = data.scopes.iter().find(|stored| stored.id == scope.id);
     ui.heading(if stored.is_some() {
-        "Edit scope"
+        tr("Edit scope")
     } else {
-        "New scope"
+        tr("New scope")
     });
     ui.add_space(4.0);
     grid(ui, "scope-editor", |ui| {
-        text(ui, "Maker", &mut scope.manufacturer);
-        text(ui, "Model", &mut scope.model);
-        ui.label("Magnification");
+        text(ui, tr("Maker"), &mut scope.manufacturer);
+        text(ui, tr("Model"), &mut scope.model);
+        ui.label(tr("Magnification"));
         ui.horizontal(|ui| {
             ui.add(
                 egui::DragValue::new(&mut scope.magnification_min)
@@ -690,7 +699,7 @@ fn scope_editor(
                     .speed(0.1)
                     .suffix("×"),
             );
-            ui.label("to");
+            ui.label(tr("to"));
             ui.add(
                 egui::DragValue::new(&mut scope.magnification_max)
                     .range(1.0..=100.0)
@@ -701,25 +710,29 @@ fn scope_editor(
         ui.end_row();
         optional_number(
             ui,
-            "Objective",
+            tr("Objective"),
             &mut scope.objective_mm,
             50.0,
             10.0..=80.0,
             1.0,
             " mm",
         );
-        ui.label("Reticle position");
+        ui.label(tr("Reticle position"));
         ui.horizontal(|ui| {
             ui.selectable_value(
                 &mut scope.focal_plane,
                 FocalPlane::Sfp,
-                "Second focal plane",
+                tr("Second focal plane"),
             );
-            ui.selectable_value(&mut scope.focal_plane, FocalPlane::Ffp, "First focal plane");
+            ui.selectable_value(
+                &mut scope.focal_plane,
+                FocalPlane::Ffp,
+                tr("First focal plane"),
+            );
         });
         ui.end_row();
         if scope.focal_plane == FocalPlane::Sfp {
-            ui.label("  marks true at");
+            ui.label(tr("  marks true at"));
             let reference = scope
                 .reticle_reference_magnification
                 .get_or_insert(scope.magnification_max);
@@ -731,7 +744,7 @@ fn scope_editor(
             );
             ui.end_row();
         }
-        ui.label("Clicks");
+        ui.label(tr("Clicks"));
         ui.horizontal(|ui| {
             for unit in [AngleUnit::CmAt100m, AngleUnit::Mrad, AngleUnit::Moa] {
                 ui.selectable_value(&mut scope.click_unit, unit, unit.label());
@@ -740,21 +753,21 @@ fn scope_editor(
                 egui::DragValue::new(&mut scope.click_value)
                     .range(0.01..=5.0)
                     .speed(0.01)
-                    .prefix("per click "),
+                    .prefix(tr("per click ")),
             );
         });
         ui.end_row();
         let travel_unit = format!(" {}", scope.click_unit.label());
         optional_number(
             ui,
-            "Elevation travel",
+            tr("Elevation travel"),
             &mut scope.elevation_travel,
             20.0,
             0.1..=500.0,
             0.5,
             &travel_unit,
         );
-        ui.label("Field of view at 100 m");
+        ui.label(tr("Field of view at 100 m"));
         ui.horizontal(|ui| {
             let mut known = scope.fov_m_at_100m.is_some();
             if ui.checkbox(&mut known, "").changed() {
@@ -768,7 +781,7 @@ fn scope_editor(
                             .speed(0.1)
                             .suffix(" m"),
                     );
-                    ui.label("to");
+                    ui.label(tr("to"));
                     ui.add(
                         egui::DragValue::new(narrow)
                             .range(0.1..=60.0)
@@ -777,15 +790,15 @@ fn scope_editor(
                     );
                 }
                 None => {
-                    ui.weak("unknown");
+                    ui.weak(tr("unknown"));
                 }
             }
         });
         ui.end_row();
-        ui.label("Illuminated");
+        ui.label(tr("Illuminated"));
         ui.checkbox(&mut scope.illuminated, "");
         ui.end_row();
-        ui.label("Reticle drawing");
+        ui.label(tr("Reticle drawing"));
         ui.vertical(|ui| {
             egui::ComboBox::from_id_salt("custom-scope-reticle")
                 .width(280.0)
@@ -794,7 +807,7 @@ fn scope_editor(
                     scope
                         .reticle_id
                         .as_deref()
-                        .map_or("Plain crosshair".to_owned(), reticle_name),
+                        .map_or(tr("Plain crosshair").to_owned(), reticle_name),
                 )
                 .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
                 .show_ui(ui, |ui| {
@@ -803,7 +816,7 @@ fn scope_editor(
                         ui.data(|data| data.get_temp(search_id)).unwrap_or_default();
                     ui.add(
                         egui::TextEdit::singleline(&mut search)
-                            .hint_text("Search any reticle name"),
+                            .hint_text(tr("Search any reticle name")),
                     )
                     .request_focus();
                     let plain = Reticle::plain_crosshair();
@@ -840,14 +853,14 @@ fn scope_editor(
             }
         });
         ui.end_row();
-        ui.label("Notes");
+        ui.label(tr("Notes"));
         ui.text_edit_multiline(&mut scope.notes);
         ui.end_row();
     });
-    ui.small(
+    ui.small(tr(
         "A catalog reticle is drawn with the dimensions its maker published for that scope. On a second-focal-plane \
          scope they are taken to be true at the magnification above.",
-    );
+    ));
     ui.add_space(8.0);
 
     let problem = scope.validate().err();
@@ -860,29 +873,33 @@ fn scope_editor(
     let mut cancel = false;
     ui.horizontal(|ui| {
         if ui
-            .add_enabled(problem.is_none() && changed, egui::Button::new("Save"))
+            .add_enabled(problem.is_none() && changed, egui::Button::new(tr("Save")))
             .clicked()
         {
             actions.push(Action::SaveScope(scope.clone()));
         }
         if let Some(stored) = stored {
-            if changed && ui.button("Undo changes").clicked() {
+            if changed && ui.button(tr("Undo changes")).clicked() {
                 *scope = stored.clone();
             }
-            if confirm_button(ui, "delete-scope", "Delete") {
+            if confirm_button(ui, "delete-scope", tr("Delete")) {
                 actions.push(Action::DeleteScope(stored.id.clone()));
             }
-        } else if ui.button("Cancel").clicked() {
+        } else if ui.button(tr("Cancel")).clicked() {
             cancel = true;
         }
     });
     if let Some(problem) = problem {
         ui.colored_label(ui.visuals().warn_fg_color, problem);
     } else if changed {
-        ui.weak("Unsaved changes");
+        ui.weak(tr("Unsaved changes"));
     }
     if in_use > 0 {
-        ui.weak(format!("Mounted on {in_use} rifle(s)."));
+        ui.weak(if in_use == 1 {
+            tr("Mounted on 1 rifle.").to_owned()
+        } else {
+            trf!("Mounted on {} rifles.", in_use)
+        });
     }
     cancel
 }
@@ -902,19 +919,16 @@ fn previewed_choice(ui: &mut egui::Ui, selected: bool, reticle: &Reticle) -> egu
             reticle_preview(ui, reticle, 160.0, false);
             ui.weak(preview_caption(reticle));
             if !reticle.also_known_as.is_empty() {
-                ui.weak(format!(
-                    "Also sold as: {}",
-                    reticle.also_known_as.join(", ")
-                ));
+                ui.weak(trf!("Also sold as: {}", reticle.also_known_as.join(", ")));
             }
         })
 }
 
 fn preview_caption(reticle: &Reticle) -> String {
     if reticle.id == PLAIN_CROSSHAIR {
-        "A fine crosshair without marks.".to_owned()
+        tr("A fine crosshair without marks.").to_owned()
     } else {
-        format!(
+        trf!(
             "Shown at its published size, {:.1} mrad from the centre to its outermost mark.",
             reticle.inner_extent_mrad()
         )

@@ -12,6 +12,7 @@ mod flags;
 mod google;
 mod http;
 mod hunting;
+mod i18n;
 mod import;
 mod loads;
 mod mobile;
@@ -140,7 +141,7 @@ struct StartupError(String);
 impl eframe::App for StartupError {
     fn update(&mut self, context: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(context, |ui| {
-            ui.heading("The database could not be opened");
+            ui.heading(i18n::tr("The database could not be opened"));
             ui.colored_label(ui.visuals().error_fg_color, &self.0);
         });
     }

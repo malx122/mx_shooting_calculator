@@ -9,6 +9,7 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use super::sheet::{PT, win_ansi_char};
+use crate::i18n::tr;
 
 #[derive(
     Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
@@ -57,13 +58,13 @@ impl Font {
 
     pub fn hint(self) -> &'static str {
         match self {
-            Font::Helvetica | Font::HelveticaBold => "Plain and clear",
+            Font::Helvetica | Font::HelveticaBold => tr("Plain and clear"),
             Font::BarlowCondensed | Font::BarlowCondensedBold => {
-                "Narrow: big numbers where the marks are close"
+                tr("Narrow: big numbers where the marks are close")
             }
-            Font::BebasNeue => "Tall and narrow, capitals only",
-            Font::ShareTechMono => "Technical, every character as wide",
-            Font::BlackOpsOne => "Stencil, military",
+            Font::BebasNeue => tr("Tall and narrow, capitals only"),
+            Font::ShareTechMono => tr("Technical, every character as wide"),
+            Font::BlackOpsOne => tr("Stencil, military"),
         }
     }
 
