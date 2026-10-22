@@ -15,7 +15,10 @@ gives:
   the rifle's zero;
 - lead for moving game;
 - the view through your scope and a 3D view of the shot, with game animals
-  and sport targets at true size.
+  and sport targets at true size;
+- a shot log of the shots you took, with the solution the app gave, what
+  came of them and, after a shot at game, the way to where the animal
+  stood.
 
 ## Install
 
@@ -98,16 +101,16 @@ switches to a one-column layout with bigger text and touch targets
 (`mobile.rs`, `calculator/phone.rs`):
 
 - **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets,
-  Cards) and a compact header whose menu holds Units, what the app is used
-  for, Hunting rules, Sync, Import, Export, Load demo data, Install and the
-  version.
+  Cards) and a compact header whose menu holds the Shot log, Units, what
+  the app is used for, Hunting rules, Sync, Import, Export, Load demo data,
+  Install and the version.
 - **Calculate, results first:**
   - The rifle and bullet line opens a page with the rest of the inputs,
     each group folded with a summary.
   - Under it are four tiles: **range**, **shot angle**, **wind** and
     **target**.
-  - Then the holds, one line on the legal class, the season and the light
-    (tap it for the details), and the scope view.
+  - Then the holds with **Log this shot**, one line on the legal class, the
+    season and the light (tap it for the details), and the scope view.
   - Limits, the range table (three columns, or all) and the trajectory
     (2D/3D) fold out below.
 - **Pickers:** sheets that slide up from the bottom (on a desktop, the same
@@ -120,8 +123,8 @@ switches to a one-column layout with bigger text and touch targets
   - **Wind:** a clock dial for the direction and quick speeds.
   - **Target:** search, recent targets, and **No target** (just the reticle
     and the impact point).
-- **Rifles, Bullets and Targets:** a list, then the record full screen with
-  a way back.
+- **Rifles, Bullets, Targets and the Shot log:** a list, then the record full
+  screen with a way back.
 
 ### Versions and releases
 
@@ -432,6 +435,35 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      The A4 sheet has copies of the strip with cut marks, a 50 mm bar to
      check the print scale, and the clicks for every range.
 
+6. **Shot log** (in the ••• menu; on a phone, the menu): **Log this shot**
+   under the hold on Calculate keeps the shot: the rifle, bullet and
+   target, the range, shot angle, wind and weather, the hold the app gave
+   (in mil or MOA and in clicks) and the bullet's drop, drift, speed,
+   energy and time of flight at the range. The log lists them newest first
+   with the date, rifle, target, range and outcome; open one to add whether
+   it hit or missed, where it hit and notes, or to delete it.
+
+   After a shot at game, the record helps find where the animal stood:
+   - **📍 Mark my position** (from where you shot) reads the phone's GPS
+     once, with its accuracy. **🧭 Take bearing** reads the compass while
+     you hold the phone flat, its top edge towards the animal. Both can be
+     typed instead, as on a computer, which has neither.
+   - From the position, the bearing and the level distance (the range ×
+     cos of the shot angle) the app works out the animal's spot on a
+     sphere the size of the Earth, and a search radius that allows for a
+     compass 10° off, a range 5 % off (at least 5 m) and the position's
+     accuracy, and is at least 10 m.
+   - **Guide me there** follows your position as you walk and shows the
+     distance and direction to the spot ("128 m, bearing 52°"), an arrow
+     when the compass knows where the phone points, and when you are
+     within the search area. **Copy coordinates** copies the spot as
+     latitude, longitude.
+
+   There is no map, so nothing about the shot is sent anywhere; the log
+   travels only in your sync copy and your backups. The browser asks before
+   it tells the app where you are, and the app asks only when you press
+   Mark my position or Guide me there.
+
 **Hunting or target shooting:** the app asks once what it is used for (and a
 hunter where they hunt); the menu's **Use for** changes it. **Target
 shooting** leaves out everything about hunting: ethical limits, legal
@@ -445,17 +477,17 @@ diameter, barrel length and twist can each be set. Values are always stored
 in metric, so changing units never changes your data.
 
 **Export backup / Import backup…** (in the menu) save and merge your rifles,
-bullets, rifle loads, custom scopes and custom targets as JSON. **Import
+bullets, rifle loads, custom scopes, custom targets and shot log as JSON. **Import
 backup…** also reads **Strelok Pro backups
 (`.srl`)**. It shows what it will add, with each rifle's inferred caliber to
 check, before writing anything, and importing the same backup again adds
 nothing. See [docs/strelok-import.md](docs/strelok-import.md). Import merges record by record and keeps whichever copy was edited
 last, so the same file can move data between devices. Backups from earlier
-versions (formats 1 to 4) still import. Restoring a backup brings back
+versions (formats 1 to 5) still import. Restoring a backup brings back
 records deleted since.
 
 **Sync** (in the menu; the header's dot shows how it is doing) keeps your rifles, bullets,
-loads, scopes and targets the same on all your devices, in one of two ways:
+loads, scopes, targets and shot log the same on all your devices, in one of two ways:
 
 - **With Google Drive:** **Sign in with Google** on each device, with the
   same account. The data is kept in a hidden folder in your own Drive that
@@ -536,7 +568,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 | Crate | What it does |
 |---|---|
 | `crates/ballistics-core` | The physics engine: a 3-DOF point-mass solver with G1/G7 drag, atmosphere, wind, shot angle, cant, spin drift, aerodynamic jump, Coriolis and the hunting analyses. No dependencies, no I/O. |
-| `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, and the sync merge and encryption (`sync.rs`). No UI, no networking. |
+| `crates/ballistics-store` | The base catalog, the SQLite database (with schema migrations), JSON export/import, the sync merge and encryption (`sync.rs`), and the shot log with its great-circle sums for the animal's spot (`shots.rs`). No UI, no networking. |
 | `crates/app` | The egui screens, for desktop and the web (`web.rs`, `index.html`). Pages return actions instead of writing to the store, so the logic can be reused by another front end. `sync.rs` and `http.rs` run sync rounds in the background. `cards/` lays out the printable cards once, in millimetres, for both the preview and a hand-written PDF (Helvetica, nothing embedded). |
 | `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
 | `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
@@ -556,7 +588,7 @@ coming back. A merge keeps the later of two copies, and on equal times
 compares them, so every device settles on the same one. Times come from a
 clock that never runs behind anything the store has seen, so a device whose
 clock is slow still stamps its edits after the copies they were made from.
-The shared copy is the usual export (format 5): encrypted on the sync
+The shared copy is the usual export (format 6): encrypted on the sync
 server, which checks versions so two devices writing at once can't overwrite
 each other; plain in Google Drive, which can't check versions, but a device
 whose write is overwritten still has its records and puts them back on its

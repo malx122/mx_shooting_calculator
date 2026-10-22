@@ -127,12 +127,13 @@ impl ImportPreview {
                 egui::ScrollArea::vertical().max_height(520.0).show(ui, |ui| match &mut self.source {
                     Source::Export(data) => {
                         ui.label(format!(
-                            "An MX Shooting Calculator backup with {} rifles, {} bullets, {} rifle loads, {} scopes and {} targets.",
+                            "An MX Shooting Calculator backup with {} rifles, {} bullets, {} rifle loads, {} scopes, {} targets and {} logged shots.",
                             data.rifles.len(),
                             data.bullets.len(),
                             data.rifle_loads.len(),
                             data.scopes.len(),
-                            data.targets.len()
+                            data.targets.len(),
+                            data.shots.len()
                         ));
                     }
                     Source::Strelok(strelok) => {

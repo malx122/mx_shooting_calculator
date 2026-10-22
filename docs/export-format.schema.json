@@ -9,7 +9,7 @@
       "type": "string"
     },
     "version": {
-      "description": "The format's version; this description is of version 5. A reader\nshould refuse versions newer than it knows.",
+      "description": "The format's version; this description is of version 6. A reader\nshould refuse versions newer than it knows.",
       "type": "integer",
       "format": "uint32",
       "minimum": 0
@@ -56,6 +56,14 @@
       },
       "default": []
     },
+    "shots": {
+      "description": "The shot log: shots the hunter took, with the solution the app gave\nand, after a shot at game, where the hunter and the animal stood.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Shot"
+      },
+      "default": []
+    },
     "deleted": {
       "description": "Records deleted, so merging the file deletes them elsewhere too.",
       "type": "array",
@@ -78,6 +86,7 @@
     "rifle_loads",
     "scopes",
     "targets",
+    "shots",
     "deleted"
   ],
   "$defs": {
@@ -1270,6 +1279,352 @@
         "other"
       ]
     },
+    "Shot": {
+      "description": "A shot taken, with the solution the app gave and what came of it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The shot's id, unique among shots.",
+          "type": "string"
+        },
+        "taken_at": {
+          "description": "When it was logged, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "rifle_id": {
+          "description": "The rifle shot with; it may have been deleted since.",
+          "type": "string"
+        },
+        "rifle_name": {
+          "description": "The rifle's name then, so the log reads after it is renamed or\ndeleted.",
+          "type": "string",
+          "default": ""
+        },
+        "bullet_id": {
+          "description": "The bullet shot.",
+          "type": "string"
+        },
+        "bullet_name": {
+          "description": "The bullet's name then.",
+          "type": "string",
+          "default": ""
+        },
+        "target_id": {
+          "description": "What was shot at: one of the hunter's targets or the catalog's, or\n`None` for no target.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "target_name": {
+          "description": "The target's name then.",
+          "type": "string",
+          "default": ""
+        },
+        "range_m": {
+          "description": "The range along the line of sight.",
+          "type": "number",
+          "format": "double"
+        },
+        "inclination_degrees": {
+          "description": "The shot angle: up (positive) or down the line of sight.",
+          "type": "number",
+          "format": "double",
+          "default": 0.0
+        },
+        "wind_speed_mps": {
+          "description": "The wind's speed.",
+          "type": "number",
+          "format": "double"
+        },
+        "wind_clock": {
+          "description": "Where the wind came from, on a clock: 12 head-on, 3 from the right.",
+          "type": "number",
+          "format": "double"
+        },
+        "weather": {
+          "description": "The weather the solution was worked out for.",
+          "$ref": "#/$defs/ShotWeather"
+        },
+        "hold": {
+          "description": "The hold the app gave.",
+          "$ref": "#/$defs/ShotHold"
+        },
+        "solution": {
+          "description": "The bullet's path at the range.",
+          "$ref": "#/$defs/ShotSolution"
+        },
+        "outcome": {
+          "description": "Hit, miss or not written down.",
+          "$ref": "#/$defs/Outcome",
+          "default": "not_recorded"
+        },
+        "hit_where": {
+          "description": "Where a hit landed, in the hunter's words (\"heart–lung\").",
+          "type": "string",
+          "default": ""
+        },
+        "position": {
+          "description": "Where the hunter stood, if they marked it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShooterPosition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bearing_degrees": {
+          "description": "The direction from the hunter to the animal, degrees from true\nnorth, if taken.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "animal_spot": {
+          "description": "Where the animal stood, from `position`, `bearing_degrees`, the\nrange and the shot angle; `None` without a position and a bearing.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimalSpot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "notes": {
+          "description": "Notes about it.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "taken_at",
+        "rifle_id",
+        "rifle_name",
+        "bullet_id",
+        "bullet_name",
+        "target_id",
+        "target_name",
+        "range_m",
+        "inclination_degrees",
+        "wind_speed_mps",
+        "wind_clock",
+        "weather",
+        "hold",
+        "solution",
+        "outcome",
+        "hit_where",
+        "position",
+        "bearing_degrees",
+        "animal_spot",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "ShotWeather": {
+      "description": "The weather the solution was worked out for.",
+      "type": "object",
+      "properties": {
+        "temperature_c": {
+          "description": "Air temperature.",
+          "type": "number",
+          "format": "double"
+        },
+        "powder_temperature_c": {
+          "description": "The cartridges' (powder's) temperature.",
+          "type": "number",
+          "format": "double"
+        },
+        "pressure_hpa": {
+          "description": "Air pressure where the hunter stood, as a barometer there reads it\n(not reduced to sea level).",
+          "type": "number",
+          "format": "double"
+        },
+        "humidity_percent": {
+          "description": "Relative humidity.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "temperature_c",
+        "powder_temperature_c",
+        "pressure_hpa",
+        "humidity_percent"
+      ]
+    },
+    "ShotHold": {
+      "description": "The hold the app gave: the angle to come up and right by, and the same\nin the rifle's clicks.",
+      "type": "object",
+      "properties": {
+        "elevation_mrad": {
+          "description": "Up (positive) or down.",
+          "type": "number",
+          "format": "double"
+        },
+        "windage_mrad": {
+          "description": "Right (positive) or left.",
+          "type": "number",
+          "format": "double"
+        },
+        "click_unit": {
+          "description": "The unit of the rifle's clicks then.",
+          "$ref": "#/$defs/ClickUnit"
+        },
+        "click_value": {
+          "description": "One click, in `click_unit`.",
+          "type": "number",
+          "format": "double"
+        },
+        "elevation_clicks": {
+          "description": "Clicks up (positive) or down, rounded to whole clicks.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "windage_clicks": {
+          "description": "Clicks right (positive) or left.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "elevation_mrad",
+        "windage_mrad",
+        "click_unit",
+        "click_value",
+        "elevation_clicks",
+        "windage_clicks"
+      ]
+    },
+    "ShotSolution": {
+      "description": "Where the bullet was worked out to be at the range, aimed dead on.",
+      "type": "object",
+      "properties": {
+        "drop_cm": {
+          "description": "Above (positive) or below the line of sight.",
+          "type": "number",
+          "format": "double"
+        },
+        "windage_cm": {
+          "description": "Right (positive) or left of the line of sight: wind and spin drift.",
+          "type": "number",
+          "format": "double"
+        },
+        "velocity_mps": {
+          "description": "Speed at the range.",
+          "type": "number",
+          "format": "double"
+        },
+        "energy_j": {
+          "description": "Energy at the range.",
+          "type": "number",
+          "format": "double"
+        },
+        "time_of_flight_s": {
+          "description": "Seconds from the muzzle to the range.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "drop_cm",
+        "windage_cm",
+        "velocity_mps",
+        "energy_j",
+        "time_of_flight_s"
+      ]
+    },
+    "Outcome": {
+      "description": "What came of a shot.",
+      "oneOf": [
+        {
+          "description": "Not written down (yet).",
+          "type": "string",
+          "const": "not_recorded"
+        },
+        {
+          "description": "The shot hit.",
+          "type": "string",
+          "const": "hit"
+        },
+        {
+          "description": "The shot missed.",
+          "type": "string",
+          "const": "miss"
+        }
+      ]
+    },
+    "ShooterPosition": {
+      "description": "Where the hunter stood when shooting.",
+      "type": "object",
+      "properties": {
+        "latitude_degrees": {
+          "description": "North positive, south negative.",
+          "type": "number",
+          "format": "double"
+        },
+        "longitude_degrees": {
+          "description": "East positive, west negative.",
+          "type": "number",
+          "format": "double"
+        },
+        "accuracy_m": {
+          "description": "How far off the position may be, as the device said; `None` when\nit was typed in.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        }
+      },
+      "required": [
+        "latitude_degrees",
+        "longitude_degrees",
+        "accuracy_m"
+      ]
+    },
+    "AnimalSpot": {
+      "description": "Where the animal stood, worked out from the hunter's position, the\nbearing and the range.",
+      "type": "object",
+      "properties": {
+        "latitude_degrees": {
+          "description": "North positive, south negative.",
+          "type": "number",
+          "format": "double"
+        },
+        "longitude_degrees": {
+          "description": "East positive, west negative.",
+          "type": "number",
+          "format": "double"
+        },
+        "search_radius_m": {
+          "description": "How far around the spot to search: the bearing's, the range's and\nthe position's possible errors together.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "latitude_degrees",
+        "longitude_degrees",
+        "search_radius_m"
+      ]
+    },
     "Deletion": {
       "description": "A record that was deleted.",
       "type": "object",
@@ -1302,7 +1657,8 @@
         "bullet",
         "rifle_load",
         "scope",
-        "target"
+        "target",
+        "shot"
       ]
     },
     "CatalogDetails": {

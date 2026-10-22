@@ -616,6 +616,9 @@ impl ResultsView<'_> {
                 );
             }
         }
+        if let Some(row) = solution.at(self.inputs.target_range_m) {
+            self.log_button(ui, &row, &mut requests);
+        }
         if let Some(statuses) = self.statuses() {
             // One line; open it for the pills and the region.
             let mut job = egui::text::LayoutJob::default();

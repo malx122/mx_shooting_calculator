@@ -18,6 +18,7 @@ mod loads;
 mod mobile;
 mod rifles;
 mod sensors;
+mod shot_log;
 mod sight_picture;
 mod sync;
 mod targets;

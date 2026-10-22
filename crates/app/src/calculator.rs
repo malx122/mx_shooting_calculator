@@ -485,6 +485,9 @@ impl CalculatorPage {
         if let Some(table) = requested.table {
             self.table_edit = Some((rifle.id.clone(), table));
         }
+        if let Some(shot) = requested.log_shot {
+            actions.push(Action::LogShot(shot));
+        }
     }
 
     pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
@@ -1434,6 +1437,8 @@ struct ViewRequests {
     region: Option<Option<String>>,
     /// Find the hunter's position, for the shooting light.
     locate: bool,
+    /// Save this shot in the shot log.
+    log_shot: Option<Box<ballistics_store::Shot>>,
 }
 
 impl ViewRequests {
@@ -1641,6 +1646,9 @@ impl ResultsView<'_> {
                             "The bullet does not reach this range.",
                         );
                     }
+                }
+                if let Some(row) = solution.at(inputs.target_range_m) {
+                    self.log_button(ui, &row, &mut requested);
                 }
                 ui.add_space(4.0);
                 if let Some(statuses) = self.statuses() {
@@ -1995,6 +2003,21 @@ impl ResultsView<'_> {
 
     fn unit(&self) -> ClickUnit {
         self.rifle.click_unit
+    }
+
+    /// "Log this shot": keeps the solution at the range in the shot log.
+    fn log_button(&self, ui: &mut egui::Ui, row: &RangeRow, requested: &mut ViewRequests) {
+        if ui
+            .button("Log this shot")
+            .on_hover_text(
+                "Keep this hold, the weather and the range in the shot log, to add what came \
+                 of it and where the animal stood",
+            )
+            .clicked()
+        {
+            let shot = crate::shot_log::from_solution(self.inputs, self.rifle, self.aim, row);
+            requested.log_shot = Some(Box::new(shot));
+        }
     }
 
     fn clicks(&self, angle: f64) -> i64 {

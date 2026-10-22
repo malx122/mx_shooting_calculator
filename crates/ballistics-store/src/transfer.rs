@@ -21,11 +21,12 @@ use serde::{Deserialize, Serialize};
 use crate::StoreError;
 use crate::db::{
     Store, bullet_from_row, from_json_column, load_from_row, observe_on, put_bullet, put_load,
-    put_rifle, put_scope, put_target, record_deletion, rifle_from_row, stamp_on,
+    put_rifle, put_scope, put_shot, put_target, record_deletion, rifle_from_row, stamp_on,
 };
 use crate::deletions::{Deletion, RecordKind};
 use crate::model::{Bullet, Rifle, RifleLoad, now_ms};
 use crate::optics::UserScope;
+use crate::shots::Shot;
 use crate::targets::Target;
 
 pub const FORMAT: &str = "mxsc/personal-data";
@@ -39,7 +40,8 @@ const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/pe
 /// 3: custom scopes, and bullets with their own drag curve.
 /// 4: custom targets.
 /// 5: deleted records.
-pub const VERSION: u32 = 5;
+/// 6: the shot log.
+pub const VERSION: u32 = 6;
 
 // This and the types in it are the documented export format: changing
 // them changes docs/export-format.schema.json and the field reference in
@@ -55,7 +57,7 @@ pub struct PersonalData {
     /// Always `mxsc/personal-data`. Files from the app's earlier names say
     /// `mhc/personal-data` or `ballistic-calculator/personal-data`.
     pub format: String,
-    /// The format's version; this description is of version 5. A reader
+    /// The format's version; this description is of version 6. A reader
     /// should refuse versions newer than it knows.
     pub version: u32,
     /// When the file was written, in milliseconds since 1970 (UTC).
@@ -73,6 +75,10 @@ pub struct PersonalData {
     /// Targets the hunter made or copied (catalog targets aren't included).
     #[serde(default)]
     pub targets: Vec<Target>,
+    /// The shot log: shots the hunter took, with the solution the app gave
+    /// and, after a shot at game, where the hunter and the animal stood.
+    #[serde(default)]
+    pub shots: Vec<Shot>,
     /// Records deleted, so merging the file deletes them elsewhere too.
     #[serde(default)]
     pub deleted: Vec<Deletion>,
@@ -329,6 +335,7 @@ record!(Bullet, RecordKind::Bullet);
 record!(RifleLoad, RecordKind::RifleLoad);
 record!(UserScope, RecordKind::Scope);
 record!(Target, RecordKind::Target);
+record!(Shot, RecordKind::Shot);
 
 impl Store {
     /// Everything the hunter has made, with the deletions, as one export.
@@ -342,6 +349,7 @@ impl Store {
             rifle_loads: self.rifle_loads()?,
             scopes: self.scopes()?,
             targets: self.targets()?,
+            shots: self.shots()?,
             deleted: self.deletions()?,
             // Sync copies stay small: only exported files carry it.
             catalog: CatalogDetails::default(),
@@ -434,6 +442,17 @@ impl Store {
                         .optional()?)
                 },
             )?;
+        }
+        for shot in &data.shots {
+            shot.validate().map_err(StoreError::Invalid)?;
+            latest = latest.max(shot.updated_at);
+            merge_record(&transaction, shot, mode, &mut report, put_shot, |tx, s| {
+                Ok(tx
+                    .query_row("SELECT data FROM shots WHERE id = ?1", [&s.id], |row| {
+                        from_json_column::<Shot>(&row.get::<_, String>(0)?)
+                    })
+                    .optional()?)
+            })?;
         }
         for rifle in &data.rifles {
             rifle.validate().map_err(StoreError::Invalid)?;
@@ -567,6 +586,9 @@ fn without_future(data: &PersonalData) -> PersonalData {
         .iter_mut()
         .for_each(|record| fix(&mut record.updated_at));
     data.targets
+        .iter_mut()
+        .for_each(|record| fix(&mut record.updated_at));
+    data.shots
         .iter_mut()
         .for_each(|record| fix(&mut record.updated_at));
     data.deleted

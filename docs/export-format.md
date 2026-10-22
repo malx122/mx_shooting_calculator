@@ -17,13 +17,14 @@ The file is UTF-8 JSON, usually named `mxsc-backup.json`.
 ```json
 {
   "format": "mxsc/personal-data",
-  "version": 5,
+  "version": 6,
   "exported_at": 1792473562000,
   "rifles": [ { "id": "…", "name": "Browning X-Bolt", "caliber": "308-win", "twist_in": 10.0, … } ],
   "bullets": [ { "id": "…", "manufacturer": "Federal", "name": "Terminal Ascent", "mass_g": 11.34, … } ],
   "rifle_loads": [ { "id": "…", "rifle_id": "…", "bullet_id": "…", "velocities": [ … ], … } ],
   "scopes": [],
   "targets": [],
+  "shots": [ { "id": "…", "taken_at": 1792473562000, "rifle_id": "…", "range_m": 150.0, "outcome": "hit", … } ],
   "deleted": [],
   "catalog": { "calibers": [ … ], "scopes": [ … ], "reticles": [ … ] }
 }
@@ -39,7 +40,10 @@ The file is UTF-8 JSON, usually named `mxsc-backup.json`.
   - energies: `_j`;
   - masses: `_g`;
   - angles: `_mrad`, `_degrees`;
-  - times: `_ms` (milliseconds since 1 January 1970, UTC).
+  - places: `latitude_degrees` and `longitude_degrees` (WGS84, as GPS gives
+    them; north and east positive);
+  - times: `_ms` (milliseconds since 1 January 1970, UTC), and `_s` for
+    seconds of flight.
 
   Twist is the one exception: `twist_in` is the inches of barrel per turn
   of the rifling, as the trade gives it.
@@ -82,10 +86,42 @@ A trajectory needs, for a rifle and a bullet of the same `caliber`:
   - `zero` says which weather the zero was made in;
   - `truing` multiplies the velocity or the drag by its `factor`.
 
+## The shot log
+
+Each of `shots` is a shot the hunter logged from the calculator. It keeps
+what the app said at the time, so it reads the same after the rifle, the
+bullet or the target is changed or deleted:
+
+- what was shot with and at: `rifle_id`, `bullet_id` and `target_id`, with
+  their names then (`rifle_name`, `bullet_name`, `target_name`);
+- the shot: `range_m` along the line of sight, `inclination_degrees`, the
+  wind and the `weather`;
+- the `hold` the app gave, as an angle (`elevation_mrad`, `windage_mrad`)
+  and in the rifle's clicks, and the bullet's path at the range
+  (`solution`);
+- what came of it: `outcome`, `hit_where` and `notes`.
+
+After a shot at game the hunter can mark where they stood (`position`, with
+the device's `accuracy_m`) and take the `bearing_degrees` to the animal,
+from true north. From these the app works out `animal_spot`: the point at
+the level distance (`range_m` × cos `inclination_degrees`) along that
+bearing, on a sphere of the Earth's mean radius (6 371 008.8 m), and a
+`search_radius_m` around it. The radius adds up, as the root of the sum of
+the squares, a compass error of ±10° (about 17 % of the distance
+sideways), a range error of 5 % (at least 5 m), and the position's
+accuracy (10 m when not known); it is at least 10 m. A reader may work the
+spot out again from the other fields; the app does whenever it saves the
+record.
+
+Positions are personal: they say where the hunter hunts. The app keeps them
+on the hunter's devices, in their sync copy (encrypted on the sync server,
+or in the app's own folder of their Google Drive) and in the files they
+export, and sends them nowhere else.
+
 ## Writing a file for the app
 
 The app reads files written by other programs:
-- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (5).
+- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (6).
 - Fields marked "may be left out" can be omitted.
 - Unknown fields are ignored, and the `catalog` section is never imported.
 - Every record is checked before anything is saved. Numbers must be finite and within what rifles and bullets can be. If any record fails, nothing from the file is imported, and the app says which record failed.
@@ -99,6 +135,7 @@ The app reads files written by other programs:
 | 3 | The hunter's own scopes; bullets with their own drag curve. |
 | 4 | The hunter's own targets. |
 | 5 | Deleted records. Later, still version 5: the `catalog` section (ignored by imports), truing, shot statistics on velocities, a zero height. |
+| 6 | The shot log (`shots`). |
 
 ## Field reference
 
@@ -111,13 +148,14 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | string | Always `mxsc/personal-data`. Files from the app's earlier names say `mhc/personal-data` or `ballistic-calculator/personal-data`. |
-| `version` | integer | The format's version; this description is of version 5. A reader should refuse versions newer than it knows. |
+| `version` | integer | The format's version; this description is of version 6. A reader should refuse versions newer than it knows. |
 | `exported_at` | integer | When the file was written, in milliseconds since 1970 (UTC). |
 | `rifles` | array of [Rifle](#rifle) | The hunter's rifles. |
 | `bullets` | array of [Bullet](#bullet) | The hunter's bullets: factory ammunition and handloads. |
 | `rifle_loads` | array of [RifleLoad](#rifleload) | What is particular to a bullet in a rifle: measured velocities, point of impact, zero weather and truing. |
 | `scopes` | array of [UserScope](#userscope) | Scopes the hunter entered (catalog scopes are only named by id). |
 | `targets` | array of [Target](#target) | Targets the hunter made or copied (catalog targets aren't included). |
+| `shots` | array of [Shot](#shot) | The shot log: shots the hunter took, with the solution the app gave and, after a shot at game, where the hunter and the animal stood. |
 | `deleted` | array of [Deletion](#deletion) | Records deleted, so merging the file deletes them elsewhere too. |
 | `catalog` | [CatalogDetails](#catalogdetails) | The catalog entries the records refer to by id, written out so the file can be read without the app. Only in exported files; importing ignores it. May be left out. |
 
@@ -440,6 +478,101 @@ One of:
 - `"sport"`
 - `"other"`
 
+### Shot
+
+A shot taken, with the solution the app gave and what came of it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The shot's id, unique among shots. |
+| `taken_at` | integer | When it was logged, in milliseconds since 1970 (UTC). |
+| `rifle_id` | string | The rifle shot with; it may have been deleted since. |
+| `rifle_name` | string | The rifle's name then, so the log reads after it is renamed or deleted. |
+| `bullet_id` | string | The bullet shot. |
+| `bullet_name` | string | The bullet's name then. |
+| `target_id` | string or null | What was shot at: one of the hunter's targets or the catalog's, or `null` for no target. |
+| `target_name` | string | The target's name then. |
+| `range_m` | number | The range along the line of sight. |
+| `inclination_degrees` | number | The shot angle: up (positive) or down the line of sight. |
+| `wind_speed_mps` | number | The wind's speed. |
+| `wind_clock` | number | Where the wind came from, on a clock: 12 head-on, 3 from the right. |
+| `weather` | [ShotWeather](#shotweather) | The weather the solution was worked out for. |
+| `hold` | [ShotHold](#shothold) | The hold the app gave. |
+| `solution` | [ShotSolution](#shotsolution) | The bullet's path at the range. |
+| `outcome` | [Outcome](#outcome) | Hit, miss or not written down. |
+| `hit_where` | string | Where a hit landed, in the hunter's words ("heart–lung"). |
+| `position` | [ShooterPosition](#shooterposition) or null | Where the hunter stood, if they marked it. |
+| `bearing_degrees` | number or null | The direction from the hunter to the animal, degrees from true north, if taken. |
+| `animal_spot` | [AnimalSpot](#animalspot) or null | Where the animal stood, from `position`, `bearing_degrees`, the range and the shot angle; `null` without a position and a bearing. |
+| `notes` | string | Notes about it. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### ShotWeather
+
+The weather the solution was worked out for.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `temperature_c` | number | Air temperature. |
+| `powder_temperature_c` | number | The cartridges' (powder's) temperature. |
+| `pressure_hpa` | number | Air pressure where the hunter stood, as a barometer there reads it (not reduced to sea level). |
+| `humidity_percent` | number | Relative humidity. |
+
+### ShotHold
+
+The hold the app gave: the angle to come up and right by, and the same in the rifle's clicks.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `elevation_mrad` | number | Up (positive) or down. |
+| `windage_mrad` | number | Right (positive) or left. |
+| `click_unit` | [ClickUnit](#clickunit) | The unit of the rifle's clicks then. |
+| `click_value` | number | One click, in `click_unit`. |
+| `elevation_clicks` | integer | Clicks up (positive) or down, rounded to whole clicks. |
+| `windage_clicks` | integer | Clicks right (positive) or left. |
+
+### ShotSolution
+
+Where the bullet was worked out to be at the range, aimed dead on.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `drop_cm` | number | Above (positive) or below the line of sight. |
+| `windage_cm` | number | Right (positive) or left of the line of sight: wind and spin drift. |
+| `velocity_mps` | number | Speed at the range. |
+| `energy_j` | number | Energy at the range. |
+| `time_of_flight_s` | number | Seconds from the muzzle to the range. |
+
+### Outcome
+
+What came of a shot.
+
+One of:
+
+- `"not_recorded"`: Not written down (yet).
+- `"hit"`: The shot hit.
+- `"miss"`: The shot missed.
+
+### ShooterPosition
+
+Where the hunter stood when shooting.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `latitude_degrees` | number | North positive, south negative. |
+| `longitude_degrees` | number | East positive, west negative. |
+| `accuracy_m` | number or null | How far off the position may be, as the device said; `null` when it was typed in. |
+
+### AnimalSpot
+
+Where the animal stood, worked out from the hunter's position, the bearing and the range.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `latitude_degrees` | number | North positive, south negative. |
+| `longitude_degrees` | number | East positive, west negative. |
+| `search_radius_m` | number | How far around the spot to search: the bearing's, the range's and the position's possible errors together. |
+
 ### Deletion
 
 A record that was deleted.
@@ -461,6 +594,7 @@ One of:
 - `"rifle_load"`
 - `"scope"`
 - `"target"`
+- `"shot"`
 
 ### CatalogDetails
 

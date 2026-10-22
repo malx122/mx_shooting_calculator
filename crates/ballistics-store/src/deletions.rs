@@ -13,6 +13,7 @@ pub enum RecordKind {
     RifleLoad,
     Scope,
     Target,
+    Shot,
 }
 
 impl RecordKind {
@@ -23,6 +24,7 @@ impl RecordKind {
             RecordKind::RifleLoad => "rifle_load",
             RecordKind::Scope => "scope",
             RecordKind::Target => "target",
+            RecordKind::Shot => "shot",
         }
     }
 
@@ -33,6 +35,7 @@ impl RecordKind {
             RecordKind::RifleLoad,
             RecordKind::Scope,
             RecordKind::Target,
+            RecordKind::Shot,
         ]
         .into_iter()
         .find(|kind| kind.as_str() == text)
@@ -46,6 +49,7 @@ impl RecordKind {
             RecordKind::RifleLoad => "rifle_loads",
             RecordKind::Scope => "scopes",
             RecordKind::Target => "targets",
+            RecordKind::Shot => "shots",
         }
     }
 }
