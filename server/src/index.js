@@ -20,7 +20,9 @@
 
 import { forgetStale, google } from './google.js';
 
-const MAX_BYTES = 256 * 1024;
+// One copy holds everything a hunter keeps, the shot log included; D1 allows
+// rows up to 2 MB.
+const MAX_BYTES = 1024 * 1024;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const COPY_PATH = /^\/v1\/copies\/([0-9a-f]{64})$/;
 

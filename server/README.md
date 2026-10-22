@@ -28,7 +28,7 @@ none after that.
 | `POST /v1/google/session/S` | the tokens, once; `404` until signed in |
 | `POST /v1/google/refresh` | `{"refresh_token"}` → `{"access_token", "expires_in"}`; `401` to sign in again |
 
-`{id}` is 64 lowercase hex digits. Copies are at most 256 KiB. CORS is open
+`{id}` is 64 lowercase hex digits. Copies are at most 1 MiB. CORS is open
 to every origin (the copy is encrypted and the id is unguessable). A weekly
 job forgets copies nobody has written for two years, and deleted ones after
 30 days.

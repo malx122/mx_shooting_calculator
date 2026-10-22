@@ -71,7 +71,7 @@ try {
   assert.equal(await (await fetch(copy(key))).text(), 'second');
 
   // Size limits and bad ids.
-  assert.equal((await put(key, new Uint8Array(256 * 1024 + 1), { 'If-Match': '"2"' })).status, 413);
+  assert.equal((await put(key, new Uint8Array(1024 * 1024 + 1), { 'If-Match': '"2"' })).status, 413);
   assert.equal((await put(key, '', { 'If-Match': '"2"' })).status, 400);
   assert.equal((await fetch(`${BASE}/v1/copies/not-an-id`)).status, 404);
 

@@ -52,6 +52,8 @@ any release may still change things noticeably.
 
 ### Changed
 
+- The sync server keeps copies of up to 1 MiB (was 256 KiB): room for the
+  shot log, about 800 shots beside everything else.
 - On a phone, the view through the scope is centred and as wide as the
   screen allows, with its magnification and width written under the
   slider.
