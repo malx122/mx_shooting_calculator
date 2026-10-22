@@ -15,3 +15,6 @@
 
 # Desktop packages (scripts/package.sh)
 /dist-desktop
+
+# The update signing tool's build output
+/tools/sign-update/target

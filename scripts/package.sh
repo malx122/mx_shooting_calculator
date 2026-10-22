@@ -3,6 +3,8 @@
 #   macOS:   MX-Shooting-Calculator-<version>-macos.dmg (Apple silicon and Intel)
 #   Windows: MX-Shooting-Calculator-<version>-windows-x64.zip
 #   Linux:   MX-Shooting-Calculator-<version>-linux-x64.tar.gz
+# and beside each the file the app's updater installs (src/updates.rs):
+#   the app bundle as -macos-update.tar.gz, the bare program elsewhere.
 # The release workflow (.github/workflows/desktop.yml) runs it on each system.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -41,6 +43,7 @@ Darwin)
     # Apple silicon runs only signed programs: sign it without an identity
     # (not notarized, so the first start needs Open Anyway).
     codesign --force --deep --sign - "$app"
+    COPYFILE_DISABLE=1 tar -czf "$out/$file-macos-update.tar.gz" -C "$work/dmg" "$name.app"
     ln -s /Applications "$work/dmg/Applications"
     hdiutil create -volname "$name" -srcfolder "$work/dmg" -ov -format UDZO \
         "$out/$file-macos.dmg"
@@ -50,6 +53,7 @@ MINGW* | MSYS* | CYGWIN*)
     dir="$work/$file"
     mkdir -p "$dir"
     cp target/release/mxsc.exe "$dir/$name.exe"
+    cp target/release/mxsc.exe "$out/$file-windows-x64-update.exe"
     cp "${licences[@]}" "$dir/"
     (cd "$work" && 7z a -tzip "../../$out/$file-windows-x64.zip" "$file" >/dev/null)
     ;;
@@ -58,6 +62,7 @@ Linux)
     dir="$work/$file"
     mkdir -p "$dir"
     cp target/release/mxsc "$dir/"
+    cp target/release/mxsc "$out/$file-linux-x64-update"
     cp "$work/icons/mxsc-256.png" "$dir/mxsc.png"
     cp crates/app/packaging/mxsc.desktop crates/app/packaging/install.sh "$dir/"
     cp "${licences[@]}" "$dir/"

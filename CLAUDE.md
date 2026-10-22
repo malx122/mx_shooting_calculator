@@ -19,7 +19,9 @@ anything it doesn't strictly need. Keep it that way:
   app only talks to:
   - Open-Meteo, for the weather;
   - the app's own sync server;
-  - Google Drive, for sync, if the user chooses it.
+  - Google Drive, for sync, if the user chooses it;
+  - GitHub, for the desktop apps' update check and downloads, if the user
+    turns updates on (off by default).
 
   Pages ship with no third-party scripts, fonts or cookies.
 - **The sync server keeps nothing readable.** Sync copies are encrypted on

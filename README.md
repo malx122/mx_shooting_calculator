@@ -38,6 +38,13 @@ on phones and anywhere else.
 - **Linux** (x86-64): unpack, then `./install.sh` puts the program in
   `~/.local/bin` with a menu entry and icon; or run `./mxsc` from the folder.
 
+**Updates** (desktop, from version 0.8.2): in the menu, **Updates…** turns
+on a check for a new version when the app starts (off until you turn it
+on), or checks now. **Update now** downloads the new version from GitHub,
+checks that it is signed by the app's maker, puts it in place of the old one
+and offers to restart. On a Mac the app must be in Applications (not run
+from the disk image).
+
 ## Run
 
 ```sh
@@ -156,6 +163,16 @@ on Linux, in `dist-desktop/`. The icons are drawn from the SVG by
 `cargo run -p mxsc --example icons`. The macOS app is signed without an
 identity and the Windows program not at all; signing and notarizing need an
 Apple Developer ID and a code-signing certificate.
+
+Beside the packages each system also gets the file the app's updater
+installs (`-update`: the app bundle as a `.tar.gz` on macOS, the bare
+program elsewhere). The release job writes `update.json`, the version and
+each update file's SHA-256, and signs it with `tools/sign-update` using the
+minisign key in the `MXSC_UPDATE_KEY` secret; the app checks that signature
+with the public key in `crates/app/src/updates.rs` before it installs
+anything. Without the secret a release gets no `update.json`, and the apps
+aren't offered it. To try the updater against a local server laid out like
+GitHub's release downloads, set `MXSC_UPDATE_FROM` to its address.
 
 The backup format (`transfer::VERSION`) and the database schema (the
 migrations in `db.rs`) have their own numbers. The backup format is

@@ -157,6 +157,8 @@ enum MenuSheet {
     WhatsNew,
     /// How to put the app on the home screen by hand.
     Install,
+    #[cfg(not(target_arch = "wasm32"))]
+    Updates,
 }
 
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
@@ -173,6 +175,8 @@ enum MenuChoice {
     Demo,
     #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
     Install,
+    #[cfg(not(target_arch = "wasm32"))]
+    Updates,
 }
 
 struct Status {
@@ -221,6 +225,15 @@ pub struct App {
     /// A backup picked in the browser, waiting to be previewed.
     #[cfg(target_arch = "wasm32")]
     picked: crate::web::PickedSlot,
+    #[cfg(not(target_arch = "wasm32"))]
+    updates: crate::updates::Updater,
+    /// Look for a new version when the app starts: off until the hunter
+    /// turns it on.
+    #[cfg(not(target_arch = "wasm32"))]
+    check_updates: bool,
+    /// The check at start was made (or wasn't wanted).
+    #[cfg(not(target_arch = "wasm32"))]
+    updates_started: bool,
 }
 
 impl App {
@@ -286,7 +299,22 @@ impl App {
             menu: None,
             #[cfg(target_arch = "wasm32")]
             picked: Default::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            updates: Default::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            check_updates: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            updates_started: false,
         };
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            app.check_updates = app
+                .store
+                .setting(crate::updates::SETTING)
+                .ok()
+                .flatten()
+                .unwrap_or(false);
+        }
         app.reload();
         app.mention_update();
         if app.data.rifles.is_empty() {
@@ -625,6 +653,13 @@ impl eframe::App for App {
                 self.status = None;
             }
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if !std::mem::replace(&mut self.updates_started, true) && self.check_updates {
+                self.updates.check(context);
+            }
+            self.updates.notice(context);
+        }
 
         self.data.region = self.calculator.inputs.region.clone();
         self.data.today = self.calculator.inputs.conditions();
@@ -846,6 +881,11 @@ impl App {
                 .clicked()
             {
                 sync = true;
+                ui.close_menu();
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if ui.button(tr("Updates…")).clicked() {
+                self.menu = Some(MenuSheet::Updates);
                 ui.close_menu();
             }
             ui.separator();
@@ -1131,6 +1171,21 @@ impl App {
                     if mobile::list_row(ui, tr("Sync"), &status, false).clicked() {
                         choice = Some(MenuChoice::Sync);
                     }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if mobile::list_row(
+                        ui,
+                        tr("Updates"),
+                        if self.check_updates {
+                            tr("Checked when the app starts")
+                        } else {
+                            tr("Off")
+                        },
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::Updates);
+                    }
                     if mobile::list_row(
                         ui,
                         tr("Import backup…"),
@@ -1202,6 +1257,8 @@ impl App {
                     Some(MenuChoice::Country) => self.menu = Some(MenuSheet::Country),
                     Some(MenuChoice::Purpose) => self.menu = Some(MenuSheet::Purpose),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
+                    #[cfg(not(target_arch = "wasm32"))]
+                    Some(MenuChoice::Updates) => self.menu = Some(MenuSheet::Updates),
                     Some(MenuChoice::WhatsNew) => self.menu = Some(MenuSheet::WhatsNew),
                     Some(MenuChoice::ShotLog) => {
                         self.menu = None;
@@ -1255,6 +1312,44 @@ impl App {
                 let shown = mobile::sheet(context, "sync", tr("Sync"), |ui| {
                     self.sync.panel(ui, &self.store)
                 });
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            MenuSheet::Updates => {
+                let mut enabled = self.check_updates;
+                let mut check = false;
+                let updates = &mut self.updates;
+                let shown = mobile::sheet(context, "updates", tr("Updates"), |ui| {
+                    ui.checkbox(&mut enabled, tr("Check for updates when the app starts"));
+                    ui.weak(tr(
+                        "The app then asks GitHub, where its releases are kept, for the latest \
+                         version. Nothing else is sent. An update is installed only when you \
+                         say so, and only if it is signed by the app's maker.",
+                    ));
+                    ui.add_space(8.0);
+                    ui.label(trf!("This is version {}.", crate::VERSION));
+                    let busy = matches!(
+                        updates.state(),
+                        crate::updates::State::Checking | crate::updates::State::Downloading(_)
+                    );
+                    if ui
+                        .add_enabled(!busy, egui::Button::new(tr("Check now")))
+                        .clicked()
+                    {
+                        check = true;
+                    }
+                    updates.show(ui);
+                });
+                if enabled != self.check_updates {
+                    self.check_updates = enabled;
+                    let _ = self.store.set_setting(crate::updates::SETTING, &enabled);
+                    check |= enabled;
+                }
+                if check {
+                    self.updates.check(context);
+                }
                 if shown.closed {
                     self.menu = None;
                 }

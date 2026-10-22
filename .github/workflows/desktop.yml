@@ -84,6 +84,30 @@ jobs:
           merge-multiple: true
           path: dist
 
+      # What the apps' updater (crates/app/src/updates.rs) reads: the
+      # version and each system's update file with its SHA-256, signed with
+      # the key in the MXSC_UPDATE_KEY secret.
+      - name: Signed update manifest
+        env:
+          MXSC_UPDATE_KEY: ${{ secrets.MXSC_UPDATE_KEY }}
+        run: |
+          if [ -z "$MXSC_UPDATE_KEY" ]; then
+            echo "No MXSC_UPDATE_KEY secret: the apps won't be offered this release" >&2
+            exit 0
+          fi
+          version=${TAG#v}
+          file=MX-Shooting-Calculator-$version
+          entry() {
+            printf '"%s":{"name":"%s","sha256":"%s"}' "$1" "$2" \
+              "$(sha256sum "dist/$2" | cut -d' ' -f1)"
+          }
+          printf '{"version":"%s","files":{%s,%s,%s}}\n' "$version" \
+            "$(entry macos "$file-macos-update.tar.gz")" \
+            "$(entry windows-x64 "$file-windows-x64-update.exe")" \
+            "$(entry linux-x64 "$file-linux-x64-update")" >dist/update.json
+          cat dist/update.json
+          cargo run --release --quiet --manifest-path tools/sign-update/Cargo.toml -- dist/update.json
+
       - name: Release notes from the changelog
         run: |
           version=${TAG#v}
@@ -101,6 +125,8 @@ jobs:
           - **Windows** (64-bit): unzip and run `MX Shooting Calculator.exe`. Windows SmartScreen may warn about an unknown publisher: choose **More info → Run anyway**.
           - **Linux** (x86-64): unpack, then run `./install.sh` for a menu entry, or `./mxsc` directly.
           - **Web and phones:** https://malx122.github.io/mx_shooting_calculator/
+
+          The files ending in `-update`, and `update.json`, are for the desktop apps' own updater (menu → Updates).
           NOTES
           } > notes.md
           cat notes.md

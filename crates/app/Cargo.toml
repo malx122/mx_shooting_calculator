@@ -28,6 +28,11 @@ ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 directories = "6"
 ureq = "3"
+# Updates: the release's signature, the download's checksum, and putting
+# the new program in place of the running one.
+minisign-verify = "0.2"
+sha2 = "0.10"
+self-replace = "1"
 
 # Linux desktops: windows on X11 and on Wayland.
 [target.'cfg(target_os = "linux")'.dependencies]

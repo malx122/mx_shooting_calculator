@@ -1,0 +1,15 @@
+# Signs the desktop apps' update manifest in the release workflow
+# (.github/workflows/desktop.yml). Kept out of the workspace so the release
+# job builds only this.
+[package]
+name = "sign-update"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+minisign = "0.7"
+ct-codecs = "1"
+
+[workspace]
