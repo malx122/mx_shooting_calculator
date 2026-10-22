@@ -533,3 +533,89 @@ fn the_best_zero_saved_to_the_millimetre_keeps_its_range() {
         );
     }
 }
+
+mod dispersion {
+    use super::scenario;
+    use crate::dispersion::{Sensitivities, Spread, Uncertainty, hit_chance};
+    use crate::solver::{self, Wind};
+
+    fn exact() -> Uncertainty {
+        Uncertainty {
+            aim: 0.0,
+            muzzle_velocity: 0.0,
+            range: 0.0,
+            wind_speed: 0.0,
+            wind_direction: 0.0,
+        }
+    }
+
+    #[test]
+    fn the_aim_alone_spreads_in_proportion_to_range() {
+        let s = scenario();
+        let base = solver::solve(&s, 400.0).unwrap();
+        let sens = Sensitivities::new(&s, base, 400.0).unwrap();
+        let u = Uncertainty {
+            aim: Uncertainty::aim_from_group(0.0307, 100.0),
+            ..exact()
+        };
+        let at_100 = sens.spread_at(100.0, &u).unwrap();
+        let at_300 = sens.spread_at(300.0, &u).unwrap();
+        // A 3.07 cm 5-shot group is 1 cm one sigma at 100 m.
+        assert!((at_100.across - 0.01).abs() < 1e-6, "{at_100:?}");
+        assert!((at_300.up - 0.03).abs() < 1e-6, "{at_300:?}");
+    }
+
+    #[test]
+    fn velocity_spread_drops_the_shot_more_far_out_and_not_at_the_zero() {
+        let s = scenario();
+        let base = solver::solve(&s, 400.0).unwrap();
+        let sens = Sensitivities::new(&s, base, 400.0).unwrap();
+        let u = Uncertainty {
+            muzzle_velocity: 10.0,
+            ..exact()
+        };
+        let near = sens.spread_at(50.0, &u).unwrap().up;
+        let far = sens.spread_at(300.0, &u).unwrap().up;
+        assert!(far > 5.0 * near, "near {near}, far {far}");
+        // 10 m/s at 300 m: a few centimetres.
+        assert!((0.01..0.06).contains(&far), "{far}");
+    }
+
+    #[test]
+    fn wind_uncertainty_spreads_across_and_a_range_error_up() {
+        let mut s = scenario();
+        s.shot.wind = Wind {
+            speed: 4.0,
+            from_degrees: 90.0,
+        };
+        let base = solver::solve(&s, 400.0).unwrap();
+        let sens = Sensitivities::new(&s, base, 400.0).unwrap();
+        let wind = sens
+            .spread_at(300.0, &Uncertainty { wind_speed: 1.0, ..exact() })
+            .unwrap();
+        assert!(wind.across > 5.0 * wind.up, "{wind:?}");
+        let range = sens
+            .spread_at(300.0, &Uncertainty { range: 10.0, ..exact() })
+            .unwrap();
+        // The drift goes on growing past the target too, a little.
+        assert!(range.up > 3.0 * range.across, "{range:?}");
+        // The drift grows with the wind it's asked for.
+        let calm = sens.drift_at(300.0, 0.0).unwrap();
+        let strong = sens.drift_at(300.0, 8.0).unwrap();
+        let now = sens.drift_at(300.0, 4.0).unwrap();
+        assert!((now - sens.base().at(300.0).unwrap().windage).abs() < 1e-9);
+        assert!(calm.abs() < now.abs() && now.abs() < strong.abs());
+    }
+
+    #[test]
+    fn hit_chance_matches_the_round_normal_formula() {
+        let spread = Spread { across: 0.1, up: 0.1 };
+        // Within one sigma radius: 1 − e^(−1/2) ≈ 0.3935.
+        let p = hit_chance(spread, [0.0, 0.0], |[x, y]| x * x + y * y <= 0.01);
+        assert!((p - 0.3935).abs() < 0.01, "{p}");
+        // Far bigger than the spread: nearly certain; off to one side: half.
+        assert!(hit_chance(spread, [0.0, 0.0], |[x, y]| x * x + y * y <= 1.0) > 0.999);
+        let half = hit_chance(spread, [0.0, 0.0], |[x, _]| x > 0.0);
+        assert!((half - 0.5).abs() < 0.01, "{half}");
+    }
+}

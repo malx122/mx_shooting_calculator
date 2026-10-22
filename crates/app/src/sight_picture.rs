@@ -29,6 +29,9 @@ pub struct SightPicture<'a> {
     pub range_m: f64,
     /// Draw the illuminated parts of the reticle lit (red).
     pub illumination: bool,
+    /// How the shots spread, one standard deviation across and up, mrad:
+    /// drawn as the ellipse 9 shots in 10 land inside.
+    pub spread_mrad: Option<[f64; 2]>,
 }
 
 /// What the drawing showed, for the caption.
@@ -82,6 +85,26 @@ impl SightPicture<'_> {
         let offset = impact - eyepiece.center;
         let impact_in_view = offset.length() < eyepiece.radius - 6.0;
         if impact_in_view {
+            if let Some([across, up]) = self.spread_mrad {
+                // A normal spread holds 90 % within 2.146 standard
+                // deviations (the ellipse's Mahalanobis radius).
+                let (rx, ry) = (
+                    (2.146 * across) as f32 * eyepiece.pixels_per_mrad,
+                    (2.146 * up) as f32 * eyepiece.pixels_per_mrad,
+                );
+                let points: Vec<Pos2> = (0..72)
+                    .map(|i| {
+                        let a = i as f32 / 72.0 * std::f32::consts::TAU;
+                        impact + egui::vec2(rx * a.cos(), ry * a.sin())
+                    })
+                    .collect();
+                let stroke = Stroke::new(1.5_f32, theme::BLAZE);
+                for pair in points.chunks(2) {
+                    if let [a, b] = pair {
+                        eyepiece.painter.line_segment([*a, *b], stroke);
+                    }
+                }
+            }
             eyepiece
                 .painter
                 .circle(impact, 3.5, theme::BLAZE, Stroke::new(1.0_f32, INK));

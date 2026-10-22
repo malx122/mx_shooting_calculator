@@ -3,6 +3,7 @@
 
 use ballistics_core::analysis::{self, OptimalZero, PointBlank, ZeroFigure};
 use ballistics_core::atmosphere::STANDARD_SEA_LEVEL_PRESSURE_HPA;
+use ballistics_core::dispersion::{Sensitivities, Uncertainty};
 use ballistics_core::{Coriolis, RangeRow, Scenario, Solution, SolveError, solver};
 use ballistics_store::{
     BcModel, Bullet, Catalog, ClickUnit, LoadZero, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad,
@@ -17,6 +18,7 @@ use ballistics_shot::{from_radians, unit_label};
 
 use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
+use crate::hits::{self, Hits};
 use crate::mobile;
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
@@ -30,6 +32,9 @@ const RAD_PER_MOA: f64 = std::f64::consts::PI / (180.0 * 60.0);
 /// Shortest range the engine flies, so the ethical limit can be found even
 /// when it lies past the table.
 const SOLVE_RANGE_M: f64 = 1200.0;
+/// Muzzle velocity spread when the hunter has no chronograph string: a
+/// typical factory load's, m/s.
+const TYPICAL_VELOCITY_SD: f64 = 8.0;
 /// The target until the hunter picks another, and when theirs is deleted.
 const DEFAULT_TARGET: &str = "moose";
 
@@ -78,6 +83,20 @@ pub struct Inputs {
     pub recent_ranges: Vec<f64>,
     /// The hunter's own minimum energy instead of the target's.
     pub min_energy_override_j: Option<f64>,
+    /// The hunter's 5-shot group at 100 m from the position they shoot
+    /// from, edge to edge, cm: their own spread for the hit chance.
+    pub group_cm: f64,
+    /// Shot-to-shot muzzle velocity, one standard deviation; `None` takes
+    /// the load's chronograph string, or a typical value.
+    pub velocity_sd_mps: Option<f64>,
+    /// How well the range, the wind's speed and its direction (clock hours)
+    /// are known: about one standard deviation each.
+    pub range_error_m: f64,
+    pub wind_error_mps: f64,
+    pub wind_direction_error_hours: f64,
+    /// The hit chance a game shot should have, percent: sets how far the
+    /// ethical range reaches.
+    pub hit_needed_percent: f64,
     /// The hunter's own minimum velocity for a target that sets one.
     pub min_velocity_override_mps: Option<f64>,
     pub target_speed: f64,
@@ -122,6 +141,12 @@ impl Default for Inputs {
             recent_targets: Vec::new(),
             recent_ranges: Vec::new(),
             min_energy_override_j: None,
+            group_cm: 4.0,
+            velocity_sd_mps: None,
+            range_error_m: 2.0,
+            wind_error_mps: 1.0,
+            wind_direction_error_hours: 1.0,
+            hit_needed_percent: 90.0,
             min_velocity_override_mps: None,
             target_speed: 0.0,
             min_velocity: 550.0,
@@ -252,6 +277,39 @@ struct Computed {
     solution: Result<Solution, SolveError>,
     optimal: Option<OptimalZero>,
     zeros: Zeros,
+    /// The shot flown again with its inputs changed a little: for the hit
+    /// chance.
+    sensitivities: Option<Sensitivities>,
+}
+
+/// A chance as a percentage, never quite certain: "94 %", "> 99 %".
+pub fn percent(chance: f64) -> String {
+    if chance > 0.995 {
+        "> 99 %".to_owned()
+    } else {
+        format!("{:.0} %", chance * 100.0)
+    }
+}
+
+/// The load's latest chronograph string's spread, and whether there was
+/// one (else a typical value).
+fn measured_velocity_sd(load: Option<&RifleLoad>) -> (f64, bool) {
+    match load.and_then(|load| load.velocities.iter().rev().find_map(|point| point.shots)) {
+        Some(shots) => (shots.sd_mps, true),
+        None => (TYPICAL_VELOCITY_SD, false),
+    }
+}
+
+/// What the hit chance was worked out for.
+#[derive(Clone, PartialEq)]
+struct HitsKey {
+    generation: u64,
+    uncertainty: Uncertainty,
+    zone: Option<hits::Zone>,
+    range: f64,
+    needed: f64,
+    max_range: f64,
+    wind: f64,
 }
 
 /// The zeros told the way they are shot in: so high at a reference range.
@@ -284,6 +342,9 @@ pub struct CalculatorPage {
     /// The ethical limit and how far the dead-on hold reaches, from the
     /// last results: for the range picker.
     limits: (Option<f64>, Option<f64>),
+    /// Counts the solves, so the hit chance knows when to work again.
+    generation: u64,
+    hits: Option<(HitsKey, Option<Hits>)>,
 }
 
 impl CalculatorPage {
@@ -297,6 +358,8 @@ impl CalculatorPage {
             weather: crate::weather::Weather::default(),
             table_edit: None,
             limits: (None, None),
+            generation: 0,
+            hits: None,
         }
     }
 
@@ -545,10 +608,12 @@ impl CalculatorPage {
                         .max(SOLVE_RANGE_M)
                         .max(self.inputs.target_range_m + 10.0),
                 );
+                let hits = self.hits_for(&aim, load.as_ref());
                 let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
                 match &computed.solution {
                     Ok(solution) => {
                         let view = ResultsView {
+                            hits,
                             inputs: &self.inputs,
                             rifle,
                             table,
@@ -624,8 +689,13 @@ impl CalculatorPage {
             let optimal = key
                 .vital_diameter
                 .and_then(|diameter| analysis::optimal_point_blank(&key.scenario, diameter));
+            let solution = solver::solve(&key.scenario, key.max_range);
+            let sensitivities = solution.as_ref().ok().and_then(|solution| {
+                Sensitivities::new(&key.scenario, solution.clone(), key.max_range).ok()
+            });
             let computed = Computed {
-                solution: solver::solve(&key.scenario, key.max_range),
+                solution,
+                sensitivities,
                 zeros: Zeros {
                     reference,
                     figure: analysis::zero_figure(&key.scenario, reference, 1000.0).ok(),
@@ -637,7 +707,57 @@ impl CalculatorPage {
                 optimal,
             };
             self.cache = Some((key, computed));
+            self.generation += 1;
         }
+    }
+
+    /// The muzzle velocity's spread: the hunter's figure, else the load's
+    /// latest chronograph string, else a typical 8 m/s.
+    pub fn velocity_sd(&self, load: Option<&RifleLoad>) -> (f64, bool) {
+        match self.inputs.velocity_sd_mps {
+            Some(sd) => (sd, false),
+            None => measured_velocity_sd(load),
+        }
+    }
+
+    /// The hit chance, its range and the wind bracket for this aim, worked
+    /// out again only when something it depends on changes.
+    fn hits_for(&mut self, aim: &Aim, load: Option<&RifleLoad>) -> Option<Hits> {
+        let (key, computed) = self.cache.as_ref()?;
+        let sensitivities = computed.sensitivities.as_ref()?;
+        let inputs = &self.inputs;
+        let uncertainty = hits::uncertainty(
+            inputs.group_cm,
+            self.velocity_sd(load).0,
+            inputs.range_error_m,
+            inputs.wind_error_mps,
+            inputs.wind_direction_error_hours,
+        );
+        let hits_key = HitsKey {
+            generation: self.generation,
+            uncertainty,
+            zone: hits::Zone::of(aim),
+            range: inputs.target_range_m,
+            needed: inputs.hit_needed_percent / 100.0,
+            max_range: key.max_range,
+            wind: inputs.wind_speed,
+        };
+        if self.hits.as_ref().is_none_or(|(cached, _)| *cached != hits_key) {
+            let result = hits_key.zone.as_ref().and_then(|zone| {
+                hits::compute(
+                    sensitivities,
+                    &uncertainty,
+                    zone,
+                    hits_key.range,
+                    hits_key.needed,
+                    hits_key.max_range - 10.0,
+                    hits_key.wind,
+                    inputs.wind_error_mps,
+                )
+            });
+            self.hits = Some((hits_key, result));
+        }
+        self.hits.as_ref().and_then(|(_, hits)| *hits)
     }
 
     fn scenario(&self, rifle: &Rifle, bullet: &Bullet, load: Option<&RifleLoad>) -> Scenario {
@@ -1018,6 +1138,101 @@ impl CalculatorPage {
             });
         });
 
+        if aim.target.is_some() {
+            let load = data.loads.iter().find(|load| {
+                Some(&load.rifle_id) == inputs.rifle_id.as_ref()
+                    && Some(&load.bullet_id) == inputs.bullet_id.as_ref()
+            });
+            let (measured_sd, from_chronograph) = measured_velocity_sd(load);
+            let summary = format!(
+                "{} group · ±{} · ±{}",
+                u.format(Quantity::ShortLength, inputs.group_cm),
+                u.format(Quantity::Distance, inputs.range_error_m),
+                u.format(Quantity::WindSpeed, inputs.wind_error_mps),
+            );
+            fold(ui, "fold-precision", "Your precision", &summary, |ui| {
+                grid(ui, "precision", |ui| {
+                    quantity(
+                        ui,
+                        "Your group",
+                        &mut inputs.group_cm,
+                        Quantity::ShortLength,
+                        0.5..=40.0,
+                        0.1,
+                    );
+                    ui.label("");
+                    ui.weak("5 shots at 100 m from the position you shoot from, edge to edge");
+                    ui.end_row();
+                    ui.label("Velocity spread");
+                    ui.horizontal(|ui| match inputs.velocity_sd_mps.as_mut() {
+                        Some(sd) => {
+                            units::drag(ui, sd, Quantity::Speed, 0.0..=50.0, 0.1);
+                            if ui
+                                .small_button("↺")
+                                .on_hover_text("Back to your chronograph's figure")
+                                .clicked()
+                            {
+                                inputs.velocity_sd_mps = None;
+                            }
+                        }
+                        None => {
+                            ui.label(format!(
+                                "{} ({})",
+                                u.format(Quantity::Speed, measured_sd),
+                                if from_chronograph {
+                                    "your chronograph"
+                                } else {
+                                    "typical"
+                                }
+                            ));
+                            if ui.small_button("Change").clicked() {
+                                inputs.velocity_sd_mps = Some(measured_sd);
+                            }
+                        }
+                    });
+                    ui.end_row();
+                    quantity(
+                        ui,
+                        "Range known to ±",
+                        &mut inputs.range_error_m,
+                        Quantity::Distance,
+                        0.0..=50.0,
+                        0.5,
+                    );
+                    quantity(
+                        ui,
+                        "Wind known to ±",
+                        &mut inputs.wind_error_mps,
+                        Quantity::WindSpeed,
+                        0.0..=10.0,
+                        0.1,
+                    );
+                    number(
+                        ui,
+                        "Wind direction to ±",
+                        &mut inputs.wind_direction_error_hours,
+                        0.0..=6.0,
+                        0.25,
+                        " h",
+                    );
+                    if aim.is_game() {
+                        number(
+                            ui,
+                            "Hit chance needed",
+                            &mut inputs.hit_needed_percent,
+                            50.0..=99.0,
+                            1.0,
+                            " %",
+                        );
+                    }
+                });
+                ui.weak(
+                    "Each ± is about one standard deviation: two times in three the truth is \
+                     within it. The hit chance assumes you hold as the app tells you.",
+                );
+            });
+        }
+
         let Some(target) = &aim.target else {
             return;
         };
@@ -1254,6 +1469,8 @@ struct ResultsView<'a> {
     /// How the load fares under the hunter's country's rules, if one is set.
     assessment: Option<ballistics_shot::Assessment>,
     zeros: Zeros,
+    /// The hit chance, its range and the wind bracket; none without a zone.
+    hits: Option<Hits>,
 }
 
 impl ResultsView<'_> {
@@ -1261,13 +1478,55 @@ impl ResultsView<'_> {
     /// point-blank range with the current zero (none without a zone).
     fn limits_of(&self, solution: &Solution) -> (Option<f64>, Option<PointBlank>) {
         let aim = self.aim;
-        let ethical = aim
-            .min_energy_j
-            .and_then(|energy| analysis::ethical_limit(solution, energy, self.min_velocity));
+        // Game: as far as the energy and speed hold up and the hit chance
+        // stays at what the hunter asks for.
+        let ethical = aim.min_energy_j.and_then(|energy| {
+            let by_energy = analysis::ethical_limit(solution, energy, self.min_velocity);
+            match (by_energy, self.hits.and_then(|hits| hits.limit)) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (a, b) => a.or(b),
+            }
+        });
         let point_blank = aim
             .vital_diameter_cm
             .and_then(|cm| analysis::point_blank_with_zero(solution, cm / 100.0));
         (ethical, point_blank)
+    }
+
+    /// What the zone is called in the hit chance: "hit area" for a drawn
+    /// one, else the vital or hit zone.
+    fn zone_word(&self) -> &'static str {
+        match hits::Zone::of(self.aim) {
+            Some(hits::Zone::Shape(_)) => "hit area",
+            _ => self.aim.zone_name(),
+        }
+    }
+
+    /// The wind bracket: how far the bullet goes across for the lowest and
+    /// highest likely wind, and whether the middle hold covers it.
+    fn bracket_line(&self, ui: &mut egui::Ui) {
+        let Some(bracket) = self.hits.and_then(|hits| hits.bracket) else {
+            return;
+        };
+        let u = units::prefs(ui.ctx());
+        let side = |drift: f64| if drift >= 0.0 { "right" } else { "left" };
+        let text = format!(
+            "Wind {}–{}: the bullet goes {} {} to {} {}",
+            u.number(Quantity::WindSpeed, bracket.low_speed, false),
+            u.format(Quantity::WindSpeed, bracket.high_speed),
+            u.format(Quantity::ShortLength, bracket.low_drift.abs() * 100.0),
+            side(bracket.low_drift),
+            u.format(Quantity::ShortLength, bracket.high_drift.abs() * 100.0),
+            side(bracket.high_drift),
+        );
+        if bracket.fits {
+            ui.label(format!("{text}; holding for the middle keeps both in the {}.", self.zone_word()));
+        } else {
+            ui.colored_label(
+                ui.visuals().warn_fg_color,
+                format!("{text}: more than the {} allows. Get closer or wait for steadier wind.", self.zone_word()),
+            );
+        }
     }
 
     /// "Moose at 150 m", or "Shot at 150 m" without a target.
@@ -1504,7 +1763,7 @@ impl ResultsView<'_> {
                         )
                     ),
                 };
-                let note = if self.min_velocity > 0.0 {
+                let mut note = if self.min_velocity > 0.0 {
                     format!(
                         "≥ {}, ≥ {}",
                         u.format(Quantity::Energy, min_energy),
@@ -1513,7 +1772,18 @@ impl ResultsView<'_> {
                 } else {
                     format!("≥ {}", u.format(Quantity::Energy, min_energy))
                 };
+                if self.hits.is_some() {
+                    note.push_str(&format!(", ≥ {:.0} % hits", self.inputs.hit_needed_percent));
+                }
                 fact(ui, "Ethical max", value, note);
+            }
+            if let Some(hits) = self.hits {
+                fact(
+                    ui,
+                    "Hit chance",
+                    percent(hits.chance),
+                    format!("in the {}, holding as told", self.zone_word()),
+                );
             }
             if self.aim.vital_diameter_cm.is_some() {
                 fact(
@@ -1649,6 +1919,10 @@ impl ResultsView<'_> {
             figure: self.aim.figure.as_ref(),
             range_m: row.range,
             illumination: self.inputs.illumination,
+            spread_mrad: self.hits.map(|hits| {
+                let per_metre = 1000.0 / row.range.max(1.0);
+                [hits.spread.across * per_metre, hits.spread.up * per_metre]
+            }),
         };
         let drawn = picture.show(ui, size);
         let mut chosen = magnification;
@@ -1780,6 +2054,7 @@ impl ResultsView<'_> {
                 ),
             };
         }
+        self.bracket_line(ui);
         if self.inputs.target_speed > 0.0 {
             let lead = analysis::moving_target_lead(row, self.inputs.target_speed);
             ui.label(format!(

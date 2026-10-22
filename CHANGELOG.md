@@ -8,6 +8,13 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Hit chance and wind bracket.** Under *Your precision*: your group, the
+  velocity spread, and how well you know the range and the wind. The
+  results give the chance of landing in the vital zone or hit area, the
+  scope view draws where 9 shots in 10 land, the ethical range for game
+  also stops where the hit chance falls below 90 % (or what you choose),
+  and the wind bracket says how far the bullet goes across for the lowest
+  and highest likely wind and whether holding for the middle covers both.
 - **Small drawings in the four input tiles** on the Calculate page, following
   the values: the range on a scale, the line of fire at its angle, the wind
   arrow on a clock face, and the chosen target's own silhouette. On a phone

@@ -212,11 +212,13 @@ impl CalculatorPage {
                 .max(SOLVE_RANGE_M)
                 .max(self.inputs.target_range_m + 10.0),
         );
+        let hits = self.hits_for(frame.aim, frame.load);
         let requests = {
             let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
             match &computed.solution {
                 Ok(solution) => {
                     let view = ResultsView {
+                        hits,
                         inputs: &self.inputs,
                         rifle,
                         table,
@@ -850,6 +852,10 @@ impl ResultsView<'_> {
             figure: self.aim.figure.as_ref(),
             range_m: row.range,
             illumination: self.inputs.illumination,
+            spread_mrad: self.hits.map(|hits| {
+                let per_metre = 1000.0 / row.range.max(1.0);
+                [hits.spread.across * per_metre, hits.spread.up * per_metre]
+            }),
         }
         .show(&mut picture_ui, size);
 
@@ -879,6 +885,14 @@ impl ResultsView<'_> {
         } else {
             ui.small("Hold the orange dot on the target.");
         }
+        if let Some(hits) = self.hits {
+            ui.label(format!(
+                "Hit chance {} in the {}",
+                super::percent(hits.chance),
+                self.zone_word()
+            ));
+        }
+        self.bracket_line(ui);
         if !drawn.impact_in_view {
             ui.colored_label(
                 ui.visuals().warn_fg_color,

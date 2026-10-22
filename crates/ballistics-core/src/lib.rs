@@ -4,6 +4,7 @@
 
 pub mod analysis;
 pub mod atmosphere;
+pub mod dispersion;
 pub mod drag;
 pub mod solver;
 pub mod stability;

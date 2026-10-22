@@ -318,6 +318,20 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    energy at the muzzle and at 100 m. A bullet whose construction isn't set
    (a Strelok import, say) is assumed to expand, and the result says so.
 
+   **Hit chance:** under **Your precision** you say how well you shoot and
+   how well you know the shot: your 5-shot group at 100 m from the
+   position you shoot from, the muzzle velocity's spread (from your
+   chronograph string when there is one), and how far off the range, the
+   wind's speed and its direction may be (each about one standard
+   deviation). The app flies the shot again with each of them changed, adds
+   up how the hits spread at the target, and gives the chance of landing in
+   the vital zone or the hit area when you hold as it tells you. The scope
+   view draws the ellipse 9 shots in 10 land in. For game, the ethical
+   range also stops where the hit chance falls below what you ask for (90 %
+   unless you change it), and the **wind bracket** says how far the bullet
+   goes across for the lowest and highest likely wind, and whether holding
+   for the middle keeps both in the zone.
+
    **Hunting today:** for game, with your country set, the results show the
    season in your county (Sweden's län, Finland's maakunnat), from
    the weather place search or picked from the list: open until when, or when

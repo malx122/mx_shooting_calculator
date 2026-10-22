@@ -10,6 +10,7 @@ mod figure;
 mod files;
 mod flags;
 mod google;
+mod hits;
 mod http;
 mod hunting;
 mod import;

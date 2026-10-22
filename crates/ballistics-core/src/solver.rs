@@ -361,7 +361,25 @@ pub fn kinetic_energy(mass_kg: f64, velocity: f64) -> f64 {
 /// Zeroes the rifle, then flies the shot out to `max_range` (slant).
 pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError> {
     validate(scenario)?;
-    let (zero_elevation, zero_windage) = zero_angles(scenario)?;
+    let zero = zero_angles(scenario)?;
+    Ok(fly_from_zero(scenario, max_range, zero))
+}
+
+/// Like `solve`, with the sights set at `zero` (elevation, windage in
+/// radians, as a `Solution` reports them) instead of zeroing the rifle
+/// again: for a shot that differs from the expected one (another muzzle
+/// velocity, another wind) with the same sight setting.
+pub fn solve_with_zero(
+    scenario: &Scenario,
+    max_range: f64,
+    zero: (f64, f64),
+) -> Result<Solution, SolveError> {
+    validate(scenario)?;
+    Ok(fly_from_zero(scenario, max_range, zero))
+}
+
+fn fly_from_zero(scenario: &Scenario, max_range: f64, zero: (f64, f64)) -> Solution {
+    let (zero_elevation, zero_windage) = zero;
     let shot = &scenario.shot;
     let muzzle_velocity = scenario.load.velocity_at(shot.powder_temperature_c);
     let stability = muzzle_stability(scenario, muzzle_velocity, &shot.atmosphere);
@@ -380,7 +398,7 @@ pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError
             sample.drop += jump * sample.range;
         }
     }
-    Ok(Solution {
+    Solution {
         muzzle_velocity,
         stability,
         zero_elevation,
@@ -390,7 +408,7 @@ pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError
         cant: shot.cant_degrees.to_radians(),
         sight_height: scenario.rifle.sight_height_m,
         bore: [zero_windage + offset_right, zero_elevation + offset_up],
-    })
+    }
 }
 
 /// The vertical angle (radians, up positive) a crosswind gives the bullet
