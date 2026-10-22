@@ -63,6 +63,10 @@ impl Part {
     }
 }
 
+/// A training target's rings: centre, and radius and score of each,
+/// innermost first.
+pub type Rings = ([f64; 2], Vec<(f64, String)>);
+
 pub struct Figure {
     /// Back to front.
     pub parts: Vec<Part>,
@@ -70,6 +74,19 @@ pub struct Figure {
     pub aim_height: f64,
     /// Size of the drawing, for previews: lowest and highest corner.
     pub bounds: [[f64; 2]; 2],
+    /// The animal's hit zones, most telling first, in the figure's metres;
+    /// empty when the vital zone is a plain circle.
+    pub zones: Vec<(String, Vec<[f64; 2]>)>,
+    pub rings: Option<Rings>,
+}
+
+/// Where a shot landing at a point falls on the target.
+#[derive(Debug, PartialEq)]
+pub struct Hit {
+    /// The zone it lands in, such as "lungs"; `None` outside them all.
+    pub zone: Option<String>,
+    /// The training ring it scores, if any.
+    pub score: Option<String>,
 }
 
 impl Figure {
@@ -77,23 +94,68 @@ impl Figure {
     /// the hunter may have changed from the target's own).
     pub fn new(target: &Target, vital_diameter_cm: f64) -> Figure {
         let vital_radius = vital_diameter_cm / 200.0;
+        let mut zones = Vec::new();
+        let mut training = None;
         let (mut parts, aim_height) = match target.shape {
             TargetShape::Animal {
                 ref silhouette,
                 shoulder_height_cm,
                 body_length_cm,
                 antlers,
-            } => animal(
-                Catalog::builtin().drawing(silhouette),
-                shoulder_height_cm / 100.0,
-                body_length_cm / 100.0,
-                antlers,
-            ),
+            } => {
+                let drawing = Catalog::builtin().drawing(silhouette);
+                let (height, length) = (shoulder_height_cm / 100.0, body_length_cm / 100.0);
+                let place = placing(drawing, height, length);
+                zones = drawing
+                    .zones
+                    .iter()
+                    .map(|zone| {
+                        let points: Vec<[f64; 2]> =
+                            zone.points.iter().map(|&point| place(point)).collect();
+                        (zone.name.clone(), points)
+                    })
+                    .collect();
+                // The rings keep their printed size; only their place scales.
+                training = drawing.rings.as_ref().map(|rings| {
+                    let sizes: Vec<(f64, String)> = rings
+                        .rings
+                        .iter()
+                        .map(|ring| (ring.diameter_m / 2.0, ring.score.clone()))
+                        .collect();
+                    (place(rings.center), sizes)
+                });
+                animal(drawing, height, length, antlers)
+            }
             TargetShape::Rings { black_mm, .. } => {
                 rings(&target.shape.ring_diameters_mm(), black_mm / 1000.0)
             }
             TargetShape::Plate { diameter_mm } => plate(diameter_mm / 1000.0),
         };
+        if !zones.is_empty() {
+            // Least telling first, so a heart is drawn over the area around it.
+            for (index, (_, points)) in zones.iter().enumerate().rev() {
+                let fill = if index == 0 && zones.len() > 1 {
+                    theme::ALARM.gamma_multiply(0.55)
+                } else {
+                    theme::MEADOW.gamma_multiply(0.45)
+                };
+                parts.push(Part::new(points.clone(), fill, Some(theme::BONE.gamma_multiply(0.8))));
+            }
+            if let Some((center, ref sizes)) = training {
+                for &(radius, _) in sizes {
+                    let points = circle(radius)
+                        .into_iter()
+                        .map(|[x, y]| [center[0] + x, center[1] + y])
+                        .collect();
+                    parts.push(Part::new(
+                        points,
+                        Color32::TRANSPARENT,
+                        Some(theme::BONE.gamma_multiply(0.9)),
+                    ));
+                }
+            }
+            return Figure::framed(parts, aim_height, zones, training);
+        }
         // The zone that counts: shaded on game, outlined on sport targets.
         parts.push(if target.is_game() {
             Part::new(
@@ -108,6 +170,15 @@ impl Figure {
                 Some(theme::MEADOW),
             )
         });
+        Figure::framed(parts, aim_height, zones, training)
+    }
+
+    fn framed(
+        parts: Vec<Part>,
+        aim_height: f64,
+        zones: Vec<(String, Vec<[f64; 2]>)>,
+        rings: Option<Rings>,
+    ) -> Figure {
         let mut low = [f64::INFINITY; 2];
         let mut high = [f64::NEG_INFINITY; 2];
         for point in parts.iter().flat_map(|part| &part.points) {
@@ -121,7 +192,27 @@ impl Figure {
             parts,
             aim_height,
             bounds: [low, high],
+            zones,
+            rings,
         }
+    }
+
+    /// Where a shot landing at `point` (metres from the aim point, x
+    /// towards the head, y up) falls.
+    pub fn hit(&self, point: [f64; 2]) -> Hit {
+        let zone = self
+            .zones
+            .iter()
+            .find(|(_, points)| ballistics_store::drawings::contains(points, point))
+            .map(|(name, _)| name.clone());
+        let score = self.rings.as_ref().and_then(|(center, sizes)| {
+            let distance = (point[0] - center[0]).hypot(point[1] - center[1]);
+            sizes
+                .iter()
+                .find(|(radius, _)| distance <= *radius)
+                .map(|(_, score)| score.clone())
+        });
+        Hit { zone, score }
     }
 }
 
@@ -134,14 +225,21 @@ pub fn circle(radius: f64) -> Vec<[f64; 2]> {
         .collect()
 }
 
-/// The drawing scaled to an animal `height` tall at the shoulder and
-/// `length` long, around its vital point; and the vital point's height.
-fn animal(drawing: &Drawing, height: f64, length: f64, antlers: bool) -> (Vec<Part>, f64) {
+/// A point of the drawing on an animal `height` tall at the shoulder and
+/// `length` long, around its vital point.
+fn placing(drawing: &Drawing, height: f64, length: f64) -> impl Fn([f64; 2]) -> [f64; 2] {
     let (sx, sy) = (
         length / drawing.length_m,
         height / drawing.shoulder_height_m,
     );
     let [vx, vy] = drawing.vital;
+    move |[x, y]| [(x - vx) * sx, (y - vy) * sy]
+}
+
+/// The drawing scaled to an animal `height` tall at the shoulder and
+/// `length` long, around its vital point; and the vital point's height.
+fn animal(drawing: &Drawing, height: f64, length: f64, antlers: bool) -> (Vec<Part>, f64) {
+    let place = placing(drawing, height, length);
     let parts = drawing
         .parts
         .iter()
@@ -149,16 +247,13 @@ fn animal(drawing: &Drawing, height: f64, length: f64, antlers: bool) -> (Vec<Pa
         .map(|part| {
             let [r, g, b] = part.rgb();
             Part::new(
-                part.points
-                    .iter()
-                    .map(|&[x, y]| [(x - vx) * sx, (y - vy) * sy])
-                    .collect(),
+                part.points.iter().map(|&point| place(point)).collect(),
                 Color32::from_rgb(r, g, b),
                 None,
             )
         })
         .collect();
-    (parts, vy * sy)
+    (parts, -place([0.0, 0.0])[1])
 }
 
 /// Triangles filling a simple polygon by ear clipping, as corner indices;
@@ -368,8 +463,35 @@ mod tests {
             (2.0..2.8).contains(&height),
             "moose with antlers {height} m tall"
         );
-        // The vital zone is the last part, centred on the origin.
-        let zone = figure.parts.last().unwrap();
-        assert!((zone.points[0][0] - 0.15).abs() < 1e-9);
+        // The moose has the test figure's hit area around the aim point.
+        assert_eq!(figure.zones.len(), 1);
+        assert_eq!(figure.hit([0.0, 0.0]).zone.as_deref(), Some("hit area"));
+    }
+
+    #[test]
+    fn a_shot_lands_in_a_zone_and_a_ring() {
+        let moose = Catalog::builtin().target("moose").unwrap();
+        let figure = Figure::new(moose, moose.vital_diameter_cm);
+        let centre = figure.hit([0.0, 0.0]);
+        assert_eq!(centre.score.as_deref(), Some("5¹"));
+        // 19 cm high: the outer ring, inside the area.
+        let high = figure.hit([0.0, 0.19]);
+        assert_eq!(high.score.as_deref(), Some("3"));
+        assert_eq!(high.zone.as_deref(), Some("hit area"));
+        // 30 cm back and 18 up: the area's tongue towards the spine, past the rings.
+        let tongue = figure.hit([-0.30, 0.18]);
+        assert_eq!(tongue.zone.as_deref(), Some("hit area"));
+        assert_eq!(tongue.score, None);
+        // Far back on the body: no zone, no ring.
+        assert_eq!(
+            figure.hit([-0.8, 0.1]),
+            Hit {
+                zone: None,
+                score: None
+            }
+        );
+        // A deer without zones keeps its circle.
+        let roe = Catalog::builtin().target("roe-deer").unwrap();
+        assert!(Figure::new(roe, roe.vital_diameter_cm).zones.is_empty());
     }
 }

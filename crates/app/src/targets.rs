@@ -707,5 +707,10 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
         theme::FOREST_900,
     );
     ui.add_space(2.0);
-    ui.label(RichText::new("Green: where a shot must land.").small());
+    let key = match (figure.zones.is_empty(), figure.rings.is_some()) {
+        (true, _) => "Green: where a shot must land.",
+        (false, true) => "Green: the hit area, where a shot must land, with the moose test figure's rings.",
+        (false, false) => "Green: the hit area, where a shot must land.",
+    };
+    ui.label(RichText::new(key).small());
 }

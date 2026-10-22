@@ -309,7 +309,9 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
    zone) and, for game, the minimum energy. You can change the energy for
    this calculation; ↺ goes back to the target's value. To use another zone
    size, copy the target on the Targets page. Sport targets have no
-   ethical limits. The target is drawn at true size through the scope and in
+   ethical limits. The moose shows the hit area and rings of Svenska
+   Jägareförbundet's moose figure, and the results say where a dead-on hold
+   lands ("in the hit area, ring 4"). The target is drawn at true size through the scope and in
    3D. When the target is game in your country, the results say whether
    your load meets the **legal rifle ammunition level** for it, worked out
    from the bullet's weight, whether it expands, lead-free or not, and its
@@ -722,7 +724,12 @@ app:
   "finland": 3}`) and what else each country's rules say (`rules_notes`).
   Older files with `swedish_class` still read.
 - **`drawings.json`:** the animal drawings the targets use, as coloured
-  polygons in metres.
+  polygons in metres. An animal can also have `zones` (polygons a shot can
+  land in, most telling first, such as a test figure's hit area) and a
+  training target's `rings` (true size, with what each scores); animals
+  without zones use a circle the size of the target's vital zone.
+  `tools/hitzone-editor.html` draws a zone's spline over a picture of the
+  figure, calibrated by its rings.
 
   The animals' vital zones and minimum energies are common **guidelines**,
   not law. Legal rules differ by country and are often stated differently

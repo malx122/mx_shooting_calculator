@@ -27,7 +27,7 @@ use std::fmt;
 pub use catalog::{Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
-pub use drawings::{Drawing, DrawingPart};
+pub use drawings::{Drawing, DrawingPart, HitZone, Ring, TrainingRings};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
     RifleLoad, ShotStats, TableColumns, TableSettings, Truing, TruingMethod, VelocityModel,

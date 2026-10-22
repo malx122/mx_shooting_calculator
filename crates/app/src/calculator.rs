@@ -1666,12 +1666,22 @@ impl ResultsView<'_> {
         }
         let u = units::prefs(ui.ctx());
         if let (Some(target), Some(zone)) = (&self.aim.target, self.aim.vital_diameter_cm) {
+            let zones = self.aim.figure.as_ref().filter(|figure| !figure.zones.is_empty());
+            let key = match zones {
+                Some(figure) if figure.rings.is_some() => {
+                    "green: the hit area, with the moose test figure's rings".to_owned()
+                }
+                Some(_) => "green: the hit area".to_owned(),
+                None => format!(
+                    "green circle: the {} {}",
+                    u.format(Quantity::ShortLength, zone),
+                    self.aim.zone_name()
+                ),
+            };
             ui.small(format!(
-                "{} at {}, true size; green circle: the {} {}.",
+                "{} at {}, true size; {key}.",
                 target.name,
                 u.format(Quantity::Distance, row.range),
-                u.format(Quantity::ShortLength, zone),
-                self.aim.zone_name()
             ));
         }
         if !drawn.impact_in_view {
@@ -1748,6 +1758,18 @@ impl ResultsView<'_> {
             u.format(Quantity::Energy, row.energy_j),
             row.time
         ));
+        if let Some(figure) = self.aim.figure.as_ref().filter(|figure| !figure.zones.is_empty()) {
+            // The figure's x runs towards the head, to the right in the view.
+            let hit = figure.hit([row.windage, row.drop]);
+            let ring = hit.score.map_or(String::new(), |score| format!(", ring {score}"));
+            match hit.zone {
+                Some(zone) => ui.label(format!("A dead-on hold lands in the {zone}{ring}.")),
+                None => ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    format!("A dead-on hold misses the hit area{ring}."),
+                ),
+            };
+        }
         if self.inputs.target_speed > 0.0 {
             let lead = analysis::moving_target_lead(row, self.inputs.target_speed);
             ui.label(format!(

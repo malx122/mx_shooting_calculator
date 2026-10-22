@@ -6,6 +6,12 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **A new moose** with the hit area and rings of Svenska Jägareförbundet's
+  moose figure (15, 25, 33 and 41.5 cm) instead of a circle. The results
+  say where a dead-on hold lands: "in the hit area, ring 4".
+
 ### Changed
 
 - The vital zone's size is no longer changed on the Calculate page; copy

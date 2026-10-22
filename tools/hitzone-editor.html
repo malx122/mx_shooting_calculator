@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hit zone editor</title>
+<style>
+  :root { --bg: #1d2a22; --panel: #15211a; --line: #2e3f34; --text: #f1eadb; --muted: #b8b2a2; --accent: #e8702a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  body { display: flex; }
+  #panel { width: 300px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 12px 14px; box-sizing: border-box; overflow: auto; }
+  #panel h1 { font-size: 15px; margin: 0 0 8px; }
+  #panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 16px 0 6px; }
+  #panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
+  #panel input[type=number] { width: 86px; background: #0f1813; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 5px; }
+  #panel button { background: #2a3a30; color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 5px 9px; margin: 3px 3px 3px 0; cursor: pointer; }
+  #panel button:hover { border-color: var(--accent); }
+  #panel button.active { background: var(--accent); color: #1a1208; }
+  textarea { width: 100%; height: 190px; box-sizing: border-box; background: #0f1813; color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.35 ui-monospace, Menlo, monospace; padding: 6px; }
+  .hint { color: var(--muted); font-size: 12px; }
+  #status { color: var(--muted); font-size: 12px; min-height: 1.4em; margin-top: 6px; }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+  canvas.pan { cursor: grab; }
+  canvas.pick { cursor: cell; }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Hit zone editor</h1>
+  <div class="hint">Drag the points. Double-click the curve to add one, right-click a point to remove it. Wheel zooms, drag empty space pans, arrows nudge the selected point (⇧ = 1 cm), ⌘Z undoes.</div>
+
+  <h2>Picture</h2>
+  <input type="file" id="file" accept="image/*">
+  <div class="hint">Or drop a picture on the canvas. The picture stays on this computer.</div>
+
+  <h2>Calibration</h2>
+  <label>Ring centre x (px) <input type="number" id="cx" step="0.5"></label>
+  <label>Ring centre y (px) <input type="number" id="cy" step="0.5"></label>
+  <label>cm per pixel <input type="number" id="cmpp" step="0.001"></label>
+  <label><span>Figure faces left (flip x)</span><input type="checkbox" id="flip"></label>
+  <button id="pickCentre">Click the centre</button>
+  <button id="pickRing">Click the 41.5 cm ring</button>
+  <label><span>Show the rings</span><input type="checkbox" id="rings" checked></label>
+
+  <h2>Points (cm; x forward, y up)</h2>
+  <textarea id="out" spellcheck="false"></textarea>
+  <button id="apply">Apply text</button>
+  <button id="copy">Copy</button>
+  <button id="download">Download JSON</button>
+  <button id="fit">Fit view</button>
+  <div id="status"></div>
+</div>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<script>
+(() => {
+  const RINGS_CM = [15, 25, 33, 41.5];
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+  let img = null, imgName = '';
+  const view = { scale: 1, ox: 0, oy: 0 };
+  const calib = { cx: 0, cy: 0, cmpp: 1, flip: false };
+  let points = [];           // {x, y} in cm
+  let selected = -1, mode = null, drag = null;
+  const history = [];
+  let showRings = true;
+
+  // ---- storage (per picture name; best effort) -------------------------
+  const key = () => 'hitzone-editor:' + (imgName || 'no-picture');
+  function save() {
+    try { localStorage.setItem(key(), JSON.stringify({ calib, points })); } catch (e) {}
+  }
+  function restore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(key()));
+      if (s && s.calib) Object.assign(calib, s.calib);
+      if (s && Array.isArray(s.points) && s.points.length >= 3) points = s.points;
+      return !!s;
+    } catch (e) { return false; }
+  }
+
+  // ---- transforms ------------------------------------------------------
+  const cmToImg = p => ({ x: calib.cx + (calib.flip ? -p.x : p.x) / calib.cmpp, y: calib.cy - p.y / calib.cmpp });
+  const imgToCm = q => ({ x: (calib.flip ? -(q.x - calib.cx) : (q.x - calib.cx)) * calib.cmpp, y: -(q.y - calib.cy) * calib.cmpp });
+  const imgToScreen = q => ({ x: view.ox + q.x * view.scale, y: view.oy + q.y * view.scale });
+  const screenToImg = s => ({ x: (s.x - view.ox) / view.scale, y: (s.y - view.oy) / view.scale });
+
+  function spline(pts, steps = 12) {
+    const n = pts.length, out = [];
+    if (n < 3) return pts.slice();
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      for (let s = 0; s < steps; s++) {
+        const t = s / steps, t2 = t * t, t3 = t2 * t;
+        out.push({
+          x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+          y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+        });
+      }
+    }
+    return out;
+  }
+
+  // ---- drawing ---------------------------------------------------------
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * devicePixelRatio);
+    canvas.height = Math.round(r.height * devicePixelRatio);
+    draw();
+  }
+  function fitView() {
+    if (!img) return;
+    const r = canvas.getBoundingClientRect();
+    view.scale = Math.min(r.width / img.width, r.height / img.height) * 0.95;
+    view.ox = (r.width - img.width * view.scale) / 2;
+    view.oy = (r.height - img.height * view.scale) / 2;
+    draw();
+  }
+  function draw() {
+    const w = canvas.width / devicePixelRatio, h = canvas.height / devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    ctx.fillStyle = '#2b3b31';
+    ctx.fillRect(0, 0, w, h);
+    if (img) {
+      ctx.imageSmoothingEnabled = view.scale < 1.5;
+      ctx.drawImage(img, view.ox, view.oy, img.width * view.scale, img.height * view.scale);
+    }
+    const c = imgToScreen({ x: calib.cx, y: calib.cy });
+    if (showRings && calib.cmpp > 0) {
+      ctx.strokeStyle = 'rgba(80,220,255,0.7)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      for (const d of RINGS_CM) {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, d / 2 / calib.cmpp * view.scale, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+    // the centre
+    ctx.strokeStyle = 'rgba(80,220,255,0.9)';
+    ctx.beginPath(); ctx.moveTo(c.x - 6, c.y); ctx.lineTo(c.x + 6, c.y); ctx.moveTo(c.x, c.y - 6); ctx.lineTo(c.x, c.y + 6); ctx.stroke();
+    // the curve
+    if (points.length >= 3) {
+      const curve = spline(points).map(p => imgToScreen(cmToImg(p)));
+      ctx.strokeStyle = '#ff40ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      curve.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.closePath();
+      ctx.stroke();
+    }
+    points.forEach((p, i) => {
+      const s = imgToScreen(cmToImg(p));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, i === selected ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = i === selected ? '#e8702a' : '#40f0ff';
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '11px sans-serif';
+      ctx.fillText(String(i + 1), s.x + 8, s.y - 8);
+    });
+  }
+
+  // ---- text in and out -------------------------------------------------
+  function writeText() {
+    $('out').value = points.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)}),`).join('\n');
+    $('cx').value = calib.cx; $('cy').value = calib.cy; $('cmpp').value = calib.cmpp; $('flip').checked = calib.flip;
+  }
+  function readText() {
+    const nums = ($('out').value.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+    const pts = [];
+    for (let i = 0; i + 1 < nums.length; i += 2) pts.push({ x: nums[i], y: nums[i + 1] });
+    if (pts.length >= 3) { push(); points = pts; selected = -1; changed(); }
+  }
+  function changed() { writeText(); save(); draw(); }
+  function push() { history.push(JSON.stringify(points)); if (history.length > 200) history.shift(); }
+  function undo() { if (history.length) { points = JSON.parse(history.pop()); selected = -1; changed(); } }
+  function status(t) { $('status').textContent = t; }
+
+  // ---- picture loading -------------------------------------------------
+  function loadPicture(file) {
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => { setPicture(im, file.name); URL.revokeObjectURL(url); };
+    im.src = url;
+  }
+  function setPicture(im, name) {
+    img = im; imgName = name;
+    if (!restore()) { calib.cx = im.width / 2; calib.cy = im.height / 2; }
+    fitView(); writeText(); draw();
+    status(`${name}: ${im.width} × ${im.height} px`);
+  }
+
+  // ---- interaction -----------------------------------------------------
+  const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const hit = s => {
+    let best = -1, bd = 10;
+    points.forEach((p, i) => { const q = imgToScreen(cmToImg(p)); const d = Math.hypot(q.x - s.x, q.y - s.y); if (d < bd) { bd = d; best = i; } });
+    return best;
+  };
+  canvas.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const s = pos(e);
+    if (mode === 'centre') { const q = screenToImg(s); calib.cx = +q.x.toFixed(1); calib.cy = +q.y.toFixed(1); mode = null; canvas.className = ''; changed(); return; }
+    if (mode === 'ring') { const q = screenToImg(s); const d = Math.hypot(q.x - calib.cx, q.y - calib.cy); if (d > 0) calib.cmpp = +(20.75 / d).toFixed(4); mode = null; canvas.className = ''; changed(); return; }
+    const i = hit(s);
+    if (i >= 0) { selected = i; push(); drag = { point: i }; }
+    else { drag = { pan: true, x: s.x, y: s.y, ox: view.ox, oy: view.oy }; canvas.className = 'pan'; }
+    draw();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const s = pos(e);
+    if (drag.pan) { view.ox = drag.ox + s.x - drag.x; view.oy = drag.oy + s.y - drag.y; draw(); }
+    else { const p = imgToCm(screenToImg(s)); points[drag.point] = { x: +p.x.toFixed(2), y: +p.y.toFixed(2) }; writeText(); draw(); }
+  });
+  window.addEventListener('mouseup', () => { if (drag && !drag.pan) save(); drag = null; if (!mode) canvas.className = ''; });
+  canvas.addEventListener('dblclick', e => {
+    if (points.length < 3) { push(); points.push(imgToCm(screenToImg(pos(e)))); changed(); return; }
+    // insert into the nearest segment of the curve
+    const s = pos(e), p = imgToCm(screenToImg(s));
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1e-9;
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2));
+      const d = Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+      if (d < bd) { bd = d; best = i; }
+    }
+    push(); points.splice(best + 1, 0, { x: +p.x.toFixed(2), y: +p.y.toFixed(2) }); selected = best + 1; changed();
+  });
+  canvas.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const i = hit(pos(e));
+    if (i >= 0 && points.length > 3) { push(); points.splice(i, 1); selected = -1; changed(); }
+  });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const s = pos(e), f = Math.exp(-e.deltaY * 0.0015);
+    view.ox = s.x - (s.x - view.ox) * f; view.oy = s.y - (s.y - view.oy) * f; view.scale *= f; draw();
+  }, { passive: false });
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    if (selected < 0) return;
+    const step = e.shiftKey ? 1 : 0.1;
+    const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+    if (d) { e.preventDefault(); push(); const p = points[selected]; points[selected] = { x: +(p.x + d[0]).toFixed(2), y: +(p.y + d[1]).toFixed(2) }; changed(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { if (points.length > 3) { push(); points.splice(selected, 1); selected = -1; changed(); } }
+  });
+  canvas.addEventListener('dragover', e => e.preventDefault());
+  canvas.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadPicture(f); });
+  $('file').addEventListener('change', e => { if (e.target.files[0]) loadPicture(e.target.files[0]); });
+  for (const id of ['cx', 'cy', 'cmpp']) $(id).addEventListener('change', () => { calib[id] = +$(id).value; changed(); });
+  $('flip').addEventListener('change', () => { calib.flip = $('flip').checked; changed(); });
+  $('rings').addEventListener('change', () => { showRings = $('rings').checked; draw(); });
+  $('pickCentre').addEventListener('click', () => { mode = 'centre'; canvas.className = 'pick'; status('Click the rings’ centre.'); });
+  $('pickRing').addEventListener('click', () => { mode = 'ring'; canvas.className = 'pick'; status('Click a point on the 41.5 cm ring.'); });
+  $('apply').addEventListener('click', readText);
+  $('copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('out').value); status('Copied.'); } catch (e) { status('Select the text and copy it.'); } });
+  $('download').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({ picture: imgName, calibration: calib, points_cm: points.map(p => [p.x, p.y]) }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hit-zone.json'; a.click();
+  });
+  $('fit').addEventListener('click', fitView);
+  window.addEventListener('resize', resize);
+
+  // A page may preload a picture (as a data URL), calibration and points.
+  const pre = window.PRELOAD;
+  resize();
+  if (pre) {
+    const im = new Image();
+    im.onload = () => {
+      img = im; imgName = pre.name || 'preloaded';
+      Object.assign(calib, pre.calib || {});
+      if (!restore() || !points.length) { points = pre.points || []; }
+      fitView(); writeText(); draw();
+      status(`${imgName}: ${im.width} × ${im.height} px`);
+    };
+    im.src = pre.image;
+  } else {
+    writeText();
+  }
+})();
+</script>
+</body>
+</html>

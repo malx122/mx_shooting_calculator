@@ -655,6 +655,23 @@ fn catalog_drawings_are_sound() {
                 part.fill
             );
         }
+        // The aim point lies in the widest zone, and the training rings'
+        // centre too; every zone is a real polygon.
+        if let Some(widest) = drawing.zones.last() {
+            assert!(
+                crate::drawings::contains(&widest.points, drawing.vital),
+                "{}: aim point outside the {}",
+                drawing.id,
+                widest.name
+            );
+            for zone in &drawing.zones {
+                assert!(zone.points.len() >= 3, "{}: {}", drawing.id, zone.name);
+            }
+            if let Some(rings) = &drawing.rings {
+                assert!(crate::drawings::contains(&widest.points, rings.center));
+                assert!(rings.rings.windows(2).all(|w| w[0].diameter_m < w[1].diameter_m));
+            }
+        }
     }
     // Ids from before the drawings were data still find one.
     assert_eq!(
