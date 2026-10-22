@@ -8,6 +8,10 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Small drawings in the four input tiles** on the Calculate page, following
+  the values: the range on a scale, the line of fire at its angle, the wind
+  arrow on a clock face, and the chosen target's own silhouette. On a phone
+  they sit under the value.
 - **A new moose** with the hit area and rings of Svenska Jägareförbundet's
   moose figure (15, 25, 33 and 41.5 cm) instead of a circle. The results
   say where a dead-on hold lands: "in the hit area, ring 4".

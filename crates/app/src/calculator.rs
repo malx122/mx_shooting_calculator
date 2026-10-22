@@ -759,11 +759,14 @@ impl CalculatorPage {
         let u = units::prefs(ui.ctx());
         let gap = 8.0;
         let width = (ui.available_width() - gap) / 2.0;
+        // The glyphs: the range on a scale to 500 m, the wind arrow full at
+        // 12 m/s.
         let fields = [
             (
                 phone::Picker::Range,
                 "Range".to_owned(),
                 u.format(Quantity::Distance, self.inputs.target_range_m),
+                phone::Glyph::Range((self.inputs.target_range_m / 500.0) as f32),
             ),
             (
                 phone::Picker::Angle,
@@ -773,11 +776,16 @@ impl CalculatorPage {
                     format!("Angle · cant {:+.0}°", self.inputs.cant_degrees)
                 },
                 format!("{:+.0}°", self.inputs.inclination_degrees),
+                phone::Glyph::Angle(self.inputs.inclination_degrees as f32),
             ),
             (
                 phone::Picker::Wind,
                 format!("Wind · {}", phone::clock_text(self.inputs.wind_clock)),
                 u.format(Quantity::WindSpeed, self.inputs.wind_speed),
+                phone::Glyph::Wind {
+                    clock: self.inputs.wind_clock as f32,
+                    strength: (self.inputs.wind_speed / 12.0) as f32,
+                },
             ),
             (
                 phone::Picker::Target,
@@ -786,14 +794,16 @@ impl CalculatorPage {
                     None => "Target".to_owned(),
                 },
                 aim.name().to_owned(),
+                phone::Glyph::Figure(aim.figure.as_ref()),
             ),
         ];
-        for pair in fields.chunks(2) {
+        let [range, angle, wind, target] = fields;
+        for pair in [[range, angle], [wind, target]] {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = gap;
-                for (picker, label, value) in pair {
-                    if phone::quick_field(ui, width, label, value).clicked() {
-                        self.picker = Some(*picker);
+                for (picker, label, value, glyph) in pair {
+                    if phone::quick_field(ui, width, &label, &value, glyph).clicked() {
+                        self.picker = Some(picker);
                     }
                 }
             });

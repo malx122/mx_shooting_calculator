@@ -16,6 +16,7 @@ use super::{
     sight_impact, wind_description,
 };
 use crate::app::{Action, Data, Page};
+use crate::figure::Figure;
 use crate::mobile::{self, TOUCH};
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
@@ -893,9 +894,134 @@ impl ResultsView<'_> {
 /// unless all are asked for.
 const PHONE_COLUMNS: usize = 3;
 
-/// A quick field: a small label over a big value, the size of a thumb.
-pub(super) fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(vec2(width, 58.0), Sense::click());
+/// The small drawing at the right of a quick field, following its value.
+pub(super) enum Glyph<'a> {
+    /// A scale with the range marked, as a share of the scale (0 to 1).
+    Range(f32),
+    /// A horizon with the line of fire at this inclination, degrees.
+    Angle(f32),
+    /// A clock face with the wind arrow: the clock direction, and the
+    /// arrow's length as a share (0 to 1).
+    Wind { clock: f32, strength: f32 },
+    /// The target at a glance; none without a target.
+    Figure(Option<&'a Figure>),
+}
+
+impl Glyph<'_> {
+    fn width(&self) -> f32 {
+        match self {
+            Glyph::Range(_) => 56.0,
+            Glyph::Angle(_) => 44.0,
+            Glyph::Wind { .. } => 40.0,
+            Glyph::Figure(_) => 60.0,
+        }
+    }
+
+    fn paint(&self, painter: &egui::Painter, rect: egui::Rect) {
+        let thin = Stroke::new(1.5_f32, theme::FOREST_500);
+        let accent = Stroke::new(2.5_f32, theme::BLAZE);
+        match *self {
+            Glyph::Range(share) => {
+                let y = rect.center().y + 6.0;
+                let (x0, x1) = (rect.left() + 2.0, rect.right() - 2.0);
+                painter.line_segment([egui::pos2(x0, y), egui::pos2(x1, y)], thin);
+                for tick in 0..=4 {
+                    let x = x0 + (x1 - x0) * tick as f32 / 4.0;
+                    let height = if tick % 2 == 0 { 5.0 } else { 3.0 };
+                    painter.line_segment([egui::pos2(x, y - height), egui::pos2(x, y)], thin);
+                }
+                let x = x0 + (x1 - x0) * share.clamp(0.0, 1.0);
+                painter.line_segment([egui::pos2(x0, y), egui::pos2(x, y)], accent);
+                painter.circle_filled(egui::pos2(x, y), 4.0, theme::BLAZE);
+                painter.circle_filled(egui::pos2(x, y), 1.5, theme::FOREST_700);
+            }
+            Glyph::Angle(degrees) => {
+                let pivot = egui::pos2(rect.left() + 3.0, rect.center().y + 8.0);
+                let reach = rect.width() - 6.0;
+                dashed(painter, pivot, pivot + vec2(reach, 0.0), thin, 3.0, 3.0);
+                let angle = degrees.clamp(-60.0, 60.0).to_radians();
+                let tip = pivot + vec2(angle.cos(), -angle.sin()) * reach;
+                painter.line_segment([pivot, tip], accent);
+                painter.circle_filled(pivot, 2.5, theme::BLAZE);
+            }
+            Glyph::Wind { clock, strength } => {
+                let centre = rect.center();
+                let radius = rect.height() / 2.0 - 1.0;
+                painter.circle_stroke(centre, radius, thin);
+                for hour in 0..12 {
+                    let a = hour as f32 / 12.0 * std::f32::consts::TAU;
+                    let dir = vec2(a.sin(), -a.cos());
+                    let inner = if hour % 3 == 0 { 5.0 } else { 2.5 };
+                    let stroke = if hour % 3 == 0 {
+                        Stroke::new(1.5_f32, theme::BONE_MUTED)
+                    } else {
+                        thin
+                    };
+                    painter.line_segment(
+                        [centre + dir * (radius - inner), centre + dir * radius],
+                        stroke,
+                    );
+                }
+                // The wind blows from its clock position towards the shooter.
+                let a = clock / 12.0 * std::f32::consts::TAU;
+                let from = vec2(a.sin(), -a.cos());
+                let length = radius * (0.35 + 0.65 * strength.clamp(0.0, 1.0));
+                let tail = centre + from * radius * 0.9;
+                let head = tail - from * length;
+                painter.line_segment([tail, head], accent);
+                let side = vec2(-from.y, from.x) * 3.5;
+                let back = from * 4.5;
+                painter.add(egui::Shape::convex_polygon(
+                    vec![head, head + back + side, head + back - side],
+                    theme::BLAZE,
+                    Stroke::NONE,
+                ));
+                painter.circle_filled(centre, 2.0, theme::BONE);
+            }
+            Glyph::Figure(figure) => {
+                let Some(figure) = figure else { return };
+                let [low, high] = figure.bounds;
+                let (w, h) = (high[0] - low[0], high[1] - low[1]);
+                if w <= 0.0 || h <= 0.0 {
+                    return;
+                }
+                let scale = (rect.width() as f64 / w).min(rect.height() as f64 / h);
+                let centre = [(low[0] + high[0]) / 2.0, (low[1] + high[1]) / 2.0];
+                let at = |[x, y]: [f64; 2]| {
+                    rect.center() + vec2(((x - centre[0]) * scale) as f32, -((y - centre[1]) * scale) as f32)
+                };
+                for part in &figure.parts {
+                    painter.add(part.shape(part.points.iter().map(|&p| at(p)).collect()));
+                }
+            }
+        }
+    }
+}
+
+fn dashed(painter: &egui::Painter, from: egui::Pos2, to: egui::Pos2, stroke: Stroke, dash: f32, gap: f32) {
+    let length = (to - from).length();
+    let dir = (to - from) / length.max(1e-6);
+    let mut t = 0.0;
+    while t < length {
+        let end = (t + dash).min(length);
+        painter.line_segment([from + dir * t, from + dir * end], stroke);
+        t += dash + gap;
+    }
+}
+
+/// A quick field: a small label over a big value, the size of a thumb,
+/// with a glyph that follows the value: at the right on a wide tile, in a
+/// strip under the value on a narrow one (a phone), which is taller.
+pub(super) fn quick_field(
+    ui: &mut Ui,
+    width: f32,
+    label: &str,
+    value: &str,
+    glyph: Glyph<'_>,
+) -> egui::Response {
+    let strip = width < 150.0;
+    let height = if strip { 84.0 } else { 58.0 };
+    let (rect, response) = ui.allocate_exact_size(vec2(width, height), Sense::click());
     let fill = if response.is_pointer_button_down_on() {
         theme::FOREST_600
     } else {
@@ -909,6 +1035,43 @@ pub(super) fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> 
         Stroke::new(1.0_f32, theme::FOREST_600),
         egui::StrokeKind::Inside,
     );
+    let text_width = |text: &str, size: f32| {
+        painter
+            .layout_no_wrap(text.to_owned(), FontId::proportional(size), theme::BONE)
+            .size()
+            .x
+    };
+    let glyph_rect = if strip {
+        // Scales stretch across; a clock or an animal keeps its own width.
+        let w = match glyph {
+            Glyph::Range(_) | Glyph::Angle(_) => rect.width() - 20.0,
+            Glyph::Wind { .. } | Glyph::Figure(_) => glyph.width().min(rect.width() - 20.0),
+        };
+        Some(egui::Rect::from_min_size(
+            egui::pos2(rect.left() + 10.0, rect.bottom() - 9.0 - 22.0),
+            vec2(w, 22.0),
+        ))
+    } else {
+        // Beside the text when it leaves room, shrunk to the room there is.
+        let room = rect.width() - 26.0 - text_width(label, 12.0).max(text_width(value, 19.0));
+        (room >= 32.0).then(|| {
+            let w = glyph.width().min(room);
+            egui::Rect::from_min_size(
+                egui::pos2(rect.right() - 10.0 - w, rect.top() + 9.0),
+                vec2(w, 40.0),
+            )
+        })
+    };
+    if let Some(glyph_rect) = glyph_rect {
+        glyph.paint(&painter.with_clip_rect(glyph_rect.expand(1.0)), glyph_rect);
+    }
+    let painter = painter.with_clip_rect(rect.shrink(4.0));
+    // A label too long for the tile keeps its first part: the glyph shows
+    // the rest ("Wind · 3 o'clock" becomes "Wind").
+    let label = match label.split_once(" · ") {
+        Some((head, _)) if text_width(label, 12.0) > rect.width() - 20.0 => head,
+        _ => label,
+    };
     painter.text(
         rect.left_top() + vec2(10.0, 9.0),
         Align2::LEFT_TOP,
@@ -916,8 +1079,9 @@ pub(super) fn quick_field(ui: &mut Ui, width: f32, label: &str, value: &str) -> 
         FontId::proportional(12.0),
         theme::BONE_MUTED,
     );
+    let value_bottom = if strip { rect.bottom() - 9.0 - 22.0 - 4.0 } else { rect.bottom() - 9.0 };
     painter.text(
-        rect.left_bottom() + vec2(10.0, -9.0),
+        egui::pos2(rect.left() + 10.0, value_bottom),
         Align2::LEFT_BOTTOM,
         value,
         FontId::proportional(19.0),
