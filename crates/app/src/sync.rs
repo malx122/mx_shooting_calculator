@@ -1,5 +1,5 @@
 //! Sync with the hunter's other devices. Every device keeps the same
-//! rifles, bullets, loads, scopes and targets, through one of:
+//! rifles, bullets, loads, scopes, targets and shot log, through one of:
 //!
 //! - **a sync key** and the app's sync server (see `server/` and
 //!   `ballistics_store::sync`): no account; the copy is encrypted;
@@ -712,8 +712,8 @@ impl Sync {
 
     fn off_panel(&mut self, ui: &mut egui::Ui, store: &Store, context: &egui::Context) {
         ui.label(
-            "Keep your rifles, bullets, scopes and targets the same on your phone and \
-             computer.",
+            "Keep your rifles, bullets, scopes, targets and shot log the same on your phone \
+             and computer.",
         );
         ui.add_space(8.0);
         ui.label(RichText::new("With Google Drive").strong());
@@ -782,9 +782,9 @@ impl Sync {
                     return;
                 }
                 ui.label(
-                    "The link holds a sync key. This device's rifles, bullets, scopes and \
-                     targets will be merged with the other devices' and kept the same from \
-                     now on.",
+                    "The link holds a sync key. This device's rifles, bullets, scopes, targets \
+                     and shot log will be merged with the other devices' and kept the same \
+                     from now on.",
                 );
                 if self.is_on() {
                     ui.colored_label(

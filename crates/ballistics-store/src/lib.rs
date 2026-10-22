@@ -1,6 +1,7 @@
 //! Storage for the ballistic calculator: the read-only base catalog of
-//! calibers and bullets, the hunter's own rifles and bullet collection in a
-//! local SQLite database, and JSON export/import of that personal data.
+//! calibers and bullets, the hunter's own rifles, bullet collection and
+//! shot log in a local SQLite database, and JSON export/import of that
+//! personal data.
 //!
 //! Nothing here depends on the UI, so a mobile front end can reuse it.
 
@@ -13,6 +14,7 @@ pub mod model;
 pub mod optics;
 pub mod rules;
 pub mod schema;
+pub mod shots;
 pub mod strelok;
 pub mod sun;
 pub mod sync;
@@ -37,6 +39,9 @@ pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
 pub use rules::{Country, Load as RulesLoad, Rules};
+pub use shots::{
+    AnimalSpot, GeoPoint, Outcome, ShooterPosition, Shot, ShotHold, ShotSolution, ShotWeather,
+};
 pub use sync::{SyncKey, SyncRound};
 pub use targets::{Target, TargetGroup, TargetKind, TargetShape};
 pub use transfer::ImportReport;

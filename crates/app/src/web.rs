@@ -245,9 +245,66 @@ pub fn can_locate() -> bool {
     geolocation().is_some()
 }
 
+/// A position from the browser: latitude, longitude (degrees) and how far
+/// off it may be (m), when the browser says.
+pub type Fix = (f64, f64, Option<f64>);
+
+/// Reads a `GeolocationPosition`.
+fn read_fix(position: &wasm_bindgen::JsValue) -> Option<Fix> {
+    let coordinate = |name: &str| {
+        js_sys::Reflect::get(position, &"coords".into())
+            .and_then(|coords| js_sys::Reflect::get(&coords, &name.into()))
+            .ok()
+            .and_then(|value| value.as_f64())
+    };
+    Some((
+        coordinate("latitude")?,
+        coordinate("longitude")?,
+        coordinate("accuracy"),
+    ))
+}
+
+/// What a `GeolocationPositionError` means, for the hunter.
+fn position_error(error: &wasm_bindgen::JsValue) -> String {
+    let code = js_sys::Reflect::get(error, &"code".into())
+        .ok()
+        .and_then(|code| code.as_f64());
+    match code {
+        Some(1.0) => "the browser wasn't allowed to tell where you are".into(),
+        Some(3.0) => "finding your position took too long".into(),
+        _ => "your position couldn't be found".into(),
+    }
+}
+
+/// The options for a position: `precise` asks for the GPS's best and a
+/// fresh answer; otherwise one from the last ten minutes will do.
+fn position_options(precise: bool) -> js_sys::Object {
+    let options = js_sys::Object::new();
+    let set = |name: &str, value: wasm_bindgen::JsValue| {
+        let _ = js_sys::Reflect::set(&options, &name.into(), &value);
+    };
+    if precise {
+        set("enableHighAccuracy", true.into());
+        set("timeout", 30000.into());
+        set("maximumAge", 0.into());
+    } else {
+        set("timeout", 15000.into());
+        set("maximumAge", 600000.into());
+    }
+    options
+}
+
 /// Asks the browser where the device is (it asks the hunter first); `done`
 /// gets latitude and longitude, or why not.
 pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
+    position(false, move |fix| {
+        done(fix.map(|(latitude, longitude, _)| (latitude, longitude)))
+    });
+}
+
+/// Asks the browser once where the device is, as exactly as it can with
+/// `precise` (it asks the hunter first); `done` gets the answer.
+pub fn position(precise: bool, done: impl Fn(Result<Fix, String>) + 'static) {
     let Some(geolocation) = geolocation() else {
         return done(Err("this browser can't tell where you are".into()));
     };
@@ -255,42 +312,108 @@ pub fn locate(done: impl Fn(Result<(f64, f64), String>) + 'static) {
     let found = {
         let done = done.clone();
         wasm_bindgen::closure::Closure::once_into_js(move |position: wasm_bindgen::JsValue| {
-            let coordinate = |name: &str| {
-                js_sys::Reflect::get(&position, &"coords".into())
-                    .and_then(|coords| js_sys::Reflect::get(&coords, &name.into()))
-                    .ok()
-                    .and_then(|value| value.as_f64())
-            };
-            done(
-                coordinate("latitude")
-                    .zip(coordinate("longitude"))
-                    .ok_or_else(|| "the browser gave no position".to_owned()),
-            );
+            done(read_fix(&position).ok_or_else(|| "the browser gave no position".to_owned()));
         })
     };
     let failed = {
         let done = done.clone();
         wasm_bindgen::closure::Closure::once_into_js(move |error: wasm_bindgen::JsValue| {
-            let code = js_sys::Reflect::get(&error, &"code".into())
-                .ok()
-                .and_then(|code| code.as_f64());
-            done(Err(match code {
-                Some(1.0) => "the browser wasn't allowed to tell where you are".into(),
-                Some(3.0) => "finding your position took too long".into(),
-                _ => "your position couldn't be found".into(),
-            }));
+            done(Err(position_error(&error)));
         })
     };
-    let options = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(&options, &"timeout".into(), &15000.into());
-    let _ = js_sys::Reflect::set(&options, &"maximumAge".into(), &600000.into());
     let started = js_sys::Reflect::get(&geolocation, &"getCurrentPosition".into())
         .ok()
         .and_then(|function| function.dyn_into::<js_sys::Function>().ok())
-        .map(|function| function.call3(&geolocation, &found, &failed, &options));
+        .map(|function| function.call3(&geolocation, &found, &failed, &position_options(precise)));
     if !matches!(started, Some(Ok(_))) {
         done(Err("this browser can't tell where you are".into()));
     }
+}
+
+/// A running `watchPosition`: its id, and the callbacks it calls.
+struct Watch {
+    id: wasm_bindgen::JsValue,
+    _found: wasm_bindgen::closure::Closure<dyn FnMut(wasm_bindgen::JsValue)>,
+    _failed: wasm_bindgen::closure::Closure<dyn FnMut(wasm_bindgen::JsValue)>,
+}
+
+thread_local! {
+    static WATCH: RefCell<Option<Watch>> = const { RefCell::new(None) };
+    /// The latest answer while following the device's position.
+    static FOLLOWED: RefCell<Option<Result<Fix, String>>> = const { RefCell::new(None) };
+}
+
+/// Starts following the device's position as it moves (the browser asks
+/// the hunter first). Answers come in `followed`.
+pub fn follow(context: egui::Context) {
+    if WATCH.with_borrow(Option::is_some) {
+        return;
+    }
+    let Some(geolocation) = geolocation() else {
+        FOLLOWED.set(Some(Err("this browser can't tell where you are".into())));
+        return;
+    };
+    let repaint = context.clone();
+    let found = wasm_bindgen::closure::Closure::<dyn FnMut(wasm_bindgen::JsValue)>::new(
+        move |position: wasm_bindgen::JsValue| {
+            if let Some(fix) = read_fix(&position) {
+                FOLLOWED.set(Some(Ok(fix)));
+                repaint.request_repaint();
+            }
+        },
+    );
+    let failed = wasm_bindgen::closure::Closure::<dyn FnMut(wasm_bindgen::JsValue)>::new(
+        move |error: wasm_bindgen::JsValue| {
+            // A position found before is still the best there is.
+            if !matches!(FOLLOWED.with_borrow(Clone::clone), Some(Ok(_))) {
+                FOLLOWED.set(Some(Err(position_error(&error))));
+            }
+            context.request_repaint();
+        },
+    );
+    let id = js_sys::Reflect::get(&geolocation, &"watchPosition".into())
+        .ok()
+        .and_then(|function| function.dyn_into::<js_sys::Function>().ok())
+        .and_then(|function| {
+            function
+                .call3(
+                    &geolocation,
+                    found.as_ref(),
+                    failed.as_ref(),
+                    &position_options(true),
+                )
+                .ok()
+        });
+    match id {
+        Some(id) => WATCH.set(Some(Watch {
+            id,
+            _found: found,
+            _failed: failed,
+        })),
+        None => FOLLOWED.set(Some(Err("this browser can't tell where you are".into()))),
+    }
+}
+
+/// The latest position while following, or why there is none.
+pub fn followed() -> Option<Result<Fix, String>> {
+    FOLLOWED.with_borrow(Clone::clone)
+}
+
+/// Stops following the device's position.
+pub fn stop_following() {
+    if let Some(watch) = WATCH.take()
+        && let Some(geolocation) = geolocation()
+    {
+        let _ = call(&geolocation, "clearWatch", Some(&watch.id));
+    }
+    FOLLOWED.set(None);
+}
+
+/// How many minutes the device's clock is ahead of UTC at a moment (an hour
+/// in Swedish winter, two in summer).
+pub fn utc_offset_minutes(unix_ms: i64) -> f64 {
+    // JavaScript counts the other way: UTC minus local.
+    -js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(unix_ms as f64)).get_timezone_offset()
 }
 
 /// Calls `object.name()` in JavaScript, if it exists.

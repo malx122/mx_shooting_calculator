@@ -3,8 +3,8 @@
 //! they return `Action`s, which keeps them easy to reuse on mobile.
 
 use ballistics_store::{
-    Bullet, Catalog, Country, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad, Scope, Store, StoreError,
-    Target, UserScope,
+    Bullet, Catalog, Country, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad, Scope, Shot, Store,
+    StoreError, Target, UserScope,
 };
 use eframe::egui::{self, RichText};
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,7 @@ use crate::cards::{CardSettings, CardsPage};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
 use crate::rifles::RiflesPage;
+use crate::shot_log::ShotLogPage;
 use crate::sync::{self, Sync};
 use crate::targets::TargetsPage;
 use crate::theme;
@@ -64,6 +65,8 @@ pub enum Page {
     Bullets,
     Targets,
     Cards,
+    /// Reached from the menu and from Calculate, not from a tab.
+    ShotLog,
 }
 
 pub enum Action {
@@ -83,6 +86,10 @@ pub enum Action {
     DeleteScope(String),
     SaveTarget(Target),
     DeleteTarget(String),
+    /// Save a shot from Calculate in the log and open it there.
+    LogShot(Box<Shot>),
+    SaveShot(Box<Shot>),
+    DeleteShot(String),
     /// Load the built-in demo rifles, bullets, scope and target.
     LoadDemo,
 }
@@ -95,6 +102,8 @@ pub struct Data {
     pub loads: Vec<RifleLoad>,
     pub scopes: Vec<UserScope>,
     pub targets: Vec<Target>,
+    /// The shot log, newest first.
+    pub shots: Vec<Shot>,
     /// Whose hunting rules to check, if any (none when target shooting).
     pub country: Option<Country>,
     /// Hunting: ethical limits and the rules apply. Off for target shooting.
@@ -152,6 +161,7 @@ enum MenuChoice {
     Country,
     Purpose,
     Sync,
+    ShotLog,
     WhatsNew,
     Import,
     Export,
@@ -176,6 +186,7 @@ pub struct App {
     rifles: RiflesPage,
     bullets: BulletsPage,
     targets: TargetsPage,
+    shot_log: ShotLogPage,
     cards: CardsPage,
     saved_cards: CardSettings,
     saved_inputs: Inputs,
@@ -251,6 +262,7 @@ impl App {
             rifles: RiflesPage::default(),
             bullets: BulletsPage::default(),
             targets: TargetsPage::default(),
+            shot_log: ShotLogPage::default(),
             cards: CardsPage::new(cards.clone()),
             saved_cards: cards,
             saved_inputs: inputs,
@@ -297,6 +309,7 @@ impl App {
                 loads: self.store.rifle_loads()?,
                 scopes: self.store.scopes()?,
                 targets: self.store.targets()?,
+                shots: self.store.shots()?,
                 country: self.rules_country(),
                 hunting: self.hunting(),
                 region: None,
@@ -402,6 +415,24 @@ impl App {
             Action::DeleteTarget(id) => self.store.delete_target(&id).map(|()| {
                 self.targets.deleted(&id);
                 "Target deleted".to_owned()
+            }),
+            Action::LogShot(mut shot) => {
+                if let Some(bullet) = self.data.bullets.iter().find(|b| b.id == shot.bullet_id) {
+                    shot.bullet_name = bullet.display_name();
+                }
+                self.store.save_shot(&mut shot).map(|()| {
+                    self.shot_log.open(&shot);
+                    self.page = Page::ShotLog;
+                    "Shot logged: add what came of it, and where the animal stood".to_owned()
+                })
+            }
+            Action::SaveShot(mut shot) => self.store.save_shot(&mut shot).map(|()| {
+                self.shot_log.saved(&shot);
+                "Saved the shot".to_owned()
+            }),
+            Action::DeleteShot(id) => self.store.delete_shot(&id).map(|()| {
+                self.shot_log.deleted(&id);
+                "Shot deleted".to_owned()
             }),
             Action::LoadDemo => self.store.load_demo().map(|report| {
                 self.page = Page::Calculate;
@@ -588,6 +619,10 @@ impl eframe::App for App {
             Page::Rifles => self.rifles.show(context, &self.data),
             Page::Bullets => self.bullets.show(context, &self.data),
             Page::Targets => self.targets.show(context, &self.data),
+            Page::ShotLog => {
+                let place = self.calculator.inputs.place.as_ref();
+                self.shot_log.show(context, &self.data, place)
+            }
             Page::Cards => {
                 let subject = self.calculator.card_subject(&self.data);
                 self.cards.show(context, subject, self.data.hunting)
@@ -595,6 +630,9 @@ impl eframe::App for App {
         };
         for action in actions {
             self.apply(action);
+        }
+        if self.page != Page::ShotLog {
+            self.shot_log.leave();
         }
         // The phone menu's sheets; on wider screens the desktop menu opens
         // the ones it has no room for.
@@ -654,8 +692,8 @@ impl App {
                 ui.add_space(4.0);
                 ui.label("Free software under the MIT or Apache-2.0 licence.");
                 ui.weak(
-                    "Your rifles, bullets and targets stay on this device, and on your other \
-                     devices if you sync them.",
+                    "Your rifles, bullets, targets and shot log stay on this device, and on \
+                     your other devices if you sync them.",
                 );
             });
         self.about_open = open;
@@ -755,6 +793,15 @@ impl App {
         let mut demo = false;
         ui.menu_button(RichText::new("•••").size(14.0), |ui| {
             ui.set_min_width(230.0);
+            if ui
+                .button("Shot log")
+                .on_hover_text("The shots you logged from Calculate")
+                .clicked()
+            {
+                self.page = Page::ShotLog;
+                ui.close_menu();
+            }
+            ui.separator();
             // Choices open a sheet: submenus would have no room to open at
             // the window's right edge and would cover this menu instead.
             let purpose = self.purpose.unwrap_or(Purpose::Hunting).name();
@@ -792,7 +839,7 @@ impl App {
             }
             if ui
                 .button("Export backup")
-                .on_hover_text("Your rifles, bullets, scopes and targets, as JSON")
+                .on_hover_text("Your rifles, bullets, scopes, targets and shot log, as JSON")
                 .clicked()
             {
                 export = true;
@@ -998,8 +1045,17 @@ impl App {
         };
         match sheet {
             MenuSheet::Main => {
+                let shots = self.data.shots.len();
                 let shown = mobile::sheet(context, "menu", "Menu", |ui| {
                     let mut choice = None;
+                    let logged = match shots {
+                        0 => "Log shots from Calculate".to_owned(),
+                        1 => "1 shot".to_owned(),
+                        count => format!("{count} shots"),
+                    };
+                    if mobile::list_row(ui, "Shot log", &logged, false).clicked() {
+                        choice = Some(MenuChoice::ShotLog);
+                    }
                     if mobile::list_row(ui, "Units", "Metric or imperial, per quantity", false)
                         .clicked()
                     {
@@ -1035,7 +1091,7 @@ impl App {
                     if mobile::list_row(
                         ui,
                         "Export backup",
-                        "Your rifles, bullets, scopes and targets",
+                        "Your rifles, bullets, scopes, targets and shots",
                         false,
                     )
                     .clicked()
@@ -1093,6 +1149,10 @@ impl App {
                     Some(MenuChoice::Purpose) => self.menu = Some(MenuSheet::Purpose),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
                     Some(MenuChoice::WhatsNew) => self.menu = Some(MenuSheet::WhatsNew),
+                    Some(MenuChoice::ShotLog) => {
+                        self.menu = None;
+                        self.page = Page::ShotLog;
+                    }
                     Some(MenuChoice::Import) => {
                         self.menu = None;
                         self.import(context);
@@ -1294,6 +1354,8 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
             }
             painter.add(line(&[(10.0, 7.5), (10.0, 17.0)]));
         }
+        // Not a tab.
+        Page::ShotLog => {}
     }
 }
 

@@ -13,6 +13,7 @@ use crate::model::{
     BcModel, Bullet, BulletKind, ClickUnit, Construction, Rifle, RifleLoad, TableSettings, now_ms,
 };
 use crate::optics::UserScope;
+use crate::shots::Shot;
 use crate::targets::Target;
 
 /// Each entry upgrades the schema by one version; never edit a released one.
@@ -119,6 +120,15 @@ pub(crate) const MIGRATIONS: &[&str] = &[
 "#,
     r#"
     ALTER TABLE rifles ADD COLUMN zero_height_cm REAL NOT NULL DEFAULT 0;
+"#,
+    r#"
+    CREATE TABLE shots (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        taken_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX shots_by_time ON shots (taken_at);
 "#,
 ];
 
@@ -315,6 +325,40 @@ impl Store {
         let transaction = self.connection.unchecked_transaction()?;
         record_deletion(&transaction, RecordKind::Target, id, self.stamp(0)?)?;
         transaction.execute("DELETE FROM targets WHERE id = ?1", [id])?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    // The shot log --------------------------------------------------------
+
+    /// The logged shots, newest first.
+    pub fn shots(&self) -> Result<Vec<Shot>, StoreError> {
+        self.query_all(
+            "SELECT data FROM shots ORDER BY taken_at DESC, id",
+            [],
+            |row| from_json_column::<Shot>(&row.get::<_, String>(0)?),
+        )
+    }
+
+    pub fn shot(&self, id: &str) -> Result<Option<Shot>, StoreError> {
+        self.query_one("SELECT data FROM shots WHERE id = ?1", [id], |row| {
+            from_json_column::<Shot>(&row.get::<_, String>(0)?)
+        })
+    }
+
+    /// Works out the animal's spot again, validates, stamps `updated_at`
+    /// and inserts or updates the shot.
+    pub fn save_shot(&self, shot: &mut Shot) -> Result<(), StoreError> {
+        shot.update_spot();
+        shot.validate().map_err(StoreError::Invalid)?;
+        shot.updated_at = self.stamp(shot.updated_at)?;
+        put_shot(&self.connection, shot)
+    }
+
+    pub fn delete_shot(&self, id: &str) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        record_deletion(&transaction, RecordKind::Shot, id, self.stamp(0)?)?;
+        transaction.execute("DELETE FROM shots WHERE id = ?1", [id])?;
         transaction.commit()?;
         Ok(())
     }
@@ -628,6 +672,21 @@ pub(crate) fn put_target(connection: &Connection, target: &Target) -> Result<(),
         "INSERT INTO targets (id, data, updated_at) VALUES (?1, ?2, ?3)
          ON CONFLICT (id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
         params![target.id, serde_json::to_string(target)?, target.updated_at],
+    )?;
+    Ok(())
+}
+
+pub(crate) fn put_shot(connection: &Connection, shot: &Shot) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO shots (id, data, taken_at, updated_at) VALUES (?1, ?2, ?3, ?4)
+         ON CONFLICT (id) DO UPDATE SET data = excluded.data, taken_at = excluded.taken_at,
+             updated_at = excluded.updated_at",
+        params![
+            shot.id,
+            serde_json::to_string(shot)?,
+            shot.taken_at,
+            shot.updated_at
+        ],
     )?;
     Ok(())
 }

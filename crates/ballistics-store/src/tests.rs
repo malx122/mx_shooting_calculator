@@ -1039,3 +1039,219 @@ fn temperature_sensitivity_needs_a_spread_and_stays_believable() {
     assert!(model.fitted);
     assert_eq!(model.per_degree, crate::model::MAX_PER_DEGREE);
 }
+
+// The shot log ---------------------------------------------------------------
+
+/// A shot at a moose at 150 m with the rifle and bullet, as Calculate logs it.
+fn logged_shot(rifle: &Rifle, bullet: &Bullet, taken_at: i64) -> Shot {
+    Shot {
+        id: new_id(),
+        taken_at,
+        rifle_id: rifle.id.clone(),
+        rifle_name: rifle.name.clone(),
+        bullet_id: bullet.id.clone(),
+        bullet_name: bullet.display_name(),
+        target_id: Some("moose".into()),
+        target_name: "Moose".into(),
+        range_m: 150.0,
+        inclination_degrees: 0.0,
+        wind_speed_mps: 3.0,
+        wind_clock: 3.0,
+        weather: ShotWeather {
+            temperature_c: 5.0,
+            powder_temperature_c: 5.0,
+            pressure_hpa: 1001.0,
+            humidity_percent: 70.0,
+        },
+        hold: ShotHold {
+            elevation_mrad: 0.6,
+            windage_mrad: -0.3,
+            click_unit: ClickUnit::Mil,
+            click_value: 0.1,
+            elevation_clicks: 6,
+            windage_clicks: -3,
+        },
+        solution: ShotSolution {
+            drop_cm: -9.0,
+            windage_cm: 4.5,
+            velocity_mps: 700.0,
+            energy_j: 2860.0,
+            time_of_flight_s: 0.2,
+        },
+        outcome: Outcome::NotRecorded,
+        hit_where: String::new(),
+        position: None,
+        bearing_degrees: None,
+        animal_spot: None,
+        notes: String::new(),
+        updated_at: 0,
+    }
+}
+
+fn position(
+    latitude_degrees: f64,
+    longitude_degrees: f64,
+    accuracy_m: Option<f64>,
+) -> ShooterPosition {
+    ShooterPosition {
+        point: GeoPoint {
+            latitude_degrees,
+            longitude_degrees,
+        },
+        accuracy_m,
+    }
+}
+
+#[test]
+fn shots_are_kept_newest_first_with_the_animals_spot() {
+    let (store, tikka, oryx) = populated();
+    let mut first = logged_shot(&tikka, &oryx, 1_000);
+    let mut second = logged_shot(&tikka, &oryx, 2_000);
+    store.save_shot(&mut first).unwrap();
+    second.outcome = Outcome::Hit;
+    second.hit_where = "heart–lung".into();
+    second.position = Some(position(64.75, 20.95, Some(5.0)));
+    second.bearing_degrees = Some(90.0);
+    second.inclination_degrees = 10.0;
+    store.save_shot(&mut second).unwrap();
+    assert!(second.updated_at > 0);
+    assert_eq!(store.shots().unwrap(), vec![second.clone(), first.clone()]);
+    assert_eq!(store.shot(&first.id).unwrap(), Some(first.clone()));
+
+    // Saving worked out the spot: east, at the level distance.
+    let spot = second.animal_spot.expect("a position and a bearing");
+    let (distance, bearing) =
+        shots::distance_and_bearing(second.position.unwrap().point, spot.point);
+    let level = 150.0 * 10f64.to_radians().cos();
+    assert!((distance - level).abs() < 0.01, "{distance}");
+    assert!((bearing - 90.0).abs() < 0.01);
+    assert!(spot.search_radius_m > 20.0 && spot.search_radius_m < 35.0);
+    // Without the bearing the spot goes.
+    second.bearing_degrees = None;
+    store.save_shot(&mut second).unwrap();
+    assert_eq!(store.shot(&second.id).unwrap().unwrap().animal_spot, None);
+
+    // A rifle's deletion leaves its shots in the log.
+    store.delete_rifle(&tikka.id).unwrap();
+    assert_eq!(store.shots().unwrap().len(), 2);
+    store.delete_shot(&first.id).unwrap();
+    assert_eq!(store.shots().unwrap(), vec![second]);
+    assert!(
+        store
+            .deletions()
+            .unwrap()
+            .iter()
+            .any(|d| d.kind == RecordKind::Shot && d.id == first.id)
+    );
+}
+
+#[test]
+fn impossible_shots_are_refused() {
+    let (store, tikka, oryx) = populated();
+    let good = logged_shot(&tikka, &oryx, 1_000);
+    let broken: [fn(&mut Shot); 7] = [
+        |shot| shot.range_m = 0.0,
+        |shot| shot.inclination_degrees = 95.0,
+        |shot| shot.wind_clock = 13.0,
+        |shot| shot.weather.pressure_hpa = -1.0,
+        |shot| shot.solution.velocity_mps = f64::NAN,
+        |shot| shot.bearing_degrees = Some(400.0),
+        |shot| shot.position = Some(position(91.0, 0.0, None)),
+    ];
+    for (index, breaks) in broken.iter().enumerate() {
+        let mut shot = good.clone();
+        breaks(&mut shot);
+        assert!(
+            matches!(store.save_shot(&mut shot), Err(StoreError::Invalid(_))),
+            "case {index}"
+        );
+    }
+    assert!(store.shots().unwrap().is_empty());
+    assert!(good.validate().is_ok());
+}
+
+#[test]
+fn shots_export_import_and_match_the_schema() {
+    let (store, tikka, oryx) = populated();
+    let mut shot = logged_shot(&tikka, &oryx, 1_000);
+    shot.position = Some(position(60.5, 15.25, None));
+    shot.bearing_degrees = Some(200.0);
+    shot.notes = "Ran 40 m into the spruce".into();
+    store.save_shot(&mut shot).unwrap();
+
+    let export = store.export_json().unwrap();
+    let value: serde_json::Value = serde_json::from_str(&export).unwrap();
+    assert_eq!(value["shots"][0]["position"]["latitude_degrees"], 60.5);
+    let validator = jsonschema::validator_for(&schema::export_schema()).unwrap();
+    let problems: Vec<String> = validator
+        .iter_errors(&value)
+        .map(|error| error.to_string())
+        .collect();
+    assert!(problems.is_empty(), "{problems:#?}");
+
+    let mut copy = Store::open_in_memory().unwrap();
+    assert_eq!(copy.import_json(&export).unwrap().added, 4);
+    assert_eq!(copy.import_json(&export).unwrap().unchanged, 4);
+    assert_eq!(copy.shots().unwrap(), vec![shot]);
+}
+
+#[test]
+fn backups_without_shots_still_import() {
+    // A version 5 file, from before the shot log.
+    let (old, _, _) = populated();
+    let mut value: serde_json::Value = serde_json::from_str(&old.export_json().unwrap()).unwrap();
+    value["version"] = 5.into();
+    value.as_object_mut().unwrap().remove("shots");
+    let mut store = Store::open_in_memory().unwrap();
+    assert_eq!(store.import_json(&value.to_string()).unwrap().added, 3);
+    assert!(store.shots().unwrap().is_empty());
+    // A shot written by another program, with only what it must have.
+    let minimal = r#"{"format":"mxsc/personal-data","version":6,"exported_at":0,
+        "rifles":[],"bullets":[],"rifle_loads":[],
+        "shots":[{"id":"s1","taken_at":1792473562000,"rifle_id":"r","bullet_id":"b",
+          "range_m":120,"wind_speed_mps":0,"wind_clock":12,
+          "weather":{"temperature_c":2,"powder_temperature_c":2,"pressure_hpa":990,
+            "humidity_percent":80},
+          "hold":{"elevation_mrad":0.2,"windage_mrad":0,"click_unit":"mil","click_value":0.1,
+            "elevation_clicks":2,"windage_clicks":0},
+          "solution":{"drop_cm":-2,"windage_cm":0,"velocity_mps":720,"energy_j":3000,
+            "time_of_flight_s":0.16}}]}"#;
+    store.import_json(minimal).unwrap();
+    let shot = store.shot("s1").unwrap().unwrap();
+    assert_eq!(shot.outcome, Outcome::NotRecorded);
+    assert_eq!((shot.position, shot.target_id), (None, None));
+}
+
+#[test]
+fn shots_sync_and_their_deletions_follow() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let (mut phone, tikka, oryx) = populated();
+    let mut desktop = Store::open_in_memory().unwrap();
+    let mut shot = logged_shot(&tikka, &oryx, model::now_ms());
+    phone.save_shot(&mut shot).unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert_eq!(desktop.shots().unwrap(), vec![shot.clone()]);
+
+    // The outcome written on the desktop reaches the phone.
+    let mut edited = desktop.shot(&shot.id).unwrap().unwrap();
+    edited.outcome = Outcome::Miss;
+    desktop.save_shot(&mut edited).unwrap();
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    assert_eq!(
+        phone.shot(&shot.id).unwrap().unwrap().outcome,
+        Outcome::Miss
+    );
+
+    // Deleted on the phone, deleted on the desktop.
+    phone.delete_shot(&shot.id).unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert!(desktop.shots().unwrap().is_empty());
+    let writes = shared.writes;
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    assert_eq!(shared.writes, writes, "settled");
+}

@@ -8,6 +8,26 @@ any release may still change things noticeably.
 
 ### Added
 
+- **A shot log.** **Log this shot** under the hold on Calculate keeps the
+  shot with the hold the app gave (in mil or MOA and in clicks), the
+  bullet's drop, drift, speed and energy at the range, the weather, the
+  wind and the range. Add whether it hit or missed, where it hit and notes.
+  The log lists the shots newest first; open it from the ••• menu (on a
+  phone, the menu) under **Shot log**.
+- **Find where the animal stood.** In a logged shot, **📍 Mark my
+  position** (from where you shot) and **🧭 Take bearing** (hold the phone
+  flat, its top edge towards the animal) work out the animal's spot from
+  the range, with an area to search that allows for a compass 10° off and
+  a range 5 % off. **Guide me there** then shows the distance and
+  direction from where you are ("128 m, bearing 52°"), an arrow when the
+  phone's compass knows which way it points, and when you are within the
+  search area. There is no map: nothing is sent anywhere, and **Copy
+  coordinates** puts the spot on the clipboard. On a computer, type the
+  position and the bearing. The browser asks before it tells the app
+  where you are, and only when you press one of those buttons.
+- Backups and sync carry the shot log (format version 6, described in
+  [docs/export-format.md](docs/export-format.md)). Older versions of the
+  app can't read the new backups.
 - **Small drawings in the four input tiles** on the Calculate page, following
   the values: the range on a scale, the line of fire at its angle, the wind
   arrow on a clock face, and the chosen target's own silhouette. On a phone

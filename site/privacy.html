@@ -86,10 +86,10 @@
   <main>
     <div class="wrap">
       <h1>Privacy</h1>
-      <p class="updated">MX Shooting Calculator · in effect from 20 October 2026</p>
+      <p class="updated">MX Shooting Calculator · in effect from 22 October 2026</p>
 
       <div class="summary">
-        <p>Your rifles, bullets, targets and settings are kept on your own devices. The app
+        <p>Your rifles, bullets, targets, shot log and settings are kept on your own devices. The app
           has no accounts, no analytics and no advertising, and it sells nothing about you.
           It only sends something elsewhere when you use a feature that needs it: the
           weather, or sync.</p>
@@ -97,8 +97,8 @@
 
       <h2>What the app keeps on your device</h2>
       <p>Everything you enter: rifles, bullets, loads and velocity measurements, scopes,
-        targets, stands, and the calculator's settings, including the place you last looked up
-        and your county. On a computer it is a database file in your user's app-data folder;
+        targets, stands, the shot log, and the calculator's settings, including the place you
+        last looked up and your county. On a computer it is a database file in your user's app-data folder;
         in the browser it is the browser's storage for this site. Deleting the app's data, or
         the browser's data for the site, deletes it. <strong>Export backup</strong> in the menu
         saves a copy wherever you choose.</p>
@@ -106,11 +106,28 @@
       <h2>Weather and your position</h2>
       <p>When you ask for the weather, the app sends the place name you typed, or your
         position, to <a href="https://open-meteo.com/">Open-Meteo</a>, which answers with the
-        forecast. Your position is read from the device only when you press
+        forecast. For the weather, your position is read from the device only when you press
         <strong>Weather here</strong> or <strong>Use my position</strong>, and only after you
         allow it. It is used for the weather and for today's shooting light, and is kept on
         your device. Open-Meteo's own terms and privacy policy cover what it does with
         requests.</p>
+
+      <h2>The shot log and where you shot</h2>
+      <p>When you press <strong>Log this shot</strong>, the app keeps the shot with the hold it
+        gave, the weather, the wind and the range, and what you add: the outcome and notes.
+        For a shot at game you can also keep where you stood and the bearing to the animal,
+        from which the app works out where the animal stood. Your position is read from the
+        device only when you press <strong>Mark my position</strong> (once) or <strong>Guide
+        me there</strong> (as you walk, until you press Stop or leave the shot log), and only
+        after you allow it; the compass only when you press <strong>Take bearing</strong> or
+        Guide me there. While guiding, your position is only shown on the screen, not
+        kept.</p>
+      <p>The positions you mark for your shots, and the animals' spots, are kept on your device,
+        in your sync copy if you sync (encrypted on your device before it goes to the sync
+        server, or in the app's own folder of your Google Drive), and in the backups you
+        export. They are never sent anywhere else: the app shows no map and asks no map service.
+        <strong>Copy coordinates</strong> puts them on your clipboard, to paste where you
+        choose.</p>
 
       <h2>Sync with a sync key</h2>
       <p>If you turn on sync with a key, your data is encrypted on your device (XChaCha20-Poly1305,
@@ -125,8 +142,9 @@
       <p>If you choose to sync through Google Drive and sign in with Google, the app asks Google
         for one permission: <strong>its own folder in your Drive</strong>
         (<code>drive.appdata</code>), a hidden folder only this app can see. The app keeps one
-        file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads, scopes
-        and targets, so your devices share them. It cannot see or change any other file in
+        file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads, scopes,
+        targets and shot log (with the positions you marked for your shots), so your devices
+        share them. It cannot see or change any other file in
         your Drive, and it doesn't ask for your name or e-mail address.</p>
       <p>The sign-in passes through the app's sync server, because Google requires a secret
         that can't be kept in the app. The server hands the sign-in to your device within ten
