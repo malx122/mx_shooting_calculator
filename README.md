@@ -292,11 +292,17 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
 
    The results lead with the hold, then (for game, with hunting rules set)
    pills for the **legal class**, the **season** in your county and today's
-   **shooting light**, then the **ethical max** and the **dead-on hold**,
-   with the zeros, muzzle velocity and stability under **Details**. Under
-   the scope view: dial or hold, and the illumination. The **range table**
-   shows the clicks, mil (or MOA), wind and energy at first; **Columns…**
-   sets its ranges and columns, kept for the rifle.
+   **shooting light**. The **ethical max**, **hit chance** and **dead-on
+   hold** stand beside the hold (on a computer, above the scope view), with
+   the zeros, muzzle velocity and stability under **Details**. Under the
+   scope view: dial or hold, and the illumination. Under the hold, the
+   **range table** (or the trajectory as a graph or in 3D, one tab away)
+   shows what to dial or hold in large clicks with the angles, drop and
+   drift in cm and the rest smaller, the hit chance at each range, the row
+   for this shot outlined (or a line between the rows it falls between),
+   the dead-on ranges marked green and the ranges past the ethical limit
+   red; click a row to shoot at that range. On a computer
+   **Columns…** sets its ranges and columns, kept for the rifle.
 
    **Weather:** **📍 Weather here** (on a phone or in a browser that may
    know your position) or a place search fills in the temperature,
@@ -407,7 +413,8 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      large as the card allows, and a meter says whether it is easy to
      read, small, or too small. A red line marks the ethical limit and a
      green bar the ranges where a dead-on hold stays in the vital zone.
-   - **Stand card:** a map of a hunting stand, facing its direction, over
+   - **Stand card:** a range card: a map of a hunting stand or a shooting
+     position, facing its direction, over
      90°, 180° or all round: range rings with the hold at each, the
      dead-on zone in green, beyond the ethical limit in red, the shooting
      sector the hunt leader gave (outside it greyed) and the directions
@@ -469,8 +476,8 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
 **Hunting or target shooting:** the app asks once what it is used for (and a
 hunter where they hunt); the menu's **Use for** changes it. **Target
 shooting** leaves out everything about hunting: ethical limits, legal
-ammunition, seasons, shooting light and stand cards. Every target is then
-just a hit zone.
+ammunition, seasons and shooting light (stand cards stay, without the
+limits). Every target is then just a hit zone.
 
 **Units** (in the menu): metric or imperial for each quantity separately.
 Distance, drop, sight height, velocity, wind speed, temperature, sensitivity,

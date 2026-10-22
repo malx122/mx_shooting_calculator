@@ -222,6 +222,7 @@ impl CalculatorPage {
                 Ok(solution) => {
                     let view = ResultsView {
                         hits,
+                        row_chances: Vec::new(),
                         inputs: &self.inputs,
                         rifle,
                         table,

@@ -69,6 +69,7 @@ impl SightPicture<'_> {
                     0.0,
                     FIELD,
                 );
+                self.draw_ground_grid(&eyepiece, figure.aim_height);
             }
             for part in &figure.parts {
                 let points = part.points.iter().map(|&point| at(point)).collect();
@@ -123,6 +124,118 @@ impl SightPicture<'_> {
             impact_in_view,
         }
     }
+}
+
+impl SightPicture<'_> {
+    /// Faint lines on the ground up to the target, so the field reads as a
+    /// plane running away from the eye: lines across at round distances,
+    /// and lines along it heading for the horizon. The eye is as high above
+    /// the ground as the aim point, so the horizon runs through it.
+    fn draw_ground_grid(&self, eyepiece: &Eyepiece, eye_height: f64) {
+        if eye_height <= 0.0 {
+            return;
+        }
+        let pixels = eyepiece.pixels_per_mrad as f64;
+        let [horizon_x, horizon_y] = self.impact_mrad;
+        // The nearest ground in view, at the bottom of the eyepiece.
+        let below = horizon_y + eyepiece.radius as f64 / pixels;
+        if below <= 0.0 {
+            return;
+        }
+        let near = eye_height * 1000.0 / below;
+        let range = self.range_m.max(1.0);
+        // Where the ground at `distance` and `across` metres to the right
+        // of the line to the target shows.
+        let ground = |distance: f64, across: f64| {
+            eyepiece.to_screen([
+                horizon_x + across * 1000.0 / distance,
+                horizon_y - eye_height * 1000.0 / distance,
+            ])
+        };
+        let line =
+            |alpha: f64| Stroke::new(1.0_f32, Color32::from_black_alpha((alpha * 40.0) as u8));
+        let (left, right) = (eyepiece.rect.left(), eyepiece.rect.right());
+
+        // Across: lines at fixed round distances, so zooming moves them
+        // smoothly. Each finer set fades in as its lines spread apart.
+        let gap = |a: f64, b: f64| eye_height * 1000.0 * (1.0 / a - 1.0 / b) * pixels;
+        for (step, coarser) in grid_levels() {
+            if gap(near, near + step) < 4.0 || (range - near) / step > 400.0 {
+                // Too crowded to show even at the bottom.
+                continue;
+            }
+            let mut distance = (near / step).floor() * step + step;
+            while distance < range {
+                let shown = spread_out(gap(distance, distance + step), 4.0, 12.0);
+                if shown > 0.0 && !on_coarser(distance, coarser) {
+                    let y = ground(distance, 0.0).y;
+                    // Fainter towards the target.
+                    let fade = 1.0 - 0.6 * (distance - near) / (range - near);
+                    eyepiece
+                        .painter
+                        .line_segment([pos2(left, y), pos2(right, y)], line(shown * fade));
+                }
+                distance += step;
+            }
+        }
+
+        // Along: the same, by how far apart they are at the bottom, each
+        // fading out towards the target.
+        const PIECES: usize = 8;
+        let half_width = eyepiece.radius as f64 / pixels * near / 1000.0;
+        for (step, coarser) in grid_levels() {
+            let shown = spread_out(step * 1000.0 / near * pixels, 12.0, 36.0);
+            if shown <= 0.0 {
+                continue;
+            }
+            let count = (half_width / step).ceil() as i32 + 1;
+            for index in -count..=count {
+                let across = index as f64 * step;
+                if on_coarser(across, coarser) {
+                    continue;
+                }
+                for piece in 0..PIECES {
+                    // Even steps in 1/distance: even steps on the screen.
+                    let t = |i: usize| i as f64 / PIECES as f64;
+                    let at = |t: f64| 1.0 / (1.0 / near + (1.0 / range - 1.0 / near) * t);
+                    let (from, to) = (at(t(piece)), at(t(piece + 1)));
+                    if from >= to {
+                        break;
+                    }
+                    eyepiece.painter.line_segment(
+                        [ground(from, across), ground(to, across)],
+                        line(shown * (1.0 - t(piece))),
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// The ground grid's spacings, metres, each with the next coarser one;
+/// each divides the next, so every coarser line is also a finer one.
+fn grid_levels() -> impl Iterator<Item = (f64, Option<f64>)> {
+    const STEPS: [f64; 9] = [0.1, 0.2, 1.0, 2.0, 10.0, 20.0, 100.0, 200.0, 1000.0];
+    STEPS
+        .into_iter()
+        .enumerate()
+        .map(|(index, step)| (step, STEPS.get(index + 1).copied()))
+}
+
+/// Whether a grid line at `at` metres belongs to the coarser set, which
+/// draws it.
+fn on_coarser(at: f64, coarser: Option<f64>) -> bool {
+    coarser.is_some_and(|coarser| {
+        let ratio = at / coarser;
+        (ratio - ratio.round()).abs() < 1e-6
+    })
+}
+
+/// How much of a grid line shows when its neighbours are `pixels` away:
+/// none at `crowded` or closer, all of it from `apart`.
+fn spread_out(pixels: f64, crowded: f64, apart: f64) -> f64 {
+    let t = ((pixels - crowded) / (apart - crowded)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
 }
 
 /// A typical scope's field of view at this magnification: the view still

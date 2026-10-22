@@ -214,6 +214,7 @@ Which range table columns to show besides the range. Elevation and wind are corr
 | `velocity` | boolean | The bullet's speed. |
 | `energy` | boolean | The bullet's energy. |
 | `time` | boolean | Time of flight. |
+| `hit_chance` | boolean | The chance of hitting the target's vital zone or hit area at each range, from the shooter's precision. Shown only for a target that has one. |
 
 ### ClickUnit
 

@@ -86,7 +86,32 @@ pub fn chance_at(
     range: f64,
 ) -> Option<(f64, Spread)> {
     let spread = sensitivities.spread_at(range, uncertainty)?;
-    Some((dispersion::hit_chance(spread, [0.0, 0.0], |p| zone.contains(p)), spread))
+    Some((
+        dispersion::hit_chance(spread, [0.0, 0.0], |p| zone.contains(p)),
+        spread,
+    ))
+}
+
+/// The chance at each of `ranges` (none where the solution doesn't reach),
+/// on a coarser grid: for the range table.
+pub fn chances_at(
+    sensitivities: &Sensitivities,
+    uncertainty: &Uncertainty,
+    zone: &Zone,
+    ranges: &[f64],
+) -> Vec<Option<f64>> {
+    ranges
+        .iter()
+        .map(|&range| {
+            let spread = sensitivities.spread_at(range, uncertainty)?;
+            Some(dispersion::hit_chance_on(
+                spread,
+                [0.0, 0.0],
+                |p| zone.contains(p),
+                60,
+            ))
+        })
+        .collect()
 }
 
 /// The hit chance at `range`, the furthest range with at least `needed`,
@@ -103,7 +128,8 @@ pub fn compute(
     wind_error: f64,
 ) -> Option<Hits> {
     let (chance, spread) = chance_at(sensitivities, uncertainty, zone, range)?;
-    let ok = |r: f64| chance_at(sensitivities, uncertainty, zone, r).is_some_and(|(p, _)| p >= needed);
+    let ok =
+        |r: f64| chance_at(sensitivities, uncertainty, zone, r).is_some_and(|(p, _)| p >= needed);
     // Out in 25 m steps to the first range that falls short, then halve
     // the gap.
     let mut limit = None;

@@ -172,17 +172,18 @@
             "end_m": 400.0,
             "step_m": 50.0,
             "columns": {
-              "drop_length": false,
+              "drop_length": true,
               "drop_mil": true,
               "drop_moa": false,
               "drop_clicks": true,
-              "wind_length": false,
+              "wind_length": true,
               "wind_mil": true,
               "wind_moa": false,
               "wind_clicks": false,
               "velocity": false,
               "energy": true,
-              "time": false
+              "time": false,
+              "hit_chance": true
             }
           }
         },
@@ -270,17 +271,18 @@
           "description": "Which columns to show.",
           "$ref": "#/$defs/TableColumns",
           "default": {
-            "drop_length": false,
+            "drop_length": true,
             "drop_mil": true,
             "drop_moa": false,
             "drop_clicks": true,
-            "wind_length": false,
+            "wind_length": true,
             "wind_mil": true,
             "wind_moa": false,
             "wind_clicks": false,
             "velocity": false,
             "energy": true,
-            "time": false
+            "time": false,
+            "hit_chance": true
           }
         }
       },
@@ -298,7 +300,7 @@
         "drop_length": {
           "description": "Where a dead-on hold hits, above (+) or below the aim, as a length.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "drop_mil": {
           "description": "Elevation in mil.",
@@ -318,7 +320,7 @@
         "wind_length": {
           "description": "Wind drift as a length.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "wind_mil": {
           "description": "Wind correction in mil.",
@@ -349,6 +351,11 @@
           "description": "Time of flight.",
           "type": "boolean",
           "default": false
+        },
+        "hit_chance": {
+          "description": "The chance of hitting the target's vital zone or hit area at each\nrange, from the shooter's precision. Shown only for a target that\nhas one.",
+          "type": "boolean",
+          "default": true
         }
       },
       "required": [
@@ -362,7 +369,8 @@
         "wind_clicks",
         "velocity",
         "energy",
-        "time"
+        "time",
+        "hit_chance"
       ]
     },
     "ClickUnit": {

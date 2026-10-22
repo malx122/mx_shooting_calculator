@@ -422,6 +422,8 @@ fn parse(xml: &str) -> Result<Backup, StoreError> {
                 velocity: flag(rifle, "m_show_speed"),
                 energy: flag(rifle, "m_show_energy"),
                 time: flag(rifle, "m_show_time"),
+                // Strelok has no hit chance: shown as for a new rifle.
+                hit_chance: true,
             },
             cartridges: rifle
                 .children()

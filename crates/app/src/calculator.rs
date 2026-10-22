@@ -45,6 +45,17 @@ pub enum PressureSource {
     SeaLevelAndAltitude,
 }
 
+/// What the desktop shows under the results: the range table, or the
+/// trajectory as a graph or in 3D.
+#[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LowerView {
+    #[default]
+    Table,
+    Graph,
+    Scene,
+}
+
 /// Everything entered on this page. Saved on the device between sessions.
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -111,6 +122,8 @@ pub struct Inputs {
     pub illumination: bool,
     /// Show the trajectory in 3D instead of as a graph.
     pub trajectory_3d: bool,
+    /// The desktop's view under the results.
+    pub lower_view: LowerView,
 }
 
 impl Default for Inputs {
@@ -155,6 +168,7 @@ impl Default for Inputs {
             dial_elevation: false,
             illumination: false,
             trajectory_3d: false,
+            lower_view: LowerView::Table,
         }
     }
 }
@@ -299,6 +313,15 @@ fn measured_velocity_sd(load: Option<&RifleLoad>) -> (f64, bool) {
     }
 }
 
+/// What the range table's hit chances were worked out for.
+#[derive(Clone, PartialEq)]
+struct RowChancesKey {
+    generation: u64,
+    uncertainty: Uncertainty,
+    zone: Option<hits::Zone>,
+    ranges: Vec<f64>,
+}
+
 /// What the hit chance was worked out for.
 #[derive(Clone, PartialEq)]
 struct HitsKey {
@@ -344,6 +367,8 @@ pub struct CalculatorPage {
     /// Counts the solves, so the hit chance knows when to work again.
     generation: u64,
     hits: Option<(HitsKey, Option<Hits>)>,
+    /// The hit chance at each of the range table's ranges.
+    row_chances: Option<(RowChancesKey, Vec<Option<f64>>)>,
 }
 
 impl CalculatorPage {
@@ -359,6 +384,7 @@ impl CalculatorPage {
             limits: (None, None),
             generation: 0,
             hits: None,
+            row_chances: None,
         }
     }
 
@@ -472,6 +498,12 @@ impl CalculatorPage {
         if let Some(three_d) = requested.trajectory_3d {
             self.inputs.trajectory_3d = three_d;
         }
+        if let Some(view) = requested.lower_view {
+            self.inputs.lower_view = view;
+        }
+        if let Some(range) = requested.range {
+            self.inputs.target_range_m = range;
+        }
         if let Some(dial) = requested.dial_elevation {
             self.inputs.dial_elevation = dial;
         }
@@ -561,11 +593,13 @@ impl CalculatorPage {
                         load.as_ref(),
                         &mut actions,
                     );
-                    if rifle.is_some() && bullet.is_some() {
+                    if rifle.is_some()
+                        && let Some(bullet) = &bullet
+                    {
                         ui.add_space(6.0);
                         self.tiles(ui, &aim);
                         ui.add_space(4.0);
-                        self.conditions(ui, data, &aim, bullet.as_ref(), &mut actions);
+                        self.conditions(ui, data, &aim, Some(bullet), &mut actions);
                     }
                 });
             });
@@ -604,47 +638,24 @@ impl CalculatorPage {
                 }
             }
             (Some(rifle), Some(bullet)) => {
-                let table = self.table_for(rifle);
-                let scenario = self.scenario(rifle, bullet, load.as_ref());
-                self.refresh(
-                    context,
-                    scenario,
-                    aim.vital_diameter_cm,
-                    table
-                        .end_m
-                        .max(SOLVE_RANGE_M)
-                        .max(self.inputs.target_range_m + 10.0),
-                );
-                let hits = self.hits_for(&aim, load.as_ref());
-                let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
-                match &computed.solution {
-                    Ok(solution) => {
-                        let view = ResultsView {
-                            hits,
-                            inputs: &self.inputs,
-                            rifle,
-                            table,
-                            optics: optics.as_ref(),
-                            aim: &aim,
-                            min_velocity: aim.min_velocity_mps.unwrap_or_else(|| {
-                                ballistics_shot::min_velocity(bullet, self.inputs.min_velocity)
-                            }),
-                            assessment: data
-                                .country
-                                .map(|country| ballistics_shot::assess(bullet, solution, country)),
-                            zeros: computed.zeros,
-                        };
-                        let (ethical, point_blank) = view.limits_of(solution);
-                        let limits = (ethical, point_blank.map(|blank| blank.far_limit));
-                        let requested = egui::ScrollArea::vertical()
-                            .show(ui, |ui| view.show(ui, solution, computed.optimal.as_ref()))
-                            .inner;
-                        self.limits = limits;
-                        self.apply_requests(requested, rifle, context, &mut actions);
-                    }
+                let shot = Shot {
+                    rifle,
+                    bullet,
+                    load: load.as_ref(),
+                    optics: optics.as_ref(),
+                    aim: &aim,
+                    country: data.country,
+                };
+                let results = self.with_results(context, &shot, |view, solution, optimal| {
+                    egui::ScrollArea::vertical()
+                        .show(ui, |ui| view.show(ui, solution, optimal))
+                        .inner
+                });
+                match results {
+                    Ok(requested) => self.apply_requests(requested, rifle, context, &mut actions),
                     Err(error) => {
                         ui.heading(tr("No solution"));
-                        ui.colored_label(ui.visuals().error_fg_color, error.to_string());
+                        ui.colored_label(ui.visuals().error_fg_color, error);
                     }
                 }
             }
@@ -769,6 +780,98 @@ impl CalculatorPage {
             self.hits = Some((hits_key, result));
         }
         self.hits.as_ref().and_then(|(_, hits)| *hits)
+    }
+
+    /// The hit chance at each of `ranges`, worked out again only when
+    /// something it depends on changes; empty without a zone.
+    fn row_chances_for(
+        &mut self,
+        aim: &Aim,
+        load: Option<&RifleLoad>,
+        ranges: Vec<f64>,
+    ) -> Vec<Option<f64>> {
+        let Some((_, computed)) = self.cache.as_ref() else {
+            return Vec::new();
+        };
+        let Some(sensitivities) = computed.sensitivities.as_ref() else {
+            return Vec::new();
+        };
+        let inputs = &self.inputs;
+        let key = RowChancesKey {
+            generation: self.generation,
+            uncertainty: hits::uncertainty(
+                inputs.group_cm,
+                self.velocity_sd(load).0,
+                inputs.range_error_m,
+                inputs.wind_error_mps,
+                inputs.wind_direction_error_hours,
+            ),
+            zone: hits::Zone::of(aim),
+            ranges,
+        };
+        if self
+            .row_chances
+            .as_ref()
+            .is_none_or(|(cached, _)| *cached != key)
+        {
+            let chances = match &key.zone {
+                Some(zone) => hits::chances_at(sensitivities, &key.uncertainty, zone, &key.ranges),
+                None => Vec::new(),
+            };
+            self.row_chances = Some((key, chances));
+        }
+        self.row_chances
+            .as_ref()
+            .map_or(Vec::new(), |(_, chances)| chances.clone())
+    }
+
+    /// Works the shot out, cached, and hands the results to `show`; the
+    /// error if the bullet can't be solved.
+    fn with_results<R>(
+        &mut self,
+        context: &egui::Context,
+        shot: &Shot,
+        show: impl FnOnce(&ResultsView, &Solution, Option<&OptimalZero>) -> R,
+    ) -> Result<R, String> {
+        let table = self.table_for(shot.rifle);
+        let scenario = self.scenario(shot.rifle, shot.bullet, shot.load);
+        self.refresh(
+            context,
+            scenario,
+            shot.aim.vital_diameter_cm,
+            table
+                .end_m
+                .max(SOLVE_RANGE_M)
+                .max(self.inputs.target_range_m + 10.0),
+        );
+        let hits = self.hits_for(shot.aim, shot.load);
+        let row_chances = if table.columns.hit_chance {
+            self.row_chances_for(shot.aim, shot.load, table.ranges().collect())
+        } else {
+            Vec::new()
+        };
+        let computed = &self.cache.as_ref().expect("refresh fills the cache").1;
+        let solution = computed.solution.as_ref().map_err(ToString::to_string)?;
+        let view = ResultsView {
+            hits,
+            row_chances,
+            inputs: &self.inputs,
+            rifle: shot.rifle,
+            table,
+            optics: shot.optics,
+            aim: shot.aim,
+            min_velocity: shot.aim.min_velocity_mps.unwrap_or_else(|| {
+                ballistics_shot::min_velocity(shot.bullet, self.inputs.min_velocity)
+            }),
+            assessment: shot
+                .country
+                .map(|country| ballistics_shot::assess(shot.bullet, solution, country)),
+            zeros: computed.zeros,
+        };
+        let (ethical, point_blank) = view.limits_of(solution);
+        let shown = show(&view, solution, computed.optimal.as_ref());
+        self.limits = (ethical, point_blank.map(|blank| blank.far_limit));
+        Ok(shown)
     }
 
     fn scenario(&self, rifle: &Rifle, bullet: &Bullet, load: Option<&RifleLoad>) -> Scenario {
@@ -1258,7 +1361,9 @@ impl CalculatorPage {
             });
         }
 
-        let Some(target) = &aim.target else {
+        // Only game has limits to change here; any target is picked and
+        // edited from its tile and the Targets page.
+        let Some(target) = aim.target.as_ref().filter(|_| aim.is_game()) else {
             return;
         };
         let mut summary = aim
@@ -1282,61 +1387,52 @@ impl CalculatorPage {
         if changed {
             summary.push_str(tr(" · changed"));
         }
-        let title = if aim.is_game() {
-            tr("Target limits")
-        } else {
-            tr("Target")
-        };
-        fold(ui, "fold-target", title, &summary, |ui| {
+        fold(ui, "fold-target", tr("Target limits"), &summary, |ui| {
             grid(ui, "ethics", |ui| {
-                if aim.is_game() {
-                    overridable(
+                overridable(
+                    ui,
+                    tr("Minimum energy"),
+                    &mut inputs.min_energy_override_j,
+                    target.min_energy_j.unwrap_or(0.0),
+                    Quantity::Energy,
+                    0.0..=8000.0,
+                    10.0,
+                );
+                match (
+                    target.min_velocity_mps,
+                    bullet.and_then(|bullet| bullet.min_expansion_mps),
+                ) {
+                    (Some(velocity), _) => overridable(
                         ui,
-                        tr("Minimum energy"),
-                        &mut inputs.min_energy_override_j,
-                        target.min_energy_j.unwrap_or(0.0),
-                        Quantity::Energy,
-                        0.0..=8000.0,
-                        10.0,
-                    );
-                    match (
-                        target.min_velocity_mps,
-                        bullet.and_then(|bullet| bullet.min_expansion_mps),
-                    ) {
-                        (Some(velocity), _) => overridable(
-                            ui,
-                            tr("Minimum velocity"),
-                            &mut inputs.min_velocity_override_mps,
-                            velocity,
-                            Quantity::Speed,
-                            0.0..=900.0,
-                            5.0,
-                        ),
-                        (None, Some(expansion)) => {
-                            ui.label(tr("Minimum velocity"));
-                            ui.label(trf!(
-                                "{} (bullet data)",
-                                u.format(Quantity::Speed, expansion)
-                            ));
-                            ui.end_row();
-                        }
-                        (None, None) => quantity(
-                            ui,
-                            tr("Minimum velocity"),
-                            &mut inputs.min_velocity,
-                            Quantity::Speed,
-                            0.0..=900.0,
-                            5.0,
-                        ),
+                        tr("Minimum velocity"),
+                        &mut inputs.min_velocity_override_mps,
+                        velocity,
+                        Quantity::Speed,
+                        0.0..=900.0,
+                        5.0,
+                    ),
+                    (None, Some(expansion)) => {
+                        ui.label(tr("Minimum velocity"));
+                        ui.label(trf!(
+                            "{} (bullet data)",
+                            u.format(Quantity::Speed, expansion)
+                        ));
+                        ui.end_row();
                     }
+                    (None, None) => quantity(
+                        ui,
+                        tr("Minimum velocity"),
+                        &mut inputs.min_velocity,
+                        Quantity::Speed,
+                        0.0..=900.0,
+                        5.0,
+                    ),
                 }
             });
-            if aim.is_game() {
-                ui.weak(tr(
-                    "Check your bullet maker's expansion data and your country's legal energy \
-                     rules.",
-                ));
-            }
+            ui.weak(tr(
+                "Check your bullet maker's expansion data and your country's legal energy \
+                 rules.",
+            ));
             if ui
                 .button(tr("Targets…"))
                 .on_hover_text(tr("See the targets or make your own"))
@@ -1467,6 +1563,9 @@ struct ViewRequests {
     locate: bool,
     /// Save this shot in the shot log.
     log_shot: Option<Box<ballistics_store::Shot>>,
+    lower_view: Option<LowerView>,
+    /// Shoot at this range: a row of the range table was clicked.
+    range: Option<f64>,
 }
 
 impl ViewRequests {
@@ -1491,6 +1590,16 @@ struct Statuses {
     region: Option<String>,
 }
 
+/// What a shot is worked out from.
+struct Shot<'a> {
+    rifle: &'a Rifle,
+    bullet: &'a Bullet,
+    load: Option<&'a RifleLoad>,
+    optics: Option<&'a (Scope, Reticle)>,
+    aim: &'a Aim,
+    country: Option<ballistics_store::Country>,
+}
+
 struct ResultsView<'a> {
     inputs: &'a Inputs,
     rifle: &'a Rifle,
@@ -1504,6 +1613,8 @@ struct ResultsView<'a> {
     zeros: Zeros,
     /// The hit chance, its range and the wind bracket; none without a zone.
     hits: Option<Hits>,
+    /// The hit chance at each of the range table's ranges, in order.
+    row_chances: Vec<Option<f64>>,
 }
 
 impl ResultsView<'_> {
@@ -1670,18 +1781,23 @@ impl ResultsView<'_> {
         optimal: Option<&OptimalZero>,
     ) -> ViewRequests {
         let inputs = self.inputs;
-        let aim = self.aim;
-        let vital_radius = aim.vital_diameter_cm.map(|cm| cm / 200.0);
         let (ethical, point_blank) = self.limits_of(solution);
 
-        const PICTURE: f32 = 300.0;
+        const RAIL: f32 = 330.0;
         let mut requested = ViewRequests::default();
+        // The hold and the range table on the left; the limits and the view
+        // through the scope in a rail on the right.
         ui.horizontal_top(|ui| {
             ui.vertical(|ui| {
-                ui.set_max_width((ui.available_width() - PICTURE - 64.0).max(420.0));
+                // Less the gap and the spacing either side of it.
+                let gap = 20.0 + 2.0 * ui.spacing().item_spacing.x;
+                ui.set_width((ui.available_width() - RAIL - gap).max(420.0));
                 ui.heading(self.title(ui));
                 match solution.at(inputs.target_range_m) {
-                    Some(row) => self.shot_card(ui, &row, ethical),
+                    Some(row) => {
+                        self.shot_card(ui, &row, ethical);
+                        self.log_button(ui, &row, &mut requested);
+                    }
                     None => {
                         ui.colored_label(
                             ui.visuals().error_fg_color,
@@ -1689,55 +1805,82 @@ impl ResultsView<'_> {
                         );
                     }
                 }
-                if let Some(row) = solution.at(inputs.target_range_m) {
-                    self.log_button(ui, &row, &mut requested);
-                }
                 ui.add_space(4.0);
                 if let Some(statuses) = self.statuses() {
                     self.go_no_go(ui, &statuses, &mut requested);
                     ui.add_space(4.0);
                 }
                 self.warnings(ui, solution);
-                ui.add_space(6.0);
-                requested.zero_height = self.limits(ui, solution, optimal, ethical, point_blank);
+                ui.add_space(8.0);
+                self.lower_view(ui, solution, ethical, point_blank, &mut requested);
             });
-            ui.add_space(24.0);
+            ui.add_space(20.0);
             ui.vertical(|ui| {
-                ui.set_width(PICTURE);
-                self.sight_picture(ui, solution, PICTURE, &mut requested);
+                ui.set_width(RAIL);
+                rail_panel(ui, |ui| {
+                    requested.zero_height =
+                        self.limits(ui, solution, optimal, ethical, point_blank);
+                });
+                ui.add_space(12.0);
+                rail_panel(ui, |ui| {
+                    let size = ui.available_width();
+                    self.sight_picture(ui, solution, size, &mut requested);
+                });
             });
         });
+        requested
+    }
 
-        ui.separator();
+    /// The range table, or the trajectory as a graph or in 3D, under tabs.
+    fn lower_view(
+        &self,
+        ui: &mut egui::Ui,
+        solution: &Solution,
+        ethical: Option<f64>,
+        point_blank: Option<PointBlank>,
+        requested: &mut ViewRequests,
+    ) {
+        let inputs = self.inputs;
+        let view = inputs.lower_view;
         ui.horizontal(|ui| {
-            ui.heading(tr("Trajectory"));
-            ui.add_space(12.0);
-            let three_d = self.inputs.trajectory_3d;
-            if ui.selectable_label(!three_d, "2D").clicked() {
-                requested.trajectory_3d = Some(false);
+            for (choice, label) in [
+                (LowerView::Table, tr("Range table")),
+                (LowerView::Graph, tr("Trajectory 2D")),
+                (LowerView::Scene, tr("3D")),
+            ] {
+                let text = RichText::new(label).size(16.0);
+                if ui.selectable_label(view == choice, text).clicked() && view != choice {
+                    requested.lower_view = Some(choice);
+                }
             }
-            if ui.selectable_label(three_d, "3D").clicked() {
-                requested.trajectory_3d = Some(true);
+            if view == LowerView::Table {
+                ui.add_space(12.0);
+                self.table_heading(ui, requested);
             }
         });
-        if self.inputs.trajectory_3d {
+        ui.separator();
+        if view == LowerView::Table {
+            egui::ScrollArea::horizontal()
+                .id_salt("range-table")
+                .show(ui, |ui| {
+                    self.rich_table(ui, solution, ethical, point_blank, requested);
+                });
+            ui.add_space(6.0);
+            ui.small(Self::table_notes(ethical, point_blank));
+        } else if view == LowerView::Scene {
             let scene = trajectory3d::Scene {
                 samples: &solution.samples,
                 target_range: inputs.target_range_m,
                 inclination_degrees: inputs.inclination_degrees,
-                figure: aim.figure.as_ref(),
+                figure: self.aim.figure.as_ref(),
                 wind_speed: inputs.wind_speed,
                 wind_from_degrees: inputs.wind_clock * 30.0,
             };
             trajectory3d::show(ui, &scene, 420.0);
         } else {
+            let vital_radius = self.aim.vital_diameter_cm.map(|cm| cm / 200.0);
             self.plot(ui, solution, vital_radius, ethical);
         }
-
-        ui.separator();
-        self.table_heading(ui, &mut requested);
-        self.table(ui, solution, ethical, None);
-        requested
     }
 
     /// "Range table  100–400 m every 25 m  [Columns…]", the button opening
@@ -1746,7 +1889,6 @@ impl ResultsView<'_> {
         let u = units::prefs(ui.ctx());
         let table = self.table;
         ui.horizontal(|ui| {
-            ui.heading(tr("Range table"));
             ui.weak(trf!(
                 "{}–{} every {}",
                 u.format(Quantity::Distance, table.start_m),
@@ -1790,8 +1932,39 @@ impl ResultsView<'_> {
         let zeros = self.zeros;
         let reference = zeros.reference;
         let mut use_zero = None;
-        let narrow = mobile::is_narrow(ui.ctx());
+        // On a computer, a row each: what it is on the left, the value on
+        // the right.
+        let rows = !mobile::is_narrow(ui.ctx());
         let fact = |ui: &mut egui::Ui, label: &str, value: String, note: String| {
+            if rows {
+                let value = RichText::new(value).size(19.0);
+                let galley = egui::WidgetText::from(value.clone()).into_galley(
+                    ui,
+                    Some(egui::TextWrapMode::Extend),
+                    f32::INFINITY,
+                    egui::TextStyle::Body,
+                );
+                ui.horizontal(|ui| {
+                    let text_width = ui.available_width() - galley.size().x - 12.0;
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(text_width, 0.0),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            ui.set_width(text_width);
+                            ui.spacing_mut().item_spacing.y = 1.0;
+                            ui.weak(label);
+                            if !note.is_empty() {
+                                ui.weak(RichText::new(note).small());
+                            }
+                        },
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(galley);
+                    });
+                });
+                ui.separator();
+                return;
+            }
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 1.0;
                 ui.weak(label);
@@ -1844,26 +2017,13 @@ impl ResultsView<'_> {
                 );
             }
         };
-        if narrow {
-            facts(ui);
-        } else {
-            ui.horizontal_top(|ui| {
-                ui.spacing_mut().item_spacing.x = 28.0;
-                facts(ui);
-            });
-        }
+        facts(ui);
         let row = |ui: &mut egui::Ui, label: &str, add: &mut dyn FnMut(&mut egui::Ui)| {
-            if narrow {
-                ui.weak(label);
-                add(ui);
-                ui.add_space(2.0);
-            } else {
-                ui.label(label);
-                add(ui);
-                ui.end_row();
-            }
+            ui.weak(label);
+            add(ui);
+            ui.add_space(2.0);
         };
-        let mut details = |ui: &mut egui::Ui| {
+        let details = |ui: &mut egui::Ui| {
             if let Some(figure) = zeros.figure {
                 row(ui, tr("Your zero"), &mut |ui| {
                     ui.label(zero_figure_text(&u, &figure));
@@ -1921,18 +2081,7 @@ impl ResultsView<'_> {
         };
         egui::CollapsingHeader::new(tr("Details"))
             .id_salt("limit-details")
-            .show(ui, |ui| {
-                if narrow {
-                    details(ui);
-                } else {
-                    let width = ui.available_width();
-                    egui::Grid::new("limits")
-                        .num_columns(2)
-                        .spacing([16.0, 4.0])
-                        .max_col_width(width * 0.7)
-                        .show(ui, details);
-                }
-            });
+            .show(ui, details);
         use_zero
     }
 
@@ -2267,7 +2416,7 @@ impl ResultsView<'_> {
             .map(|row| y(row.drop));
 
         let mut command = None;
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             if ui
                 .button(tr("Fit"))
                 .on_hover_text(tr("Show the whole trajectory (or double-click the graph)"))
@@ -2566,6 +2715,383 @@ impl ResultsView<'_> {
     }
 }
 
+/// How much a range table column stands out.
+#[derive(Clone, Copy, PartialEq)]
+enum Weight {
+    /// The range.
+    Range,
+    /// What to dial or hold: large.
+    Key,
+    /// The rest: small and muted.
+    Other,
+}
+
+impl ResultsView<'_> {
+    /// The desktop's range table: what to dial or hold stands out, the row
+    /// for this shot is outlined, the dead-on ranges have a green bar, rows
+    /// past the ethical limit are red, and clicking a row shoots at it.
+    fn rich_table(
+        &self,
+        ui: &mut egui::Ui,
+        solution: &Solution,
+        ethical: Option<f64>,
+        point_blank: Option<PointBlank>,
+        requested: &mut ViewRequests,
+    ) {
+        let prefs = units::prefs(ui.ctx());
+        let u = &prefs;
+        let show = self.table.columns;
+        let unit = self.unit();
+        let (other_unit, unit_name, other_name) = match unit {
+            ClickUnit::Mil => (ClickUnit::Moa, "mil", "MOA"),
+            ClickUnit::Moa => (ClickUnit::Mil, "MOA", "mil"),
+        };
+        let shows = |unit: ClickUnit, mil: bool, moa: bool| match unit {
+            ClickUnit::Mil => mil,
+            ClickUnit::Moa => moa,
+        };
+        type Cell<'a> = Box<dyn Fn(&RangeRow, usize) -> String + 'a>;
+        // (group, header, weight, cell)
+        let mut columns: Vec<(u8, String, Weight, Cell<'_>)> = vec![(
+            0,
+            u.label(Quantity::Distance).to_owned(),
+            Weight::Range,
+            Box::new(|row, _| format!("{:.0}", u.show(Quantity::Distance, row.range))),
+        )];
+        let angle = |unit: ClickUnit, radians: f64| format!("{:+.2}", from_radians(unit, radians));
+        for (group, clicks, mil, moa, length, correction, length_of) in [
+            (
+                1,
+                show.drop_clicks,
+                show.drop_mil,
+                show.drop_moa,
+                show.drop_length,
+                (|row: &RangeRow| row.elevation_correction) as fn(&RangeRow) -> f64,
+                (|row: &RangeRow| row.drop) as fn(&RangeRow) -> f64,
+            ),
+            (
+                2,
+                show.wind_clicks,
+                show.wind_mil,
+                show.wind_moa,
+                show.wind_length,
+                |row: &RangeRow| row.windage_correction,
+                |row: &RangeRow| row.windage,
+            ),
+        ] {
+            if clicks {
+                columns.push((
+                    group,
+                    tr("clicks").to_owned(),
+                    Weight::Key,
+                    Box::new(move |row, _| {
+                        format!("{:+}", self.clicks(from_radians(unit, correction(row))))
+                    }),
+                ));
+            }
+            if shows(unit, mil, moa) {
+                columns.push((
+                    group,
+                    unit_name.to_owned(),
+                    if clicks { Weight::Other } else { Weight::Key },
+                    Box::new(move |row, _| angle(unit, correction(row))),
+                ));
+            }
+            if shows(other_unit, mil, moa) {
+                columns.push((
+                    group,
+                    other_name.to_owned(),
+                    Weight::Other,
+                    Box::new(move |row, _| angle(other_unit, correction(row))),
+                ));
+            }
+            if length {
+                columns.push((
+                    group,
+                    u.label(Quantity::ShortLength).to_owned(),
+                    Weight::Other,
+                    Box::new(move |row, _| {
+                        u.number(Quantity::ShortLength, length_of(row) * 100.0, true)
+                    }),
+                ));
+            }
+        }
+        if show.hit_chance && !self.row_chances.is_empty() {
+            columns.push((
+                3,
+                tr("hit chance").to_owned(),
+                Weight::Other,
+                Box::new(|_, index| {
+                    self.row_chances
+                        .get(index)
+                        .copied()
+                        .flatten()
+                        .map_or(String::new(), percent)
+                }),
+            ));
+        }
+        let target_speed = self.inputs.target_speed;
+        for (wanted, header, cell) in [
+            (
+                show.velocity,
+                u.label(Quantity::Speed).to_owned(),
+                Box::new(|row: &RangeRow, _: usize| u.number(Quantity::Speed, row.velocity, false))
+                    as Cell<'_>,
+            ),
+            (
+                show.energy,
+                u.label(Quantity::Energy).to_owned(),
+                Box::new(|row: &RangeRow, _: usize| {
+                    u.number(Quantity::Energy, row.energy_j, false)
+                }),
+            ),
+            (
+                show.time,
+                "s".to_owned(),
+                Box::new(|row: &RangeRow, _: usize| format!("{:.3}", row.time)),
+            ),
+            (
+                target_speed > 0.0,
+                trf!("lead {}", u.label(Quantity::ShortLength)),
+                Box::new(move |row: &RangeRow, _: usize| {
+                    u.number(
+                        Quantity::ShortLength,
+                        analysis::moving_target_lead(row, target_speed).distance * 100.0,
+                        false,
+                    )
+                }),
+            ),
+        ] {
+            if wanted {
+                columns.push((3, header, Weight::Other, cell));
+            }
+        }
+
+        let rows: Vec<(f64, RangeRow)> = self
+            .table
+            .ranges()
+            .map_while(|range| solution.at(range).map(|row| (range, row)))
+            .collect();
+        // The row for this shot, if the range is one of the table's; else
+        // the row it comes after, marked by a line under it.
+        let target = self.inputs.target_range_m;
+        let current = rows
+            .iter()
+            .position(|(range, _)| (range - target).abs() <= self.table.step_m * 0.01);
+        let before = rows
+            .windows(2)
+            .position(|pair| pair[0].0 < target && target < pair[1].0)
+            .filter(|_| current.is_none());
+        // The bottom of the row before and the top of the row after.
+        let mut gap = (None, None);
+
+        let font = |weight: Weight| match weight {
+            Weight::Range => egui::FontId::proportional(16.0),
+            Weight::Key => egui::FontId::proportional(18.0),
+            Weight::Other => egui::FontId::proportional(12.5),
+        };
+        let header_font = egui::FontId::proportional(12.0);
+        let painter = ui.painter().clone();
+        let measure = |text: &str, font: egui::FontId| {
+            painter
+                .layout_no_wrap(text.to_owned(), font, theme::BONE)
+                .size()
+                .x
+        };
+        let widths: Vec<f32> = columns
+            .iter()
+            .map(|(_, header, weight, cell)| {
+                rows.iter()
+                    .enumerate()
+                    .map(|(index, (_, row))| measure(&cell(row, index), font(*weight)))
+                    .fold(measure(header, header_font.clone()), f32::max)
+                    + 18.0
+            })
+            .collect();
+        let total: f32 = widths.iter().sum::<f32>() + 12.0;
+
+        // The group headings over their columns, then the column headings.
+        let wind = trf!(
+            "Wind {}, {}",
+            u.format(Quantity::WindSpeed, self.inputs.wind_speed),
+            phone::clock_text(self.inputs.wind_clock)
+        );
+        let (rect, _) = ui.allocate_exact_size(egui::vec2(total, 34.0), egui::Sense::hover());
+        let mut x = rect.left() + 12.0;
+        let mut group_start = (0u8, x);
+        let mut groups = Vec::new();
+        for ((group, header, weight, _), width) in columns.iter().zip(&widths) {
+            if *group != group_start.0 {
+                groups.push((group_start.0, group_start.1, x));
+                group_start = (*group, x);
+            }
+            let align = if *weight == Weight::Range {
+                egui::Align2::LEFT_BOTTOM
+            } else {
+                egui::Align2::RIGHT_BOTTOM
+            };
+            let at = if *weight == Weight::Range {
+                x
+            } else {
+                x + width - 18.0
+            };
+            painter.text(
+                egui::pos2(at, rect.bottom() - 2.0),
+                align,
+                header,
+                header_font.clone(),
+                theme::BONE_MUTED,
+            );
+            x += width;
+        }
+        groups.push((group_start.0, group_start.1, x));
+        for (group, from, to) in groups {
+            let title = match group {
+                1 => tr("Elevation, up").to_owned(),
+                2 => trf!("{}, right", wind),
+                _ => continue,
+            };
+            painter.text(
+                egui::pos2(from, rect.top() + 2.0),
+                egui::Align2::LEFT_TOP,
+                title,
+                egui::FontId::proportional(13.0),
+                theme::BONE,
+            );
+            painter.line_segment(
+                [
+                    egui::pos2(from, rect.top() + 18.0),
+                    egui::pos2(to - 18.0, rect.top() + 18.0),
+                ],
+                egui::Stroke::new(1.0_f32, theme::FOREST_600),
+            );
+        }
+
+        let dead_on = |range: f64| {
+            point_blank.is_some_and(|blank| range >= blank.near_limit && range <= blank.far_limit)
+        };
+        for (index, (range, row)) in rows.iter().enumerate() {
+            let (rect, response) =
+                ui.allocate_exact_size(egui::vec2(total, 30.0), egui::Sense::click());
+            if before == Some(index) {
+                gap.0 = Some((rect.left(), rect.bottom()));
+            } else if before.is_some_and(|before| before + 1 == index) {
+                gap.1 = Some(rect.top());
+            }
+            let response = response
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text(trf!("Shoot at {}", u.format(Quantity::Distance, *range)));
+            if response.clicked() {
+                requested.range = Some(*range);
+            }
+            let is_current = current == Some(index);
+            let fill = if is_current {
+                theme::FOREST_700
+            } else if response.hovered() {
+                theme::FOREST_600
+            } else if index % 2 == 1 {
+                theme::FOREST_800
+            } else {
+                egui::Color32::TRANSPARENT
+            };
+            painter.rect_filled(rect, 5.0, fill);
+            if is_current {
+                painter.rect_stroke(
+                    rect.shrink(1.0),
+                    5.0,
+                    egui::Stroke::new(2.0_f32, theme::BLAZE),
+                    egui::StrokeKind::Inside,
+                );
+            }
+            if dead_on(*range) {
+                painter.rect_filled(
+                    egui::Rect::from_min_size(
+                        rect.left_top() + egui::vec2(3.0, 4.0),
+                        egui::vec2(4.0, rect.height() - 8.0),
+                    ),
+                    2.0,
+                    theme::MEADOW,
+                );
+            }
+            let beyond = ethical.is_some_and(|limit| *range > limit);
+            let mut x = rect.left() + 12.0;
+            for ((_, _, weight, cell), width) in columns.iter().zip(&widths) {
+                let text = if *weight != Weight::Range && *range <= 0.0 {
+                    "–".to_owned()
+                } else {
+                    cell(row, index)
+                };
+                let colour = match (beyond, weight) {
+                    (true, Weight::Other) => theme::ALARM.gamma_multiply(0.8),
+                    (true, _) => theme::ALARM,
+                    (false, Weight::Other) => theme::BONE_MUTED,
+                    (false, _) => theme::BONE,
+                };
+                let (align, at) = if *weight == Weight::Range {
+                    (egui::Align2::LEFT_CENTER, x)
+                } else {
+                    (egui::Align2::RIGHT_CENTER, x + width - 18.0)
+                };
+                painter.text(
+                    egui::pos2(at, rect.center().y),
+                    align,
+                    text,
+                    font(*weight),
+                    colour,
+                );
+                x += width;
+            }
+        }
+        // Between two rows: a line where the shot's range falls, over both.
+        if let (Some((left, bottom)), Some(top)) = gap {
+            let y = (bottom + top) / 2.0;
+            painter.line_segment(
+                [egui::pos2(left, y), egui::pos2(left + total, y)],
+                egui::Stroke::new(2.0_f32, theme::BLAZE),
+            );
+            painter.add(egui::Shape::convex_polygon(
+                vec![
+                    egui::pos2(left, y - 5.0),
+                    egui::pos2(left + 7.0, y),
+                    egui::pos2(left, y + 5.0),
+                ],
+                theme::BLAZE,
+                egui::Stroke::NONE,
+            ));
+        }
+    }
+
+    /// What the range table's colours and signs mean.
+    fn table_notes(ethical: Option<f64>, point_blank: Option<PointBlank>) -> String {
+        let mut notes = vec![tr(
+            "Corrections: up and right positive. Click a row to shoot at that range.",
+        )];
+        if point_blank.is_some() {
+            notes.push(tr("Green: hold dead on."));
+        }
+        if ethical.is_some() {
+            notes.push(tr("Red: past your ethical range."));
+        }
+        notes.push(tr("Confirm the table on paper at real distances."));
+        notes.join(" ")
+    }
+}
+
+/// A quiet panel in the results' right rail: darker than the page, unlike
+/// the input tiles, which are buttons.
+fn rail_panel(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::new()
+        .fill(theme::FOREST_900)
+        .corner_radius(6)
+        .inner_margin(12)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            // The scope view masks its corners in the panel's colour.
+            ui.visuals_mut().panel_fill = theme::FOREST_900;
+            add(ui);
+        });
+}
+
 /// Where the bullet lands relative to the crosshair, in mrad (x right, y
 /// up), and the elevation clicks dialled. Windage is always held: hunters
 /// rarely dial wind.
@@ -2827,6 +3353,7 @@ fn table_settings(ui: &mut egui::Ui, table: &mut TableSettings, unit: ClickUnit)
         ui.end_row();
         ui.label(tr("Also"));
         ui.horizontal_wrapped(|ui| {
+            ui.checkbox(&mut columns.hit_chance, tr("hit chance"));
             ui.checkbox(&mut columns.velocity, tr("speed"));
             ui.checkbox(&mut columns.energy, tr("energy"));
             ui.checkbox(&mut columns.time, tr("time of flight"));

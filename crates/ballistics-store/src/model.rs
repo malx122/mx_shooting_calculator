@@ -266,24 +266,30 @@ pub struct TableColumns {
     pub energy: bool,
     /// Time of flight.
     pub time: bool,
+    /// The chance of hitting the target's vital zone or hit area at each
+    /// range, from the shooter's precision. Shown only for a target that
+    /// has one.
+    pub hit_chance: bool,
 }
 
 impl Default for TableColumns {
     fn default() -> Self {
         // What a scope shooter reads: the clicks to dial, the angles to
-        // hold, and the energy. The rest can be switched on.
+        // hold, the drop and drift, and the energy. The rest can be
+        // switched on.
         Self {
-            drop_length: false,
+            drop_length: true,
             drop_mil: true,
             drop_moa: false,
             drop_clicks: true,
-            wind_length: false,
+            wind_length: true,
             wind_mil: true,
             wind_moa: false,
             wind_clicks: false,
             velocity: false,
             energy: true,
             time: false,
+            hit_chance: true,
         }
     }
 }

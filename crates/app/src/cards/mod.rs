@@ -257,9 +257,6 @@ impl CardsPage {
     ) -> Vec<Action> {
         let mut actions = Vec::new();
         self.hunting = hunting;
-        if !hunting && self.settings.kind == Kind::Stand {
-            self.settings.kind = Kind::Dope;
-        }
         let Some(subject) = subject else {
             egui::CentralPanel::default().show(context, |ui| {
                 ui.heading(tr("Cards"));
@@ -347,9 +344,6 @@ impl CardsPage {
                     tr("A strip for the elevation turret with the ranges at their clicks"),
                 ),
             ] {
-                if kind == Kind::Stand && !self.hunting {
-                    continue;
-                }
                 let selected = self.settings.kind == kind;
                 let text = RichText::new(label).size(16.0);
                 if ui

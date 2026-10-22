@@ -5,7 +5,7 @@
 //! target is found by flying the shot again with it changed (a linear
 //! sensitivity), so the result is two standard deviations, across and up.
 
-use crate::solver::{self, Scenario, SolveError, Solution};
+use crate::solver::{self, Scenario, Solution, SolveError};
 
 /// A 5-shot group's extreme spread is on average 3.07 standard deviations
 /// (per axis) of a round normal spread; a 3-shot group's 2.41.
@@ -134,7 +134,10 @@ impl Sensitivities {
     pub fn drift_at(&self, range: f64, speed: f64) -> Option<f64> {
         let base = self.base.at(range)?;
         let windier = self.windier.at(range)?;
-        Some(base.windage + (windier.windage - base.windage) / DELTA_WIND * (speed - self.wind_speed))
+        Some(
+            base.windage
+                + (windier.windage - base.windage) / DELTA_WIND * (speed - self.wind_speed),
+        )
     }
 
     /// The expected shot.
@@ -147,15 +150,25 @@ impl Sensitivities {
 /// spread normally by `spread` around `centre` (all in metres, x across, y
 /// up). Integrated on a grid over ±4 standard deviations.
 pub fn hit_chance(spread: Spread, centre: [f64; 2], inside: impl Fn([f64; 2]) -> bool) -> f64 {
-    const STEPS: usize = 120;
+    hit_chance_on(spread, centre, inside, 120)
+}
+
+/// `hit_chance` on a coarser or finer grid of `steps` × `steps` points:
+/// 60 is within a percent and four times quicker, for a whole table.
+pub fn hit_chance_on(
+    spread: Spread,
+    centre: [f64; 2],
+    inside: impl Fn([f64; 2]) -> bool,
+    steps: usize,
+) -> f64 {
     let (sx, sy) = (spread.across.max(1e-4), spread.up.max(1e-4));
     let mut total = 0.0;
     let mut hit = 0.0;
-    for i in 0..STEPS {
-        let u = -4.0 + 8.0 * (i as f64 + 0.5) / STEPS as f64;
+    for i in 0..steps {
+        let u = -4.0 + 8.0 * (i as f64 + 0.5) / steps as f64;
         let wx = (-0.5 * u * u).exp();
-        for j in 0..STEPS {
-            let v = -4.0 + 8.0 * (j as f64 + 0.5) / STEPS as f64;
+        for j in 0..steps {
+            let v = -4.0 + 8.0 * (j as f64 + 0.5) / steps as f64;
             let w = wx * (-0.5 * v * v).exp();
             total += w;
             if inside([centre[0] + u * sx, centre[1] + v * sy]) {
