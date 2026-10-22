@@ -18,6 +18,9 @@ any release may still change things noticeably.
 
 ### Changed
 
+- On a phone, the view through the scope is centred and as wide as the
+  screen allows, with its magnification and width written under the
+  slider.
 - The vital zone's size is no longer changed on the Calculate page; copy
   the target on the Targets page to use another size.
 

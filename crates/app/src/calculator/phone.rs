@@ -836,10 +836,11 @@ impl ResultsView<'_> {
         let (impact_mrad, dialled_clicks) =
             sight_impact(&row, click_mrad, self.inputs.dial_elevation);
 
+        // The picture centred, as wide as the screen allows.
         let width = ui.available_width();
-        let size = (width * 0.74).min(340.0);
+        let size = width.min(340.0);
         let (rect, _) = ui.allocate_exact_size(vec2(width, size), Sense::hover());
-        let picture_rect = Rect::from_min_size(rect.min, vec2(size, size));
+        let picture_rect = Rect::from_center_size(rect.center(), vec2(size, size));
         let mut picture_ui = ui.new_child(UiBuilder::new().max_rect(picture_rect));
         let drawn = SightPicture {
             scope,
@@ -851,26 +852,23 @@ impl ResultsView<'_> {
             illumination: self.inputs.illumination,
         }
         .show(&mut picture_ui, size);
-        // The magnification and the view's width, bottom right.
-        ui.painter().text(
-            rect.right_bottom() - vec2(0.0, 20.0),
-            Align2::RIGHT_BOTTOM,
-            magnification_text(magnification),
-            FontId::proportional(20.0),
-            theme::BONE,
-        );
-        ui.painter().text(
-            rect.right_bottom(),
-            Align2::RIGHT_BOTTOM,
-            format!("{:.1} m at 100 m", drawn.field_of_view_mrad / 10.0),
-            FontId::proportional(11.0),
-            theme::BONE_MUTED,
-        );
 
         let mut chosen = magnification;
-        if magnification_slider(ui, &mut chosen, scope, size).changed() {
-            requests.magnification = Some(chosen);
-        }
+        let margin = ((width - size) / 2.0 - ui.spacing().item_spacing.x).max(0.0);
+        ui.horizontal(|ui| {
+            ui.add_space(margin);
+            if magnification_slider(ui, &mut chosen, scope, size).changed() {
+                requests.magnification = Some(chosen);
+            }
+        });
+        // The magnification and the view's width, under the slider.
+        ui.vertical_centered(|ui| {
+            ui.small(format!(
+                "{} · {:.1} m across at 100 m",
+                magnification_text(magnification),
+                drawn.field_of_view_mrad / 10.0
+            ));
+        });
         super::view_toggles(ui, self.inputs, scope, requests);
         if self.inputs.dial_elevation {
             ui.small(format!(
