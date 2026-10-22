@@ -62,9 +62,10 @@ pub fn fix(done: impl Fn(Result<Fix, String>) + 'static) {
     #[cfg(target_arch = "wasm32")]
     crate::web::position(true, move |fix| done(fix.map(fix_of)));
     #[cfg(not(target_arch = "wasm32"))]
-    done(Err(
-        "this device can't tell where it is; type the position".into()
-    ));
+    done(Err(crate::i18n::tr(
+        "this device can't tell where it is; type the position",
+    )
+    .into()));
 }
 
 /// Starts following where the device is as it moves (the browser may ask

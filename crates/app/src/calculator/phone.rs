@@ -913,7 +913,7 @@ impl ResultsView<'_> {
             ui.small(tr("Hold the orange dot on the target."));
         }
         if let Some(hits) = self.hits {
-            ui.label(format!(
+            ui.label(trf!(
                 "Hit chance {} in the {}",
                 super::percent(hits.chance),
                 self.zone_word()

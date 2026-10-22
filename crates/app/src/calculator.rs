@@ -284,9 +284,9 @@ struct Computed {
 /// A chance as a percentage, never quite certain: "94 %", "> 99 %".
 pub fn percent(chance: f64) -> String {
     if chance > 0.995 {
-        "> 99 %".to_owned()
+        tr("> 99 %").to_owned()
     } else {
-        format!("{:.0} %", chance * 100.0)
+        trf!("{:.0} %", chance * 100.0)
     }
 }
 
@@ -749,7 +749,11 @@ impl CalculatorPage {
             max_range: key.max_range,
             wind: inputs.wind_speed,
         };
-        if self.hits.as_ref().is_none_or(|(cached, _)| *cached != hits_key) {
+        if self
+            .hits
+            .as_ref()
+            .is_none_or(|(cached, _)| *cached != hits_key)
+        {
             let result = hits_key.zone.as_ref().and_then(|zone| {
                 hits::compute(
                     sensitivities,
@@ -1163,32 +1167,34 @@ impl CalculatorPage {
                     && Some(&load.bullet_id) == inputs.bullet_id.as_ref()
             });
             let (measured_sd, from_chronograph) = measured_velocity_sd(load);
-            let summary = format!(
+            let summary = trf!(
                 "{} group · ±{} · ±{}",
                 u.format(Quantity::ShortLength, inputs.group_cm),
                 u.format(Quantity::Distance, inputs.range_error_m),
                 u.format(Quantity::WindSpeed, inputs.wind_error_mps),
             );
-            fold(ui, "fold-precision", "Your precision", &summary, |ui| {
+            fold(ui, "fold-precision", tr("Your precision"), &summary, |ui| {
                 grid(ui, "precision", |ui| {
                     quantity(
                         ui,
-                        "Your group",
+                        tr("Your group"),
                         &mut inputs.group_cm,
                         Quantity::ShortLength,
                         0.5..=40.0,
                         0.1,
                     );
                     ui.label("");
-                    ui.weak("5 shots at 100 m from the position you shoot from, edge to edge");
+                    ui.weak(tr(
+                        "5 shots at 100 m from the position you shoot from, edge to edge",
+                    ));
                     ui.end_row();
-                    ui.label("Velocity spread");
+                    ui.label(tr("Velocity spread"));
                     ui.horizontal(|ui| match inputs.velocity_sd_mps.as_mut() {
                         Some(sd) => {
                             units::drag(ui, sd, Quantity::Speed, 0.0..=50.0, 0.1);
                             if ui
                                 .small_button("↺")
-                                .on_hover_text("Back to your chronograph's figure")
+                                .on_hover_text(tr("Back to your chronograph's figure"))
                                 .clicked()
                             {
                                 inputs.velocity_sd_mps = None;
@@ -1199,12 +1205,12 @@ impl CalculatorPage {
                                 "{} ({})",
                                 u.format(Quantity::Speed, measured_sd),
                                 if from_chronograph {
-                                    "your chronograph"
+                                    tr("your chronograph")
                                 } else {
-                                    "typical"
+                                    tr("typical")
                                 }
                             ));
-                            if ui.small_button("Change").clicked() {
+                            if ui.small_button(tr("Change")).clicked() {
                                 inputs.velocity_sd_mps = Some(measured_sd);
                             }
                         }
@@ -1212,7 +1218,7 @@ impl CalculatorPage {
                     ui.end_row();
                     quantity(
                         ui,
-                        "Range known to ±",
+                        tr("Range known to ±"),
                         &mut inputs.range_error_m,
                         Quantity::Distance,
                         0.0..=50.0,
@@ -1220,7 +1226,7 @@ impl CalculatorPage {
                     );
                     quantity(
                         ui,
-                        "Wind known to ±",
+                        tr("Wind known to ±"),
                         &mut inputs.wind_error_mps,
                         Quantity::WindSpeed,
                         0.0..=10.0,
@@ -1228,7 +1234,7 @@ impl CalculatorPage {
                     );
                     number(
                         ui,
-                        "Wind direction to ±",
+                        tr("Wind direction to ±"),
                         &mut inputs.wind_direction_error_hours,
                         0.0..=6.0,
                         0.25,
@@ -1237,7 +1243,7 @@ impl CalculatorPage {
                     if aim.is_game() {
                         number(
                             ui,
-                            "Hit chance needed",
+                            tr("Hit chance needed"),
                             &mut inputs.hit_needed_percent,
                             50.0..=99.0,
                             1.0,
@@ -1245,10 +1251,10 @@ impl CalculatorPage {
                         );
                     }
                 });
-                ui.weak(
+                ui.weak(tr(
                     "Each ± is about one standard deviation: two times in three the truth is \
                      within it. The hit chance assumes you hold as the app tells you.",
-                );
+                ));
             });
         }
 
@@ -1524,7 +1530,7 @@ impl ResultsView<'_> {
     /// one, else the vital or hit zone.
     fn zone_word(&self) -> &'static str {
         match hits::Zone::of(self.aim) {
-            Some(hits::Zone::Shape(_)) => "hit area",
+            Some(hits::Zone::Shape(_)) => tr("hit area"),
             _ => self.aim.zone_name(),
         }
     }
@@ -1536,8 +1542,14 @@ impl ResultsView<'_> {
             return;
         };
         let u = units::prefs(ui.ctx());
-        let side = |drift: f64| if drift >= 0.0 { "right" } else { "left" };
-        let text = format!(
+        let side = |drift: f64| {
+            if drift >= 0.0 {
+                tr("right")
+            } else {
+                tr("left")
+            }
+        };
+        let text = trf!(
             "Wind {}–{}: the bullet goes {} {} to {} {}",
             u.number(Quantity::WindSpeed, bracket.low_speed, false),
             u.format(Quantity::WindSpeed, bracket.high_speed),
@@ -1547,11 +1559,19 @@ impl ResultsView<'_> {
             side(bracket.high_drift),
         );
         if bracket.fits {
-            ui.label(format!("{text}; holding for the middle keeps both in the {}.", self.zone_word()));
+            ui.label(trf!(
+                "{text}; holding for the middle keeps both in the {zone}.",
+                text = text,
+                zone = self.zone_word()
+            ));
         } else {
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                format!("{text}: more than the {} allows. Get closer or wait for steadier wind.", self.zone_word()),
+                trf!(
+                    "{text}: more than the {zone} allows. Get closer or wait for steadier wind.",
+                    text = text,
+                    zone = self.zone_word()
+                ),
             );
         }
     }
@@ -1810,9 +1830,9 @@ impl ResultsView<'_> {
             if let Some(hits) = self.hits {
                 fact(
                     ui,
-                    "Hit chance",
+                    tr("Hit chance"),
                     percent(hits.chance),
-                    format!("in the {}, holding as told", self.zone_word()),
+                    trf!("in the {}, holding as told", self.zone_word()),
                 );
             }
             if self.aim.vital_diameter_cm.is_some() {
@@ -2052,11 +2072,11 @@ impl ResultsView<'_> {
     /// "Log this shot": keeps the solution at the range in the shot log.
     fn log_button(&self, ui: &mut egui::Ui, row: &RangeRow, requested: &mut ViewRequests) {
         if ui
-            .button("Log this shot")
-            .on_hover_text(
+            .button(tr("Log this shot"))
+            .on_hover_text(tr(
                 "Keep this hold, the weather and the range in the shot log, to add what came \
                  of it and where the animal stood",
-            )
+            ))
             .clicked()
         {
             let shot = crate::shot_log::from_solution(self.inputs, self.rifle, self.aim, row);

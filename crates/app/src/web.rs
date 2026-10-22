@@ -356,7 +356,9 @@ pub fn follow(context: egui::Context) {
         return;
     }
     let Some(geolocation) = geolocation() else {
-        FOLLOWED.set(Some(Err("this browser can't tell where you are".into())));
+        FOLLOWED.set(Some(
+            Err(tr("this browser can't tell where you are").into()),
+        ));
         return;
     };
     let repaint = context.clone();
@@ -396,7 +398,9 @@ pub fn follow(context: egui::Context) {
             _found: found,
             _failed: failed,
         })),
-        None => FOLLOWED.set(Some(Err("this browser can't tell where you are".into()))),
+        None => FOLLOWED.set(Some(
+            Err(tr("this browser can't tell where you are").into()),
+        )),
     }
 }
 

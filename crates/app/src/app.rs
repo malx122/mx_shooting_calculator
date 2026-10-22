@@ -437,16 +437,16 @@ impl App {
                 self.store.save_shot(&mut shot).map(|()| {
                     self.shot_log.open(&shot);
                     self.page = Page::ShotLog;
-                    "Shot logged: add what came of it, and where the animal stood".to_owned()
+                    tr("Shot logged: add what came of it, and where the animal stood").to_owned()
                 })
             }
             Action::SaveShot(mut shot) => self.store.save_shot(&mut shot).map(|()| {
                 self.shot_log.saved(&shot);
-                "Saved the shot".to_owned()
+                tr("Saved the shot").to_owned()
             }),
             Action::DeleteShot(id) => self.store.delete_shot(&id).map(|()| {
                 self.shot_log.deleted(&id);
-                "Shot deleted".to_owned()
+                tr("Shot deleted").to_owned()
             }),
             Action::LoadDemo => self.store.load_demo().map(|report| {
                 self.page = Page::Calculate;
@@ -812,8 +812,8 @@ impl App {
         ui.menu_button(RichText::new("•••").size(14.0), |ui| {
             ui.set_min_width(230.0);
             if ui
-                .button("Shot log")
-                .on_hover_text("The shots you logged from Calculate")
+                .button(tr("Shot log"))
+                .on_hover_text(tr("The shots you logged from Calculate"))
                 .clicked()
             {
                 self.page = Page::ShotLog;
@@ -861,7 +861,9 @@ impl App {
             }
             if ui
                 .button(tr("Export backup"))
-                .on_hover_text(tr("Your rifles, bullets, scopes, targets and shot log, as JSON"))
+                .on_hover_text(tr(
+                    "Your rifles, bullets, scopes, targets and shot log, as JSON",
+                ))
                 .clicked()
             {
                 export = true;

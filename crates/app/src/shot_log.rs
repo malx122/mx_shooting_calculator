@@ -19,6 +19,7 @@ use eframe::egui::{self, RichText, vec2};
 
 use crate::app::{Action, Data, Page};
 use crate::calculator::{Aim, Inputs, clicks_text};
+use crate::i18n::{tr, tr_data, trf};
 use crate::mobile;
 use crate::sensors::{self, Fix};
 use crate::theme;
@@ -173,12 +174,12 @@ impl ShotLogPage {
             // On a phone: the list, or one shot with a way back.
             egui::CentralPanel::default().show(context, |ui| {
                 if self.open.is_none() {
-                    if mobile::back_button(ui, "Calculate") {
+                    if mobile::back_button(ui, tr("Calculate")) {
                         actions.push(Action::Goto(Page::Calculate));
                     }
                     egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, true));
                 } else {
-                    if mobile::back_button(ui, "Shot log") {
+                    if mobile::back_button(ui, tr("Shot log")) {
                         self.close();
                         return;
                     }
@@ -225,12 +226,12 @@ impl ShotLogPage {
 
     /// The shots, newest first: when, what at, how far and how it went.
     fn list(&mut self, ui: &mut egui::Ui, data: &Data, phone: bool) {
-        ui.heading("Shot log");
+        ui.heading(tr("Shot log"));
         if data.shots.is_empty() {
-            ui.weak(
+            ui.weak(tr(
                 "No shots yet. On Calculate, press Log this shot when you shoot: the hold, \
                  the weather and the range are kept, and you can add what came of it.",
-            );
+            ));
             return;
         }
         let u = units::prefs(ui.ctx());
@@ -246,7 +247,7 @@ impl ShotLogPage {
                 "{} · {} · {}",
                 u.format(Quantity::Distance, shot.range_m),
                 rifle_of(shot, data),
-                shot.outcome.label()
+                outcome_label(shot.outcome)
             );
             let clicked = if phone {
                 mobile::list_row(ui, &title, &detail, selected).clicked()
@@ -272,11 +273,13 @@ impl ShotLogPage {
         actions: &mut Vec<Action>,
     ) {
         let Some(shot) = &mut self.open else {
-            ui.weak("Choose a shot, or log one from the results on Calculate.");
+            ui.weak(tr(
+                "Choose a shot, or log one from the results on Calculate.",
+            ));
             return;
         };
         let u = units::prefs(ui.ctx());
-        ui.heading(format!(
+        ui.heading(trf!(
             "{} at {}",
             target_of(shot),
             u.format(Quantity::Distance, shot.range_m)
@@ -290,17 +293,17 @@ impl ShotLogPage {
         ui.add_space(6.0);
 
         ui.horizontal_wrapped(|ui| {
-            ui.label("Outcome");
+            ui.label(tr("Outcome"));
             for outcome in Outcome::ALL {
-                ui.selectable_value(&mut shot.outcome, outcome, outcome.label());
+                ui.selectable_value(&mut shot.outcome, outcome, outcome_label(outcome));
             }
         });
         if shot.outcome == Outcome::Hit {
             ui.horizontal(|ui| {
-                ui.label("Where it hit");
+                ui.label(tr("Where it hit"));
                 ui.add(
                     egui::TextEdit::singleline(&mut shot.hit_where)
-                        .hint_text("heart–lung, shoulder…")
+                        .hint_text(tr("heart–lung, shoulder…"))
                         .desired_width(220.0),
                 );
             });
@@ -309,20 +312,20 @@ impl ShotLogPage {
         fold(
             ui,
             "shot-solution",
-            "The solution",
+            tr("The solution"),
             &hold_summary(&shot.hold),
             |ui| solution(ui, shot),
         );
         ui.add_space(8.0);
 
-        ui.label(RichText::new("Where the animal stood").strong());
+        ui.label(RichText::new(tr("Where the animal stood")).strong());
         whereabouts(ui, shot, &mut self.sensing, data, place);
         ui.add_space(8.0);
 
-        ui.label("Notes");
+        ui.label(tr("Notes"));
         ui.add(
             egui::TextEdit::multiline(&mut shot.notes)
-                .hint_text("Where it went, what you found…")
+                .hint_text(tr("Where it went, what you found…"))
                 .desired_rows(3)
                 .desired_width(f32::INFINITY),
         );
@@ -330,15 +333,15 @@ impl ShotLogPage {
         let stored = data.shots.iter().find(|stored| stored.id == shot.id);
         let close = ui
             .horizontal(|ui| {
-                if ui.button("Save").clicked() {
+                if ui.button(tr("Save")).clicked() {
                     actions.push(Action::SaveShot(shot.clone()));
                 }
-                if stored.is_some() && confirm_button(ui, "delete-shot", "Delete") {
+                if stored.is_some() && confirm_button(ui, "delete-shot", tr("Delete")) {
                     actions.push(Action::DeleteShot(shot.id.clone()));
                 }
-                let close = ui.button("Close").clicked();
+                let close = ui.button(tr("Close")).clicked();
                 if stored.is_none_or(|stored| stored != &**shot) {
-                    ui.weak("Not saved yet");
+                    ui.weak(tr("Not saved yet"));
                 }
                 close
             })
@@ -349,12 +352,28 @@ impl ShotLogPage {
     }
 }
 
-/// "Moose", or "Shot" with no target.
+/// "Moose", or "Shot" with no target; a catalog target in the current
+/// language.
 fn target_of(shot: &Shot) -> String {
+    let catalog = shot
+        .target_id
+        .as_ref()
+        .is_some_and(|id| ballistics_store::Catalog::builtin().target(id).is_some());
     if shot.target_name.is_empty() {
-        "Shot".to_owned()
+        tr("Shot").to_owned()
+    } else if catalog {
+        tr_data(&shot.target_name).to_owned()
     } else {
         shot.target_name.clone()
+    }
+}
+
+/// "Hit", in the current language.
+fn outcome_label(outcome: Outcome) -> &'static str {
+    match outcome {
+        Outcome::NotRecorded => tr("Not recorded"),
+        Outcome::Hit => tr("Hit"),
+        Outcome::Miss => tr("Miss"),
     }
 }
 
@@ -425,7 +444,7 @@ fn clock_text(clock: f64) -> String {
     let hour = if hour < 0.25 { 12.0 } else { hour };
     let minutes = (hour.fract() * 60.0).round();
     if minutes < 1.0 || minutes > 59.0 {
-        format!("{:.0} o'clock", hour.round())
+        trf!("{:.0} o'clock", hour.round())
     } else {
         format!("{}:{minutes:02.0}", hour.floor())
     }
@@ -438,66 +457,76 @@ fn solution(ui: &mut egui::Ui, shot: &Shot) {
     let solution = &shot.solution;
     let weather = &shot.weather;
     grid(ui, "shot-solution-grid", |ui| {
-        ui.label("Elevation");
+        ui.label(tr("Elevation"));
         ui.label(format!(
             "{} ({} {})",
-            angle_text(hold.elevation_mrad, hold.click_unit, "⬆ up", "⬇ down"),
+            angle_text(
+                hold.elevation_mrad,
+                hold.click_unit,
+                tr("⬆ up"),
+                tr("⬇ down")
+            ),
             clicks_text(hold.elevation_clicks.abs()),
             if hold.elevation_clicks >= 0 {
-                "up"
+                tr("up")
             } else {
-                "down"
+                tr("down")
             }
         ));
         ui.end_row();
-        ui.label("Windage");
+        ui.label(tr("Windage"));
         ui.label(format!(
             "{} ({} {})",
-            angle_text(hold.windage_mrad, hold.click_unit, "➡ right", "⬅ left"),
+            angle_text(
+                hold.windage_mrad,
+                hold.click_unit,
+                tr("➡ right"),
+                tr("⬅ left")
+            ),
             clicks_text(hold.windage_clicks.abs()),
             if hold.windage_clicks >= 0 {
-                "right"
+                tr("right")
             } else {
-                "left"
+                tr("left")
             }
         ));
         ui.end_row();
-        ui.label("Dead-on hold hits");
+        ui.label(tr("Dead-on hold hits"));
         ui.label(format!(
             "{} {}, {} {}",
             u.format(Quantity::ShortLength, solution.drop_cm.abs()),
             if solution.drop_cm >= 0.0 {
-                "high"
+                tr("high")
             } else {
-                "low"
+                tr("low")
             },
             u.format(Quantity::ShortLength, solution.windage_cm.abs()),
             if solution.windage_cm >= 0.0 {
-                "right"
+                tr("right")
             } else {
-                "left"
+                tr("left")
             }
         ));
         ui.end_row();
-        ui.label("At the target");
-        ui.label(format!(
+        ui.label(tr("At the target"));
+        ui.label(trf!(
             "{} · {} · {:.3} s flight",
             u.format(Quantity::Speed, solution.velocity_mps),
             u.format(Quantity::Energy, solution.energy_j),
             solution.time_of_flight_s
         ));
         ui.end_row();
-        ui.label("Shot angle");
+        ui.label(tr("Shot angle"));
         ui.label(format!("{:+.0}°", shot.inclination_degrees));
         ui.end_row();
-        ui.label("Wind");
-        ui.label(format!(
+        ui.label(tr("Wind"));
+        ui.label(trf!(
             "{} from {}",
             u.format(Quantity::WindSpeed, shot.wind_speed_mps),
             clock_text(shot.wind_clock)
         ));
         ui.end_row();
-        ui.label("Weather");
+        ui.label(tr("Weather"));
         let mut text = format!(
             "{} · {} · {:.0} %",
             u.format(Quantity::Temperature, weather.temperature_c),
@@ -505,7 +534,7 @@ fn solution(ui: &mut egui::Ui, shot: &Shot) {
             weather.humidity_percent
         );
         if (weather.powder_temperature_c - weather.temperature_c).abs() >= 0.05 {
-            text.push_str(&format!(
+            text.push_str(&trf!(
                 " · cartridges {}",
                 u.format(Quantity::Temperature, weather.powder_temperature_c)
             ));
@@ -521,15 +550,15 @@ fn point_text(point: GeoPoint) -> String {
         "{:.6}° {}, {:.6}° {}",
         point.latitude_degrees.abs(),
         if point.latitude_degrees >= 0.0 {
-            "N"
+            tr("N")
         } else {
-            "S"
+            tr("S")
         },
         point.longitude_degrees.abs(),
         if point.longitude_degrees >= 0.0 {
-            "E"
+            tr("E")
         } else {
-            "W"
+            tr("W")
         }
     )
 }
@@ -546,7 +575,7 @@ fn whereabouts(
     let u = units::prefs(ui.ctx());
     let context = ui.ctx().clone();
     grid(ui, "shot-where", |ui| {
-        ui.label("Your position");
+        ui.label(tr("Your position"));
         ui.horizontal_wrapped(|ui| {
             match &mut shot.position {
                 Some(position) => {
@@ -557,7 +586,7 @@ fn whereabouts(
                             .range(-90.0..=90.0)
                             .speed(0.00001)
                             .fixed_decimals(6)
-                            .prefix("lat ")
+                            .prefix(tr("lat "))
                             .suffix("°"),
                     );
                     ui.add(
@@ -565,7 +594,7 @@ fn whereabouts(
                             .range(-180.0..=180.0)
                             .speed(0.00001)
                             .fixed_decimals(6)
-                            .prefix("lon ")
+                            .prefix(tr("lon "))
                             .suffix("°"),
                     );
                     // Moved by hand: no longer what the device said.
@@ -575,15 +604,15 @@ fn whereabouts(
                     if let Some(accuracy) = position.accuracy_m {
                         ui.weak(format!("± {}", u.format(Quantity::Distance, accuracy)));
                     }
-                    if ui.small_button("✖").on_hover_text("Clear").clicked() {
+                    if ui.small_button("✖").on_hover_text(tr("Clear")).clicked() {
                         shot.position = None;
                     }
                 }
                 None => {
-                    ui.weak("not marked");
+                    ui.weak(tr("not marked"));
                     if ui
-                        .button("Type it")
-                        .on_hover_text("Latitude and longitude in degrees, from a map or a GPS")
+                        .button(tr("Type it"))
+                        .on_hover_text(tr("Latitude and longitude in degrees, from a map or a GPS"))
                         .clicked()
                     {
                         shot.position = Some(ShooterPosition {
@@ -595,16 +624,16 @@ fn whereabouts(
             }
             if sensors::can_locate() && sensing.marking.is_none() {
                 let label = if shot.position.is_some() {
-                    "📍 Mark again"
+                    tr("📍 Mark again")
                 } else {
-                    "📍 Mark my position"
+                    tr("📍 Mark my position")
                 };
                 if ui
                     .button(label)
-                    .on_hover_text(
+                    .on_hover_text(tr(
                         "Where you stand now, from the phone's GPS (the browser asks first). \
                          Mark it from where you shot.",
-                    )
+                    ))
                     .clicked()
                 {
                     sensing.marking = Some(shot.id.clone());
@@ -620,12 +649,12 @@ fn whereabouts(
             }
             if sensing.marking.is_some() {
                 ui.spinner();
-                ui.weak("Finding your position…");
+                ui.weak(tr("Finding your position…"));
             }
         });
         ui.end_row();
 
-        ui.label("Bearing to the animal");
+        ui.label(tr("Bearing to the animal"));
         ui.horizontal_wrapped(|ui| {
             match &mut shot.bearing_degrees {
                 Some(bearing) => {
@@ -637,15 +666,15 @@ fn whereabouts(
                             .suffix("°"),
                     );
                     ui.weak(compass_point(*bearing));
-                    if ui.small_button("✖").on_hover_text("Clear").clicked() {
+                    if ui.small_button("✖").on_hover_text(tr("Clear")).clicked() {
                         shot.bearing_degrees = None;
                     }
                 }
                 None => {
-                    ui.weak("not taken");
+                    ui.weak(tr("not taken"));
                     if ui
-                        .button("Type it")
-                        .on_hover_text("Degrees from north: 90 is east")
+                        .button(tr("Type it"))
+                        .on_hover_text(tr("Degrees from north: 90 is east"))
                         .clicked()
                     {
                         shot.bearing_degrees = Some(0.0);
@@ -656,23 +685,23 @@ fn whereabouts(
                 if sensing.taking_bearing {
                     match sensors::heading() {
                         Some(heading) => {
-                            ui.label(format!("phone: {heading:.0}°"));
-                            if ui.button("Use").clicked() {
+                            ui.label(trf!("phone: {:.0}°", heading));
+                            if ui.button(tr("Use")).clicked() {
                                 shot.bearing_degrees = Some(heading.round().rem_euclid(360.0));
                                 sensing.taking_bearing = false;
                             }
                         }
                         None => {
-                            ui.weak("waiting for the compass…");
+                            ui.weak(tr("waiting for the compass…"));
                         }
                     }
                     ui.ctx().request_repaint();
                 } else if ui
-                    .button("🧭 Take bearing")
-                    .on_hover_text(
+                    .button(tr("🧭 Take bearing"))
+                    .on_hover_text(tr(
                         "From where you shot: hold the phone flat, its top edge towards where \
                          the animal stood",
-                    )
+                    ))
                     .clicked()
                 {
                     sensors::start_compass(ui.ctx().clone());
@@ -688,7 +717,7 @@ fn whereabouts(
 
     let level = shot.horizontal_range_m();
     if shot.inclination_degrees.abs() >= 0.5 {
-        ui.weak(format!(
+        ui.weak(trf!(
             "{} away on the level: {} along the line of sight at {:+.0}°.",
             u.format(Quantity::Distance, level),
             u.format(Quantity::Distance, shot.range_m),
@@ -697,25 +726,27 @@ fn whereabouts(
     }
     shot.update_spot();
     let Some(spot) = shot.animal_spot else {
-        ui.weak(
+        ui.weak(tr(
             "Mark where you shot from and take the bearing to the animal, and the app works out \
              where it stood.",
-        );
+        ));
         return;
     };
-    ui.label(format!(
+    ui.label(trf!(
         "It stood at {}. Search within {} of it.",
         point_text(spot.point),
         u.format(Quantity::Distance, spot.search_radius_m)
     ))
-    .on_hover_text(
+    .on_hover_text(tr(
         "The search area allows for a compass 10° off, a range 5 % off (at least 5 m) and your \
          position's accuracy.",
-    );
+    ));
     ui.horizontal_wrapped(|ui| {
         if ui
-            .button("Copy coordinates")
-            .on_hover_text("As latitude, longitude in degrees, to paste where you like")
+            .button(tr("Copy coordinates"))
+            .on_hover_text(tr(
+                "As latitude, longitude in degrees, to paste where you like",
+            ))
             .clicked()
         {
             ui.ctx().copy_text(format!(
@@ -724,9 +755,9 @@ fn whereabouts(
             ));
         }
         if sensors::can_locate() && !sensing.guiding {
-            let guide = ui.button("🧭 Guide me there").on_hover_text(
+            let guide = ui.button(tr("🧭 Guide me there")).on_hover_text(tr(
                 "The distance and direction from where you are (the browser asks first)",
-            );
+            ));
             if guide.clicked() {
                 sensors::follow(ui.ctx().clone());
                 if sensors::has_compass() {
@@ -776,7 +807,7 @@ fn guide(ui: &mut egui::Ui, spot: AnimalSpot, sensing: &mut Sensing) {
                 None => {
                     ui.horizontal(|ui| {
                         ui.spinner();
-                        ui.weak("Finding where you are…");
+                        ui.weak(tr("Finding where you are…"));
                     });
                 }
                 Some(Err(error)) => {
@@ -789,30 +820,34 @@ fn guide(ui: &mut egui::Ui, spot: AnimalSpot, sensing: &mut Sensing) {
                     };
                     let (distance, bearing) = shots::distance_and_bearing(here, spot.point);
                     ui.label(
-                        RichText::new(format!(
-                            "{}, bearing {bearing:.0}° ({})",
+                        RichText::new(trf!(
+                            "{}, bearing {:.0}° ({})",
                             u.format(Quantity::Distance, distance),
+                            bearing,
                             compass_point(bearing)
                         ))
                         .size(22.0)
                         .strong(),
                     );
                     if distance <= spot.search_radius_m {
-                        ui.colored_label(theme::MEADOW, "Within the search area: look around you.");
+                        ui.colored_label(
+                            theme::MEADOW,
+                            tr("Within the search area: look around you."),
+                        );
                     }
                     if let Some(heading) = sensors::heading() {
                         arrow(ui, bearing - heading);
-                        ui.weak("Hold the phone flat and walk where the arrow points.");
+                        ui.weak(tr("Hold the phone flat and walk where the arrow points."));
                     }
                     if let Some(accuracy) = fix.accuracy_m {
-                        ui.weak(format!(
+                        ui.weak(trf!(
                             "Your position ± {}",
                             u.format(Quantity::Distance, accuracy)
                         ));
                     }
                 }
             }
-            if ui.button("Stop").clicked() {
+            if ui.button(tr("Stop")).clicked() {
                 sensing.stop();
             }
         });
