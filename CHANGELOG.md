@@ -6,6 +6,17 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-22
+
+### Added
+
+- **Updates on a computer.** In the menu, *Updates…* can check for a new
+  version when the app starts (off until you turn it on), or check now.
+  *Update now* downloads it, checks that it is signed by the app's maker,
+  puts it in place and offers to restart. The check asks GitHub, where the
+  releases are kept; nothing else is sent. It works from this version on:
+  this one still has to be installed by hand.
+
 ## [0.8.1] - 2026-10-22
 
 ### Changed
@@ -373,7 +384,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.7.1...v0.7.2

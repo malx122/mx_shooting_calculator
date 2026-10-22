@@ -170,11 +170,11 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "ballistics-core"
-version = "0.8.1"
+version = "0.8.2"
 
 [[package]]
 name = "ballistics-shot"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "ballistics-core",
  "ballistics-store",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "ballistics-store"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "chacha20poly1305",
  "jsonschema",
@@ -981,6 +981,12 @@ dependencies = [
  "quote",
  "syn 3.0.9",
 ]
+
+[[package]]
+name = "fastrand"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fax"
@@ -1961,6 +1967,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a86d3146ed3995b5913c414f6664344b9617457320782e64f0bb44afd49d74"
 
 [[package]]
+name = "minisign-verify"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f9645cb765ea72b8111f36c522475d2daa0d22c957a9826437e97534bc4e9e"
+
+[[package]]
 name = "miniz_oxide"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1992,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "mxsc"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "ballistics-core",
  "ballistics-shot",
@@ -2003,11 +2015,14 @@ dependencies = [
  "egui_extras",
  "egui_plot",
  "js-sys",
+ "minisign-verify",
  "png 0.18.1",
  "qrcode",
  "rfd",
+ "self-replace",
  "serde",
  "serde_json",
+ "sha2",
  "sqlite-wasm-rs",
  "sqlite-wasm-vfs",
  "sys-locale",
@@ -2022,7 +2037,7 @@ dependencies = [
 
 [[package]]
 name = "mxsc-mcp"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "ballistics-core",
  "ballistics-shot",
@@ -3131,6 +3146,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "self-replace"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03ec815b5eab420ab893f63393878d89c90fdd94c0bcc44c07abb8ad95552fb7"
+dependencies = [
+ "fastrand",
+ "tempfile",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3514,6 +3540,19 @@ dependencies = [
  "libc",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "tempfile"
+version = "3.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
+dependencies = [
+ "fastrand",
+ "getrandom 0.4.3",
+ "once_cell",
+ "rustix 1.1.5",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
