@@ -728,8 +728,9 @@ app:
   land in, most telling first, such as a test figure's hit area) and a
   training target's `rings` (true size, with what each scores); animals
   without zones use a circle the size of the target's vital zone.
-  `tools/hitzone-editor.html` draws a zone's spline over a picture of the
-  figure, calibrated by its rings.
+  `tools/drawings/README.md` describes how a drawing is made: a flat vector
+  picture, converted by `tools/drawings/svg2drawing.py`, with its zone drawn
+  in `tools/hitzone-editor.html` over a picture of the figure.
 
   The animals' vital zones and minimum energies are common **guidelines**,
   not law. Legal rules differ by country and are often stated differently
