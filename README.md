@@ -52,6 +52,12 @@ cargo run --release      # the app
 cargo test --workspace   # all tests
 ```
 
+On GitHub the `Tests` workflow (`.github/workflows/test.yml`) runs on every
+push to main: the workspace's tests, clippy with warnings as errors (also
+for the browser build: `scripts/web.sh lint`), and the sync server's tests
+(`cd server && npm test`). Each release workflow runs it first and publishes
+nothing if it fails.
+
 The program is called `mxsc`. Its database is stored in the platform's
 app-data folder: on macOS that is
 `~/Library/Application Support/MX Shooting Calculator/mxsc.sqlite`. To use
@@ -170,8 +176,9 @@ program elsewhere). The release job writes `update.json`, the version and
 each update file's SHA-256, and signs it with `tools/sign-update` using the
 minisign key in the `MXSC_UPDATE_KEY` secret; the app checks that signature
 with the public key in `crates/app/src/updates.rs` before it installs
-anything. Without the secret a release gets no `update.json`, and the apps
-aren't offered it. To try the updater against a local server laid out like
+anything. The secret lives in the repository's `release` environment, which
+only `v*` tags may use, so no branch or manual run from one can sign.
+Without it a release gets no `update.json`, and the apps aren't offered it. To try the updater against a local server laid out like
 GitHub's release downloads, set `MXSC_UPDATE_FROM` to its address.
 
 The backup format (`transfer::VERSION`) and the database schema (the

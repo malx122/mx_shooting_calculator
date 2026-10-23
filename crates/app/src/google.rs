@@ -55,8 +55,6 @@ pub enum Trouble {
     /// Google no longer accepts the sign-in, or it lacks Drive: the hunter
     /// must sign in again (with why).
     SignIn(String),
-    /// The synced copy was deleted.
-    Deleted,
     Other(String),
 }
 
@@ -79,20 +77,50 @@ struct File {
     id: String,
 }
 
-/// The page that starts a sign-in, for the session `session`.
-pub fn sign_in_url(server: &str, session: &str) -> String {
-    format!("{server}/v1/google/start?session={session}")
+/// The page that starts a sign-in, for the session `session`; `reply`
+/// says how the sync server hands the pick-up code back to this app (see
+/// the server's google.js): the port the desktop app listens on, or `w`
+/// and the web app's origin's number.
+pub fn sign_in_url(server: &str, session: &str, reply: &str) -> String {
+    format!("{server}/v1/google/start?session={session}&reply={reply}")
 }
 
-/// Waits for the hunter to finish signing in in the browser, then picks up
-/// the account from the sync server.
-pub async fn finish_sign_in(server: String, session: String) -> Result<Account, String> {
+/// The code the sync server keeps a finished sign-in under, once it reaches
+/// the app: through the desktop's port, a message to the web app's window,
+/// or typed in from the sign-in page.
+pub type PickUp = Arc<Mutex<Option<String>>>;
+
+/// A pick-up code as typed, in its own letters (Crockford's base 32: no I,
+/// L, O or U), or `None` if it isn't one.
+pub fn pick_up_code(typed: &str) -> Option<String> {
+    let code: String = typed
+        .chars()
+        .filter(|c| !matches!(c, '-' | ' '))
+        .map(|c| match c.to_ascii_uppercase() {
+            'O' => '0',
+            'I' | 'L' => '1',
+            c => c,
+        })
+        .collect();
+    (code.len() == 10
+        && code
+            .chars()
+            .all(|c| c.is_ascii_digit() || (c.is_ascii_uppercase() && !"ILOU".contains(c))))
+    .then_some(code)
+}
+
+/// Waits for the pick-up code of the hunter's sign-in in the browser, then
+/// picks up the account from the sync server.
+pub async fn finish_sign_in(server: String, pick_up: PickUp) -> Result<Account, String> {
     let started = now_ms();
     while now_ms() - started < i64::from(SIGN_IN_S) * 1000 {
-        http::sleep(2000).await;
+        http::sleep(500).await;
+        let Some(code) = pick_up.lock().ok().and_then(|code| code.clone()) else {
+            continue;
+        };
         let response = http::fetch(Request {
             method: Method::Post,
-            url: format!("{server}/v1/google/session/{session}"),
+            url: format!("{server}/v1/google/session/{code}"),
             headers: Vec::new(),
             body: None,
         })
@@ -116,18 +144,102 @@ pub async fn finish_sign_in(server: String, session: String) -> Result<Account, 
                 account.expires_at_ms = now_ms() + tokens.expires_in.unwrap_or(3600) * 1000;
                 return Ok(account);
             }
-            Ok(response) if response.status == 404 => {}
+            Ok(response) if response.status == 404 => {
+                return Err(tr("that sign-in has expired or was already used").into());
+            }
             Ok(response) => {
                 return Err(trf!(
                     "the sync server answered {status}",
                     status = response.status
                 ));
             }
-            // No connection for a moment: keep waiting.
-            Err(_) => {}
+            Err(error) => return Err(error),
         }
     }
     Err(tr("signing in took too long").into())
+}
+
+/// Waits on `listener` (on 127.0.0.1) for the browser to come back from the
+/// sync server with the pick-up code of `session`, and puts it in
+/// `pick_up`. Requests for other sessions are turned away.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn listen(listener: std::net::TcpListener, session: String, pick_up: PickUp) {
+    use std::io::{Read, Write};
+    use std::time::{Duration, Instant};
+    if listener.set_nonblocking(true).is_err() {
+        return;
+    }
+    let started = Instant::now();
+    while started.elapsed() < Duration::from_secs(SIGN_IN_S.into()) {
+        let mut stream = match listener.accept() {
+            Ok((stream, _)) => stream,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                std::thread::sleep(Duration::from_millis(200));
+                continue;
+            }
+            Err(_) => return,
+        };
+        let _ = stream.set_nonblocking(false);
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+        // The request line and headers, which may come in pieces.
+        let mut request = Vec::new();
+        let mut chunk = [0; 1024];
+        while request.len() < 8192 && !request.windows(4).any(|end| end == b"\r\n\r\n") {
+            match stream.read(&mut chunk) {
+                Ok(0) | Err(_) => break,
+                Ok(read) => request.extend_from_slice(&chunk[..read]),
+            }
+        }
+        let request = String::from_utf8_lossy(&request);
+        let code = request
+            .lines()
+            .next()
+            .and_then(|line| line.strip_prefix("GET /google?"))
+            .and_then(|line| line.split(' ').next())
+            .and_then(|query| {
+                let field = |name: &str| {
+                    query
+                        .split('&')
+                        .find_map(|pair| pair.strip_prefix(name)?.strip_prefix('='))
+                };
+                (field("session") == Some(session.as_str()))
+                    .then(|| field("pickup").and_then(pick_up_code))
+                    .flatten()
+            });
+        let (status, title, text) = match &code {
+            Some(_) => (
+                "200 OK",
+                tr("Signed in"),
+                tr(
+                    "Go back to MX Shooting Calculator; it starts syncing in a moment. You can \
+                    close this window.",
+                ),
+            ),
+            None => (
+                "404 Not Found",
+                tr("Sign-in failed"),
+                tr("This isn't the sign-in the app is waiting for. Try again from the app."),
+            ),
+        };
+        let page = format!(
+            "<!doctype html><meta charset=\"utf-8\"><title>{title}</title>\
+             <body style=\"font-family:system-ui,sans-serif;background:#16261d;color:#ece6d6;\
+             text-align:center;padding:3rem\"><h1 style=\"color:#e0682b\">{title}</h1>\
+             <p>{text}</p>"
+        );
+        let _ = write!(
+            stream,
+            "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\n\
+             Content-Length: {}\r\nConnection: close\r\n\r\n{page}",
+            page.len()
+        );
+        if let Some(code) = code {
+            if let Ok(mut slot) = pick_up.lock() {
+                *slot = Some(code);
+            }
+            return;
+        }
+    }
 }
 
 /// The app's file: its bytes and its Drive id, or `None` before any device
@@ -145,9 +257,8 @@ pub async fn read(server: &str, account: &Shared) -> Result<Option<(Vec<u8>, Str
         None,
     )
     .await?;
-    if response.body == DELETED {
-        return Err(Trouble::Deleted);
-    }
+    // The deletion marker comes back as it is: sync stops on it, unless
+    // this device was just signed in again to start afresh.
     Ok(Some((response.body, id)))
 }
 
@@ -340,6 +451,41 @@ mod tests {
     /// in again", not fail on the requests themselves:
     /// `cargo test -p mxsc -- --ignored`.
     #[test]
+    fn pick_up_codes_read_as_typed() {
+        assert_eq!(pick_up_code("abcde-fgh12").as_deref(), Some("ABCDEFGH12"));
+        assert_eq!(pick_up_code("0O1IL 23456").as_deref(), Some("0011123456"));
+        assert_eq!(pick_up_code("ABCDEFGH1"), None);
+        assert_eq!(pick_up_code("ABCDEFGHU1"), None);
+        assert_eq!(pick_up_code("ABCDE/GH12"), None);
+    }
+
+    /// The desktop's listener takes the code of its own session only.
+    #[test]
+    fn the_listener_takes_its_own_sessions_code() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let pick_up: PickUp = Arc::default();
+        let waiting = {
+            let pick_up = Arc::clone(&pick_up);
+            std::thread::spawn(move || listen(listener, "s1".into(), pick_up))
+        };
+        let get = |path: &str| {
+            let mut stream = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+            write!(stream, "GET {path} HTTP/1.1\r\nHost: x\r\n\r\n").unwrap();
+            let mut answer = String::new();
+            stream.read_to_string(&mut answer).unwrap();
+            answer
+        };
+        assert!(get("/google?session=s2&pickup=ABCDEFGH12").starts_with("HTTP/1.1 404"));
+        assert!(get("/google?session=s1&pickup=bad").starts_with("HTTP/1.1 404"));
+        assert_eq!(*pick_up.lock().unwrap(), None);
+        assert!(get("/google?session=s1&pickup=ABCDEFGH12").starts_with("HTTP/1.1 200"));
+        waiting.join().unwrap();
+        assert_eq!(pick_up.lock().unwrap().as_deref(), Some("ABCDEFGH12"));
+    }
+
+    #[test]
     #[ignore = "needs the network"]
     fn a_dead_sign_in_asks_to_sign_in_again() {
         let account: Shared = Arc::new(Mutex::new(Account::new("made-up".into())));
@@ -351,7 +497,6 @@ mod tests {
         match outcome.unwrap() {
             Err(Trouble::SignIn(_)) => {}
             Err(Trouble::Other(error)) => panic!("{error}"),
-            Err(Trouble::Deleted) => panic!("deleted"),
             Ok(_) => panic!("read with a made-up sign-in"),
         }
     }

@@ -145,6 +145,32 @@ impl Store {
         Store::init(Connection::open(path)?)
     }
 
+    /// Opens the database only to read it, as it is: no upgrade, which an
+    /// older app sharing it couldn't open afterwards. Refuses a database of
+    /// another schema version than this program's.
+    pub fn open_read_only(path: impl AsRef<Path>) -> Result<Store, StoreError> {
+        use rusqlite::OpenFlags;
+        let connection = Connection::open_with_flags(
+            path,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )?;
+        let version: i64 = connection.pragma_query_value(None, "user_version", |row| row.get(0))?;
+        let current = MIGRATIONS.len() as i64;
+        if version < current {
+            return Err(StoreError::Invalid(format!(
+                "the database is from an older version of the app (schema {version}, this \
+                 program reads {current}): start the app once to bring it up to date"
+            )));
+        }
+        if version > current {
+            return Err(StoreError::Invalid(format!(
+                "the database was created by a newer version of the app (schema {version}): \
+                 update this program"
+            )));
+        }
+        Ok(Store { connection })
+    }
+
     pub fn open_in_memory() -> Result<Store, StoreError> {
         Store::init(Connection::open_in_memory()?)
     }

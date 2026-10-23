@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Where the sync server sends the browser after a Google sign-in started
+     in the web app (server/src/google.js): it hands the app's window the
+     sign-in's pick-up code, and shows the code to type into the app in
+     case it doesn't arrive (an app on a phone's home screen). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>MX Shooting Calculator</title>
+  <style>
+    body { margin: 0; min-height: 90vh; display: grid; place-items: center; background: #16261d; color: #ece6d6; font-family: system-ui, sans-serif; }
+    main { max-width: 28rem; padding: 1.5rem; text-align: center; }
+    h1 { color: #e0682b; }
+    strong { font-size: 1.5em; letter-spacing: 0.08em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">Signed in</h1>
+    <p id="text">Go back to MX Shooting Calculator; it starts syncing in a moment.</p>
+    <p><span id="enter">If it doesn't, enter this code there:</span><br><strong id="code"></strong></p>
+  </main>
+  <script>
+    const words = {
+      sv: ['Inloggad', 'Gå tillbaka till MX Shooting Calculator; den börjar synka om en stund.', 'Om inte, skriv in den här koden där:'],
+      fi: ['Kirjauduttu sisään', 'Palaa MX Shooting Calculatoriin; synkronointi alkaa hetken kuluttua.', 'Jos ei, kirjoita tämä koodi sinne:'],
+    }[navigator.language.slice(0, 2)];
+    if (words) {
+      ['title', 'text', 'enter'].forEach((id, i) => (document.getElementById(id).textContent = words[i]));
+    }
+    const fields = new URLSearchParams(location.hash.slice(1));
+    const session = fields.get('session') || '';
+    const pickup = fields.get('pickup') || '';
+    // Not left in the address or the history.
+    history.replaceState(null, '', location.pathname);
+    if (/^[0-9a-f]{32}$/.test(session) && /^[0-9A-Z]{10}$/.test(pickup)) {
+      document.getElementById('code').textContent = `${pickup.slice(0, 5)}-${pickup.slice(5)}`;
+      new BroadcastChannel('mxsc-google').postMessage({ session, pickup });
+      setTimeout(() => window.close(), 2000);
+    }
+  </script>
+</body>
+</html>

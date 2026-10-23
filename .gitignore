@@ -18,3 +18,11 @@
 
 # The update signing tool's build output
 /tools/sign-update/target
+
+# Secrets that must never be committed: signing keys, the sync server's
+# local Worker secrets
+*.key
+server/.dev.vars
+
+# Python caches
+__pycache__/

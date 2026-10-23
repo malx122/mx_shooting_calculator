@@ -94,11 +94,62 @@ pub fn take_sync_link() -> Option<ballistics_store::SyncKey> {
     ballistics_store::SyncKey::parse(&hash)
 }
 
+/// Where the web app may run, as the sync server knows them (`RETURNS` in
+/// its google.js): the reply to ask for is `w` and the number.
+const ORIGINS: [&str; 3] = [
+    "https://malx122.github.io",
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+];
+
+/// Listens for the pick-up code of `session`, which google.html (where the
+/// sync server sends the sign-in window back to, on this app's own site)
+/// hands on, and puts it in `pick_up`. Returns the reply to ask the server
+/// for, or `None` when the app runs somewhere the server won't send it.
+pub fn listen_for_google(session: &str, pick_up: &crate::google::PickUp) -> Option<String> {
+    let window = web_sys::window()?;
+    let origin = window.location().origin().ok()?;
+    let index = ORIGINS.iter().position(|known| *known == origin)?;
+    let channel = web_sys::BroadcastChannel::new("mxsc-google").ok()?;
+    let (session, pick_up) = (session.to_owned(), std::sync::Arc::clone(pick_up));
+    let closure = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+        move |event: web_sys::MessageEvent| {
+            let text = |name: &str| {
+                js_sys::Reflect::get(&event.data(), &name.into())
+                    .ok()
+                    .and_then(|value| value.as_string())
+            };
+            if text("session").as_deref() != Some(session.as_str()) {
+                return;
+            }
+            if let Some(code) = text("pickup")
+                .as_deref()
+                .and_then(crate::google::pick_up_code)
+                && let Ok(mut slot) = pick_up.lock()
+            {
+                *slot = Some(code);
+            }
+        },
+    );
+    channel.set_onmessage(Some(closure.as_ref().unchecked_ref()));
+    closure.forget();
+    // Kept open for the page's life: a later sign-in opens its own.
+    std::mem::forget(channel);
+    Some(format!("w{index}"))
+}
+
 /// Opens the database kept in this browser's IndexedDB. SQLite works on
 /// a copy in memory that is written back to IndexedDB in the background
 /// after each change.
 async fn open_store() -> Result<Store, String> {
     use sqlite_wasm_vfs::relaxed_idb::{RelaxedIdbCfg, install};
+    if !hold_database_lock().await {
+        return Err(tr(
+            "The app is already open in another tab or window. Use that one, or close it and \
+             reload this page.",
+        )
+        .into());
+    }
     install::<sqlite_wasm_rs::WasmOsCallback>(&RelaxedIdbCfg::default(), true)
         .await
         .map_err(|error| {
@@ -108,6 +159,49 @@ async fn open_store() -> Result<Store, String> {
             )
         })?;
     Store::open(DATABASE).map_err(|error| trf!("could not open the database: {}", error))
+}
+
+/// Takes the database's lock for this page's life (Web Locks), so a second
+/// tab of the app can't work on the database at the same time: each keeps
+/// its own copy in memory and writes it back, which can corrupt it. False
+/// if another tab holds it; true in browsers without Web Locks.
+async fn hold_database_lock() -> bool {
+    use wasm_bindgen::JsValue;
+    let Some(window) = web_sys::window() else {
+        return true;
+    };
+    let locks = js_sys::Reflect::get(&window.navigator(), &"locks".into()).unwrap_or_default();
+    let Some(request) = js_sys::Reflect::get(&locks, &"request".into())
+        .ok()
+        .and_then(|request| request.dyn_into::<js_sys::Function>().ok())
+    else {
+        return true;
+    };
+    let options = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&options, &"ifAvailable".into(), &JsValue::TRUE);
+    let granted = js_sys::Promise::new(&mut |resolve, _| {
+        // Called with the lock, or null if another tab has it. The lock is
+        // held until the promise it returns settles: never.
+        let answer = resolve.clone();
+        let held = wasm_bindgen::closure::Closure::<dyn FnMut(JsValue) -> JsValue>::new(
+            move |lock: JsValue| {
+                let _ = answer.call1(&JsValue::NULL, &JsValue::from_bool(!lock.is_null()));
+                js_sys::Promise::new(&mut |_, _| {}).into()
+            },
+        );
+        if request
+            .call3(&locks, &"mxsc-database".into(), &options, held.as_ref())
+            .is_err()
+        {
+            let _ = resolve.call1(&JsValue::NULL, &JsValue::TRUE);
+        }
+        held.forget();
+    });
+    wasm_bindgen_futures::JsFuture::from(granted)
+        .await
+        .ok()
+        .and_then(|granted| granted.as_bool())
+        .unwrap_or(true)
 }
 
 /// Opens the database, then starts the app in the page's

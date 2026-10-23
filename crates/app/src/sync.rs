@@ -101,7 +101,6 @@ impl From<google::Trouble> for Failure {
     fn from(trouble: google::Trouble) -> Failure {
         match trouble {
             google::Trouble::SignIn(why) => Failure::SignIn(why),
-            google::Trouble::Deleted => Failure::Gone,
             google::Trouble::Other(error) => Failure::Other(error),
         }
     }
@@ -119,6 +118,12 @@ enum Phase {
 struct SigningIn {
     attempt: u32,
     url: String,
+    /// Typed codes go here (on the web).
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    pick_up: google::PickUp,
+    /// The pick-up code as being typed, from the sign-in page.
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    typed: String,
 }
 
 /// What the app should do after a frame of sync.
@@ -528,13 +533,43 @@ impl Sync {
         let attempt = self.sign_in_attempts;
         let session = uuid_hex();
         let server = self.server();
-        let url = google::sign_in_url(&server, &session);
+        let pick_up = google::PickUp::default();
+        // The pick-up code comes back to this app only: to a port the
+        // desktop app listens on, or as a message to the web app's window.
+        #[cfg(not(target_arch = "wasm32"))]
+        let reply_to = match std::net::TcpListener::bind("127.0.0.1:0") {
+            Ok(listener) => {
+                let port = listener.local_addr().map(|address| address.port()).unwrap_or(0);
+                let (session, pick_up) = (session.clone(), std::sync::Arc::clone(&pick_up));
+                std::thread::spawn(move || google::listen(listener, session, pick_up));
+                port.to_string()
+            }
+            Err(error) => {
+                self.join_error = Some(error.to_string());
+                return;
+            }
+        };
+        #[cfg(target_arch = "wasm32")]
+        let reply_to = match crate::web::listen_for_google(&session, &pick_up) {
+            Some(reply_to) => reply_to,
+            None => {
+                self.join_error =
+                    Some(tr("Google sign-in works only in the app's own web address").into());
+                return;
+            }
+        };
+        let url = google::sign_in_url(&server, &session, &reply_to);
         http::open_in_browser(context, &url);
-        self.signing_in = Some(SigningIn { attempt, url });
+        self.signing_in = Some(SigningIn {
+            attempt,
+            url,
+            pick_up: std::sync::Arc::clone(&pick_up),
+            typed: String::new(),
+        });
         self.join_error = None;
         let reply = self.reply_with(context);
         http::spawn(async move {
-            let result = google::finish_sign_in(server, session).await;
+            let result = google::finish_sign_in(server, pick_up).await;
             reply(Reply::SignedIn(attempt, result));
         });
     }
@@ -623,16 +658,38 @@ impl Sync {
     pub fn panel(&mut self, ui: &mut egui::Ui, store: &Store) {
         let now = ui.ctx().input(|input| input.time);
         let context = ui.ctx().clone();
-        if let Some(url) = self.signing_in.as_ref().map(|s| s.url.clone()) {
+        if let Some(signing_in) = &mut self.signing_in {
             ui.label(tr(
                 "Finish signing in to Google in your browser; this updates by itself.",
             ));
+            let mut cancel = false;
             ui.horizontal(|ui| {
-                ui.hyperlink_to(tr("Open the sign-in page again"), url);
-                if ui.button(tr("Cancel")).clicked() {
-                    self.signing_in = None;
-                }
+                ui.hyperlink_to(tr("Open the sign-in page again"), &signing_in.url);
+                cancel = ui.button(tr("Cancel")).clicked();
             });
+            // An app on a phone's home screen may not hear back from the
+            // sign-in page, which then shows the code to type here.
+            #[cfg(target_arch = "wasm32")]
+            {
+                ui.add_space(6.0);
+                ui.weak(tr("If it doesn't, enter the code the sign-in page shows:"));
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut signing_in.typed)
+                            .hint_text("XXXXX-XXXXX")
+                            .desired_width(130.0),
+                    );
+                    let code = google::pick_up_code(&signing_in.typed);
+                    if ui.add_enabled(code.is_some(), egui::Button::new(tr("Use code"))).clicked()
+                        && let Ok(mut slot) = signing_in.pick_up.lock()
+                    {
+                        *slot = code;
+                    }
+                });
+            }
+            if cancel {
+                self.signing_in = None;
+            }
             return;
         }
         match self.target.clone() {
@@ -833,6 +890,10 @@ fn failure(status: u16) -> Failure {
         412 => Failure::Conflict,
         410 => Failure::Gone,
         413 => Failure::Other(tr("your data is too large for the sync server").into()),
+        429 => Failure::Other(tr("the sync server is busy; will try again").into()),
+        507 => Failure::Other(
+            tr("the sync server is full and takes no new synced copies just now").into(),
+        ),
         status => Failure::Other(trf!("the sync server answered {status}", status = status)),
     }
 }

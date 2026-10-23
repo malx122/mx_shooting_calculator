@@ -400,20 +400,35 @@ fn put_in_place(archive: &[u8]) -> Result<PathBuf, String> {
     result
 }
 
-/// Writes the new program and swaps it for this one; returns it, to start.
+/// Writes the new program beside this one and swaps them; returns it, to
+/// start.
 #[cfg(not(target_os = "macos"))]
 fn put_in_place(program: &[u8]) -> Result<PathBuf, String> {
     use std::fs;
+    use std::io::Write;
     // Before the swap: on Linux, afterwards it names the replaced file.
     let current = std::env::current_exe().map_err(write_error)?;
-    let new = std::env::temp_dir().join(format!("mxsc-update-{}", std::process::id()));
-    fs::write(&new, program).map_err(write_error)?;
+    let folder = current
+        .parent()
+        .ok_or_else(|| write_error(std::io::ErrorKind::NotFound.into()))?;
+    // In the program's own folder, which only its owner can write to, and
+    // made new: never a file or link someone else put there.
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |since| since.as_nanos());
+    let new = folder.join(format!(".mxsc-update-{}-{stamp}", std::process::id()));
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&new, fs::Permissions::from_mode(0o755)).map_err(write_error)?;
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o755);
     }
-    let replaced = self_replace::self_replace(&new).map_err(write_error);
+    let written = options
+        .open(&new)
+        .and_then(|mut file| file.write_all(program).and_then(|()| file.sync_all()))
+        .map_err(write_error);
+    let replaced = written.and_then(|()| self_replace::self_replace(&new).map_err(write_error));
     let _ = fs::remove_file(&new);
     replaced.map(|()| current)
 }

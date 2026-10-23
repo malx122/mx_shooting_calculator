@@ -977,9 +977,12 @@ fn strip_weight(text: &str) -> String {
         return text.trim().to_owned();
     }
     let rest = text[digits..].trim_start_matches(['-', ' ']);
-    let lower = rest.to_lowercase();
     for unit in ["grain", "gr"] {
-        if lower.starts_with(unit) {
+        // Compared on the text itself: lowercasing can change byte lengths.
+        if rest
+            .get(..unit.len())
+            .is_some_and(|start| start.eq_ignore_ascii_case(unit))
+        {
             return rest[unit.len()..]
                 .trim_start_matches(['.', ' '])
                 .trim()
@@ -991,9 +994,16 @@ fn strip_weight(text: &str) -> String {
 
 /// "Naturalis 50 gr" → "Naturalis".
 fn strip_trailing_weight(text: &str) -> String {
-    let lower = text.to_lowercase();
     for unit in [" gr", "gr"] {
-        if let Some(head) = lower.strip_suffix(unit) {
+        // Compared on the text itself, so the offsets fit it: lowercasing
+        // can change byte lengths (İ, the Kelvin sign).
+        let head = text
+            .len()
+            .checked_sub(unit.len())
+            .and_then(|at| Some((text.get(..at)?, text.get(at..)?)))
+            .filter(|(_, end)| end.eq_ignore_ascii_case(unit))
+            .map(|(head, _)| head);
+        if let Some(head) = head {
             let head = head.trim_end();
             let figures = head
                 .chars()
@@ -1027,6 +1037,17 @@ mod tests {
     use super::*;
 
     const SAMPLE: &str = include_str!("../testdata/strelok-sample.srl");
+
+    #[test]
+    fn names_whose_lowercase_is_longer_do_not_panic() {
+        assert_eq!(strip_trailing_weight("İİİİİİ 5gr"), "İİİİİİ");
+        assert_eq!(strip_trailing_weight("Naturalis 50 GR"), "Naturalis");
+        assert_eq!(
+            strip_trailing_weight("\u{212A}\u{212A} 50 gr"),
+            "\u{212A}\u{212A}"
+        );
+        assert_eq!(strip_trailing_weight("İgr"), "İgr");
+    }
 
     fn options() -> PlanOptions {
         PlanOptions {

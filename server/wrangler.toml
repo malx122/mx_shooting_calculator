@@ -16,6 +16,31 @@ migrations_dir = "migrations"
 # secret: `npx wrangler secret put GOOGLE_CLIENT_SECRET`.
 GOOGLE_CLIENT_ID = "223667274903-qu244apl6nvu5423gfifmma588fnrqk7.apps.googleusercontent.com"
 
-# Weekly clean-up of copies unused for two years.
+# The largest the database may grow before new copies are refused, bytes,
+# so that filling it can't stop the hunters already syncing: about 80 % of
+# the plan's limit. 400 MB on the free plan (500 MB); on Workers Paid
+# (10 GB), 8000000000.
+MAX_DATABASE_BYTES = "400000000"
+
+# Requests one IP address may make (Cloudflare's rate limiter: counted per
+# data centre, nothing stored). The namespace ids only need to be unique
+# within the account.
+[[ratelimits]]
+name = "NEW_COPY_LIMIT"
+namespace_id = "1001"
+simple = { limit = 2, period = 60 }
+
+[[ratelimits]]
+name = "GOOGLE_LIMIT"
+namespace_id = "1002"
+simple = { limit = 20, period = 60 }
+
+[[ratelimits]]
+name = "REQUEST_LIMIT"
+namespace_id = "1003"
+simple = { limit = 120, period = 60 }
+
+# Clean-up every quarter of an hour: Google sign-ins nobody picked up, and
+# copies unused for two years.
 [triggers]
-crons = ["17 3 * * SUN"]
+crons = ["*/15 * * * *"]

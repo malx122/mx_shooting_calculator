@@ -6,6 +6,28 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Google sign-in is safer.** The sign-in is handed only to the app that
+  started it: a sign-in link someone else sends you can no longer give them
+  your Drive data. A sign-in no app picks up is deleted within half an hour.
+  On a phone's home-screen app, type in the code the sign-in page shows if
+  the app doesn't continue by itself. Apps before this version can't sign in
+  to Google any more (they still sync once signed in): update them.
+- The sync server limits how many requests one sender can make, and stops
+  taking new synced copies before it runs out of room, so nobody can fill
+  it up and stop everyone's sync.
+- After *Delete the synced copy*, signing in to Google again starts syncing
+  again instead of stopping at once.
+- The web app refuses to open in a second tab while it is open in another,
+  which could damage the data kept in the browser.
+- Importing a Strelok file with some non-English letters in a bullet's
+  name no longer crashes the app.
+- The tool for AI assistants only reads the app's database, and never
+  upgrades it for a newer version.
+- The desktop updater writes the new version beside the app, not in a
+  shared temporary folder.
+
 ## [0.8.2] - 2026-10-22
 
 ### Added

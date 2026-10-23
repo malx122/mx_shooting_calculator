@@ -11,9 +11,13 @@ accounts. See `crates/ballistics-store/src/sync.rs` for the client side.
 
 It also signs the app in to Google for syncing through the hunter's own
 Google Drive (`src/google.js`). The app's Google client is a web client,
-whose code exchange needs the client secret, so that happens here; tokens
-wait at most ten minutes for the app to pick them up, and the server keeps
-none after that.
+whose code exchange needs the client secret, so that happens here. The
+tokens wait under a pick-up code the server makes, which goes back only to
+the app that started the sign-in: to a port the desktop app listens on
+(`127.0.0.1`), or to the web app's own `google.html`, which hands it to the
+app's window and shows it to type in. A link someone else made therefore
+gets them nothing. Tokens wait at most ten minutes, and one no app picked up
+is deleted at the next sign-in request or the quarter-hourly clean-up.
 
 ## API
 
@@ -23,15 +27,21 @@ none after that.
 | `PUT /v1/copies/{id}` with `If-None-Match: *` | `201`: the first copy; `412` if one exists |
 | `PUT /v1/copies/{id}` with `If-Match: "<version>"` | `200` with the new `ETag`; `412` if another device wrote first |
 | `DELETE /v1/copies/{id}` | `204`; later reads and writes get `410`, so no device starts it again |
-| `GET /v1/google/start?session=S` | redirects to Google's sign-in (S: 32 hex digits the app made) |
-| `GET /v1/google/callback` | Google's redirect; the tokens wait under S |
-| `POST /v1/google/session/S` | the tokens, once; `404` until signed in |
+| `GET /v1/google/start?session=S&reply=R` | redirects to Google's sign-in (S: 32 hex digits the app made; R: the desktop app's port, or `w0`–`w2` for the web app's sites) |
+| `GET /v1/google/callback` | Google's redirect; sends the browser back to the app with S and a new pick-up code P |
+| `POST /v1/google/session/P` | the tokens, once; `404` for an unknown, used or expired code |
 | `POST /v1/google/refresh` | `{"refresh_token"}` → `{"access_token", "expires_in"}`; `401` to sign in again |
 
 `{id}` is 64 lowercase hex digits. Copies are at most 1 MiB. CORS is open
-to every origin (the copy is encrypted and the id is unguessable). A weekly
-job forgets copies nobody has written for two years, and deleted ones after
-30 days.
+to every origin (the copy is encrypted and the id is unguessable).
+
+One IP address may start 2 copies a minute, make 20 Google sign-in requests
+and 120 requests in all (Cloudflare's rate limiter, in `wrangler.toml`;
+nothing is stored), else `429`. When the database reaches
+`MAX_DATABASE_BYTES` (about 80 % of the plan's size: raise it on Workers
+Paid), new copies get `507`, and the copies already there keep syncing. A job
+every quarter of an hour forgets Google sign-ins nobody picked up, copies
+nobody has written for two years, and deleted ones after 30 days.
 
 ## Develop
 

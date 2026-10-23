@@ -86,7 +86,7 @@
   <main>
     <div class="wrap">
       <h1>Privacy</h1>
-      <p class="updated">MX Shooting Calculator · in effect from 22 October 2026</p>
+      <p class="updated">MX Shooting Calculator · in effect from 23 October 2026</p>
 
       <div class="summary">
         <p>Your rifles, bullets, targets, shot log and settings are kept on your own devices. The app
@@ -134,7 +134,9 @@
         with a key made from your sync key) before it is sent to the app's sync server, which
         runs on Cloudflare. The server stores only that encrypted copy, under a hash of the
         key; it never sees the key or anything readable, and keeps no accounts or names. A copy
-        nobody has written to for two years is removed. <strong>Delete the synced copy</strong>
+        nobody has written to for two years is removed. To keep any one sender from flooding it,
+        the server counts the requests from each IP address over the last minute; Cloudflare
+        does the counting, and the address is not stored or logged. <strong>Delete the synced copy</strong>
         in the app's Sync window removes the data at once; a note that it was deleted stays
         for 30 days, so your other devices stop instead of starting it again.</p>
 
@@ -147,8 +149,9 @@
         share them. It cannot see or change any other file in
         your Drive, and it doesn't ask for your name or e-mail address.</p>
       <p>The sign-in passes through the app's sync server, because Google requires a secret
-        that can't be kept in the app. The server hands the sign-in to your device within ten
-        minutes and keeps nothing afterwards; later it only passes requests for a fresh access
+        that can't be kept in the app. The server hands the sign-in only to the device that
+        started it, within ten minutes, and keeps nothing afterwards: one that no device picks
+        up is deleted within half an hour. Later it only passes requests for a fresh access
         token on to Google, without storing them. The sign-in is kept on your device. Your
         data goes straight from your device to your Drive, not through the server.</p>
       <p>The app's use and transfer of information received from Google APIs adheres to the

@@ -2,7 +2,15 @@
 # Linux with scripts/package.sh, and attaches them to the GitHub release of
 # each version tag such as v0.8.0. By hand from the Actions tab it builds
 # them as downloadable artifacts, and with "release" set to an existing tag
-# also attaches them to that tag's release.
+# also attaches them to that tag's release, built from that tag (start it
+# from the tag itself: the release environment admits only v* tags).
+#
+# The release job signs the update manifest the apps' updater trusts, so the
+# chain to it is kept short: third-party actions pinned by commit, no build
+# cache (a poisoned cache could slip into a signed release), write access
+# only for the release job, and the signing key (the MXSC_UPDATE_KEY secret,
+# best kept in the "release" environment limited to v* tags) only in the
+# step that signs.
 name: Desktop apps
 
 on:
@@ -16,10 +24,14 @@ on:
         default: ""
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +42,9 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.release || github.ref }}
 
       - name: Check the tag matches the version in Cargo.toml
         env:
@@ -48,10 +62,6 @@ jobs:
           rustup toolchain install stable --profile minimal
           rustup default stable
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: desktop
-
       - name: Linux libraries
         if: runner.os == 'Linux'
         run: |
@@ -62,7 +72,7 @@ jobs:
       - name: Package
         run: scripts/package.sh
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: desktop-${{ runner.os }}
           path: dist-desktop/*
@@ -72,17 +82,27 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/') || inputs.release != ''
     runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
     env:
       TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.release }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.release || github.ref }}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: desktop-*
           merge-multiple: true
           path: dist
+
+      # Built before the key is anywhere near: its dependencies' build
+      # scripts never see it.
+      - name: Build the signing tool
+        run: cargo build --release --locked --manifest-path tools/sign-update/Cargo.toml
 
       # What the apps' updater (crates/app/src/updates.rs) reads: the
       # version and each system's update file with its SHA-256, signed with
@@ -106,7 +126,7 @@ jobs:
             "$(entry windows-x64 "$file-windows-x64-update.exe")" \
             "$(entry linux-x64 "$file-linux-x64-update")" >dist/update.json
           cat dist/update.json
-          cargo run --release --quiet --manifest-path tools/sign-update/Cargo.toml -- dist/update.json
+          tools/sign-update/target/release/sign-update dist/update.json
 
       - name: Release notes from the changelog
         run: |

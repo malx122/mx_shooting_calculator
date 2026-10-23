@@ -4,7 +4,8 @@
 //!
 //! The assistant starts this program and talks JSON-RPC to it over stdin
 //! and stdout, one message per line (MCP's stdio transport). It opens the
-//! same database as the desktop app (or `--db <file>` / `MXSC_DB`).
+//! same database as the desktop app (or `--db <file>` / `MXSC_DB`), only to
+//! read it, and as it is: it never upgrades it for a newer version.
 
 mod tools;
 
@@ -26,7 +27,8 @@ const INSTRUCTIONS: &str = "Tools for MX Shooting Calculator, the hunter's balli
 
 fn main() {
     let store = match database_path().and_then(|path| {
-        Store::open(&path).map_err(|error| format!("could not open {}: {error}", path.display()))
+        Store::open_read_only(&path)
+            .map_err(|error| format!("could not open {}: {error}", path.display()))
     }) {
         Ok(store) => store,
         Err(error) => {

@@ -15,6 +15,11 @@
 // Copies nobody has written to for two years are forgotten, and deleted
 // ones after 30 days.
 //
+// One IP address may make only so many requests (wrangler.toml): 429 when
+// it makes more. Cloudflare's rate limiter counts them; nothing is stored.
+// When the database nears its plan's size, new copies are refused (507),
+// so the hunters already syncing carry on.
+//
 // It also signs the app in to Google, for syncing through the hunter's own
 // Google Drive instead (see google.js).
 
@@ -62,6 +67,10 @@ async function handle(request, env) {
   const url = new URL(request.url);
   if (url.pathname === '/') {
     return reply(200, 'MX Shooting Calculator sync');
+  }
+  const signingIn = /^\/v1\/google\/(start|callback|session\/)/.test(url.pathname);
+  if (await tooMany(request, signingIn ? env.GOOGLE_LIMIT : env.REQUEST_LIMIT)) {
+    return reply(429, 'too many requests; try again in a minute');
   }
   if (url.pathname.startsWith('/v1/google/')) {
     return google(request, env, url, reply, json);
@@ -113,6 +122,10 @@ async function write(request, env, id, row) {
   const now = Date.now();
 
   if (request.headers.get('If-None-Match') === '*') {
+    if (await tooMany(request, env.NEW_COPY_LIMIT)) {
+      return reply(429, 'too many new copies; try again in a minute');
+    }
+    if (await full(env)) return reply(507, 'the sync server is full');
     const result = await env.DB.prepare(
       'INSERT INTO copies (id, version, data, updated_at) VALUES (?1, 1, ?2, ?3) ON CONFLICT (id) DO NOTHING',
     )
@@ -147,6 +160,23 @@ async function remove(env, id, row) {
       .run();
   }
   return new Response(null, { status: 204, headers: CORS });
+}
+
+/// Whether this request's IP address is over `limit` (a rate limiter
+/// binding; none: no limit).
+async function tooMany(request, limit) {
+  if (!limit) return false;
+  const key = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const { success } = await limit.limit({ key });
+  return !success;
+}
+
+/// Whether the database has reached MAX_DATABASE_BYTES.
+async function full(env) {
+  const most = Number(env.MAX_DATABASE_BYTES);
+  if (!most) return false;
+  const result = await env.DB.prepare('SELECT 1').run();
+  return (result.meta.size_after ?? 0) >= most;
 }
 
 function written(status, version) {

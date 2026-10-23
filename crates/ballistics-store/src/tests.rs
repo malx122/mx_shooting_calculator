@@ -51,6 +51,28 @@ fn newer_schema_is_refused() {
 }
 
 #[test]
+fn read_only_opening_reads_and_never_upgrades() {
+    let path = temporary_path();
+    let mut saved = rifle("Tikka T3x", "308-win");
+    Store::open(&path).unwrap().save_rifle(&mut saved).unwrap();
+    let reader = Store::open_read_only(&path).unwrap();
+    assert_eq!(reader.rifles().unwrap(), vec![saved.clone()]);
+    assert!(reader.save_rifle(&mut saved).is_err());
+    drop(reader);
+    // An older schema stays as it is.
+    let connection = rusqlite::Connection::open(&path).unwrap();
+    connection.pragma_update(None, "user_version", 1).unwrap();
+    drop(connection);
+    assert!(matches!(Store::open_read_only(&path), Err(StoreError::Invalid(_))));
+    let version: i64 = rusqlite::Connection::open(&path)
+        .unwrap()
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap();
+    assert_eq!(version, 1);
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
 fn saving_validates_and_stamps_records() {
     let store = Store::open_in_memory().unwrap();
     let mut unnamed = rifle(" ", "308-win");
