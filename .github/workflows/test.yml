@@ -4,6 +4,7 @@
 # fails. It uses no secrets, so pull requests can run it safely.
 #
 # - Rust: formatting, the workspace's tests, clippy with warnings as errors
+# - Windows: the desktop app compiles there
 # - Dependencies: known security advisories, licences, sources (deny.toml)
 # - Web: clippy for the browser build
 # - Sync server: its tests, against a local worker
@@ -53,6 +54,26 @@ jobs:
 
       - name: The update signing tool builds
         run: cargo build --locked --manifest-path tools/sign-update/Cargo.toml
+
+  # The desktop app compiles for Windows too: its graphics and system code
+  # differ there, and a release builds it.
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Rust
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          key: test-windows
+
+      - name: Check
+        run: cargo check -p mxsc --all-targets --locked
 
   dependencies:
     runs-on: ubuntu-24.04
