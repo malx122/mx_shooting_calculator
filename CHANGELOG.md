@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-10-24
+
 ### Changed
 
 - The app runs on a newer version of its user-interface library (egui
@@ -421,7 +423,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.0...v0.8.1
