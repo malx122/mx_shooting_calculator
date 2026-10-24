@@ -143,8 +143,8 @@ fn app_creator(store: Result<Store, String>) -> eframe::AppCreator<'static> {
 struct StartupError(String);
 
 impl eframe::App for StartupError {
-    fn update(&mut self, context: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(context, |ui| {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ui, |ui| {
             ui.heading(i18n::tr("The database could not be opened"));
             ui.colored_label(ui.visuals().error_fg_color, &self.0);
         });

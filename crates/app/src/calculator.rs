@@ -524,7 +524,8 @@ impl CalculatorPage {
         }
     }
 
-    pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
+    pub fn show(&mut self, ui: &mut egui::Ui, data: &Data) -> Vec<Action> {
+        let context = &ui.ctx().clone();
         if let Some(report) = self.weather.poll(context) {
             crate::weather::apply(&report, &mut self.inputs);
         }
@@ -561,7 +562,7 @@ impl CalculatorPage {
 
         if mobile::is_narrow(context) {
             self.show_phone(
-                context,
+                ui,
                 data,
                 phone::PhoneFrame {
                     rifle: rifle.as_ref(),
@@ -578,11 +579,11 @@ impl CalculatorPage {
             return actions;
         }
 
-        egui::SidePanel::left("calculator-inputs")
+        egui::Panel::left("calculator-inputs")
             .resizable(true)
-            .default_width(370.0)
-            .max_width(560.0)
-            .show(context, |ui| {
+            .default_size(370.0)
+            .max_size(560.0)
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     self.equipment(
                         ui,
@@ -604,7 +605,7 @@ impl CalculatorPage {
                 });
             });
 
-        egui::CentralPanel::default().show(context, |ui| match (&rifle, &bullet) {
+        egui::CentralPanel::default().show(ui, |ui| match (&rifle, &bullet) {
             (None, _) => {
                 ui.heading(tr("Add a rifle to start"));
                 ui.label(tr(
@@ -1898,21 +1899,14 @@ impl ResultsView<'_> {
             let button = ui
                 .button(tr("Columns…"))
                 .on_hover_text(tr("The table's ranges and columns, kept for this rifle"));
-            let popup = ui.make_persistent_id("table-columns");
-            if button.clicked() {
-                ui.memory_mut(|memory| memory.toggle_popup(popup));
-            }
             let mut changed = table;
-            egui::popup_below_widget(
-                ui,
-                popup,
-                &button,
-                egui::PopupCloseBehavior::CloseOnClickOutside,
-                |ui| {
+            egui::Popup::from_toggle_button_response(&button)
+                .id(ui.make_persistent_id("table-columns"))
+                .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+                .show(|ui| {
                     ui.set_min_width(280.0);
                     table_settings(ui, &mut changed, self.rifle.click_unit);
-                },
-            );
+                });
             if changed != table {
                 requested.table = Some(changed);
             }
@@ -2246,9 +2240,9 @@ impl ResultsView<'_> {
             ui.label(big(format!(
                 "{} {:.2} {}",
                 if elevation >= 0.0 {
-                    tr("⬆ up")
+                    tr("↑ up")
                 } else {
-                    tr("⬇ down")
+                    tr("↓ down")
                 },
                 elevation.abs(),
                 unit_label(unit)
@@ -2258,9 +2252,9 @@ impl ResultsView<'_> {
             ui.label(big(format!(
                 "{} {:.2} {}",
                 if windage >= 0.0 {
-                    tr("➡ right")
+                    tr("→ right")
                 } else {
-                    tr("⬅ left")
+                    tr("← left")
                 },
                 windage.abs(),
                 unit_label(unit)
@@ -2489,27 +2483,18 @@ impl ResultsView<'_> {
 
                 if let Some(zone) = zone {
                     let zone_name = capitalised(self.aim.zone_name());
-                    plot_ui.hline(HLine::new(zone).color(theme::MEADOW).name(&zone_name));
-                    plot_ui.hline(HLine::new(-zone).color(theme::MEADOW).name(&zone_name));
+                    plot_ui.hline(HLine::new(&zone_name, zone).color(theme::MEADOW));
+                    plot_ui.hline(HLine::new(&zone_name, -zone).color(theme::MEADOW));
                 }
-                plot_ui.hline(
-                    HLine::new(0.0)
-                        .color(theme::BONE_MUTED)
-                        .name(tr("Line of sight")),
-                );
+                plot_ui.hline(HLine::new(tr("Line of sight"), 0.0).color(theme::BONE_MUTED));
                 plot_ui.line(
-                    Line::new(PlotPoints::from(path))
+                    Line::new(tr("Bullet"), PlotPoints::from(path))
                         .width(2.0_f32)
-                        .color(theme::BLAZE)
-                        .name(tr("Bullet")),
+                        .color(theme::BLAZE),
                 );
-                plot_ui.vline(VLine::new(target).color(theme::BONE).name(tr("Target")));
+                plot_ui.vline(VLine::new(tr("Target"), target).color(theme::BONE));
                 if let Some(limit) = ethical.filter(|limit| *limit <= max_range) {
-                    plot_ui.vline(
-                        VLine::new(x(limit))
-                            .color(theme::ALARM)
-                            .name(tr("Ethical limit")),
-                    );
+                    plot_ui.vline(VLine::new(tr("Ethical limit"), x(limit)).color(theme::ALARM));
                 }
             });
     }

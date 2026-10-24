@@ -17,19 +17,19 @@ const NARROW_WIDTH: f32 = 640.0;
 pub const TOUCH: f32 = 44.0;
 
 pub fn is_narrow(context: &egui::Context) -> bool {
-    context.screen_rect().width() < NARROW_WIDTH
+    context.content_rect().width() < NARROW_WIDTH
 }
 
 /// Bigger text and controls on phones; the desktop sizes otherwise.
 /// Only touches the style when the layout changes.
 pub fn apply_style(context: &egui::Context) {
     let narrow = is_narrow(context);
-    let id = Id::new("mobile-style");
+    let id = Id::unique("mobile-style");
     if context.data(|data| data.get_temp::<bool>(id)) == Some(narrow) {
         return;
     }
     context.data_mut(|data| data.insert_temp(id, narrow));
-    context.style_mut(|style| {
+    context.all_styles_mut(|style| {
         use egui::{FontFamily, FontId, TextStyle};
         let scale = if narrow { 1.3 } else { 1.0 };
         style.text_styles = [
@@ -99,7 +99,7 @@ pub fn list_row(ui: &mut Ui, title: &str, detail: &str, selected: bool) -> egui:
     let line = |text: &str, font: egui::FontId, colour: Color32| {
         let mut job = egui::text::LayoutJob::simple_singleline(text.to_owned(), font, colour);
         job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
-        ui.fonts(|fonts| fonts.layout_job(job))
+        ui.painter().layout_job(job)
     };
     if detail.is_empty() {
         let galley = line(title, body, theme::BONE);
@@ -138,9 +138,9 @@ pub fn sheet<R>(
     title: &str,
     contents: impl FnOnce(&mut Ui) -> R,
 ) -> Sheet<R> {
-    let screen = context.screen_rect();
+    let screen = context.content_rect();
     let mut closed = false;
-    egui::Area::new(Id::new(id).with("dim"))
+    egui::Area::new(Id::unique(id).with("dim"))
         .order(Order::Middle)
         .fixed_pos(Pos2::ZERO)
         .show(context, |ui| {
@@ -157,7 +157,7 @@ pub fn sheet<R>(
     };
     // Sit on the bottom edge, using the height measured last frame (an
     // anchored area would get too little room on its first frame).
-    let height_id = Id::new(id).with("height");
+    let height_id = Id::unique(id).with("height");
     let height: f32 = context
         .data(|data| data.get_temp(height_id))
         .unwrap_or(screen.height() * 0.6);
@@ -172,7 +172,7 @@ pub fn sheet<R>(
             (screen.bottom() - height).max(screen.top() + screen.height() * 0.08),
         )
     };
-    let shown = egui::Area::new(Id::new(id))
+    let shown = egui::Area::new(Id::unique(id))
         .order(Order::Foreground)
         .fixed_pos(pos2(left, top))
         .constrain(false)

@@ -33,7 +33,12 @@ pub fn wordmark() -> egui::ImageSource<'static> {
 pub fn window_icon() -> Option<egui::IconData> {
     let image = egui_extras::image::load_svg_bytes_with_size(
         ICON_SVG,
-        Some(egui::SizeHint::Size(256, 256)),
+        egui::SizeHint::Size {
+            width: 256,
+            height: 256,
+            maintain_aspect_ratio: true,
+        },
+        &resvg::usvg::Options::default(),
     )
     .ok()?;
     Some(egui::IconData {
@@ -55,7 +60,7 @@ pub fn hairline(color: Color32) -> Stroke {
 pub fn apply(context: &egui::Context) {
     egui_extras::install_image_loaders(context);
     context.set_visuals(visuals());
-    context.style_mut(|style| {
+    context.all_styles_mut(|style| {
         style.spacing.item_spacing = egui::vec2(8.0, 6.0);
         style.spacing.button_padding = egui::vec2(8.0, 4.0);
     });
@@ -97,4 +102,32 @@ fn visuals() -> egui::Visuals {
     widgets.active.bg_stroke = hairline(BLAZE);
     widgets.open.bg_stroke = hairline(FOREST_500);
     visuals
+}
+
+#[cfg(test)]
+mod tests {
+    use eframe::egui;
+
+    /// The symbols the app writes come out on the desktop: the built-in
+    /// fonts lack most of them, so eframe's system font fallback must find
+    /// them. It depends on the system's fonts, so it's checked by hand:
+    /// `cargo test -p mxsc symbols -- --ignored`.
+    #[test]
+    #[ignore = "depends on the system's fonts"]
+    fn the_desktop_draws_the_symbols_the_app_uses() {
+        let context = egui::Context::default();
+        context.add_font_provider(std::sync::Arc::new(
+            egui_system_font_provider::SystemFontProvider::new(),
+        ));
+        let mut output = context.run_ui(egui::RawInput::default(), |_| {});
+        output.textures_delta.clear();
+        let font = egui::FontId::proportional(14.0);
+        let missing: String = context.fonts_mut(|fonts| {
+            "↑↓←→✖↺↻⚠✔✓📍⌘🧭"
+                .chars()
+                .filter(|c| !fonts.has_glyph(&font, *c))
+                .collect()
+        });
+        assert!(missing.is_empty(), "no glyph for {missing}");
+    }
 }

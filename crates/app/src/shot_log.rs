@@ -162,17 +162,13 @@ impl ShotLogPage {
         self.open = None;
     }
 
-    pub fn show(
-        &mut self,
-        context: &egui::Context,
-        data: &Data,
-        place: Option<&Place>,
-    ) -> Vec<Action> {
+    pub fn show(&mut self, ui: &mut egui::Ui, data: &Data, place: Option<&Place>) -> Vec<Action> {
+        let context = &ui.ctx().clone();
         self.collect_position();
         let mut actions = Vec::new();
         if mobile::is_narrow(context) {
             // On a phone: the list, or one shot with a way back.
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 if self.open.is_none() {
                     if mobile::back_button(ui, tr("Calculate")) {
                         actions.push(Action::Goto(Page::Calculate));
@@ -189,13 +185,13 @@ impl ShotLogPage {
             });
             return actions;
         }
-        egui::SidePanel::left("shot-list")
+        egui::Panel::left("shot-list")
             .resizable(true)
-            .default_width(280.0)
-            .show(context, |ui| {
+            .default_size(280.0)
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, false));
             });
-        egui::CentralPanel::default().show(context, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, place, &mut actions));
         });
         actions
@@ -418,7 +414,7 @@ fn when(unix_ms: i64, country: Option<Country>) -> String {
     )
 }
 
-/// An angle in the hold's unit: "⬆ 0.60 mil".
+/// An angle in the hold's unit: "↑ 0.60 mil".
 fn angle_text(mrad: f64, unit: ClickUnit, positive: &str, negative: &str) -> String {
     let value = from_radians(unit, mrad / 1000.0);
     format!(
@@ -429,12 +425,12 @@ fn angle_text(mrad: f64, unit: ClickUnit, positive: &str, negative: &str) -> Str
     )
 }
 
-/// "⬆ 0.60 mil · ➡ 0.30 mil"
+/// "↑ 0.60 mil · → 0.30 mil"
 fn hold_summary(hold: &ShotHold) -> String {
     format!(
         "{} · {}",
-        angle_text(hold.elevation_mrad, hold.click_unit, "⬆", "⬇"),
-        angle_text(hold.windage_mrad, hold.click_unit, "➡", "⬅")
+        angle_text(hold.elevation_mrad, hold.click_unit, "↑", "↓"),
+        angle_text(hold.windage_mrad, hold.click_unit, "→", "←")
     )
 }
 
@@ -463,8 +459,8 @@ fn solution(ui: &mut egui::Ui, shot: &Shot) {
             angle_text(
                 hold.elevation_mrad,
                 hold.click_unit,
-                tr("⬆ up"),
-                tr("⬇ down")
+                tr("↑ up"),
+                tr("↓ down")
             ),
             clicks_text(hold.elevation_clicks.abs()),
             if hold.elevation_clicks >= 0 {
@@ -480,8 +476,8 @@ fn solution(ui: &mut egui::Ui, shot: &Shot) {
             angle_text(
                 hold.windage_mrad,
                 hold.click_unit,
-                tr("➡ right"),
-                tr("⬅ left")
+                tr("→ right"),
+                tr("← left")
             ),
             clicks_text(hold.windage_clicks.abs()),
             if hold.windage_clicks >= 0 {
@@ -944,7 +940,7 @@ mod tests {
         assert_eq!(shot.wind_clock, 0.0, "12 o'clock kept as 0");
         assert!(shot.weather.pressure_hpa > 900.0 && shot.weather.pressure_hpa < 1013.0);
         assert!(shot.validate().is_ok(), "{:?}", shot.validate());
-        assert_eq!(hold_summary(&shot.hold), "⬆ 1.20 mil · ⬅ 0.36 mil");
+        assert_eq!(hold_summary(&shot.hold), "↑ 1.20 mil · ← 0.36 mil");
     }
 
     #[test]
@@ -976,9 +972,11 @@ mod tests {
             };
             let mut actions = Vec::new();
             for _ in 0..2 {
-                let _ = context.run(input.clone(), |context| {
-                    actions = page.show(context, &data, None);
+                let mut output = context.run_ui(input.clone(), |ui| {
+                    actions = page.show(ui, &data, None);
                 });
+                // Nothing draws here: the textures need no uploading.
+                output.textures_delta.clear();
             }
             assert!(actions.is_empty());
             let open = page.open.as_ref().expect("still open");

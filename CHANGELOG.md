@@ -6,6 +6,13 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Changed
+
+- The app runs on a newer version of its user-interface library (egui
+  0.37). It should look and work as before. The hold's arrows are plain
+  arrows, and on a computer, symbols and emoji the app's own fonts lack come
+  from the system's fonts, as they do in a browser.
+
 ### Fixed
 
 - The desktop app's secure connections (weather, sync, updates) now refuse

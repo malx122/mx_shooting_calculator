@@ -9,8 +9,21 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # The UI library and what must stay on its versions: the wgpu the web
+      # build names (eframe's), and resvg for the window icon
+      # (egui_extras'). Updated together, in one pull request.
+      egui:
+        patterns: ["eframe", "egui*", "wgpu", "resvg"]
       rust:
         update-types: [minor, patch]
+    ignore:
+      # 0.6/0.3 drop the IndexedDB storage the web app keeps its data in
+      # (only OPFS in a worker is left): moving to it means carrying every
+      # browser's data across, a change of its own, not an update.
+      - dependency-name: sqlite-wasm-rs
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: sqlite-wasm-vfs
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: cargo
     directory: /tools/sign-update

@@ -84,9 +84,9 @@ impl BulletsPage {
         }
     }
 
-    pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
+    pub fn show(&mut self, ui: &mut egui::Ui, data: &Data) -> Vec<Action> {
         let mut actions = Vec::new();
-        egui::TopBottomPanel::top("bullets-toolbar").show(context, |ui| {
+        egui::Panel::top("bullets-toolbar").show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 ui.selectable_value(&mut self.view, View::Collection, tr("My bullets"));
                 ui.selectable_value(&mut self.view, View::Catalog, tr("Catalog"));
@@ -105,16 +105,17 @@ impl BulletsPage {
             });
         });
         match self.view {
-            View::Collection => self.collection(context, data, &mut actions),
-            View::Catalog => self.catalog(context, data),
+            View::Collection => self.collection(ui, data, &mut actions),
+            View::Catalog => self.catalog(ui, data),
         }
         actions
     }
 
-    fn collection(&mut self, context: &egui::Context, data: &Data, actions: &mut Vec<Action>) {
+    fn collection(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        let context = &ui.ctx().clone();
         if mobile::is_narrow(context) {
             // On a phone: the list, or one bullet with a way back.
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 if self.editing.is_none() {
                     self.collection_list(ui, data, true);
                 } else if mobile::back_button(ui, tr("My bullets")) {
@@ -125,11 +126,11 @@ impl BulletsPage {
             });
             return;
         }
-        egui::SidePanel::left("bullet-list")
+        egui::Panel::left("bullet-list")
             .resizable(true)
-            .default_width(320.0)
-            .show(context, |ui| self.collection_list(ui, data, false));
-        egui::CentralPanel::default().show(context, |ui| self.collection_editor(ui, data, actions));
+            .default_size(320.0)
+            .show(ui, |ui| self.collection_list(ui, data, false));
+        egui::CentralPanel::default().show(ui, |ui| self.collection_editor(ui, data, actions));
     }
 
     /// The hunter's bullets by caliber, with ways to add more. On a phone
@@ -283,10 +284,11 @@ impl BulletsPage {
         }
     }
 
-    fn catalog(&mut self, context: &egui::Context, data: &Data) {
+    fn catalog(&mut self, ui: &mut egui::Ui, data: &Data) {
+        let context = &ui.ctx().clone();
         let catalog = Catalog::builtin();
         let u = units::prefs(context);
-        egui::CentralPanel::default().show(context, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             let Some(caliber) = catalog.caliber(&self.caliber) else {
                 ui.heading(tr("Choose a caliber"));
                 ui.label(tr("The catalog shows factory ammunition in that caliber and component bullets that fit it."));
@@ -675,7 +677,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
                 .allow_boxed_zoom(false)
                 .x_axis_label("Mach")
                 .y_axis_label("Cd")
-                .show(ui, |plot_ui| plot_ui.line(Line::new(points).color(theme::BLAZE)));
+                .show(ui, |plot_ui| plot_ui.line(Line::new("Cd", points).color(theme::BLAZE)));
         }
         egui::CollapsingHeader::new(tr("Points")).id_salt("drag-curve-points").show(ui, |ui| {
             egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {

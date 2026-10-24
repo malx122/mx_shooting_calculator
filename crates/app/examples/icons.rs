@@ -56,7 +56,12 @@ fn padded_png(size: u32) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 fn rgba(size: u32) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let image = egui_extras::image::load_svg_bytes_with_size(
         ICON_SVG,
-        Some(eframe::egui::SizeHint::Size(size, size)),
+        eframe::egui::SizeHint::Size {
+            width: size,
+            height: size,
+            maintain_aspect_ratio: true,
+        },
+        &resvg::usvg::Options::default(),
     )?;
     if image.size != [size as usize, size as usize] {
         return Err(format!("the icon came out {:?}, not {size} square", image.size).into());

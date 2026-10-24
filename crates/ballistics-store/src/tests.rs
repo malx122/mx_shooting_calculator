@@ -872,6 +872,20 @@ fn a_sealed_copy_opens_only_with_its_key() {
     assert!(key.open(b"MXS1").is_err());
 }
 
+/// A copy sealed by version 0.8.3 (chacha20poly1305 0.10, sha2 0.10) still
+/// opens: crate updates mustn't change the format devices share.
+#[test]
+fn a_copy_sealed_by_an_earlier_version_still_opens() {
+    let key = SyncKey::parse("Q3N2-19H2-MNSF-FQYB-SV0B-4WSQ-F8").unwrap();
+    let hex = "4d585331dd3a197ca26748568a037c4495646bdb4c94172bc47a442d3ee018d30536645243e39b\
+               d085f7c68fed4f60282d9b3df57b7c2ac760";
+    let sealed: Vec<u8> = (0..hex.len())
+        .step_by(2)
+        .map(|at| u8::from_str_radix(&hex[at..at + 2], 16).unwrap())
+        .collect();
+    assert_eq!(key.open(&sealed).unwrap(), b"made by 0.8.3");
+}
+
 #[test]
 fn two_devices_converge_and_deletions_stay_deleted() {
     let key = SyncKey::generate();

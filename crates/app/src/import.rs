@@ -119,7 +119,7 @@ impl ImportPreview {
         let mut replan = false;
         let mut open = true;
         egui::Window::new(trf!("Import {}", self.file_name))
-            .id(egui::Id::new("import"))
+            .id(egui::Id::unique("import"))
             .collapsible(false)
             .resizable(true)
             .default_width(680.0)

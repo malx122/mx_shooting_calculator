@@ -844,7 +844,7 @@ impl Sync {
         };
         let mut open = true;
         egui::Window::new(tr("Sync this device?"))
-            .id(egui::Id::new("sync-offer"))
+            .id(egui::Id::unique("sync-offer"))
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))

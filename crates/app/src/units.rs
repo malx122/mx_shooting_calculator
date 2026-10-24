@@ -210,7 +210,7 @@ impl UnitPrefs {
     }
 
     pub fn install(&self, context: &egui::Context) {
-        context.data_mut(|data| data.insert_temp(egui::Id::new(PREFS_ID), self.clone()));
+        context.data_mut(|data| data.insert_temp(egui::Id::unique(PREFS_ID), self.clone()));
     }
 }
 
@@ -218,7 +218,7 @@ const PREFS_ID: &str = "mxsc-unit-prefs";
 
 pub fn prefs(context: &egui::Context) -> UnitPrefs {
     context
-        .data(|data| data.get_temp::<UnitPrefs>(egui::Id::new(PREFS_ID)))
+        .data(|data| data.get_temp::<UnitPrefs>(egui::Id::unique(PREFS_ID)))
         .unwrap_or_default()
 }
 

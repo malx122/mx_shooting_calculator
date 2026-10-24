@@ -606,15 +606,16 @@ impl App {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, context: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let context = &ui.ctx().clone();
         self.units.install(context);
         mobile::apply_style(context);
         let narrow = mobile::is_narrow(context);
         if narrow {
-            self.phone_header(context);
-            self.tab_bar(context);
+            self.phone_header(ui);
+            self.tab_bar(ui);
         } else {
-            self.desktop_header(context);
+            self.desktop_header(ui);
         }
         // Messages go away by themselves after a while; errors stay.
         let now = context.input(|input| input.time);
@@ -638,7 +639,7 @@ impl eframe::App for App {
         }
         if let Some(status) = &self.status {
             let mut dismiss = false;
-            egui::TopBottomPanel::bottom("status").show(context, |ui| {
+            egui::Panel::bottom("status").show(ui, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     let text = RichText::new(&status.text);
                     if status.error {
@@ -658,23 +659,23 @@ impl eframe::App for App {
             if !std::mem::replace(&mut self.updates_started, true) && self.check_updates {
                 self.updates.check(context);
             }
-            self.updates.notice(context);
+            self.updates.notice(ui);
         }
 
         self.data.region = self.calculator.inputs.region.clone();
         self.data.today = self.calculator.inputs.conditions();
         let actions = match self.page {
-            Page::Calculate => self.calculator.show(context, &self.data),
-            Page::Rifles => self.rifles.show(context, &self.data),
-            Page::Bullets => self.bullets.show(context, &self.data),
-            Page::Targets => self.targets.show(context, &self.data),
+            Page::Calculate => self.calculator.show(ui, &self.data),
+            Page::Rifles => self.rifles.show(ui, &self.data),
+            Page::Bullets => self.bullets.show(ui, &self.data),
+            Page::Targets => self.targets.show(ui, &self.data),
             Page::ShotLog => {
                 let place = self.calculator.inputs.place.as_ref();
-                self.shot_log.show(context, &self.data, place)
+                self.shot_log.show(ui, &self.data, place)
             }
             Page::Cards => {
                 let subject = self.calculator.card_subject(&self.data);
-                self.cards.show(context, subject, self.data.hunting)
+                self.cards.show(ui, subject, self.data.hunting)
             }
         };
         for action in actions {
@@ -717,7 +718,7 @@ impl App {
         }
         let mut open = self.whats_new_open;
         egui::Window::new(tr("What's new"))
-            .id(egui::Id::new("whats-new"))
+            .id(egui::Id::unique("whats-new"))
             .open(&mut open)
             .collapsible(false)
             .default_size([520.0, 560.0])
@@ -729,7 +730,7 @@ impl App {
         self.whats_new_open = open;
         let mut open = self.about_open;
         egui::Window::new(tr("About"))
-            .id(egui::Id::new("about"))
+            .id(egui::Id::unique("about"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -751,7 +752,7 @@ impl App {
         self.about_open = open;
         let mut open = self.sync.window_open;
         egui::Window::new(tr("Sync"))
-            .id(egui::Id::new("sync"))
+            .id(egui::Id::unique("sync"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -763,79 +764,78 @@ impl App {
         self.sync.offer_window(context, &self.store);
     }
 
-    fn desktop_header(&mut self, context: &egui::Context) {
+    fn desktop_header(&mut self, ui: &mut egui::Ui) {
+        let context = &ui.ctx().clone();
         let header = egui::Frame::new()
             .fill(theme::FOREST_900)
             .inner_margin(egui::Margin::symmetric(14, 8))
             .stroke(theme::hairline(theme::FOREST_600));
-        egui::TopBottomPanel::top("navigation")
-            .frame(header)
-            .show(context, |ui| {
-                ui.horizontal(|ui| {
-                    if brand(ui) {
-                        self.whats_new_open = !self.whats_new_open;
+        egui::Panel::top("navigation").frame(header).show(ui, |ui| {
+            ui.horizontal(|ui| {
+                if brand(ui) {
+                    self.whats_new_open = !self.whats_new_open;
+                }
+                ui.add_space(28.0);
+                for (page, label) in [
+                    (Page::Calculate, tr("Calculate")),
+                    (Page::Rifles, tr("Rifles")),
+                    (Page::Bullets, tr("Bullets")),
+                    (Page::Targets, tr("Targets")),
+                    (Page::Cards, tr("Cards")),
+                ] {
+                    ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
+                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    self.desktop_menu(ui, context);
+                    let now = context.input(|input| input.time);
+                    // The font has no dot, so paint one in a slot of its own
+                    // before the status.
+                    let galley = ui.painter().layout_no_wrap(
+                        self.sync.short_status().to_owned(),
+                        egui::FontId::proportional(12.0),
+                        egui::Color32::PLACEHOLDER,
+                    );
+                    let dot = 14.0;
+                    let (rect, sync) = ui.allocate_exact_size(
+                        egui::vec2(dot + galley.size().x, galley.size().y.max(20.0)),
+                        egui::Sense::click(),
+                    );
+                    let colour = if sync.hovered() {
+                        theme::BONE
+                    } else {
+                        theme::BONE_MUTED
+                    };
+                    ui.painter().circle_filled(
+                        rect.left_center() + egui::vec2(4.0, 0.0),
+                        4.0,
+                        self.sync.colour(),
+                    );
+                    ui.painter().galley(
+                        egui::pos2(rect.left() + dot, rect.center().y - galley.size().y / 2.0),
+                        galley,
+                        colour,
+                    );
+                    let sync = sync
+                        .on_hover_cursor(egui::CursorIcon::PointingHand)
+                        .on_hover_text(self.sync.status(now));
+                    if sync.clicked() {
+                        self.sync.window_open = !self.sync.window_open;
                     }
-                    ui.add_space(28.0);
-                    for (page, label) in [
-                        (Page::Calculate, tr("Calculate")),
-                        (Page::Rifles, tr("Rifles")),
-                        (Page::Bullets, tr("Bullets")),
-                        (Page::Targets, tr("Targets")),
-                        (Page::Cards, tr("Cards")),
-                    ] {
-                        ui.selectable_value(&mut self.page, page, RichText::new(label).size(15.0));
+                    if let Some(country) = self.rules_country() {
+                        let height = 13.0;
+                        let (rect, response) = ui.allocate_exact_size(
+                            egui::vec2(crate::flags::width(country, height), height),
+                            egui::Sense::hover(),
+                        );
+                        crate::flags::paint(ui.painter(), rect.left_center(), country, height);
+                        response.on_hover_text(trf!(
+                            "{} hunting rules: legal ammunition, seasons and shooting light",
+                            i18n::country_adjective(country)
+                        ));
                     }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        self.desktop_menu(ui, context);
-                        let now = context.input(|input| input.time);
-                        // The font has no dot, so paint one in a slot of its own
-                        // before the status.
-                        let galley = ui.painter().layout_no_wrap(
-                            self.sync.short_status().to_owned(),
-                            egui::FontId::proportional(12.0),
-                            egui::Color32::PLACEHOLDER,
-                        );
-                        let dot = 14.0;
-                        let (rect, sync) = ui.allocate_exact_size(
-                            egui::vec2(dot + galley.size().x, galley.size().y.max(20.0)),
-                            egui::Sense::click(),
-                        );
-                        let colour = if sync.hovered() {
-                            theme::BONE
-                        } else {
-                            theme::BONE_MUTED
-                        };
-                        ui.painter().circle_filled(
-                            rect.left_center() + egui::vec2(4.0, 0.0),
-                            4.0,
-                            self.sync.colour(),
-                        );
-                        ui.painter().galley(
-                            egui::pos2(rect.left() + dot, rect.center().y - galley.size().y / 2.0),
-                            galley,
-                            colour,
-                        );
-                        let sync = sync
-                            .on_hover_cursor(egui::CursorIcon::PointingHand)
-                            .on_hover_text(self.sync.status(now));
-                        if sync.clicked() {
-                            self.sync.window_open = !self.sync.window_open;
-                        }
-                        if let Some(country) = self.rules_country() {
-                            let height = 13.0;
-                            let (rect, response) = ui.allocate_exact_size(
-                                egui::vec2(crate::flags::width(country, height), height),
-                                egui::Sense::hover(),
-                            );
-                            crate::flags::paint(ui.painter(), rect.left_center(), country, height);
-                            response.on_hover_text(trf!(
-                                "{} hunting rules: legal ammunition, seasons and shooting light",
-                                i18n::country_adjective(country)
-                            ));
-                        }
-                    });
                 });
             });
+        });
     }
 
     /// The desktop's one menu: settings, backups and about.
@@ -852,7 +852,7 @@ impl App {
                 .clicked()
             {
                 self.page = Page::ShotLog;
-                ui.close_menu();
+                ui.close();
             }
             ui.separator();
             // Choices open a sheet: submenus would have no room to open at
@@ -871,7 +871,7 @@ impl App {
             for (label, sheet) in rows {
                 if ui.button(label).clicked() {
                     self.menu = Some(sheet);
-                    ui.close_menu();
+                    ui.close();
                 }
             }
             let now = ui.ctx().input(|input| input.time);
@@ -881,12 +881,12 @@ impl App {
                 .clicked()
             {
                 sync = true;
-                ui.close_menu();
+                ui.close();
             }
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button(tr("Updates…")).clicked() {
                 self.menu = Some(MenuSheet::Updates);
-                ui.close_menu();
+                ui.close();
             }
             ui.separator();
             if ui
@@ -897,7 +897,7 @@ impl App {
                 .clicked()
             {
                 import = true;
-                ui.close_menu();
+                ui.close();
             }
             if ui
                 .button(tr("Export backup"))
@@ -907,7 +907,7 @@ impl App {
                 .clicked()
             {
                 export = true;
-                ui.close_menu();
+                ui.close();
             }
             if ui
                 .button(tr("Load demo data"))
@@ -915,16 +915,16 @@ impl App {
                 .clicked()
             {
                 demo = true;
-                ui.close_menu();
+                ui.close();
             }
             ui.separator();
             if ui.button(tr("What's new")).clicked() {
                 self.whats_new_open = true;
-                ui.close_menu();
+                ui.close();
             }
             if ui.button(tr("About")).clicked() {
                 self.about_open = true;
-                ui.close_menu();
+                ui.close();
             }
         })
         .response
@@ -950,8 +950,8 @@ impl App {
         }
         let mut chosen_purpose = None;
         let mut chosen_country = None;
-        let width = (context.screen_rect().width() - 48.0).min(440.0);
-        let modal = egui::Modal::new(egui::Id::new("welcome")).show(context, |ui| {
+        let width = (context.content_rect().width() - 48.0).min(440.0);
+        let modal = egui::Modal::new(egui::Id::unique("welcome")).show(context, |ui| {
             ui.set_width(width);
             if self.asking_country {
                 ui.heading(tr("Where do you hunt?"));
@@ -1029,14 +1029,14 @@ impl App {
     }
 
     /// The phone's header: the logo and the menu button.
-    fn phone_header(&mut self, context: &egui::Context) {
+    fn phone_header(&mut self, ui: &mut egui::Ui) {
         let header = egui::Frame::new()
             .fill(theme::FOREST_900)
             .inner_margin(egui::Margin::symmetric(12, 6))
             .stroke(theme::hairline(theme::FOREST_600));
-        egui::TopBottomPanel::top("phone-header")
+        egui::Panel::top("phone-header")
             .frame(header)
-            .show(context, |ui| {
+            .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.add(
                         egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(30.0, 30.0)),
@@ -1064,7 +1064,7 @@ impl App {
     }
 
     /// The phone's tab bar: one tab per page.
-    fn tab_bar(&mut self, context: &egui::Context) {
+    fn tab_bar(&mut self, ui: &mut egui::Ui) {
         let frame = egui::Frame::new()
             .fill(theme::FOREST_900)
             .inner_margin(egui::Margin {
@@ -1074,46 +1074,44 @@ impl App {
                 bottom: 10,
             })
             .stroke(theme::hairline(theme::FOREST_600));
-        egui::TopBottomPanel::bottom("tabs")
-            .frame(frame)
-            .show(context, |ui| {
-                let tabs = [
-                    (Page::Calculate, tr("Calculate")),
-                    (Page::Rifles, tr("Rifles")),
-                    (Page::Bullets, tr("Bullets")),
-                    (Page::Targets, tr("Targets")),
-                    (Page::Cards, tr("Cards")),
-                ];
-                let width = ui.available_width() / tabs.len() as f32;
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    for (page, label) in tabs {
-                        let (rect, response) =
-                            ui.allocate_exact_size(egui::vec2(width, 54.0), egui::Sense::click());
-                        let colour = if self.page == page {
-                            theme::BLAZE
-                        } else {
-                            theme::BONE_MUTED
-                        };
-                        tab_icon(
-                            ui.painter(),
-                            rect.center() - egui::vec2(0.0, 9.0),
-                            page,
-                            colour,
-                        );
-                        ui.painter().text(
-                            rect.center() + egui::vec2(0.0, 15.0),
-                            egui::Align2::CENTER_CENTER,
-                            label,
-                            egui::FontId::proportional(12.0),
-                            colour,
-                        );
-                        if response.clicked() {
-                            self.page = page;
-                        }
+        egui::Panel::bottom("tabs").frame(frame).show(ui, |ui| {
+            let tabs = [
+                (Page::Calculate, tr("Calculate")),
+                (Page::Rifles, tr("Rifles")),
+                (Page::Bullets, tr("Bullets")),
+                (Page::Targets, tr("Targets")),
+                (Page::Cards, tr("Cards")),
+            ];
+            let width = ui.available_width() / tabs.len() as f32;
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                for (page, label) in tabs {
+                    let (rect, response) =
+                        ui.allocate_exact_size(egui::vec2(width, 54.0), egui::Sense::click());
+                    let colour = if self.page == page {
+                        theme::BLAZE
+                    } else {
+                        theme::BONE_MUTED
+                    };
+                    tab_icon(
+                        ui.painter(),
+                        rect.center() - egui::vec2(0.0, 9.0),
+                        page,
+                        colour,
+                    );
+                    ui.painter().text(
+                        rect.center() + egui::vec2(0.0, 15.0),
+                        egui::Align2::CENTER_CENTER,
+                        label,
+                        egui::FontId::proportional(12.0),
+                        colour,
+                    );
+                    if response.clicked() {
+                        self.page = page;
                     }
-                });
+                }
             });
+        });
     }
 
     /// The phone menu: units, backups and what version this is.

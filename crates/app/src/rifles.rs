@@ -98,11 +98,12 @@ impl RiflesPage {
         }
     }
 
-    pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
+    pub fn show(&mut self, ui: &mut egui::Ui, data: &Data) -> Vec<Action> {
+        let context = &ui.ctx().clone();
         let mut actions = Vec::new();
         if mobile::is_narrow(context) {
             // On a phone: the list, or one editor with a way back.
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 if matches!(self.editing, Editing::Nothing) {
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| self.phone_list(ui, data, &mut actions));
@@ -118,13 +119,13 @@ impl RiflesPage {
             });
             return actions;
         }
-        egui::SidePanel::left("rifle-list")
+        egui::Panel::left("rifle-list")
             .resizable(true)
-            .default_width(280.0)
-            .show(context, |ui| {
+            .default_size(280.0)
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, &mut actions));
             });
-        egui::CentralPanel::default().show(context, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             let cancel = egui::ScrollArea::vertical()
                 .show(ui, |ui| self.editor(ui, data, &mut actions))
                 .inner;
@@ -563,7 +564,7 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
         .as_deref()
         .and_then(|id| data.scope(id))
         .and_then(|scope| scope.rifle_clicks());
-    let own_id = ui.id().with("own-clicks");
+    let own_id = ui.scope_id().with("own-clicks");
     let own = ui
         .data(|data| data.get_temp::<bool>(own_id))
         .unwrap_or(false);
@@ -811,7 +812,7 @@ fn scope_editor(
                 )
                 .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
                 .show_ui(ui, |ui| {
-                    let search_id = ui.id().with("reticle-search");
+                    let search_id = ui.scope_id().with("reticle-search");
                     let mut search: String =
                         ui.data(|data| data.get_temp(search_id)).unwrap_or_default();
                     ui.add(
@@ -841,8 +842,8 @@ fn scope_editor(
                     }
                     if chosen_one {
                         search.clear();
-                        // A combo box popup, not a menu: close_menu leaves it open.
-                        ui.memory_mut(|memory| memory.close_popup());
+                        // Closes the combo box's popup.
+                        ui.close();
                     }
                     ui.data_mut(|data| data.insert_temp(search_id, search));
                 });

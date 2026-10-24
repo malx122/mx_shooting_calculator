@@ -158,8 +158,8 @@ pub fn caliber_picker(
                 if response.clicked() {
                     chosen = Some(caliber);
                     search.clear();
-                    // A combo box popup, not a menu: close_menu leaves it open.
-                    ui.memory_mut(|memory| memory.close_popup());
+                    // Closes the combo box's popup.
+                    ui.close();
                 }
             }
         });
@@ -168,7 +168,7 @@ pub fn caliber_picker(
 
 /// A button that needs a second click to confirm. Returns true on confirm.
 pub fn confirm_button(ui: &mut egui::Ui, id: &str, label: &str) -> bool {
-    let id = ui.id().with(id);
+    let id = ui.scope_id().with(id);
     let armed = ui.data(|data| data.get_temp::<bool>(id).unwrap_or(false));
     if armed {
         let confirmed = ui
@@ -277,8 +277,8 @@ pub fn scope_picker(
             }
             if choice.is_some() {
                 search.clear();
-                // A combo box popup, not a menu: close_menu leaves it open.
-                ui.memory_mut(|memory| memory.close_popup());
+                // Closes the combo box's popup.
+                ui.close();
             }
         });
     choice

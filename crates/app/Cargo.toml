@@ -13,9 +13,9 @@ path = "src/main.rs"
 [dependencies]
 ballistics-core.workspace = true
 ballistics-store.workspace = true
-eframe = { version = "0.31", default-features = false, features = ["default_fonts", "wgpu"] }
-egui_extras = { version = "0.31", default-features = false, features = ["svg"] }
-egui_plot = "0.31"
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "wgpu"] }
+egui_extras = { version = "0.37", default-features = false, features = ["svg"] }
+egui_plot = "0.38"
 serde = { version = "1", features = ["derive"] }
 rfd = { version = "0.17", features = ["file-handle-inner"] }
 qrcode = { version = "0.14", default-features = false }
@@ -26,17 +26,22 @@ sys-locale = { version = "0.3", features = ["js"] }
 ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Symbols and emoji the built-in fonts lack (arrows, ✖, ↺, ⚠, 📍) from the
+# system's fonts, as the browser does on the web.
+eframe = { version = "0.37", default-features = false, features = ["system_fonts"] }
 directories = "6"
 ureq = "3"
 # Updates: the release's signature, the download's checksum, and putting
 # the new program in place of the running one.
-minisign-verify = "0.2"
-sha2 = "0.10"
+minisign-verify = "0.3"
+sha2 = "0.11"
 self-replace = "1"
+# The window icon, drawn from the SVG (egui_extras uses the same version).
+resvg = { version = "0.45", default-features = false }
 
 # Linux desktops: windows on X11 and on Wayland.
 [target.'cfg(target_os = "linux")'.dependencies]
-eframe = { version = "0.31", default-features = false, features = ["x11", "wayland"] }
+eframe = { version = "0.37", default-features = false, features = ["x11", "wayland"] }
 
 # The web build (`trunk build` in this folder; see README).
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -68,12 +73,16 @@ web-sys = { version = "0.3", features = [
 sqlite-wasm-rs = "0.5"
 sqlite-wasm-vfs = "0.2"
 # WebGL as well as WebGPU, for browsers without WebGPU.
-wgpu = { version = "24", default-features = false, features = ["webgl", "webgpu", "wgsl"] }
+wgpu = { version = "30", default-features = false, features = ["webgl", "webgpu", "wgsl"] }
 
 [dev-dependencies]
 serde_json = "1"
 # The icons example writes the desktop packages' icons.
 png = "0.18"
+
+# The desktop's system font fallback, to check the symbols the app shows.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+egui_system_font_provider = "0.37"
 
 # The Windows program's icon, when MXSC_ICO names one (scripts/package.sh).
 [target.'cfg(windows)'.build-dependencies]

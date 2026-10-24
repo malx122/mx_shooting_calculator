@@ -197,7 +197,7 @@ impl Updater {
 
     /// A line at the bottom of the window while an update is offered,
     /// downloading or ready to start.
-    pub fn notice(&mut self, context: &egui::Context) {
+    pub fn notice(&mut self, ui: &mut egui::Ui) {
         let wanted = match self.state() {
             State::Available(_) => !self.later,
             State::Downloading(_) | State::Installed { .. } => true,
@@ -207,7 +207,7 @@ impl Updater {
         if !wanted {
             return;
         }
-        egui::TopBottomPanel::bottom("update").show(context, |ui| {
+        egui::Panel::bottom("update").show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 if let State::Failed { message, .. } = self.state() {
                     ui.colored_label(ui.visuals().error_fg_color, message);

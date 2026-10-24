@@ -50,11 +50,12 @@ impl TargetsPage {
         }
     }
 
-    pub fn show(&mut self, context: &egui::Context, data: &Data) -> Vec<Action> {
+    pub fn show(&mut self, ui: &mut egui::Ui, data: &Data) -> Vec<Action> {
+        let context = &ui.ctx().clone();
         let mut actions = Vec::new();
         if mobile::is_narrow(context) {
             // On a phone: the list, or one target with a way back.
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 if matches!(self.showing, Showing::Nothing) {
                     egui::ScrollArea::vertical().show(ui, |ui| self.phone_list(ui, data));
                 } else {
@@ -67,13 +68,13 @@ impl TargetsPage {
             });
             return actions;
         }
-        egui::SidePanel::left("target-list")
+        egui::Panel::left("target-list")
             .resizable(true)
-            .default_width(260.0)
-            .show(context, |ui| {
+            .default_size(260.0)
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data));
             });
-        egui::CentralPanel::default().show(context, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, &mut actions));
         });
         actions

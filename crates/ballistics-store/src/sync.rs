@@ -106,7 +106,7 @@ impl SyncKey {
         nonce[16..].copy_from_slice(&uuid::Uuid::new_v4().as_bytes()[..8]);
         let ciphertext = self
             .cipher()
-            .encrypt(XNonce::from_slice(&nonce), plaintext)
+            .encrypt(&XNonce::from(nonce), plaintext)
             .expect("encrypting in memory cannot fail");
         [MAGIC.as_slice(), &nonce, &ciphertext].concat()
     }
@@ -120,8 +120,9 @@ impl SyncKey {
             return Err(wrong());
         }
         let (nonce, ciphertext) = rest.split_at(NONCE_LEN);
+        let nonce = XNonce::try_from(nonce).map_err(|_| wrong())?;
         self.cipher()
-            .decrypt(XNonce::from_slice(nonce), ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|_| wrong())
     }
 }

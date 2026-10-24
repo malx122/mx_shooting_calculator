@@ -16,13 +16,9 @@ targets = [
 # unmaintained or yanked one. To accept one, add its id here with why it
 # can't affect the app.
 ignore = [
-    # paste (macros used while compiling wgpu's Metal backend): unmaintained,
-    # no known flaw, and nothing of it runs in the app. Goes with a newer
-    # eframe/wgpu.
-    { id = "RUSTSEC-2024-0436", reason = "compile-time macros in wgpu's Metal backend; goes with a newer eframe" },
-    # ttf-parser: unmaintained, no known flaw. It reads only the fonts built
-    # into the app (egui's and the cards'), never a file from outside.
-    { id = "RUSTSEC-2026-0192", reason = "reads only the app's own embedded fonts" },
+    # ttf-parser: unmaintained, no known flaw. The cards use it to measure
+    # the fonts built into the app, never a file from outside.
+    { id = "RUSTSEC-2026-0192", reason = "reads only the cards' own embedded fonts" },
 ]
 
 [licenses]

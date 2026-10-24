@@ -251,14 +251,15 @@ impl CardsPage {
 
     pub fn show(
         &mut self,
-        context: &egui::Context,
+        ui: &mut egui::Ui,
         subject: Option<Subject>,
         hunting: bool,
     ) -> Vec<Action> {
+        let context = &ui.ctx().clone();
         let mut actions = Vec::new();
         self.hunting = hunting;
         let Some(subject) = subject else {
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 ui.heading(tr("Cards"));
                 ui.label(tr(
                     "Dope cards and stand cards are made for a rifle and a bullet. Add a rifle \
@@ -282,7 +283,7 @@ impl CardsPage {
         self.refresh(&subject, &u);
 
         if mobile::is_narrow(context) {
-            egui::CentralPanel::default().show(context, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     self.kind_picker(ui);
                     self.subject_line(ui, &subject, &mut actions);
@@ -296,10 +297,10 @@ impl CardsPage {
             });
             return actions;
         }
-        egui::SidePanel::left("card-controls")
+        egui::Panel::left("card-controls")
             .resizable(true)
-            .default_width(390.0)
-            .show(context, |ui| {
+            .default_size(390.0)
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     self.kind_picker(ui);
                     self.subject_line(ui, &subject, &mut actions);
@@ -307,7 +308,7 @@ impl CardsPage {
                     self.controls(ui, &subject);
                 });
             });
-        egui::CentralPanel::default().show(context, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 self.save_button(ui, &subject);
                 ui.separator();

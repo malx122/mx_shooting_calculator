@@ -71,12 +71,13 @@ const ANGLE_PRESETS: [f64; 7] = [-30.0, -20.0, -10.0, 0.0, 10.0, 20.0, 30.0];
 impl CalculatorPage {
     pub(super) fn show_phone(
         &mut self,
-        context: &egui::Context,
+        ui: &mut egui::Ui,
         data: &Data,
         frame: PhoneFrame<'_>,
         actions: &mut Vec<Action>,
     ) {
-        egui::CentralPanel::default().show(context, |ui| match self.phone_view {
+        let context = &ui.ctx().clone();
+        egui::CentralPanel::default().show(ui, |ui| match self.phone_view {
             PhoneView::Conditions => {
                 if mobile::back_button(ui, tr("Calculate")) {
                     self.phone_view = PhoneView::Results;
@@ -679,7 +680,7 @@ impl ResultsView<'_> {
             .id_salt("phone-table")
             .show(ui, |ui| {
                 self.table_heading_phone(ui, &mut requests);
-                let all_id = ui.id().with("all-columns");
+                let all_id = ui.scope_id().with("all-columns");
                 let all = ui
                     .data(|data| data.get_temp::<bool>(all_id))
                     .unwrap_or(false);
@@ -738,7 +739,7 @@ impl ResultsView<'_> {
     fn table_heading_phone(&self, ui: &mut Ui, requests: &mut ViewRequests) {
         let u = units::prefs(ui.ctx());
         let table = self.table;
-        let id = ui.id().with("columns-open");
+        let id = ui.scope_id().with("columns-open");
         ui.horizontal(|ui| {
             ui.weak(trf!(
                 "{}–{} every {}",
@@ -791,7 +792,7 @@ impl ResultsView<'_> {
                     };
                     hold(
                         &mut columns[0],
-                        if elevation >= 0.0 { "⬆" } else { "⬇" },
+                        if elevation >= 0.0 { "↑" } else { "↓" },
                         elevation,
                         self.clicks(elevation),
                         if elevation >= 0.0 {
@@ -803,7 +804,7 @@ impl ResultsView<'_> {
                     columns[1].with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
                         hold(
                             ui,
-                            if windage >= 0.0 { "➡" } else { "⬅" },
+                            if windage >= 0.0 { "→" } else { "←" },
                             windage,
                             self.clicks(windage),
                             if windage >= 0.0 {

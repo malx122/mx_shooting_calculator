@@ -412,7 +412,7 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
         },
     };
 
-    let id = ui.id().with("trajectory-3d-camera");
+    let id = ui.scope_id().with("trajectory-3d-camera");
     let mut camera = ui
         .data(|data| data.get_temp::<CameraState>(id))
         .map_or_else(|| frame.view(View::Overview), |s| s.0);
