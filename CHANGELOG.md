@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-10-24
+
+### Fixed
+
+- The Windows app builds again: 0.8.4 came out for the web only, without
+  the desktop downloads, because of a mismatch between two of the graphics
+  library's parts on Windows.
+
 ## [0.8.4] - 2026-10-24
 
 ### Changed
@@ -423,7 +431,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.1...v0.8.2
