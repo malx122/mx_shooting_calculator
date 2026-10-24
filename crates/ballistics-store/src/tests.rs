@@ -63,7 +63,10 @@ fn read_only_opening_reads_and_never_upgrades() {
     let connection = rusqlite::Connection::open(&path).unwrap();
     connection.pragma_update(None, "user_version", 1).unwrap();
     drop(connection);
-    assert!(matches!(Store::open_read_only(&path), Err(StoreError::Invalid(_))));
+    assert!(matches!(
+        Store::open_read_only(&path),
+        Err(StoreError::Invalid(_))
+    ));
     let version: i64 = rusqlite::Connection::open(&path)
         .unwrap()
         .pragma_query_value(None, "user_version", |row| row.get(0))
@@ -691,7 +694,12 @@ fn catalog_drawings_are_sound() {
             }
             if let Some(rings) = &drawing.rings {
                 assert!(crate::drawings::contains(&widest.points, rings.center));
-                assert!(rings.rings.windows(2).all(|w| w[0].diameter_m < w[1].diameter_m));
+                assert!(
+                    rings
+                        .rings
+                        .windows(2)
+                        .all(|w| w[0].diameter_m < w[1].diameter_m)
+                );
             }
         }
     }

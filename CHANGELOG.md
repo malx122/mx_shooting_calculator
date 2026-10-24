@@ -6,6 +6,12 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- The desktop app's secure connections (weather, sync, updates) now refuse
+  certificates from an authority whose keys have leaked (an update of the
+  TLS library, rustls-webpki).
+
 ## [0.8.3] - 2026-10-24
 
 ### Fixed

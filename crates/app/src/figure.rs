@@ -139,7 +139,11 @@ impl Figure {
                 } else {
                     theme::MEADOW.gamma_multiply(0.45)
                 };
-                parts.push(Part::new(points.clone(), fill, Some(theme::BONE.gamma_multiply(0.8))));
+                parts.push(Part::new(
+                    points.clone(),
+                    fill,
+                    Some(theme::BONE.gamma_multiply(0.8)),
+                ));
             }
             if let Some((center, ref sizes)) = training {
                 for &(radius, _) in sizes {

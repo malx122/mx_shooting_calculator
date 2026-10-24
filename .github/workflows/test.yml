@@ -1,8 +1,10 @@
-# Tests everything on each push to main, and before each release: the
-# release workflows (desktop.yml, pages.yml, sync-server.yml) call this one
-# first and publish nothing if it fails.
+# Tests everything on each push to main, on pull requests (Dependabot's
+# among them), and before each release: the release workflows (desktop.yml,
+# pages.yml, sync-server.yml) call this one first and publish nothing if it
+# fails. It uses no secrets, so pull requests can run it safely.
 #
-# - Rust: the workspace's tests, and clippy with warnings as errors
+# - Rust: formatting, the workspace's tests, clippy with warnings as errors
+# - Dependencies: known security advisories, licences, sources (deny.toml)
 # - Web: clippy for the browser build
 # - Sync server: its tests, against a local worker
 name: Tests
@@ -10,6 +12,7 @@ name: Tests
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
   workflow_call:
 
@@ -24,8 +27,13 @@ jobs:
 
       - name: Rust
         run: |
-          rustup toolchain install stable --profile minimal --component clippy
+          rustup toolchain install stable --profile minimal --component clippy --component rustfmt
           rustup default stable
+
+      - name: Formatting
+        run: |
+          cargo fmt --all --check
+          cargo fmt --manifest-path tools/sign-update/Cargo.toml --check
 
       - name: Linux libraries
         run: |
@@ -45,6 +53,16 @@ jobs:
 
       - name: The update signing tool builds
         run: cargo build --locked --manifest-path tools/sign-update/Cargo.toml
+
+  dependencies:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Advisories, licences and sources
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+        with:
+          command: check advisories licenses sources
 
   web:
     runs-on: ubuntu-24.04

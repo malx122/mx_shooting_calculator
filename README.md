@@ -53,10 +53,14 @@ cargo test --workspace   # all tests
 ```
 
 On GitHub the `Tests` workflow (`.github/workflows/test.yml`) runs on every
-push to main: the workspace's tests, clippy with warnings as errors (also
-for the browser build: `scripts/web.sh lint`), and the sync server's tests
-(`cd server && npm test`). Each release workflow runs it first and publishes
-nothing if it fails.
+push to main and on pull requests: formatting (`cargo fmt --all --check`),
+the workspace's tests, clippy with warnings as errors (also for the browser
+build: `scripts/web.sh lint`), the dependencies' security advisories,
+licences and sources (`cargo deny check`, set in `deny.toml`), and the sync
+server's tests (`cd server && npm test`). Each release workflow runs it
+first and publishes nothing if it fails. Dependabot (`.github/dependabot.yml`)
+opens weekly pull requests to update the crates, npm packages and pinned
+actions.
 
 The program is called `mxsc`. Its database is stored in the platform's
 app-data folder: on macOS that is

@@ -1,0 +1,37 @@
+# Weekly pull requests that update dependencies: the Rust crates, the update
+# signing tool's, the sync server's npm packages, and the GitHub actions the
+# workflows pin by commit. The Tests workflow runs on each; merge the ones
+# that pass. Minor and patch updates come grouped, one pull request per kind.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      rust:
+        update-types: [minor, patch]
+
+  - package-ecosystem: cargo
+    directory: /tools/sign-update
+    schedule:
+      interval: weekly
+    groups:
+      sign-update:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /server
+    schedule:
+      interval: weekly
+    groups:
+      server:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -43,3 +43,20 @@ and the types in it) is a documented, open format. When you change it:
 - Update the hand-written sections of `docs/export-format.md` yourself.
 - Field doc comments become the published descriptions: write them for an
   outside reader.
+
+## Keep the code healthy
+
+- **Before committing** run what the Tests workflow runs: `cargo fmt --all`,
+  `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D
+  warnings`, `scripts/web.sh lint`, and `cd server && npm test` when the
+  server changed. CI fails on any of them, and releases wait for CI.
+- **Review bigger changes before committing them.** For a feature, a
+  security-relevant change or anything touching sync, the server, the
+  updater or the stored data, have an independent review agent read the
+  diff (correctness first, then security and the rules above), check its
+  findings against the code, fix the real ones, then commit. One-line fixes
+  and text changes don't need it.
+- **Dependencies:** Dependabot proposes updates weekly; `deny.toml` keeps out
+  crates with known security advisories, unaccepted licences or unknown
+  sources. If a check fails on an advisory, update the crate, or note in
+  `deny.toml` why it can't affect the app.

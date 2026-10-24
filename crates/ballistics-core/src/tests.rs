@@ -591,11 +591,23 @@ mod dispersion {
         let base = solver::solve(&s, 400.0).unwrap();
         let sens = Sensitivities::new(&s, base, 400.0).unwrap();
         let wind = sens
-            .spread_at(300.0, &Uncertainty { wind_speed: 1.0, ..exact() })
+            .spread_at(
+                300.0,
+                &Uncertainty {
+                    wind_speed: 1.0,
+                    ..exact()
+                },
+            )
             .unwrap();
         assert!(wind.across > 5.0 * wind.up, "{wind:?}");
         let range = sens
-            .spread_at(300.0, &Uncertainty { range: 10.0, ..exact() })
+            .spread_at(
+                300.0,
+                &Uncertainty {
+                    range: 10.0,
+                    ..exact()
+                },
+            )
             .unwrap();
         // The drift goes on growing past the target too, a little.
         assert!(range.up > 3.0 * range.across, "{range:?}");
@@ -609,7 +621,10 @@ mod dispersion {
 
     #[test]
     fn hit_chance_matches_the_round_normal_formula() {
-        let spread = Spread { across: 0.1, up: 0.1 };
+        let spread = Spread {
+            across: 0.1,
+            up: 0.1,
+        };
         // Within one sigma radius: 1 − e^(−1/2) ≈ 0.3935.
         let p = hit_chance(spread, [0.0, 0.0], |[x, y]| x * x + y * y <= 0.01);
         assert!((p - 0.3935).abs() < 0.01, "{p}");

@@ -539,7 +539,10 @@ impl Sync {
         #[cfg(not(target_arch = "wasm32"))]
         let reply_to = match std::net::TcpListener::bind("127.0.0.1:0") {
             Ok(listener) => {
-                let port = listener.local_addr().map(|address| address.port()).unwrap_or(0);
+                let port = listener
+                    .local_addr()
+                    .map(|address| address.port())
+                    .unwrap_or(0);
                 let (session, pick_up) = (session.clone(), std::sync::Arc::clone(&pick_up));
                 std::thread::spawn(move || google::listen(listener, session, pick_up));
                 port.to_string()
@@ -680,7 +683,9 @@ impl Sync {
                             .desired_width(130.0),
                     );
                     let code = google::pick_up_code(&signing_in.typed);
-                    if ui.add_enabled(code.is_some(), egui::Button::new(tr("Use code"))).clicked()
+                    if ui
+                        .add_enabled(code.is_some(), egui::Button::new(tr("Use code")))
+                        .clicked()
                         && let Ok(mut slot) = signing_in.pick_up.lock()
                     {
                         *slot = code;
