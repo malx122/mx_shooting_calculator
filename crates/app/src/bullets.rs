@@ -367,7 +367,11 @@ impl BulletsPage {
                         ui.label(format!("{:.1} g / {grains:.0} gr", entry.mass_g));
                         ui.label(entry.bc_g1.map_or("–".to_owned(), |bc| format!("{bc:.3}")));
                         ui.label(entry.bc_g7.map_or("–".to_owned(), |bc| format!("{bc:.3}")));
-                        ui.label(entry.muzzle_velocity_mps.map_or(tr("your load").to_owned(), |v| u.format(Quantity::Speed, v)));
+                        ui.label(match (entry.kind, entry.muzzle_velocity_mps) {
+                            (_, Some(velocity)) => u.format(Quantity::Speed, velocity),
+                            (CatalogKind::Ammunition, None) => "–".to_owned(),
+                            (CatalogKind::Component, None) => tr("your load").to_owned(),
+                        });
                         if let Some(country) = country {
                             let level = *levels
                                 .entry((entry.id.clone(), caliber.key.clone(), country))

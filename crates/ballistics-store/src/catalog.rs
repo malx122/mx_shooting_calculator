@@ -115,8 +115,8 @@ impl CatalogBullet {
         }
     }
 
-    /// A copy for the hunter's collection, loaded in `caliber`. Component
-    /// bullets come without a velocity: the hunter enters their own load's.
+    /// A copy for the hunter's collection, loaded in `caliber`. Missing
+    /// velocities become zero, so the hunter must enter one before saving.
     pub fn to_collection(&self, caliber: &Caliber) -> Bullet {
         let mut bullet = Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm);
         bullet.id = new_id();
@@ -295,11 +295,12 @@ mod tests {
                 CatalogKind::Ammunition => {
                     let caliber = bullet.caliber.as_deref().expect(name);
                     assert!(keys.contains(caliber), "{name}: unknown caliber {caliber}");
-                    let velocity = bullet.muzzle_velocity_mps.expect(name);
-                    assert!(
-                        (250.0..1300.0).contains(&velocity),
-                        "{name}: velocity {velocity}"
-                    );
+                    if let Some(velocity) = bullet.muzzle_velocity_mps {
+                        assert!(
+                            (250.0..1300.0).contains(&velocity),
+                            "{name}: velocity {velocity}"
+                        );
+                    }
                 }
                 CatalogKind::Component => {
                     assert!(
@@ -331,9 +332,17 @@ mod tests {
             let collected =
                 bullet.to_collection(catalog.calibers.iter().find(|c| bullet.fits(c)).unwrap());
             if bullet.kind == CatalogKind::Ammunition {
-                collected
-                    .validate()
-                    .unwrap_or_else(|problem| panic!("{name}: {problem}"));
+                if bullet.muzzle_velocity_mps.is_some() {
+                    collected
+                        .validate()
+                        .unwrap_or_else(|problem| panic!("{name}: {problem}"));
+                } else {
+                    assert_eq!(
+                        collected.muzzle_velocity_mps, 0.0,
+                        "{name}: missing velocity"
+                    );
+                    assert!(collected.validate().is_err(), "{name}: missing velocity");
+                }
             }
         }
     }

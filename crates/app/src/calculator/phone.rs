@@ -1074,17 +1074,25 @@ pub(super) fn quick_field(
     let strip = width < 150.0;
     let height = if strip { 84.0 } else { 58.0 };
     let (rect, response) = ui.allocate_exact_size(vec2(width, height), Sense::click());
+    let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
     let fill = if response.is_pointer_button_down_on() {
+        theme::FOREST_500
+    } else if response.hovered() {
         theme::FOREST_600
     } else {
         theme::FOREST_700
+    };
+    let stroke = if response.hovered() || response.is_pointer_button_down_on() {
+        theme::BLAZE
+    } else {
+        theme::FOREST_600
     };
     let painter = ui.painter();
     painter.rect(
         rect,
         10,
         fill,
-        Stroke::new(1.0_f32, theme::FOREST_600),
+        Stroke::new(1.0_f32, stroke),
         egui::StrokeKind::Inside,
     );
     let text_width = |text: &str, size: f32| {
