@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [dependencies]
-minisign = "0.7"
+minisign = "0.10"
 ct-codecs = "1"
 
 [workspace]
