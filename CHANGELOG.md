@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-10-25
+
 ### Added
 
 - Added 260 Federal rifle and rimfire loads from its official product pages,
@@ -497,7 +499,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.6...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.7...HEAD
+[0.8.7]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.3...v0.8.4
