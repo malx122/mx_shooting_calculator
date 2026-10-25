@@ -828,12 +828,13 @@ The HELIA 1-5x24i's click value is not published.
 `crates/ballistics-store/catalog/` holds the catalog as JSON compiled into the
 app:
 
-- **`calibers.json`:** about 50 calibers, each with bullet diameter and a
+- **`calibers.json`:** 55 calibers, each with bullet diameter and a
   typical twist.
-- **`bullets/`:** 225 bullets and loads, one file per maker (for example
+- **`bullets/`:** 548 bullets and loads, one file per maker (for example
   `bullets/norma.json`). These are factory loads from Norma, Lapua, Sako,
   Hornady, Barnes, Geco, Federal, CCI, Remington and Winchester, and
-  component bullets from Hornady, Nosler, Sierra, Barnes, Lapua and Norma.
+  component bullets from Hornady, Nosler, Sierra, Barnes, Lapua, Norma,
+  Berger, CopperBear, Infitech, Speer, Swift and Woodleigh.
 - **`scopes/`:** scopes, one file per maker; see below.
 
   A new maker only needs a new file: the build script compiles in every

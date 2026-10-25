@@ -6,6 +6,15 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.6] - 2026-10-25
+
+### Added
+
+- Expanded the bullet catalog with Berger, CopperBear, Infitech, Speer,
+  Swift and Woodleigh bullets, and added several calibers.
+- Catalog ammunition without a published muzzle velocity can now be added;
+  enter your load's velocity before saving it.
+
 ## [0.8.5] - 2026-10-24
 
 ### Fixed
@@ -431,7 +440,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.6...HEAD
+[0.8.6]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.2...v0.8.3
