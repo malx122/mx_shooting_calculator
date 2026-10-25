@@ -1,6 +1,7 @@
 [
  {
   "id": "aguila-high-velocity-22-lr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR High Velocity",
@@ -22,6 +23,7 @@
  },
  {
   "id": "aguila-hollow-point-22-lr-38gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Hollow Point",
@@ -43,6 +45,7 @@
  },
  {
   "id": "aguila-subsonic-solid-point-22-lr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Subsonic Solid Point",
@@ -64,6 +67,7 @@
  },
  {
   "id": "aguila-standard-velocity-22-lr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Standard Velocity",
@@ -85,6 +89,7 @@
  },
  {
   "id": "aguila-supermaximum-22-lr-30gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Supermaximum",
@@ -106,6 +111,7 @@
  },
  {
   "id": "aguila-interceptor-22-lr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Interceptor",
@@ -127,6 +133,7 @@
  },
  {
   "id": "aguila-high-velocity-22-short-29gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 Short High Velocity",
@@ -148,6 +155,7 @@
  },
  {
   "id": "aguila-target-competition-22-lr-40gr-ammunition",
+  "bc_source": "user_supplied",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Target Competition",
@@ -169,6 +177,7 @@
  },
  {
   "id": "aguila-supermaximum-hollow-point-22-lr-30gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Supermaximum Hollow Point",
@@ -190,6 +199,7 @@
  },
  {
   "id": "aguila-interceptor-hollow-point-22-lr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Interceptor Hollow Point",
@@ -211,6 +221,7 @@
  },
  {
   "id": "aguila-subsonic-hollow-point-22-lr-38gr-ammunition",
+  "bc_source": "user_supplied",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Subsonic Hollow Point",
@@ -232,6 +243,7 @@
  },
  {
   "id": "aguila-high-velocity-22-wmr-40gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 Win Mag High Velocity",
@@ -253,6 +265,7 @@
  },
  {
   "id": "aguila-sniper-subsonic-22-lr-60gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Sniper Subsonic",
@@ -274,6 +287,7 @@
  },
  {
   "id": "aguila-colibri-22-lr-20gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Colibri",
@@ -295,6 +309,7 @@
  },
  {
   "id": "aguila-super-colibri-22-lr-20gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 LR Super Colibri",
@@ -316,6 +331,7 @@
  },
  {
   "id": "aguila-5mm-rimfire-magnum-semi-jacketed-hp-30gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "5mm RRM Semi-Jacketed Hollow Point",
@@ -337,6 +353,7 @@
  },
  {
   "id": "aguila-5mm-rimfire-magnum-jacketed-hp-30gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "5mm RRM Jacketed Hollow Point",
@@ -358,6 +375,7 @@
  },
  {
   "id": "aguila-22-win-auto-45gr-ammunition",
+  "bc_source": "estimated",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "22 Win Auto",
@@ -379,6 +397,7 @@
  },
  {
   "id": "aguila-17-hmr-jacketed-hp-20gr-ammunition",
+  "bc_source": "borrowed",
   "kind": "ammunition",
   "manufacturer": "Aguila",
   "product": "17 HMR Jacketed Hollow Point",

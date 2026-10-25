@@ -4,8 +4,8 @@
 use std::collections::HashMap;
 
 use ballistics_store::{
-    BcBand, BcModel, Bullet, BulletKind, Catalog, CatalogBullet, CatalogKind, Construction,
-    Country, DragPoint, GRAMS_PER_GRAIN,
+    BcBand, BcModel, BcSource, Bullet, BulletKind, Catalog, CatalogBullet, CatalogKind,
+    Construction, Country, DragPoint, GRAMS_PER_GRAIN,
 };
 use eframe::egui::{self, RichText};
 use egui_plot::{Line, Plot, PlotPoints};
@@ -277,6 +277,14 @@ impl BulletsPage {
                     ui.hyperlink_to(tr("Source"), &source.source_url)
                         .on_hover_text(&source.source_url);
                 });
+                if let Some(provenance) = source.bc_source {
+                    ui.label(trf!("Catalog BC source: {}", bc_source_label(provenance)));
+                }
+                if !source.notes.is_empty() {
+                    egui::CollapsingHeader::new(tr("Catalog source notes")).show(ui, |ui| {
+                        ui.label(&source.notes);
+                    });
+                }
             }
         });
         if cancel {
@@ -358,7 +366,13 @@ impl BulletsPage {
                             chosen = Some(entry);
                         }
                         ui.label(&entry.manufacturer);
-                        ui.label(&entry.product);
+                        ui.vertical(|ui| {
+                            ui.label(&entry.product);
+                            if let Some(provenance) = entry.bc_source {
+                                ui.small(trf!("BC source: {}", bc_source_label(provenance)))
+                                    .on_hover_text(&entry.notes);
+                            }
+                        });
                         ui.label(match entry.kind {
                             CatalogKind::Ammunition => tr("Factory"),
                             CatalogKind::Component => tr("Component"),
@@ -403,6 +417,15 @@ impl BulletsPage {
                 self.view = View::Collection;
             }
         });
+    }
+}
+
+fn bc_source_label(source: BcSource) -> &'static str {
+    match source {
+        BcSource::Estimated => tr("Estimated from published velocities"),
+        BcSource::UserSupplied => tr("User supplied"),
+        BcSource::Borrowed => tr("Borrowed from another bullet (provisional)"),
+        BcSource::Retailer => tr("Retailer published"),
     }
 }
 

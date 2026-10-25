@@ -26,7 +26,7 @@ mod tests;
 
 use std::fmt;
 
-pub use catalog::{Caliber, Catalog, CatalogBullet, CatalogKind};
+pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart, HitZone, Ring, TrainingRings};

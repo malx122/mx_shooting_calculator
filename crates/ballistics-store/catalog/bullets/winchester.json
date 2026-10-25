@@ -1,6 +1,7 @@
 [
  {
   "id": "winchester-varmint-lf-ntx-17-hmr-16gr-ammunition",
+  "bc_source": "retailer",
   "kind": "ammunition",
   "manufacturer": "Winchester",
   "product": "Varmint LF NTX",

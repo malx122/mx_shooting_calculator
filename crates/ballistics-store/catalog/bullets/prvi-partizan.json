@@ -366,7 +366,7 @@
     "mass_g": 9.0,
     "mass_gr": 140,
     "length_mm": null,
-    "bc_g1": 0.400,
+    "bc_g1": 0.535,
     "bc_g7": null,
     "muzzle_velocity_mps": 820,
     "test_barrel_mm": 610,
@@ -375,7 +375,7 @@
     "min_expansion_mps": null,
     "source_url": "https://www.prvipartizan.com/download/PPU_2023.pdf",
     "verified_on": "2026-10-25",
-    "notes": "PPU 2023 catalog, p. 41. The Match ammunition table explicitly labels this load's BC as G1; its value is retained separately from the different BC printed for bullet B-689 in the rifle-bullet table."
+    "notes": "PPU 2023 catalog, pp. 40-41. Uses the identified component bullet B-689 BC 0.535 as G1, replacing the ammunition table's conflicting G1 0.400 by maintainer decision on 2026-10-25. A standard-atmosphere G1 fit to the published 100/200/300 m velocities gives approximately 0.529, supporting the component value. This resolves a publication inconsistency; it is not independent physical verification."
   },
   {
     "id": "ppu-a-718-match",
@@ -387,7 +387,7 @@
     "mass_g": 7.8,
     "mass_gr": 120,
     "length_mm": null,
-    "bc_g1": 0.519,
+    "bc_g1": 0.400,
     "bc_g7": null,
     "muzzle_velocity_mps": 885,
     "test_barrel_mm": 610,
@@ -396,7 +396,7 @@
     "min_expansion_mps": null,
     "source_url": "https://www.prvipartizan.com/download/PPU_2023.pdf",
     "verified_on": "2026-10-25",
-    "notes": "PPU 2023 catalog, p. 41. The Match ammunition table explicitly labels this load's BC as G1; its value is retained separately from the different BC printed for bullet B-540 in the rifle-bullet table."
+    "notes": "PPU 2023 catalog, pp. 40-41. Uses the identified component bullet B-540 BC 0.400 as G1, replacing the ammunition table's conflicting G1 0.519 by maintainer decision on 2026-10-25. A standard-atmosphere G1 fit to the published 100/200/300 m velocities gives approximately 0.406, supporting the component value. This resolves a publication inconsistency; it is not independent physical verification."
   },
   {
     "id": "ppu-a-540-match",
@@ -492,7 +492,7 @@
     "mass_g": 10.1,
     "mass_gr": 156,
     "length_mm": null,
-    "bc_g1": 0.450,
+    "bc_g1": 0.485,
     "bc_g7": null,
     "muzzle_velocity_mps": 835,
     "test_barrel_mm": 610,
@@ -501,7 +501,7 @@
     "min_expansion_mps": null,
     "source_url": "https://www.prvipartizan.com/download/PPU_2023.pdf",
     "verified_on": "2026-10-25",
-    "notes": "PPU 2023 catalog, pp. 20-21 and p. 41. PPU identifies its solid bullets as lead-free; the Match ammunition table explicitly labels this load's BC as G1, and its value is retained separately from the different BC printed for bullet B-594 in the rifle-bullet table."
+    "notes": "PPU 2023 catalog, pp. 20-21 and 40-41. PPU identifies its solid bullets as lead-free. Uses the identified B-594 component BC 0.485 as G1, replacing the ammunition table's conflicting G1 0.450 by maintainer decision on 2026-10-25. A standard-atmosphere G1 fit to the published 100/200/300 m velocities gives approximately 0.493, supporting the component value with moderate confidence. This resolves a publication inconsistency; it is not independent physical verification."
   },
   {
     "id": "ppu-a-496-match",

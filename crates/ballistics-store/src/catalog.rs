@@ -70,6 +70,17 @@ pub enum CatalogKind {
     Component,
 }
 
+/// Explicitly recorded BC provenance. An absent classification is unknown;
+/// it must not be interpreted as a manufacturer measurement.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BcSource {
+    Estimated,
+    UserSupplied,
+    Borrowed,
+    Retailer,
+}
+
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct CatalogBullet {
     pub id: String,
@@ -85,6 +96,8 @@ pub struct CatalogBullet {
     pub length_mm: Option<f64>,
     pub bc_g1: Option<f64>,
     pub bc_g7: Option<f64>,
+    #[serde(default)]
+    pub bc_source: Option<BcSource>,
     pub muzzle_velocity_mps: Option<f64>,
     pub test_barrel_mm: Option<f64>,
     pub construction: Construction,
@@ -378,7 +391,7 @@ mod tests {
                 .iter()
                 .filter(|bullet| bullet.bc_g7.is_some())
                 .count(),
-            10
+            9
         );
         for profile in &profiles {
             assert!(profile.bc_g1.is_some(), "{}: missing G1 BC", profile.id);
@@ -390,7 +403,11 @@ mod tests {
         }
 
         let profile = |id: &str| profiles.iter().find(|bullet| bullet.id == id).unwrap();
-        assert_eq!(profile("fiocchi-709891-ammunition").bc_g7, Some(0.213));
+        assert_eq!(profile("fiocchi-709891-ammunition").bc_g7, None);
+        let caliber = Catalog::builtin().caliber("308-win").unwrap();
+        let copied = profile("fiocchi-709891-ammunition").to_collection(caliber);
+        assert_eq!(copied.drag_model, BcModel::G1);
+        assert_eq!(copied.ballistic_coefficient(), Some(0.355));
         assert_eq!(profile("fiocchi-709977-ammunition").bc_g7, Some(0.381));
         assert_eq!(profile("fiocchi-709976-ammunition").bc_g7, Some(0.314));
         assert!(profile("fiocchi-745582-ammunition").lead_free);
@@ -451,7 +468,7 @@ mod tests {
                 .find(|bullet| bullet.id == "ppu-a-718-match")
                 .unwrap()
                 .bc_g1,
-            Some(0.519)
+            Some(0.400)
         );
         assert_eq!(
             catalog
@@ -487,7 +504,7 @@ mod tests {
                 .find(|bullet| bullet.id == "ppu-a-594-match")
                 .unwrap()
                 .bc_g1,
-            Some(0.450)
+            Some(0.485)
         );
         assert_eq!(
             catalog

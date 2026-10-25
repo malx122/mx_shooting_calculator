@@ -1,6 +1,7 @@
 [
  {
   "id": "hornady-varmint-express-ntx-17-hmr-16gr-ammunition",
+  "bc_source": "retailer",
   "kind": "ammunition",
   "manufacturer": "Hornady",
   "product": "Varmint Express NTX",
@@ -22,6 +23,7 @@
  },
  {
   "id": "hornady-varmint-express-v-max-17-hmr-17gr-ammunition",
+  "bc_source": "retailer",
   "kind": "ammunition",
   "manufacturer": "Hornady",
   "product": "Varmint Express V-MAX",
@@ -43,6 +45,7 @@
  },
  {
   "id": "hornady-varmint-express-xtp-17-hmr-20gr-ammunition",
+  "bc_source": "retailer",
   "kind": "ammunition",
   "manufacturer": "Hornady",
   "product": "Varmint Express XTP",

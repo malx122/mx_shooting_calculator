@@ -430,7 +430,7 @@
     "mass_gr": 175,
     "length_mm": null,
     "bc_g1": 0.496,
-    "bc_g7": 0.310,
+    "bc_g7": 0.243,
     "muzzle_velocity_mps": 800,
     "test_barrel_mm": null,
     "construction": "match",
@@ -438,7 +438,7 @@
     "min_expansion_mps": null,
     "source_url": "https://fiocchi.com/en/709959.html",
     "verified_on": "2026-10-25",
-    "notes": "Fiocchi product page #709959. 175 gr HPBT Sierra Match King; the product page publishes G1 0.496 and G7 0.310 BCs and a muzzle velocity of 800 m/s."
+    "notes": "Fiocchi product page #709959. 175 gr HPBT Sierra Match King; the product page publishes G1 0.496 and G7 0.243 (Litz) BCs and a muzzle velocity of 800 m/s. G7 corrected from 0.310 after rechecking the official page on 2026-10-25."
   },
   {
     "id": "fiocchi-709958-ammunition",
@@ -661,7 +661,7 @@
     "mass_gr": 165,
     "length_mm": null,
     "bc_g1": 0.355,
-    "bc_g7": 0.213,
+    "bc_g7": null,
     "muzzle_velocity_mps": 830,
     "test_barrel_mm": null,
     "construction": "cup_and_core",
@@ -669,7 +669,7 @@
     "min_expansion_mps": null,
     "source_url": "https://fiocchi.com/en/709891.html",
     "verified_on": "2026-10-25",
-    "notes": "Fiocchi product page #709891. 165 gr HPBT Sierra GameKing; the product page publishes G1 0.355 and G7 0.213 BCs and a muzzle velocity of 830 m/s. ZetaPi identifies the primer mixture, not a lead-free projectile."
+    "notes": "Fiocchi product page #709891. 165 gr HPBT Sierra GameKing; G1 0.355 and muzzle velocity 830 m/s as published. The page also publishes G7 0.213 (Litz), retained here as disputed source data but excluded from the active BC fields by maintainer decision on 2026-10-25. G1 0.355 closely reproduces the published velocity table; G7 0.213 does not under the same standard-atmosphere assumptions. This is a publication-consistency check, not physical verification. ZetaPi identifies the primer mixture, not a lead-free projectile."
   },
   {
     "id": "fiocchi-709913-ammunition",

@@ -6,6 +6,17 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected selected Fiocchi and PPU catalog BCs after reviewing source conflicts.
+  The Fiocchi 165 gr GameKing now uses G1 instead of its disputed G7 value.
+
+### Added
+
+- BC source labels for Aguila and the retailer-sourced Hornady and Winchester
+  rimfire entries, identifying estimates, user-supplied values and provisional
+  matches to other bullets. Catalog source notes are available in the bullet editor.
+
 ## [0.8.7] - 2026-10-25
 
 ### Added
