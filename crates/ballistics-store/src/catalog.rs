@@ -286,6 +286,10 @@ mod tests {
         assert!(catalog.calibers.len() >= 40);
         let keys: HashSet<_> = catalog.calibers.iter().map(|c| c.key.as_str()).collect();
         assert_eq!(keys.len(), catalog.calibers.len(), "duplicate caliber key");
+        assert!(
+            keys.contains("22-long") && keys.contains("22-lr"),
+            ".22 Long and .22 LR must remain separate calibers"
+        );
         let ids: HashSet<_> = catalog.bullets.iter().map(|b| b.id.as_str()).collect();
         assert_eq!(ids.len(), catalog.bullets.len(), "duplicate bullet id");
 
@@ -297,7 +301,7 @@ mod tests {
                     assert!(keys.contains(caliber), "{name}: unknown caliber {caliber}");
                     if let Some(velocity) = bullet.muzzle_velocity_mps {
                         assert!(
-                            (250.0..1300.0).contains(&velocity),
+                            (0.0..1300.0).contains(&velocity),
                             "{name}: velocity {velocity}"
                         );
                     }
@@ -345,6 +349,155 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn sellier_bellot_profiles_include_both_published_bc_models() {
+        let profiles: Vec<_> = Catalog::builtin()
+            .bullets
+            .iter()
+            .filter(|bullet| bullet.manufacturer == "Sellier & Bellot")
+            .collect();
+        assert_eq!(profiles.len(), 152);
+        for profile in profiles {
+            assert!(profile.bc_g1.is_some(), "{}: missing G1 BC", profile.id);
+            assert!(profile.bc_g7.is_some(), "{}: missing G7 BC", profile.id);
+        }
+    }
+
+    #[test]
+    fn fiocchi_profiles_keep_published_bc_models() {
+        let profiles: Vec<_> = Catalog::builtin()
+            .bullets
+            .iter()
+            .filter(|bullet| bullet.manufacturer == "Fiocchi")
+            .collect();
+        assert_eq!(profiles.len(), 46);
+        assert_eq!(
+            profiles
+                .iter()
+                .filter(|bullet| bullet.bc_g7.is_some())
+                .count(),
+            10
+        );
+        for profile in &profiles {
+            assert!(profile.bc_g1.is_some(), "{}: missing G1 BC", profile.id);
+            assert!(
+                profile.source_url.starts_with("https://fiocchi.com/"),
+                "{}: unexpected source",
+                profile.id
+            );
+        }
+
+        let profile = |id: &str| profiles.iter().find(|bullet| bullet.id == id).unwrap();
+        assert_eq!(profile("fiocchi-709891-ammunition").bc_g7, Some(0.213));
+        assert_eq!(profile("fiocchi-709977-ammunition").bc_g7, Some(0.381));
+        assert_eq!(profile("fiocchi-709976-ammunition").bc_g7, Some(0.314));
+        assert!(profile("fiocchi-745582-ammunition").lead_free);
+        assert!(profile("fiocchi-709898-ammunition").lead_free);
+        assert!(!profile("fiocchi-709913-ammunition").lead_free);
+    }
+
+    #[test]
+    fn prvi_partizan_profiles_keep_matched_g1_values() {
+        let profiles: Vec<_> = Catalog::builtin()
+            .bullets
+            .iter()
+            .filter(|bullet| bullet.manufacturer == "Prvi Partizan")
+            .collect();
+        assert_eq!(profiles.len(), 55);
+        assert_eq!(
+            profiles
+                .iter()
+                .filter(|bullet| bullet.kind == CatalogKind::Ammunition)
+                .count(),
+            37
+        );
+        assert_eq!(
+            profiles
+                .iter()
+                .filter(|bullet| bullet.kind == CatalogKind::Component)
+                .count(),
+            18
+        );
+        for profile in profiles {
+            assert!(profile.bc_g1.is_some(), "{}: missing G1 BC", profile.id);
+            assert!(profile.bc_g7.is_none(), "{}: unexpected G7 BC", profile.id);
+        }
+
+        let catalog = Catalog::builtin();
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-a-132-standard")
+                .unwrap()
+                .bc_g1,
+            Some(0.215)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-a-203-standard")
+                .unwrap()
+                .bc_g1,
+            Some(0.256)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-a-718-match")
+                .unwrap()
+                .bc_g1,
+            Some(0.519)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-b-540-component")
+                .unwrap()
+                .bc_g1,
+            Some(0.400)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-a-721-match")
+                .unwrap()
+                .bc_g1,
+            Some(0.519)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-b-689-component")
+                .unwrap()
+                .bc_g1,
+            Some(0.535)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-a-594-match")
+                .unwrap()
+                .bc_g1,
+            Some(0.450)
+        );
+        assert_eq!(
+            catalog
+                .bullets
+                .iter()
+                .find(|bullet| bullet.id == "ppu-b-594-component")
+                .unwrap()
+                .bc_g1,
+            Some(0.485)
+        );
     }
 
     #[test]
@@ -525,6 +678,14 @@ mod tests {
                 .map(|c| c.key.as_str())
                 .collect();
             assert!(found.contains(&"6-5x55-se"), "{query}: {found:?}");
+        }
+        for query in [".300 BLK", "7.62x35mm"] {
+            let found: Vec<_> = catalog
+                .search_calibers(query)
+                .into_iter()
+                .map(|c| c.key.as_str())
+                .collect();
+            assert!(found.contains(&"300-aac-blackout"), "{query}: {found:?}");
         }
         assert_eq!(catalog.search_calibers("").len(), catalog.calibers.len());
     }

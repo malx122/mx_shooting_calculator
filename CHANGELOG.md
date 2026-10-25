@@ -6,6 +6,63 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- Added 260 Federal rifle and rimfire loads from its official product pages,
+  bringing Federal to 275 profiles across 46 supported calibers. The
+  unlabelled BCs are stored as G1; separately labeled G7 values are retained.
+  Identical ballistic listings across part numbers and package sizes share a
+  profile. Loads without a published BC and loads in unsupported calibers are
+  not included.
+- Added 163 Norma factory loads from its official product pages across 39
+  supported calibers. The pages publish G1 BCs; no G7 BCs were found for
+  these loads. Profiles without a published BC and duplicates of existing
+  Norma loads are not included.
+- Added 46 Fiocchi rifle loads from its official product pages, retaining
+  published G1 coefficients and G7 values where available. The Fiocchi
+  rimfire listings are not included because their product pages do not
+  publish BCs.
+- Added 17 Prvi Partizan standard rifle loads from the supported calibers in
+  its 2023 catalog's first standard-ammunition tables, matching their Bullet
+  Art. numbers to the rifle-bullet table, plus 20 Match loads and 18 rifle
+  component bullets from its 2023 catalog. The Match loads publish G1 BCs;
+  standard-bullet BCs are listed without a drag-model label and stored as G1
+  by catalog convention. Load-specific Match BCs remain distinct where they
+  differ from the component table. The .50 Browning Match entry is not
+  included because the caliber is not yet defined here.
+- Added 152 Sellier & Bellot rifle loads from its eXergy Edge and Blue, SP,
+  SPCE, HPC, PTS, Sierra, FMJ and Target Match lines. Each profile includes
+  both manufacturer-published G1 and G7 BCs. Added 12 calibers, including
+  .17 Hornet, 5.6×50R Magnum, 6.5 Grendel, 6.5×52R, 6.8 Rem SPC,
+  .30 Carbine, 7.62×54R, 7×65R, 8×57 JR/JRS, 8×64 S and 9.3×72R.
+  7×65R remains distinct from 7×64.
+- Added 11 lead-free Tarvas component bullets, including its target bullet,
+  the .308 Win 165 gr Tarvas cartridge linked to the matching bullet, and
+  GGG's .308 Win 165 gr TARVAS cartridge. Both cartridge records use the
+  published muzzle velocity of 825 m/s.
+- Added 109 Sierra rifle-hunting component bullets and the .350 Legend and
+  .450 Bushmaster calibers. Sierra lists projectiles for reloading, not
+  factory ammunition; listings without a published BC are omitted.
+- Added 11 GGG factory loads listed in its brochure and three GGG FMJ
+  component bullets, using the published weights, ballistic coefficients
+  and muzzle velocities.
+- Added all 41 remaining CCI single-projectile rimfire load profiles, bringing
+  the catalog to 48 CCI profiles. Package-size variants share entries where
+  their ballistic data match. Added the .17 Mach 2, .22 Long, .22 Short and
+  .22 WRF calibers; .22 Long remains distinct from .22 LR. Multi-pellet
+  shotshells and the noise blank are outside the single-projectile catalog.
+- Added .300 AAC Blackout (.300 BLK / 7.62×35) with its .308-inch bullet
+  diameter and a typical 1:8 twist.
+- Added seven Barnes .300 AAC Blackout factory-load profiles, including
+  VOR-TX, Suppressor Series, Precision Match and Multi-Purpose JHP loads.
+- Added nine SK .22 LR factory-load profiles using SK's published ballistic
+  chart data.
+- Added Aguila's 19 listed rimfire loads and the .22 Win Auto and 5mm
+  Remington Rimfire Magnum calibers. G1 BCs are labeled as estimates where
+  Aguila does not publish them, except for its 20 gr 17 HMR JHP, which uses
+  the matching Hornady 20 gr XTP BC. Aguila's internally inconsistent 17 HMR
+  velocity table is not used.
+
 ## [0.8.6] - 2026-10-25
 
 ### Added

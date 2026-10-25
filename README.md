@@ -828,13 +828,32 @@ The HELIA 1-5x24i's click value is not published.
 `crates/ballistics-store/catalog/` holds the catalog as JSON compiled into the
 app:
 
-- **`calibers.json`:** 55 calibers, each with bullet diameter and a
+- **`calibers.json`:** 80 calibers, each with bullet diameter and a
   typical twist.
-- **`bullets/`:** 548 bullets and loads, one file per maker (for example
+- **`bullets/`:** 1529 bullets and loads, one file per maker (for example
   `bullets/norma.json`). These are factory loads from Norma, Lapua, Sako,
-  Hornady, Barnes, Geco, Federal, CCI, Remington and Winchester, and
-  component bullets from Hornady, Nosler, Sierra, Barnes, Lapua, Norma,
-  Berger, CopperBear, Infitech, Speer, Swift and Woodleigh.
+  Hornady, Barnes, Geco, Federal (275 rifle and rimfire loads), CCI
+  (48 single-projectile rimfire load profiles), SK (9 .22 LR loads), Aguila
+  (19 rimfire loads), Remington, Winchester, GGG, RWS, Norma (198 factory
+  loads), Prvi Partizan
+  (17 standard and 20 Match rifle loads),
+  Sellier & Bellot (152 rifle loads), and Fiocchi (46 rifle loads with
+  published G1 BCs). Fiocchi profiles also retain G7 BCs where published;
+  its rimfire listings do not publish BCs. S&B profiles retain both published
+  G1 and G7 BCs. Federal's unlabelled BCs are stored as G1; separately
+  labeled G7 values are retained. Identical Federal listings across part
+  numbers and package sizes share a profile.
+  Prvi Partizan's Match loads publish G1 BCs. The standard loads use generic
+  BCs joined by the published Bullet Art. numbers; PPU does not identify those
+  coefficients as G1 or G7, so they are stored as G1 by catalog convention.
+  Load-specific Match BCs remain distinct where the load and component tables
+  disagree. Aguila profiles
+  include estimated G1 BCs where no coefficient was published, except for
+  the 20 gr .17 HMR JHP, which uses the matching Hornady 20 gr XTP BC. Barnes
+  includes seven .300 AAC Blackout factory-load profiles. The catalog also
+  includes component bullets from Hornady, Nosler, Sierra, Barnes, Lapua,
+  Norma, Berger, CopperBear, GGG, Infitech, Speer, Swift, Tarvas, Woodleigh
+  and Prvi Partizan.
 - **`scopes/`:** scopes, one file per maker; see below.
 
   A new maker only needs a new file: the build script compiles in every
@@ -867,6 +886,16 @@ don't publish BCs for their .17 HMR loads, so those four entries take their
 BC from retailer pages: at least two independent sources had to agree, and
 each entry's notes list them.
 
+Prvi Partizan's 2023 catalog publishes G1 BCs for its Match line. For standard
+rifle loads, a coefficient is assigned only when the ammunition table's
+Bullet Art. number matches a rifle-bullet entry with a published BC. The 17
+added standard loads are the entries from the catalog's first standard-rifle
+tables (pp. 10-11) in calibers defined here; other standard loads are not yet
+included. The catalog does not identify standard-bullet coefficients as G1 or
+G7, so they are stored as G1 by the catalog's convention for unlabeled BCs.
+The Match catalog's .50 Browning entry is not included because the caliber is
+not yet defined here.
+
 Every entry carries the manufacturer page it came from (`source_url`) and the
 date it was checked. Values that a manufacturer does not publish are left
 empty rather than estimated: bullet length (often), G7 BC, and minimum
@@ -884,16 +913,17 @@ Edit the JSON directly and run the tests.
 
 ### Known caveats in the data
 
-- **Sako, Geco, CCI, Remington and Federal (partly)** don't say whether
-  their BC is G1 or G7. The values are stored as G1, which matches the
-  published velocity tables and is the usual convention for rimfire.
+- **Sako, Geco, CCI, Remington and some Federal listings** don't say whether
+  their BC is G1 or G7. Those values are stored as G1, which matches the
+  published velocity tables and is the usual convention for rimfire. Federal
+  labels G7 separately where it publishes that model.
+- CCI multi-pellet rimfire shotshells and its noise blank aren't listed:
+  the ballistic catalog models single-projectile loads.
 - **Lapua Naturalis** has unusually low published G1 BCs (for example 0.201
   for the 6.5 mm 140 gr). Lapua's own velocity tables confirm them.
 - **Bullet length** is missing for most factory loads. Without it the app
   cannot compute stability, spin drift or aerodynamic jump and says so;
   enter the length if you know it.
-- **RWS is not included:** its website asks AI crawlers not to collect its
-  pages.
 
 ## Physics validation
 
