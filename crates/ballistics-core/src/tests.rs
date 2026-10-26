@@ -476,6 +476,108 @@ fn the_best_point_blank_zero_is_told_at_100_m() {
 }
 
 #[test]
+fn solvers_reject_non_finite_environmental_inputs() {
+    for field in [
+        "zero temperature",
+        "zero pressure",
+        "zero humidity",
+        "shot temperature",
+        "shot pressure",
+        "shot humidity",
+        "latitude",
+        "azimuth",
+    ] {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let mut invalid = scenario();
+            invalid.shot.coriolis = Some(Coriolis {
+                latitude_degrees: 0.0,
+                azimuth_degrees: 0.0,
+            });
+            let input = match field {
+                "zero temperature" => &mut invalid.zero_atmosphere.temperature_c,
+                "zero pressure" => &mut invalid.zero_atmosphere.pressure_hpa,
+                "zero humidity" => &mut invalid.zero_atmosphere.humidity,
+                "shot temperature" => &mut invalid.shot.atmosphere.temperature_c,
+                "shot pressure" => &mut invalid.shot.atmosphere.pressure_hpa,
+                "shot humidity" => &mut invalid.shot.atmosphere.humidity,
+                "latitude" => &mut invalid.shot.coriolis.as_mut().unwrap().latitude_degrees,
+                "azimuth" => &mut invalid.shot.coriolis.as_mut().unwrap().azimuth_degrees,
+                _ => unreachable!(),
+            };
+            *input = value;
+            for result in [
+                solver::solve(&invalid, 1.0),
+                solver::solve_with_zero(&invalid, 1.0, (0.0, 0.0)),
+            ] {
+                assert!(
+                    matches!(result, Err(SolveError::InvalidInput(_))),
+                    "{field} = {value} must be rejected"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn bc_bands_reject_non_finite_points() {
+    for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        assert!(BcBands::new(&[(value, 0.4)]).is_err());
+        assert!(BcBands::new(&[(1.0, value)]).is_err());
+    }
+}
+
+#[test]
+fn bc_band_lookup_rejects_non_finite_speeds() {
+    for bands in [
+        BcBands::NONE,
+        BcBands::new(&[(1.0, 0.4)]).unwrap(),
+        BcBands::new(&[(1.0, 0.4), (2.0, 0.5)]).unwrap(),
+    ] {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(bands.at(value), None);
+        }
+    }
+}
+
+#[test]
+fn solve_with_zero_rejects_non_finite_angles() {
+    for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        for zero in [(value, 0.0), (0.0, value)] {
+            assert!(matches!(
+                solver::solve_with_zero(&scenario(), 1.0, zero),
+                Err(SolveError::InvalidInput(_))
+            ));
+        }
+    }
+}
+
+#[test]
+fn solvers_reject_invalid_maximum_ranges() {
+    let s = scenario();
+    for range in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -1.0] {
+        for result in [
+            solver::solve(&s, range),
+            solver::solve_with_zero(&s, range, (0.0, 0.0)),
+        ] {
+            assert!(
+                matches!(result, Err(SolveError::InvalidInput(_))),
+                "maximum range {range} must be rejected"
+            );
+        }
+    }
+    // A request at the origin is valid, including the signed-zero boundary.
+    for range in [0.0, -0.0] {
+        assert!(solver::solve(&s, range).unwrap().at(0.0).is_some());
+        assert!(
+            solver::solve_with_zero(&s, range, (0.0, 0.0))
+                .unwrap()
+                .at(0.0)
+                .is_some()
+        );
+    }
+}
+
+#[test]
 fn absurd_bullets_are_refused_or_fly_short_without_a_panic() {
     // Found by stress testing: these panicked in the drag table lookup.
     let mut feather = scenario();

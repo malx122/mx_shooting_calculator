@@ -89,11 +89,10 @@ impl BcBands {
         if points.len() > MAX_BC_BANDS {
             return Err("at most five BC bands");
         }
-        if points
-            .iter()
-            .any(|&(velocity, bc)| !(velocity > 0.0 && bc > 0.0))
-        {
-            return Err("BC bands need a positive velocity and BC");
+        if points.iter().any(|&(velocity, bc)| {
+            !velocity.is_finite() || !bc.is_finite() || velocity <= 0.0 || bc <= 0.0
+        }) {
+            return Err("BC bands need a positive, finite velocity and BC");
         }
         let mut bands = BcBands::NONE;
         bands.points[..points.len()].copy_from_slice(points);
@@ -112,7 +111,11 @@ impl BcBands {
         self.len == 0
     }
 
+    /// Returns `None` for an empty table or a non-finite speed.
     pub fn at(&self, speed: f64) -> Option<f64> {
+        if !speed.is_finite() {
+            return None;
+        }
         let points = &self.points[..self.len];
         let (first, last) = (points.first()?, points.last()?);
         if speed <= first.0 {
@@ -359,7 +362,9 @@ pub fn kinetic_energy(mass_kg: f64, velocity: f64) -> f64 {
 }
 
 /// Zeroes the rifle, then flies the shot out to `max_range` (slant).
+/// The maximum range must be finite and nonnegative.
 pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError> {
+    validate_max_range(max_range)?;
     validate(scenario)?;
     let zero = zero_angles(scenario)?;
     Ok(fly_from_zero(scenario, max_range, zero))
@@ -369,11 +374,16 @@ pub fn solve(scenario: &Scenario, max_range: f64) -> Result<Solution, SolveError
 /// radians, as a `Solution` reports them) instead of zeroing the rifle
 /// again: for a shot that differs from the expected one (another muzzle
 /// velocity, another wind) with the same sight setting.
+/// The maximum range must be finite and nonnegative, and both zero angles finite.
 pub fn solve_with_zero(
     scenario: &Scenario,
     max_range: f64,
     zero: (f64, f64),
 ) -> Result<Solution, SolveError> {
+    validate_max_range(max_range)?;
+    if !zero.0.is_finite() || !zero.1.is_finite() {
+        return Err(SolveError::InvalidInput("zero angles must be finite"));
+    }
     validate(scenario)?;
     Ok(fly_from_zero(scenario, max_range, zero))
 }
@@ -475,6 +485,15 @@ pub fn interpolate(samples: &[Sample], range: f64) -> Option<Sample> {
     })
 }
 
+fn validate_max_range(max_range: f64) -> Result<(), SolveError> {
+    if !max_range.is_finite() || max_range < 0.0 {
+        return Err(SolveError::InvalidInput(
+            "maximum range must be finite and nonnegative",
+        ));
+    }
+    Ok(())
+}
+
 fn validate(scenario: &Scenario) -> Result<(), SolveError> {
     let Scenario {
         bullet,
@@ -505,8 +524,18 @@ fn validate(scenario: &Scenario) -> Result<(), SolveError> {
         shot.wind.from_degrees,
         shot.powder_temperature_c,
         scenario.zero_powder_temperature_c,
+        zero_atmosphere.temperature_c,
+        zero_atmosphere.pressure_hpa,
+        zero_atmosphere.humidity,
+        shot.atmosphere.temperature_c,
+        shot.atmosphere.pressure_hpa,
+        shot.atmosphere.humidity,
     ];
-    if numbers.iter().any(|value| !value.is_finite()) {
+    if numbers.iter().any(|value| !value.is_finite())
+        || shot.coriolis.is_some_and(|coriolis| {
+            !coriolis.latitude_degrees.is_finite() || !coriolis.azimuth_degrees.is_finite()
+        })
+    {
         return Err(SolveError::InvalidInput(
             "a number is not a number (infinite or undefined)",
         ));

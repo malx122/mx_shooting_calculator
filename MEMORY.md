@@ -1,5 +1,18 @@
 # Project memory
 
+## Core software reliability review — 2026-10-25
+
+See [the review](docs/core-software-review-2026-10-25.md), initially based on
+`6ed03b4`. All four input-handling findings were fixed on the user's instruction:
+non-finite environmental values and explicit zero angles are rejected; both
+solver entry points reject non-finite or negative maximum ranges (zero is valid);
+`BcBands::new` rejects non-finite points and its lookup returns `None` for
+non-finite queries. Five regression tests reproduced the failures before the
+fixes and passed afterward. The full workspace passed with 205 tests successful
+and four ignored; formatting, desktop Clippy and browser lint passed. Ordinary
+UI reachability of NaN was not established. No independent calculator comparison
+was completed and this review does not establish ballistic accuracy.
+
 ## BC plausibility review — 2026-10-25
 
 The user requested a plausibility review of every catalog BC and asked that

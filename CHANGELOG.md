@@ -8,6 +8,8 @@ any release may still change things noticeably.
 
 ### Fixed
 
+- Reject non-finite core inputs and invalid maximum ranges, and prevent a NaN
+  query from panicking in the BC-band lookup.
 - Corrected selected Fiocchi and PPU catalog BCs after reviewing source conflicts.
   The Fiocchi 165 gr GameKing now uses G1 instead of its disputed G7 value.
 
