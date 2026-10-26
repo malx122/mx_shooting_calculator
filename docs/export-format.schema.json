@@ -9,7 +9,7 @@
       "type": "string"
     },
     "version": {
-      "description": "The format's version; this description is of version 6. A reader\nshould refuse versions newer than it knows.",
+      "description": "The format's version; this description is of version 7. A reader\nshould refuse versions newer than it knows.",
       "type": "integer",
       "format": "uint32",
       "minimum": 0
@@ -505,6 +505,17 @@
             "null"
           ]
         },
+        "data_attribution": {
+          "description": "Attribution for copied data. Preserve it when sharing or adapting the\nrecord, even if the catalog entry is no longer available.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataAttribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "notes": {
           "description": "The hunter's notes.",
           "type": "string"
@@ -630,6 +641,44 @@
         "fmj",
         "match",
         "other"
+      ]
+    },
+    "DataAttribution": {
+      "description": "Attribution and license terms for data copied from another collection.\nThese describe the copied data, not the user's independent notes or the app's code.",
+      "type": "object",
+      "properties": {
+        "credit": {
+          "description": "The creator or collection that must receive credit.",
+          "type": "string"
+        },
+        "source_url": {
+          "description": "HTTPS URL where the copied record can be found. Other URL schemes\nare rejected when storing or importing the record.",
+          "type": "string"
+        },
+        "source_revision": {
+          "description": "Revision of the source collection used for the import.",
+          "type": "string"
+        },
+        "license": {
+          "description": "SPDX license identifier for the copied data, e.g. `CC-BY-SA-4.0`.",
+          "type": "string"
+        },
+        "license_url": {
+          "description": "HTTPS URL of the license text or canonical license page. Other URL\nschemes are rejected when storing or importing the record.",
+          "type": "string"
+        },
+        "changes": {
+          "description": "Changes made in the initial catalog adaptation. Personal copies may\ncontain later user edits.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "credit",
+        "source_url",
+        "source_revision",
+        "license",
+        "license_url",
+        "changes"
       ]
     },
     "RifleLoad": {

@@ -41,6 +41,139 @@ fn data_survives_reopening_the_file() {
 }
 
 #[test]
+fn unsafe_data_attribution_links_are_rejected_before_storage_or_import() {
+    let source = DataAttribution {
+        credit: "Example data collection".into(),
+        source_url: "https://example.com/data".into(),
+        source_revision: "1".into(),
+        license: "CC-BY-SA-4.0".into(),
+        license_url: "https://creativecommons.org/licenses/by-sa/4.0/".into(),
+        changes: "Initial format conversion".into(),
+    };
+    for url in [
+        "javascript:alert(1)",
+        "data:text/html,test",
+        "file:///tmp/test",
+        "custom:run",
+        "https:///no-host",
+        "https://example.com/\n",
+    ] {
+        for license_link in [false, true] {
+            let mut invalid = bullet("Attributed", "308-win");
+            let mut attribution = source.clone();
+            if license_link {
+                attribution.license_url = url.into();
+            } else {
+                attribution.source_url = url.into();
+            }
+            invalid.data_attribution = Some(attribution);
+            let mut store = Store::open_in_memory().unwrap();
+            assert!(matches!(
+                store.save_bullet(&mut invalid),
+                Err(StoreError::Invalid(_))
+            ));
+            let data = transfer::PersonalData {
+                format: transfer::FORMAT.into(),
+                version: transfer::VERSION,
+                bullets: vec![invalid],
+                ..Default::default()
+            };
+            assert!(matches!(
+                store.import_data(&data, false),
+                Err(StoreError::Invalid(_))
+            ));
+            assert!(store.bullets().unwrap().is_empty());
+        }
+    }
+}
+
+#[test]
+fn data_attribution_survives_storage_backups_and_sync_without_catalog_links() {
+    let catalog = Catalog::builtin();
+    let caliber = catalog.caliber("308-win").unwrap();
+    let entry = catalog
+        .bullets_for(caliber)
+        .find(|entry| entry.data_attribution.is_some())
+        .unwrap();
+    let mut copied = entry.to_collection(caliber);
+    let attribution = copied.data_attribution.clone();
+    copied.muzzle_velocity_mps = 1.0; // A user-entered value is required for storage.
+    copied.catalog_id = None;
+    copied.notes.clear();
+    let path = temporary_path();
+    let source = Store::open(&path).unwrap();
+    source.save_bullet(&mut copied).unwrap();
+    drop(source);
+    let source = Store::open(&path).unwrap();
+    assert_eq!(
+        source.bullet(&copied.id).unwrap().unwrap().data_attribution,
+        attribution
+    );
+    let json = source.export_json().unwrap();
+    let export: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(export["version"], 7);
+    assert_eq!(
+        export["bullets"][0]["data_attribution"]["license"],
+        "CC-BY-SA-4.0"
+    );
+    let mut restored = Store::open_in_memory().unwrap();
+    restored.import_json(&json).unwrap();
+    assert_eq!(
+        restored
+            .bullet(&copied.id)
+            .unwrap()
+            .unwrap()
+            .data_attribution,
+        attribution
+    );
+    let mut synced = Store::open_in_memory().unwrap();
+    synced.merge_sync(&source.export_data().unwrap()).unwrap();
+    assert_eq!(
+        synced.bullet(&copied.id).unwrap().unwrap().data_attribution,
+        attribution
+    );
+    // A later personal edit must keep the attribution too.
+    let mut changed = synced.bullet(&copied.id).unwrap().unwrap();
+    changed.notes = "My own note".into();
+    synced.save_bullet(&mut changed).unwrap();
+    assert_eq!(
+        synced.bullet(&copied.id).unwrap().unwrap().data_attribution,
+        attribution
+    );
+    drop(source);
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn the_database_before_data_attribution_upgrades_without_changing_bullets() {
+    let path = temporary_path();
+    let connection = rusqlite::Connection::open(&path).unwrap();
+    let migrations = &crate::db::MIGRATIONS[..9];
+    for migration in migrations {
+        connection.execute_batch(migration).unwrap();
+    }
+    connection.pragma_update(None, "user_version", 9).unwrap();
+    connection
+        .execute_batch(
+            "INSERT INTO bullets (id, kind, manufacturer, name, caliber, diameter_mm, mass_g,
+         bc_g1, drag_model, muzzle_velocity_mps, velocity_temperature_c, velocity_per_degree,
+         construction, lead_free, notes, updated_at)
+         VALUES ('old', 'handload', 'Test', 'Existing record', '308-win', 7.82, 1,
+         0.1, 'G1', 1, 15, 0, 'other', 0, 'Existing note', 123);",
+        )
+        .unwrap();
+    drop(connection);
+    let upgraded = Store::open(&path).unwrap();
+    let existing = upgraded.bullet("old").unwrap().unwrap();
+    assert!(existing.data_attribution.is_none());
+    assert_eq!(existing.name, "Existing record");
+    assert_eq!(existing.notes, "Existing note");
+    assert_eq!(existing.updated_at, 123);
+    drop(upgraded);
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
 fn newer_schema_is_refused() {
     let path = temporary_path();
     let connection = rusqlite::Connection::open(&path).unwrap();

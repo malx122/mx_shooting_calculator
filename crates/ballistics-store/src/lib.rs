@@ -31,9 +31,9 @@ pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart, HitZone, Ring, TrainingRings};
 pub use model::{
-    BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DragPoint, LoadZero, Rifle,
-    RifleLoad, ShotStats, TableColumns, TableSettings, Truing, TruingMethod, VelocityModel,
-    VelocityPoint, ZeroWeather,
+    BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DataAttribution, DragPoint,
+    LoadZero, Rifle, RifleLoad, ShotStats, TableColumns, TableSettings, Truing, TruingMethod,
+    VelocityModel, VelocityPoint, ZeroWeather,
 };
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,

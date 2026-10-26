@@ -130,6 +130,9 @@ pub(crate) const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX shots_by_time ON shots (taken_at);
 "#,
+    r#"
+    ALTER TABLE bullets ADD COLUMN data_attribution TEXT;
+"#,
 ];
 
 /// The setting holding the store's clock: the latest time it has stamped
@@ -602,9 +605,9 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
         "INSERT INTO bullets (id, kind, manufacturer, name, caliber, diameter_mm, mass_g,
              length_mm, bc_g1, bc_g7, drag_model, muzzle_velocity_mps, velocity_temperature_c,
              velocity_per_degree, test_barrel_mm, construction, lead_free, min_expansion_mps,
-             catalog_id, notes, updated_at, bc_bands, drag_curve)
+             catalog_id, notes, updated_at, bc_bands, drag_curve, data_attribution)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-             ?18, ?19, ?20, ?21, ?22, ?23)
+             ?18, ?19, ?20, ?21, ?22, ?23, ?24)
          ON CONFLICT (id) DO UPDATE SET
              kind = excluded.kind, manufacturer = excluded.manufacturer, name = excluded.name,
              caliber = excluded.caliber, diameter_mm = excluded.diameter_mm,
@@ -617,7 +620,7 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
              lead_free = excluded.lead_free, min_expansion_mps = excluded.min_expansion_mps,
              catalog_id = excluded.catalog_id, notes = excluded.notes,
              updated_at = excluded.updated_at, bc_bands = excluded.bc_bands,
-             drag_curve = excluded.drag_curve",
+             drag_curve = excluded.drag_curve, data_attribution = excluded.data_attribution",
         params![
             bullet.id,
             match bullet.kind {
@@ -649,6 +652,11 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
             bullet.updated_at,
             serde_json::to_string(&bullet.bc_bands)?,
             serde_json::to_string(&bullet.drag_curve)?,
+            bullet
+                .data_attribution
+                .as_ref()
+                .map(serde_json::to_string)
+                .transpose()?,
         ],
     )?;
     Ok(())
@@ -798,6 +806,10 @@ pub(crate) fn bullet_from_row(row: &Row<'_>) -> rusqlite::Result<Bullet> {
         lead_free: row.get("lead_free")?,
         min_expansion_mps: row.get("min_expansion_mps")?,
         catalog_id: row.get("catalog_id")?,
+        data_attribution: row
+            .get::<_, Option<String>>("data_attribution")?
+            .map(|text| from_json_column(&text))
+            .transpose()?,
         notes: row.get("notes")?,
         updated_at: row.get("updated_at")?,
     })

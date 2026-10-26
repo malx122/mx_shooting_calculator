@@ -17,7 +17,7 @@ The file is UTF-8 JSON, usually named `mxsc-backup.json`.
 ```json
 {
   "format": "mxsc/personal-data",
-  "version": 6,
+  "version": 7,
   "exported_at": 1792473562000,
   "rifles": [ { "id": "…", "name": "Browning X-Bolt", "caliber": "308-win", "twist_in": 10.0, … } ],
   "bullets": [ { "id": "…", "manufacturer": "Federal", "name": "Terminal Ascent", "mass_g": 11.34, … } ],
@@ -31,6 +31,15 @@ The file is UTF-8 JSON, usually named `mxsc-backup.json`.
 ```
 
 ## Conventions
+
+- **Licensed catalog data:** a copied bullet may contain `data_attribution`.
+  Preserve it when sharing, adapting, importing or re-exporting the record,
+  including when its catalog link or personal notes change. It identifies the
+  source, revision, credit, license and initial adaptation. These terms apply to
+  the copied data, not the user's independent notes or the app's source code.
+  The app writes format 7 so older versions reject such backups rather than
+  silently discarding attribution. Older backups without the field still import.
+  Both attribution URLs must use HTTPS; unsafe schemes are rejected on import.
 
 - **Units are in the field names**, always metric:
   - lengths: `_mm`, `_cm`, `_m`;
@@ -121,7 +130,7 @@ export, and sends them nowhere else.
 ## Writing a file for the app
 
 The app reads files written by other programs:
-- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (6).
+- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (7).
 - Fields marked "may be left out" can be omitted.
 - Unknown fields are ignored, and the `catalog` section is never imported.
 - Every record is checked before anything is saved. Numbers must be finite and within what rifles and bullets can be. If any record fails, nothing from the file is imported, and the app says which record failed.
@@ -148,7 +157,7 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | string | Always `mxsc/personal-data`. Files from the app's earlier names say `mhc/personal-data` or `ballistic-calculator/personal-data`. |
-| `version` | integer | The format's version; this description is of version 6. A reader should refuse versions newer than it knows. |
+| `version` | integer | The format's version; this description is of version 7. A reader should refuse versions newer than it knows. |
 | `exported_at` | integer | When the file was written, in milliseconds since 1970 (UTC). |
 | `rifles` | array of [Rifle](#rifle) | The hunter's rifles. |
 | `bullets` | array of [Bullet](#bullet) | The hunter's bullets: factory ammunition and handloads. |
@@ -252,6 +261,7 @@ A bullet in the hunter's own collection: either factory ammunition or a handload
 | `lead_free` | boolean | Whether the bullet is lead-free. |
 | `min_expansion_mps` | number or null | The least impact speed at which it expands, as the maker gives it. |
 | `catalog_id` | string or null | The catalog entry this was copied from, if any. |
+| `data_attribution` | [DataAttribution](#dataattribution) or null | Attribution for copied data. Preserve it when sharing or adapting the record, even if the catalog entry is no longer available. May be left out. |
 | `notes` | string | The hunter's notes. |
 | `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). Merging keeps the copy changed last. |
 
@@ -308,6 +318,19 @@ One of:
 - `"fmj"`
 - `"match"`
 - `"other"`
+
+### DataAttribution
+
+Attribution and license terms for data copied from another collection. These describe the copied data, not the user's independent notes or the app's code.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `credit` | string | The creator or collection that must receive credit. |
+| `source_url` | string | HTTPS URL where the copied record can be found. Other URL schemes are rejected when storing or importing the record. |
+| `source_revision` | string | Revision of the source collection used for the import. |
+| `license` | string | SPDX license identifier for the copied data, e.g. `CC-BY-SA-4.0`. |
+| `license_url` | string | HTTPS URL of the license text or canonical license page. Other URL schemes are rejected when storing or importing the record. |
+| `changes` | string | Changes made in the initial catalog adaptation. Personal copies may contain later user edits. |
 
 ### RifleLoad
 

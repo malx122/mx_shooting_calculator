@@ -744,6 +744,21 @@ impl App {
                 });
                 ui.add_space(4.0);
                 ui.label(tr("Free software under the MIT or Apache-2.0 licence."));
+                egui::CollapsingHeader::new(tr("Catalog data attribution")).show(ui, |ui| {
+                    egui::ScrollArea::vertical()
+                        .max_height(220.0)
+                        .show(ui, |ui| {
+                            ui.label(ballistics_store::catalog::CHAMBERSIM_DATA_NOTICE);
+                            ui.hyperlink_to(
+                                "ChamberSim Reloaded project database",
+                                "https://github.com/Schildkroet/ChamberSim-Reloaded",
+                            );
+                            ui.hyperlink_to(
+                                "CC BY-SA 4.0",
+                                "https://creativecommons.org/licenses/by-sa/4.0/",
+                            );
+                        });
+                });
                 ui.weak(tr(
                     "Your rifles, bullets, targets and shot log stay on this device, and on \
                      your other devices if you sync them.",

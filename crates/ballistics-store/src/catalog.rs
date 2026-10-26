@@ -10,13 +10,17 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
 use crate::drawings::{Drawing, RENAMED};
-use crate::model::{BcModel, Bullet, BulletKind, Construction, new_id};
+use crate::model::{BcModel, Bullet, BulletKind, Construction, DataAttribution, new_id};
 use crate::optics::{Reticle, Scope};
 use crate::targets::Target;
 
 mod files {
     include!(concat!(env!("OUT_DIR"), "/catalog_files.rs"));
 }
+
+/// Attribution for the separately licensed imported collection, also shown offline.
+pub const CHAMBERSIM_DATA_NOTICE: &str =
+    include_str!("../catalog/third-party/chambersim/ATTRIBUTION.txt");
 
 /// One list from the files of a catalog folder, in file name order.
 fn from_files<T: DeserializeOwned>(files: &[(&str, &str)]) -> serde_json::Result<Vec<T>> {
@@ -98,6 +102,9 @@ pub struct CatalogBullet {
     pub bc_g7: Option<f64>,
     #[serde(default)]
     pub bc_source: Option<BcSource>,
+    /// License and credit for a separately licensed data collection.
+    #[serde(default)]
+    pub data_attribution: Option<DataAttribution>,
     pub muzzle_velocity_mps: Option<f64>,
     pub test_barrel_mm: Option<f64>,
     pub construction: Construction,
@@ -156,6 +163,11 @@ impl CatalogBullet {
         bullet.lead_free = self.lead_free;
         bullet.min_expansion_mps = self.min_expansion_mps;
         bullet.catalog_id = Some(self.id.clone());
+        bullet.data_attribution = self.data_attribution.clone();
+        if self.data_attribution.is_some() {
+            // Preserve the source's uncertainty notes independently of later catalog updates.
+            bullet.notes = self.notes.clone();
+        }
         bullet
     }
 }
@@ -180,9 +192,11 @@ impl Catalog {
     }
 
     fn builtin_parts() -> serde_json::Result<Catalog> {
+        let mut bullets = from_files(files::BULLETS)?;
+        bullets.extend(from_files::<CatalogBullet>(files::CHAMBERSIM_BULLETS)?);
         Catalog {
             calibers: serde_json::from_str(include_str!("../catalog/calibers.json"))?,
-            bullets: from_files(files::BULLETS)?,
+            bullets,
             scopes: from_files(files::SCOPES)?,
             reticles: serde_json::from_str(include_str!("../catalog/reticles.json"))?,
             targets: Vec::new(),
@@ -369,7 +383,9 @@ mod tests {
         let profiles: Vec<_> = Catalog::builtin()
             .bullets
             .iter()
-            .filter(|bullet| bullet.manufacturer == "Sellier & Bellot")
+            .filter(|bullet| {
+                bullet.manufacturer == "Sellier & Bellot" && bullet.data_attribution.is_none()
+            })
             .collect();
         assert_eq!(profiles.len(), 152);
         for profile in profiles {
@@ -383,7 +399,7 @@ mod tests {
         let profiles: Vec<_> = Catalog::builtin()
             .bullets
             .iter()
-            .filter(|bullet| bullet.manufacturer == "Fiocchi")
+            .filter(|bullet| bullet.manufacturer == "Fiocchi" && bullet.data_attribution.is_none())
             .collect();
         assert_eq!(profiles.len(), 46);
         assert_eq!(
@@ -420,7 +436,9 @@ mod tests {
         let profiles: Vec<_> = Catalog::builtin()
             .bullets
             .iter()
-            .filter(|bullet| bullet.manufacturer == "Prvi Partizan")
+            .filter(|bullet| {
+                bullet.manufacturer == "Prvi Partizan" && bullet.data_attribution.is_none()
+            })
             .collect();
         assert_eq!(profiles.len(), 55);
         assert_eq!(
@@ -632,6 +650,45 @@ mod tests {
     }
 
     #[test]
+    fn chambersim_records_keep_their_license_and_unknown_fields() {
+        let imported: Vec<CatalogBullet> = from_files(files::CHAMBERSIM_BULLETS).unwrap();
+        let manifest: serde_json::Value = serde_json::from_str(include_str!(
+            "../catalog/third-party/chambersim/import-manifest.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            imported.len(),
+            manifest["counts"]["imported"].as_u64().unwrap() as usize
+        );
+        assert!(!imported.is_empty());
+        let catalog = Catalog::builtin();
+        for entry in imported {
+            assert!(entry.id.starts_with("chambersim-"));
+            assert_eq!(entry.kind, CatalogKind::Component);
+            assert!(entry.length_mm.is_none());
+            assert_eq!(entry.construction, Construction::Other);
+            assert!(!entry.lead_free);
+            assert!(entry.min_expansion_mps.is_none());
+            assert!(entry.verified_on.is_empty());
+            let attribution = entry.data_attribution.as_ref().unwrap();
+            assert_eq!(attribution.credit, "ChamberSim Reloaded project database");
+            assert_eq!(attribution.license, "CC-BY-SA-4.0");
+            assert_eq!(
+                attribution.source_revision,
+                manifest["source_revision"].as_str().unwrap()
+            );
+            assert!(entry.source_url.contains(&attribution.source_revision));
+            assert_eq!(attribution.source_url, entry.source_url);
+            assert!(CHAMBERSIM_DATA_NOTICE.contains(&attribution.source_revision));
+            let caliber = catalog.calibers.iter().find(|c| entry.fits(c)).unwrap();
+            let copied = entry.to_collection(caliber);
+            assert_eq!(copied.data_attribution.as_ref(), Some(attribution));
+            assert_eq!(copied.notes, entry.notes);
+            assert_eq!(copied.muzzle_velocity_mps, 0.0);
+        }
+    }
+
+    #[test]
     fn each_maker_file_holds_that_maker_only() {
         let slug = |maker: &str| {
             maker
@@ -641,7 +698,7 @@ mod tests {
                 .collect::<Vec<_>>()
                 .join("-")
         };
-        for (name, json) in files::BULLETS {
+        for (name, json) in files::BULLETS.iter().chain(files::CHAMBERSIM_BULLETS) {
             let bullets: Vec<CatalogBullet> = serde_json::from_str(json)
                 .unwrap_or_else(|error| panic!("bullets/{name}: {error}"));
             assert!(!bullets.is_empty(), "bullets/{name} is empty");

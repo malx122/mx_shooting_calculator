@@ -4,7 +4,9 @@
 
 use ballistics_core::{Coriolis, analysis, solver};
 use ballistics_shot::{Conditions, Hold, Pressure, unit_label};
-use ballistics_store::{Bullet, Catalog, Country, Rifle, RifleLoad, Store, Target, TargetGroup};
+use ballistics_store::{
+    Bullet, Catalog, Country, DataAttribution, Rifle, RifleLoad, Store, Target, TargetGroup,
+};
 use serde_json::{Value, json};
 
 /// The engine always flies this far, so the ethical limit can be found.
@@ -211,6 +213,20 @@ fn list_rifles(store: &Store) -> Result<Answer, String> {
     })
 }
 
+fn data_attribution_text(attribution: Option<&DataAttribution>) -> String {
+    attribution.map_or_else(String::new, |data| {
+        format!(
+            "\n  Data: {}; {} ({}); source {}; revision {}. Initial adaptation: {}",
+            data.credit,
+            data.license,
+            data.license_url,
+            data.source_url,
+            data.source_revision,
+            data.changes
+        )
+    })
+}
+
 fn bullet_line(bullet: &Bullet) -> String {
     let bc = match (bullet.bc_g1, bullet.bc_g7) {
         (Some(g1), Some(g7)) => format!("G1 {g1}, G7 {g7}"),
@@ -219,12 +235,13 @@ fn bullet_line(bullet: &Bullet) -> String {
         (None, None) => "own drag curve".into(),
     };
     format!(
-        "{} ({}): {bc}, {} m/s, {}{}",
+        "{} ({}): {bc}, {} m/s, {}{}{}",
         bullet.display_name(),
         caliber_name(&bullet.caliber),
         bullet.muzzle_velocity_mps,
         bullet.construction.label().to_lowercase(),
-        if bullet.lead_free { ", lead-free" } else { "" }
+        if bullet.lead_free { ", lead-free" } else { "" },
+        data_attribution_text(bullet.data_attribution.as_ref())
     )
 }
 
@@ -265,6 +282,7 @@ fn list_bullets(store: &Store, arguments: &Value) -> Result<Answer, String> {
                 "muzzle_velocity_mps": b.muzzle_velocity_mps,
                 "construction": b.construction.label(),
                 "lead_free": b.lead_free,
+                "data_attribution": b.data_attribution,
             })
         })
         .collect();
@@ -884,7 +902,7 @@ fn search_catalog(arguments: &Value) -> Result<Answer, String> {
                     (None, None) => "no BC".into(),
                 };
                 format!(
-                    "- {}{}: {bc}{}, {}{}",
+                    "- {}{}: {bc}{}, {}{}{}",
                     bullet.display_name(),
                     bullet.caliber.as_deref().map_or(
                         " (component bullet)".to_owned(),
@@ -894,7 +912,8 @@ fn search_catalog(arguments: &Value) -> Result<Answer, String> {
                         .muzzle_velocity_mps
                         .map_or(String::new(), |v| format!(", {v} m/s")),
                     bullet.construction.label().to_lowercase(),
-                    if bullet.lead_free { ", lead-free" } else { "" }
+                    if bullet.lead_free { ", lead-free" } else { "" },
+                    data_attribution_text(bullet.data_attribution.as_ref())
                 )
             })
             .collect();
@@ -1028,6 +1047,37 @@ mod tests {
             json!({"rifle": "tikka", "bullet": "oryx", "from_m": 100, "to_m": 300, "step_m": 50}),
         );
         assert_eq!(answer.lines().count(), 2 + 5, "{answer}");
+    }
+
+    #[test]
+    fn catalog_and_personal_data_listings_include_attribution() {
+        let catalog = Catalog::builtin();
+        let caliber = catalog.caliber("308-win").unwrap();
+        let entry = catalog
+            .bullets_for(caliber)
+            .find(|entry| entry.data_attribution.is_some())
+            .unwrap();
+        let mut copied = entry.to_collection(caliber);
+        copied.muzzle_velocity_mps = 1.0;
+        let store = Store::open_in_memory().unwrap();
+        store.save_bullet(&mut copied).unwrap();
+        let listed = list_bullets(&store, &json!({})).unwrap();
+        let attribution = copied.data_attribution.as_ref().unwrap();
+        assert!(listed.text.contains(&attribution.credit));
+        assert!(listed.text.contains(&attribution.license_url));
+        assert!(listed.text.contains(&attribution.source_url));
+        assert_eq!(
+            listed.data.unwrap()["bullets"][0]["data_attribution"],
+            serde_json::to_value(attribution).unwrap()
+        );
+        let found = search_catalog(&json!({"search": "Balistix"})).unwrap();
+        assert!(found.text.contains("ChamberSim Reloaded project database"));
+        assert!(
+            found
+                .text
+                .contains("https://creativecommons.org/licenses/by-sa/4.0/")
+        );
+        assert!(found.text.contains("Initial adaptation:"));
     }
 
     #[test]

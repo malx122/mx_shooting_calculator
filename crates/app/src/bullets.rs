@@ -270,10 +270,14 @@ impl BulletsPage {
             {
                 ui.separator();
                 ui.horizontal_wrapped(|ui| {
-                    ui.weak(trf!(
-                        "Copied from the catalog (data checked {}).",
-                        source.verified_on
-                    ));
+                    if source.data_attribution.is_some() {
+                        ui.weak(tr("Copied from a separately licensed data collection."));
+                    } else {
+                        ui.weak(trf!(
+                            "Copied from the catalog (data checked {}).",
+                            source.verified_on
+                        ));
+                    }
                     ui.hyperlink_to(tr("Source"), &source.source_url)
                         .on_hover_text(&source.source_url);
                 });
@@ -285,6 +289,18 @@ impl BulletsPage {
                         ui.label(&source.notes);
                     });
                 }
+            }
+            if let Some(attribution) = &bullet.data_attribution {
+                ui.separator();
+                ui.label(&attribution.credit);
+                ui.horizontal_wrapped(|ui| {
+                    ui.hyperlink_to(&attribution.license, &attribution.license_url);
+                    ui.hyperlink_to(tr("Source"), &attribution.source_url);
+                });
+                egui::CollapsingHeader::new(tr("Data attribution")).show(ui, |ui| {
+                    ui.label(&attribution.changes);
+                    ui.weak(&attribution.source_revision);
+                });
             }
         });
         if cancel {
@@ -371,6 +387,10 @@ impl BulletsPage {
                             if let Some(provenance) = entry.bc_source {
                                 ui.small(trf!("BC source: {}", bc_source_label(provenance)))
                                     .on_hover_text(&entry.notes);
+                            }
+                            if let Some(attribution) = &entry.data_attribution {
+                                ui.hyperlink_to(&attribution.license, &attribution.license_url)
+                                    .on_hover_text(&attribution.credit);
                             }
                         });
                         ui.label(match entry.kind {

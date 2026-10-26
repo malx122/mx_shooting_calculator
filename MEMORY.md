@@ -1,5 +1,58 @@
 # Project memory
 
+## ChamberSim licensed data import — 2026-10-26
+
+The user approved importing new component records with BCs already present in
+ChamberSim. Added a separate CC BY-SA 4.0 collection under
+`crates/ballistics-store/catalog/third-party/chambersim/`: 1,034 records in 14
+manufacturer files, from source revision `8e544ebcf30cb1d64caed95895e79369064358df`.
+The original 1,529 catalog entries are unchanged; combined totals are 2,563
+entries (1,533 components and 1,030 ammunition records).
+
+The importer `tools/import_chambersim.py` uses the comparison snapshot's hashes
+and conservatively excludes possible existing matches, possible packaging
+duplicates, records without BCs, unsupported diameters and two entries outside
+the existing catalog BC bounds. Every decision is in the collection's manifest.
+Source lengths and uncertainty descriptions are retained in notes; active
+lengths are unknown. Construction/expansion limits are unknown, and no lead-free
+claim is made. BCs are copied without fitting or independent verification.
+
+Structured `data_attribution` survives personal copies, storage, backups and
+sync independently of catalog IDs and user notes. Database schema 10 adds a
+nullable column; old rows retain null. Backup format 7 prevents older readers
+from silently losing the field. The code remains MIT OR Apache-2.0; NOTICE,
+in-app credits and source files identify the CC BY-SA collection and applicable
+database rights. No ChamberSim code or original GRT database was imported.
+
+Verification: 210 workspace tests passed, four ignored; formatting and desktop/
+browser Clippy passed. The importer reproduces byte-identical output, and input
+hashes confirm both original catalogs are unchanged. Independent review checked
+source values, IDs, source links, all selection decisions and license propagation.
+An unsafe attribution-URL issue found in review was fixed with HTTPS validation
+and storage/import regression coverage. MCP data listings retain attribution too.
+The import and its baseline comparison artifacts are tracked together.
+
+## ChamberSim projectile data comparison — 2026-10-26
+
+Compared sibling `../ChamberSim-Reloaded/data/projectiles` (3,120 projectiles in
+51 files, revision `8e544eb`) with our 1,529 entries at `63c11ce` (499 components,
+1,030 ammunition records). See [the report](docs/chambersim-projectile-comparison-2026-10-26.md)
+and [the complete comparison ledger](docs/chambersim-projectile-comparison-2026-10-26.json).
+No catalog values were changed. There are 350 unique item-number matches;
+all 195 shared G1 and 107 shared G7 fields agree exactly. This is catalog
+agreement, not physical validation. A further 16 name/dimension and 39
+dimension-only component matches remain candidates; 94 have no candidate.
+
+Retain for later source checks: diameter differences for Sierra #1100, #1110,
+#2755 and PPU B-541; nominal mass difference for RWS #2145960. PPU B-498's
+16.3 g / 250 gr discrepancy is already explained in our notes. Two Barnes LRX
+and three Lapua TRX lengths differ, but ChamberSim explicitly estimates or
+image-measures those lengths. It also has 193 lengths missing here on direct
+item-number matches, including 69 image measurements, 31 estimates, 65 with only
+a general validation flag and 28 with unspecified method. Do not silently treat
+them as manufacturer measurements. ChamberSim data declares CC BY-SA 4.0;
+the comparison preserves attribution, and neither project catalog was edited.
+
 ## Core software reliability review — 2026-10-25
 
 See [the review](docs/core-software-review-2026-10-25.md), initially based on

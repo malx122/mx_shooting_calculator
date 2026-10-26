@@ -41,7 +41,9 @@ const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/pe
 /// 4: custom targets.
 /// 5: deleted records.
 /// 6: the shot log.
-pub const VERSION: u32 = 6;
+/// 7: attribution for separately licensed bullet data. Older readers must not
+/// silently discard it when importing and re-exporting records.
+pub const VERSION: u32 = 7;
 
 // This and the types in it are the documented export format: changing
 // them changes docs/export-format.schema.json and the field reference in
@@ -57,7 +59,7 @@ pub struct PersonalData {
     /// Always `mxsc/personal-data`. Files from the app's earlier names say
     /// `mhc/personal-data` or `ballistic-calculator/personal-data`.
     pub format: String,
-    /// The format's version; this description is of version 6. A reader
+    /// The format's version; this description is of version 7. A reader
     /// should refuse versions newer than it knows.
     pub version: u32,
     /// When the file was written, in milliseconds since 1970 (UTC).

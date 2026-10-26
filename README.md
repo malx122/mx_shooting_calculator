@@ -633,7 +633,7 @@ coming back. A merge keeps the later of two copies, and on equal times
 compares them, so every device settles on the same one. Times come from a
 clock that never runs behind anything the store has seen, so a device whose
 clock is slow still stamps its edits after the copies they were made from.
-The shared copy is the usual export (format 6): encrypted on the sync
+The shared copy is the usual export (format 7): encrypted on the sync
 server, which checks versions so two devices writing at once can't overwrite
 each other; plain in Google Drive, which can't check versions, but a device
 whose write is overwritten still has its records and puts them back on its
@@ -824,6 +824,16 @@ drawn rather than published, and each reticle's `notes` say which:
 The HELIA 1-5x24i's click value is not published.
 
 ## The base catalog
+
+The separately attributed [ChamberSim data collection](crates/ballistics-store/catalog/third-party/chambersim/README.md)
+adds 1,034 component records with BCs already present in its source data. It is
+CC BY-SA 4.0, separately from the app's MIT/Apache-2.0 code. Attribution travels
+with copied records in the database, backups and sync, and is shown in the
+catalog editor and About window. Existing catalog records are retained. Source
+lengths and uncertainty descriptions are kept in notes; the active length field
+is left unknown for this first import. No manufacturer recheck or physical BC
+validation is implied. Backups now use format 7, which older app versions refuse
+so they cannot silently discard the data attribution.
 
 `crates/ballistics-store/catalog/` holds the catalog as JSON compiled into the
 app:

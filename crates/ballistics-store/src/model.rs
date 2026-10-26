@@ -411,6 +411,42 @@ pub struct BcBand {
     pub bc: f64,
 }
 
+/// Attribution and license terms for data copied from another collection.
+/// These describe the copied data, not the user's independent notes or the app's code.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct DataAttribution {
+    /// The creator or collection that must receive credit.
+    pub credit: String,
+    /// HTTPS URL where the copied record can be found. Other URL schemes
+    /// are rejected when storing or importing the record.
+    pub source_url: String,
+    /// Revision of the source collection used for the import.
+    pub source_revision: String,
+    /// SPDX license identifier for the copied data, e.g. `CC-BY-SA-4.0`.
+    pub license: String,
+    /// HTTPS URL of the license text or canonical license page. Other URL
+    /// schemes are rejected when storing or importing the record.
+    pub license_url: String,
+    /// Changes made in the initial catalog adaptation. Personal copies may
+    /// contain later user edits.
+    pub changes: String,
+}
+
+impl DataAttribution {
+    fn is_valid(&self) -> bool {
+        let https_url = |url: &str| {
+            url.strip_prefix("https://").is_some_and(|rest| {
+                !rest.split(['/', '?', '#']).next().unwrap_or("").is_empty()
+                    && !url.chars().any(|c| c.is_control() || c.is_whitespace())
+            })
+        };
+        !self.credit.trim().is_empty()
+            && !self.license.trim().is_empty()
+            && https_url(&self.source_url)
+            && https_url(&self.license_url)
+    }
+}
+
 /// A bullet in the hunter's own collection: either factory ammunition or a
 /// handload. Only these can be chosen when calculating.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -462,6 +498,10 @@ pub struct Bullet {
     pub min_expansion_mps: Option<f64>,
     /// The catalog entry this was copied from, if any.
     pub catalog_id: Option<String>,
+    /// Attribution for copied data. Preserve it when sharing or adapting the
+    /// record, even if the catalog entry is no longer available.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data_attribution: Option<DataAttribution>,
     /// The hunter's notes.
     pub notes: String,
     /// When the record was last changed, in milliseconds since 1970 (UTC).
@@ -494,6 +534,7 @@ impl Bullet {
             lead_free: false,
             min_expansion_mps: None,
             catalog_id: None,
+            data_attribution: None,
             notes: String::new(),
             updated_at: 0,
         }
@@ -524,6 +565,12 @@ impl Bullet {
         };
         let checks = [
             (!self.name.trim().is_empty(), "the bullet needs a name"),
+            (
+                self.data_attribution
+                    .as_ref()
+                    .is_none_or(DataAttribution::is_valid),
+                "data attribution needs credit, a license and HTTPS source and license URLs",
+            ),
             (
                 self.name.chars().count() <= NAME_MAX
                     && self.manufacturer.chars().count() <= NAME_MAX,

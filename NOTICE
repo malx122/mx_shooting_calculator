@@ -19,6 +19,9 @@ Built-in catalog data
 The files in crates/ballistics-store/catalog/ hold calibers, bullets,
 scopes, reticles, targets and animal drawings.
 
+The separately licensed ChamberSim collection described below is an exception
+to the descriptions of this project's independently compiled data.
+
   * Bullet, ammunition and scope figures are factual specifications compiled
     from the manufacturers' published product information (and, for a few
     entries, retailers' pages). Each entry names its source. Facts like
@@ -41,6 +44,37 @@ scopes, reticles, targets and animal drawings.
 
 The project's own parts of the catalog (the drawings, notes and guideline
 values) are licensed under the same licences as the source code.
+
+ChamberSim projectile data
+-------------------------
+The files in crates/ballistics-store/catalog/third-party/chambersim/ contain
+selected, adapted records from the ChamberSim Reloaded project database:
+https://github.com/Schildkroet/ChamberSim-Reloaded
+
+This data collection is licensed under Creative Commons Attribution-ShareAlike
+4.0 International (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Credit: ChamberSim Reloaded project database. The upstream license declaration,
+source revision, file hashes and selection decisions are retained with the data.
+Each imported record carries its attribution and a link to the source record.
+
+Changes: selected component records, renamed fields and converted grains to
+grams. Source lengths and uncertainty descriptions are retained in notes;
+the active length field remains unknown. BCs were copied without fitting or
+independent verification. Construction, lead-free status and expansion limits
+were not established by the import. Possible existing matches and packaging
+duplicates were excluded.
+
+The adapted data collection and any database rights arising from combining it
+with the built-in bullet catalog are offered under CC BY-SA 4.0. This does not
+relicense the independent software code or individual independent contents.
+Copies in personal collections and backups retain their data attribution.
+No rights are claimed in users' independently created personal notes.
+
+The data is provided as found, without warranty. No endorsement is implied.
+No ChamberSim program code or original Gordon's Reloading Tool database is
+included. Those materials are not licensed by this data notice.
 
 Product and company names (for example Kahles, Vortex, Swarovski Optik,
 Zeiss, Meopta, GPO, Norma, Lapua, Hornady, Federal, Strelok Pro) and reticle

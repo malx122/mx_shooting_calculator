@@ -15,6 +15,11 @@ any release may still change things noticeably.
 
 ### Added
 
+- Added 1,034 ChamberSim component records as a separately attributed CC BY-SA
+  4.0 data collection. Source uncertainty notes and record links are retained;
+  existing catalog entries are unchanged. Data attribution survives personal
+  copies, backups and sync. Backup format 7 and database schema 10 preserve the
+  new field; older apps cannot open the newer database or import these backups.
 - BC source labels for Aguila and the retailer-sourced Hornady and Winchester
   rimfire entries, identifying estimates, user-supplied values and provisional
   matches to other bullets. Catalog source notes are available in the bullet editor.

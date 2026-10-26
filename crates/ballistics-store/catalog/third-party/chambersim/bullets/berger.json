@@ -1,0 +1,31 @@
+[
+  {
+    "id": "chambersim-berger-8ac81a1c8754c8ae",
+    "kind": "component",
+    "manufacturer": "Berger",
+    "product": "VLD Target 24429",
+    "caliber": null,
+    "diameter_mm": 6.17,
+    "mass_g": 6.80388555,
+    "mass_gr": 105.0,
+    "length_mm": null,
+    "bc_g1": 0.517,
+    "bc_g7": 0.265,
+    "muzzle_velocity_mps": null,
+    "test_barrel_mm": null,
+    "construction": "other",
+    "lead_free": false,
+    "min_expansion_mps": null,
+    "source_url": "https://github.com/Schildkroet/ChamberSim-Reloaded/blob/8e544ebcf30cb1d64caed95895e79369064358df/data/projectiles/berger.json#L1592",
+    "verified_on": "",
+    "notes": "Imported from ChamberSim Reloaded on 2026-10-26; no fresh manufacturer check. Source record: berger.json:110 (zero-based index). Source length: 31 mm; active length left unknown in this first import.  The source's general validation flag is not physical BC verification. Construction, lead-free status and expansion limits are unknown; the lead-free flag is not asserted.",
+    "data_attribution": {
+      "credit": "ChamberSim Reloaded project database",
+      "source_url": "https://github.com/Schildkroet/ChamberSim-Reloaded/blob/8e544ebcf30cb1d64caed95895e79369064358df/data/projectiles/berger.json#L1592",
+      "source_revision": "8e544ebcf30cb1d64caed95895e79369064358df",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Selected component records; renamed fields and converted grains to grams. Source lengths retained in notes, not used as confirmed lengths. Construction, lead-free status and expansion limits not established by this import. The initial import copied BC values without fitting or independent verification; personal copies may contain later user edits."
+    }
+  }
+]

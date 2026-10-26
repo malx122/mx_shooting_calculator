@@ -1,0 +1,22 @@
+ChamberSim Reloaded project database
+https://github.com/Schildkroet/ChamberSim-Reloaded
+Source revision: 8e544ebcf30cb1d64caed95895e79369064358df
+
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International
+(CC BY-SA 4.0): https://creativecommons.org/licenses/by-sa/4.0/
+The upstream license declaration is retained in UPSTREAM-LICENSE.md.
+
+Changes: selected component records; converted grains to grams and renamed
+fields for MX Shooting Calculator; excluded possible existing matches and
+packaging duplicates. Source lengths and uncertainty descriptions are retained
+in notes; the active length field remains unknown. BCs are copied as recorded,
+without fitting or independent verification. Construction, lead-free status
+and expansion limits are not established by this import.
+
+The adapted collection is shared under CC BY-SA 4.0, without additional
+restrictions. The data is provided as found, without warranty, and its reuse
+does not imply endorsement by ChamberSim Reloaded or any manufacturer.
+
+The independent app code remains MIT OR Apache-2.0. No ChamberSim program code,
+original Gordon's Reloading Tool database or external reference database is
+included in this data collection.
