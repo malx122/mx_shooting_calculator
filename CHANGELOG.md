@@ -6,6 +6,15 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.8.8] - 2026-10-26
+
+### Compatibility
+
+- Existing bullets and settings are retained, and older backups still import.
+  This version upgrades the local database to schema 10 and writes backup
+  format 7 to preserve data attribution. Older app versions cannot open the
+  updated database or import these new backups. Update all syncing devices.
+
 ### Fixed
 
 - Reject non-finite core inputs and invalid maximum ranges, and prevent a NaN
