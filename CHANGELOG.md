@@ -6,6 +6,11 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep mobile update messages fully visible above the bottom navigation from
+  the first frame, without leaving space after the message expires.
+
 ## [0.8.8] - 2026-10-26
 
 ### Compatibility

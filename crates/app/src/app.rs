@@ -617,43 +617,7 @@ impl eframe::App for App {
         } else {
             self.desktop_header(ui);
         }
-        // Messages go away by themselves after a while; errors stay.
-        let now = context.input(|input| input.time);
-        match &self.status {
-            Some(status) if !status.error => {
-                if self
-                    .status_seen
-                    .as_ref()
-                    .is_none_or(|(text, _)| *text != status.text)
-                {
-                    self.status_seen = Some((status.text.clone(), now));
-                }
-                let since = self.status_seen.as_ref().map_or(now, |(_, since)| *since);
-                if now - since > STATUS_SECONDS {
-                    self.status = None;
-                } else {
-                    context.request_repaint_after(std::time::Duration::from_secs(1));
-                }
-            }
-            _ => self.status_seen = None,
-        }
-        if let Some(status) = &self.status {
-            let mut dismiss = false;
-            egui::Panel::bottom("status").show(ui, |ui| {
-                ui.horizontal_wrapped(|ui| {
-                    let text = RichText::new(&status.text);
-                    if status.error {
-                        ui.colored_label(ui.visuals().error_fg_color, text);
-                    } else {
-                        ui.label(text);
-                    }
-                    dismiss = ui.small_button("✖").clicked();
-                });
-            });
-            if dismiss {
-                self.status = None;
-            }
-        }
+        self.status_bar(ui);
         #[cfg(not(target_arch = "wasm32"))]
         {
             if !std::mem::replace(&mut self.updates_started, true) && self.check_updates {
@@ -1043,6 +1007,88 @@ impl App {
         }
     }
 
+    fn status_bar(&mut self, ui: &mut egui::Ui) {
+        let context = ui.ctx().clone();
+        // Messages go away by themselves after a while; errors stay.
+        let now = context.input(|input| input.time);
+        match &self.status {
+            Some(status) if !status.error => {
+                if self
+                    .status_seen
+                    .as_ref()
+                    .is_none_or(|(text, _)| *text != status.text)
+                {
+                    self.status_seen = Some((status.text.clone(), now));
+                }
+                let since = self.status_seen.as_ref().map_or(now, |(_, since)| *since);
+                if now - since > STATUS_SECONDS {
+                    self.status = None;
+                } else {
+                    context.request_repaint_after(std::time::Duration::from_secs(1));
+                }
+            }
+            _ => self.status_seen = None,
+        }
+        if let Some(status) = &self.status {
+            let mut dismiss = false;
+            if mobile::is_narrow(&context) {
+                let frame = egui::Frame::side_top_panel(ui.style());
+                let text_width = (ui.available_width()
+                    - frame.total_margin().sum().x
+                    - mobile::TOUCH
+                    - ui.spacing().item_spacing.x)
+                    .max(1.0);
+                let colour = if status.error {
+                    ui.visuals().error_fg_color
+                } else {
+                    ui.visuals().text_color()
+                };
+                let text = ui.painter().layout(
+                    status.text.clone(),
+                    egui::TextStyle::Body.resolve(ui.style()),
+                    colour,
+                    text_width,
+                );
+                // Bottom panels otherwise start with an estimated height and can
+                // paint their wrapped contents underneath the navigation bar.
+                let height = text.size().y.max(mobile::TOUCH)
+                    + frame.total_margin().sum().y
+                    + ui.visuals().widgets.noninteractive.bg_stroke.width.round();
+                egui::Panel::bottom("status")
+                    .frame(frame)
+                    .exact_size(height)
+                    .show(ui, |ui| {
+                        ui.horizontal_top(|ui| {
+                            ui.add(egui::Label::new(text));
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                                dismiss = ui
+                                    .add_sized(
+                                        egui::vec2(mobile::TOUCH, mobile::TOUCH),
+                                        egui::Button::new("✖").small(),
+                                    )
+                                    .clicked();
+                            });
+                        });
+                    });
+            } else {
+                egui::Panel::bottom("status").show(ui, |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        let text = RichText::new(&status.text);
+                        if status.error {
+                            ui.colored_label(ui.visuals().error_fg_color, text);
+                        } else {
+                            ui.label(text);
+                        }
+                        dismiss = ui.small_button("✖").clicked();
+                    });
+                });
+            }
+            if dismiss {
+                self.status = None;
+            }
+        }
+    }
+
     /// The phone's header: the logo and the menu button.
     fn phone_header(&mut self, ui: &mut egui::Ui) {
         let header = egui::Frame::new()
@@ -1089,7 +1135,11 @@ impl App {
                 bottom: 10,
             })
             .stroke(theme::hairline(theme::FOREST_600));
-        egui::Panel::bottom("tabs").frame(frame).show(ui, |ui| {
+        let height = 54.0
+            + frame.total_margin().sum().y
+            + ui.visuals().widgets.noninteractive.bg_stroke.width.round();
+        let panel = egui::Panel::bottom("tabs").frame(frame).exact_size(height);
+        panel.show(ui, |ui| {
             let tabs = [
                 (Page::Calculate, tr("Calculate")),
                 (Page::Rifles, tr("Rifles")),
@@ -1597,4 +1647,127 @@ fn brand(ui: &mut egui::Ui) -> bool {
         );
     });
     clicked
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mobile_update_notice_fits_above_navigation_from_the_first_frame() {
+        for language in Language::ALL {
+            for (width, height) in [(320.0, 568.0), (390.0, 844.0), (600.0, 800.0)] {
+                let context = egui::Context::default();
+                theme::apply(&context);
+                let store = Store::open_in_memory().unwrap();
+                store.set_setting(SEEN_VERSION, &"0.8.7").unwrap();
+                store
+                    .set_setting(LANGUAGE_SETTING, &Some(language))
+                    .unwrap();
+                let mut app = App::new(store);
+                let message = app.status.as_ref().unwrap().text.clone();
+                for time in [0.0, 1.0, STATUS_SECONDS + 0.1] {
+                    let expired = time > STATUS_SECONDS;
+                    let mut output = context.run_ui(
+                        egui::RawInput {
+                            screen_rect: Some(egui::Rect::from_min_size(
+                                egui::Pos2::ZERO,
+                                egui::vec2(width, height),
+                            )),
+                            time: Some(time),
+                            ..Default::default()
+                        },
+                        |ui| {
+                            mobile::apply_style(&context);
+                            app.phone_header(ui);
+                            app.tab_bar(ui);
+                            let above_tabs = ui.available_rect_before_wrap();
+                            app.status_bar(ui);
+                            let tabs = egui::containers::panel::PanelState::load(
+                                &context,
+                                ui.scope_id().with_salt(egui::IdSalt::new("tabs")),
+                            )
+                            .unwrap()
+                            .outer_rect;
+                            assert!(
+                                (tabs.bottom() - height).abs() <= 0.5,
+                                "navigation must stay on screen from the first frame"
+                            );
+                            if expired {
+                                assert_eq!(
+                                    ui.available_rect_before_wrap(),
+                                    above_tabs,
+                                    "expired notice must release all of its space"
+                                );
+                            } else {
+                                let status = egui::containers::panel::PanelState::load(
+                                    &context,
+                                    ui.scope_id().with_salt(egui::IdSalt::new("status")),
+                                )
+                                .unwrap()
+                                .outer_rect;
+                                assert!(
+                                    status.bottom() <= tabs.top() + 0.5,
+                                    "notice overlaps the navigation"
+                                );
+                            }
+                        },
+                    );
+                    let rendered = output.shapes.iter().find_map(|shape| {
+                        if let egui::epaint::Shape::Text(text) = &shape.shape
+                            && text.galley.job.text == message
+                        {
+                            return Some((
+                                shape.clip_rect,
+                                egui::Rect::from_min_size(text.pos, text.galley.size()),
+                            ));
+                        }
+                        None
+                    });
+                    if expired {
+                        assert!(app.status.is_none());
+                        assert!(rendered.is_none());
+                    } else {
+                        let (clip, text) = rendered.expect("the update message must be painted");
+                        assert!(
+                            clip.expand(0.5).contains_rect(text),
+                            "message is clipped: {language:?}, {width}x{height}, {time}: text={text:?}, clip={clip:?}"
+                        );
+                    }
+                    output.textures_delta.clear();
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn mobile_errors_stay_visible_after_the_notice_timeout() {
+        let context = egui::Context::default();
+        theme::apply(&context);
+        let mut app = App::new(Store::open_in_memory().unwrap());
+        app.status = Some(Status {
+            text: "An error that needs attention".into(),
+            error: true,
+        });
+        for time in [0.0, STATUS_SECONDS + 1.0] {
+            let mut output = context.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(390.0, 844.0),
+                    )),
+                    time: Some(time),
+                    ..Default::default()
+                },
+                |ui| {
+                    mobile::apply_style(&context);
+                    app.phone_header(ui);
+                    app.tab_bar(ui);
+                    app.status_bar(ui);
+                },
+            );
+            assert!(app.status.as_ref().is_some_and(|status| status.error));
+            output.textures_delta.clear();
+        }
+    }
 }
