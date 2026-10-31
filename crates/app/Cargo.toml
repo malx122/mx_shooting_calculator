@@ -37,7 +37,7 @@ minisign-verify = "0.3"
 sha2 = "0.11"
 self-replace = "1"
 # The window icon, drawn from the SVG (egui_extras uses the same version).
-resvg = { version = "0.45", default-features = false }
+resvg = { version = "0.49", default-features = false }
 
 # Linux desktops: windows on X11 and on Wayland.
 [target.'cfg(target_os = "linux")'.dependencies]
