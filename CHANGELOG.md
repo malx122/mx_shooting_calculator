@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-31
+
 ### Added
 
 - **Windage label:** a fourth card, a strip for the windage turret with a
@@ -553,7 +555,9 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.7...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.8...v0.9.0
+[0.8.8]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.4...v0.8.5
