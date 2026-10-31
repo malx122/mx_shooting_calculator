@@ -11,6 +11,7 @@ mod pdf;
 pub mod sheet;
 pub mod stand;
 pub mod turret;
+pub mod windage;
 
 use ballistics_core::Solution;
 use ballistics_core::analysis::{self, PointBlank};
@@ -30,6 +31,7 @@ use dope::{DopeOptions, DopeTable, Measure};
 use sheet::Sheet;
 use stand::{Landmark, NoShoot, Stand, StandOptions, View};
 use turret::{Marker, Numbers, Plan, Temperature, Turret, TurretOptions};
+use windage::{WindPlan, WindageOptions};
 
 /// Paper and card sizes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -186,6 +188,7 @@ pub enum Kind {
     Dope,
     Stand,
     Turret,
+    Windage,
 }
 
 /// The hunter's card choices and stands, kept on this device.
@@ -200,6 +203,9 @@ pub struct CardSettings {
     pub turret: TurretOptions,
     /// Each rifle's elevation turret, by rifle id.
     pub turrets: std::collections::BTreeMap<String, Turret>,
+    pub windage: WindageOptions,
+    /// Each rifle's windage turret, by rifle id.
+    pub windage_turrets: std::collections::BTreeMap<String, Turret>,
     /// Named label appearances for each rifle; device-local, like the other
     /// card settings, and not included in personal-data backups or sync.
     pub label_designs: std::collections::BTreeMap<String, LabelDesigns>,
@@ -227,6 +233,8 @@ struct Preview {
     notes: Vec<String>,
     /// The turret label's marks.
     plan: Option<Plan>,
+    /// The windage label's bands.
+    wind_plan: Option<WindPlan>,
 }
 
 type PreviewKey = (CardSettings, Subject, UnitPrefs);
@@ -242,6 +250,9 @@ pub struct CardsPage {
     /// Hunting: stand cards and the ethical limit. Off for target shooting.
     hunting: bool,
     design_editor: DesignEditor,
+    /// The windage label's own, so a design chosen for one label isn't
+    /// updated from the other by mistake.
+    windage_design_editor: DesignEditor,
 }
 
 impl CardsPage {
@@ -254,6 +265,7 @@ impl CardsPage {
             status: None,
             hunting: true,
             design_editor: DesignEditor::default(),
+            windage_design_editor: DesignEditor::default(),
         }
     }
 
@@ -352,6 +364,11 @@ impl CardsPage {
                     tr("Turret label"),
                     tr("A strip for the elevation turret with the ranges at their clicks"),
                 ),
+                (
+                    Kind::Windage,
+                    tr("Windage label"),
+                    tr("A strip for the windage turret with the winds at their clicks, a band for each range"),
+                ),
             ] {
                 let selected = self.settings.kind == kind;
                 let text = RichText::new(label).size(16.0);
@@ -372,18 +389,25 @@ impl CardsPage {
 
     fn subject_line(&self, ui: &mut egui::Ui, subject: &Subject, actions: &mut Vec<Action>) {
         ui.horizontal_wrapped(|ui| {
-            ui.weak(trf!(
-                "For {} with {}{}, in today's weather, level and in calm air (Calculate also counts today's wind, angle and cant).",
-                subject.rifle.name,
-                subject.bullet.display_name(),
-                subject
-                    .target
-                    .as_ref()
-                    .map_or(String::new(), |target| format!(
-                        ", {}",
-                        target.to_lowercase()
-                    ))
-            ));
+            let target = subject
+                .target
+                .as_ref()
+                .map_or(String::new(), |target| format!(", {}", target.to_lowercase()));
+            ui.weak(if self.settings.kind == Kind::Windage {
+                trf!(
+                    "For {} with {}{}, in today's weather and level, each mark for its own wind.",
+                    subject.rifle.name,
+                    subject.bullet.display_name(),
+                    target
+                )
+            } else {
+                trf!(
+                    "For {} with {}{}, in today's weather, level and in calm air (Calculate also counts today's wind, angle and cant).",
+                    subject.rifle.name,
+                    subject.bullet.display_name(),
+                    target
+                )
+            });
             if ui
                 .small_button(tr("Change…"))
                 .on_hover_text(tr("Choose in Calculate"))
@@ -412,6 +436,7 @@ impl CardsPage {
                         ethical_m: table.ethical_m,
                         notes: Vec::new(),
                         plan: None,
+                        wind_plan: None,
                         card: layout.sheet,
                     }
                 })
@@ -427,6 +452,7 @@ impl CardsPage {
                     ethical_m: None,
                     notes: Vec::new(),
                     plan: None,
+                    wind_plan: None,
                 })
             }
             Kind::Turret => {
@@ -465,6 +491,47 @@ impl CardsPage {
                         ethical_m: plan.ethical_m,
                         notes,
                         plan: Some(plan),
+                        wind_plan: None,
+                    }
+                })
+            }
+            Kind::Windage => {
+                let turret = self.windage_turret_for(subject);
+                let options = &self.settings.windage;
+                WindPlan::compute(subject, &turret, options, u).map(|mut plan| {
+                    let strip = windage::strip(subject, &turret, options, &mut plan, u);
+                    let page = windage::page(subject, &turret, options, &plan, &strip, u);
+                    let mut notes = Vec::new();
+                    let crowded = plan.crowded();
+                    if crowded > 0 {
+                        notes.push(trf!(
+                            "{crowded} winds left off where they would overlap (they are in the \
+                             table on the sheet).",
+                            crowded = crowded
+                        ));
+                    }
+                    if plan.past_half() > 0 {
+                        notes.push(
+                            tr("Winds that need more than half a turn are left off the label.")
+                                .to_owned(),
+                        );
+                    }
+                    for range in &plan.left_out {
+                        notes.push(trf!(
+                            "{} is left off the label.",
+                            u.format(Quantity::Distance, *range)
+                        ));
+                    }
+                    Preview {
+                        pages: vec![page],
+                        card: strip,
+                        text_size: None,
+                        rows: plan.bands.len(),
+                        columns: 0,
+                        ethical_m: plan.ethical_m,
+                        notes,
+                        plan: None,
+                        wind_plan: Some(plan),
                     }
                 })
             }
@@ -580,6 +647,10 @@ impl CardsPage {
                         format!("turret-label-{}.pdf", file_part(&subject.rifle.name)),
                         trf!("Turret label, {}", subject.rifle.name),
                     ),
+                    Kind::Windage => (
+                        format!("windage-label-{}.pdf", file_part(&subject.rifle.name)),
+                        trf!("Windage label, {}", subject.rifle.name),
+                    ),
                 };
                 let bytes = pdf::write(&preview.pages, &title);
                 self.status = Some(save(ui.ctx(), &file, &bytes));
@@ -611,7 +682,200 @@ impl CardsPage {
             Kind::Dope => self.dope_controls(ui, subject),
             Kind::Stand => self.stand_controls(ui),
             Kind::Turret => self.turret_controls(ui, subject),
+            Kind::Windage => self.windage_controls(ui, subject),
         }
+    }
+
+    /// The rifle's windage turret as measured, else the elevation turret's
+    /// size (they are often alike) turning the way most do, else a start
+    /// from its clicks.
+    fn windage_turret_for(&self, subject: &Subject) -> Turret {
+        let rifle = &subject.rifle;
+        if let Some(turret) = self.settings.windage_turrets.get(&rifle.id) {
+            return turret.clone();
+        }
+        Turret {
+            // The elevation turret's turning says nothing about this one's.
+            clockwise: false,
+            ..self.turret_for(subject)
+        }
+    }
+
+    fn windage_controls(&mut self, ui: &mut egui::Ui, subject: &Subject) {
+        let rifle = &subject.rifle;
+        self.windage_design_editor.show(
+            ui,
+            &rifle.id,
+            self.settings
+                .label_designs
+                .entry(rifle.id.clone())
+                .or_default(),
+            &mut self.settings.windage.look,
+        );
+        ui.separator();
+        let fallback = self.windage_turret_for(subject);
+        let u = units::prefs(ui.ctx());
+        let ethical = self
+            .current()
+            .and_then(|preview| preview.as_ref().ok())
+            .and_then(|preview| preview.ethical_m);
+        let bands: Vec<String> = self
+            .current()
+            .and_then(|preview| preview.as_ref().ok())
+            .and_then(|preview| preview.wind_plan.as_ref())
+            .map_or(Vec::new(), |plan| {
+                plan.bands
+                    .iter()
+                    .map(|band| u.format(Quantity::Distance, band.range_m))
+                    .collect()
+            });
+        let measured = self.settings.windage_turrets.contains_key(&rifle.id);
+        let hunting = self.hunting;
+        let turret = self
+            .settings
+            .windage_turrets
+            .entry(rifle.id.clone())
+            .or_insert(fallback);
+        turret_measures(
+            ui,
+            "windage-yours",
+            tr(
+                "Measure the windage turret's cap with a caliper where the label goes: over \
+                the ridges if it is knurled, as the label sits on them. The height is the band \
+                the label will cover. Kept for this rifle.",
+            ),
+            (
+                tr("Dialling right turns"),
+                tr("Seen from the turret's cap, from the right of the scope"),
+            ),
+            turret,
+            rifle,
+            !measured,
+        );
+
+        let options = &mut self.settings.windage;
+        // The starting ranges and winds are round in metres and m/s; make
+        // them round in the hunter's own units.
+        let distance = u.unit(Quantity::Distance);
+        let wind = u.label(Quantity::WindSpeed);
+        let (wind_choices, numbers_start, marks_start) = windage::wind_steps(wind);
+        let start = WindageOptions::default();
+        if options.ranges_m == start.ranges_m {
+            options.ranges_m = start
+                .ranges_m
+                .iter()
+                .map(|range| distance.base(*range))
+                .collect();
+        }
+        if options.numbers_every == start.numbers_every && options.marks_every == start.marks_every
+        {
+            options.numbers_every = numbers_start;
+            options.marks_every = marks_start;
+        }
+        ui.add_space(6.0);
+        ui.strong(tr("Ranges"));
+        ui.weak(tr(
+            "A band for each, the nearest at the bottom, with the range at the 0.",
+        ));
+        chips(
+            ui,
+            "windage-ranges",
+            &mut options.ranges_m,
+            Quantity::Distance,
+            10.0..=2000.0,
+            5.0,
+            |last| distance.base(distance.show(last) + 100.0),
+        );
+        ui.horizontal_wrapped(|ui| {
+            ui.weak(tr("Quick:"));
+            for ranges in [
+                &[100.0, 200.0, 300.0][..],
+                &[100.0, 150.0, 200.0, 250.0],
+                &[200.0, 300.0, 400.0, 500.0],
+            ] {
+                let text = ranges
+                    .iter()
+                    .map(|range| format!("{range:.0}"))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if ui.small_button(text).clicked() {
+                    options.ranges_m = ranges.iter().map(|range| distance.base(*range)).collect();
+                }
+            }
+        });
+        grid(ui, "windage-range-numbers", |ui| {
+            ui.label(tr("Ranges as"));
+            ui.horizontal_wrapped(|ui| {
+                ui.selectable_value(&mut options.look.numbers, Numbers::Hundreds, "1 2 3")
+                    .on_hover_text(tr("In hundreds: 1.1 for 110, 1.25 for 125"));
+                ui.selectable_value(&mut options.look.numbers, Numbers::Tens, "10 20 30")
+                    .on_hover_text(tr("In tens: 11 for 110"));
+                ui.selectable_value(&mut options.look.numbers, Numbers::Full, "100 200 300");
+            });
+            ui.end_row();
+        });
+        if hunting {
+            ui.add_enabled_ui(ethical.is_some() || options.stop_at_limit, |ui| {
+                ui.checkbox(
+                    &mut options.stop_at_limit,
+                    tr("Leave out ranges beyond the ethical limit"),
+                )
+                .on_hover_text(tr("Otherwise their numbers get their own colour"));
+            });
+        }
+
+        ui.add_space(6.0);
+        ui.strong(tr("Wind"));
+        grid(ui, "windage-winds", |ui| {
+            ui.label(tr("Numbers every"));
+            ui.horizontal_wrapped(|ui| {
+                for &every in wind_choices {
+                    ui.selectable_value(
+                        &mut options.numbers_every,
+                        every,
+                        format!("{every:.0} {wind}"),
+                    );
+                }
+            });
+            ui.end_row();
+            ui.label(tr("Marks between"));
+            ui.horizontal_wrapped(|ui| {
+                ui.selectable_value(&mut options.marks_every, 0.0, tr("none"));
+                for every in [1.0, 2.0, 5.0, 10.0] {
+                    let divides = (options.numbers_every / every).fract().abs() < 1e-9;
+                    if every < options.numbers_every && divides {
+                        ui.selectable_value(&mut options.marks_every, every, format!("{every:.0}"));
+                    }
+                }
+            });
+            ui.end_row();
+            units::quantity(
+                ui,
+                tr("Up to"),
+                &mut options.wind_to_mps,
+                Quantity::WindSpeed,
+                1.0..=30.0,
+                0.5,
+            );
+        });
+        let divides = |every: f64| (options.numbers_every / every).fract().abs() < 1e-9;
+        if options.marks_every >= options.numbers_every || !divides(options.marks_every.max(1.0)) {
+            options.marks_every = 0.0;
+        }
+        ui.weak(tr(
+            "Full-value wind, from 3 or 9 o'clock. The two sides are alike: the wind alone, \
+             without the spin drift.",
+        ));
+
+        temperature_controls(ui, &mut options.temperature, subject, &u);
+
+        ui.add_space(6.0);
+        look_controls(ui, &mut options.look, &bands, hunting, None, &u);
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            ui.label(tr("Copies on the sheet"));
+            ui.add(egui::DragValue::new(&mut options.look.copies).range(1..=8));
+        });
     }
 
     /// The rifle's turret as measured, or a start from its clicks.
@@ -647,7 +911,6 @@ impl CardsPage {
             .current()
             .and_then(|preview| preview.as_ref().ok())
             .and_then(|preview| preview.ethical_m);
-        let unit = ballistics_shot::unit_label(rifle.click_unit);
         let plan = self
             .current()
             .and_then(|preview| preview.as_ref().ok())
@@ -662,124 +925,18 @@ impl CardsPage {
             .entry(rifle.id.clone())
             .or_insert(fallback);
 
-        let summary = trf!(
-            "{:.1} mm × {:.1} mm · {} clicks · {}",
-            turret.diameter_mm,
-            turret.height_mm,
-            turret.clicks_per_turn,
-            if turret.clockwise {
-                tr("clockwise")
-            } else {
-                tr("anticlockwise")
-            }
-        );
-        fold_with(
+        turret_measures(
             ui,
             "turret-yours",
-            tr("Your turret"),
-            &summary,
+            tr(
+                "Measure the elevation turret's cap with a caliper where the label goes: over \
+                the ridges if it is knurled, as the label sits on them. The height is the band \
+                the label will cover. Kept for this rifle.",
+            ),
+            (tr("Dialling up turns"), tr("Seen from above; most scopes")),
+            turret,
+            rifle,
             !measured,
-            |ui| {
-                ui.weak(tr(
-                    "Measure the elevation turret's cap with a caliper where the label goes: over \
-             the ridges if it is knurled, as the label sits on them. The height is the band \
-             the label will cover. Kept for this rifle.",
-                ));
-                grid(ui, "turret-size", |ui| {
-                    ui.label(tr("Diameter"));
-                    ui.add(
-                        egui::DragValue::new(&mut turret.diameter_mm)
-                            .range(10.0..=80.0)
-                            .speed(0.1)
-                            .max_decimals(1)
-                            .suffix(" mm"),
-                    );
-                    ui.end_row();
-                    ui.label(tr("Height"));
-                    ui.add(
-                        egui::DragValue::new(&mut turret.height_mm)
-                            .range(5.0..=40.0)
-                            .speed(0.1)
-                            .max_decimals(1)
-                            .suffix(" mm"),
-                    );
-                    ui.end_row();
-                    ui.label(tr("Label"));
-                    ui.horizontal(|ui| {
-                        let materials: [(&str, f64, &str); 4] = [
-                            (tr("Paper"), 0.1, tr("Ordinary printer paper, about 0.1 mm")),
-                            (
-                                tr("Sticker"),
-                                0.15,
-                                tr("Printable vinyl or sticker paper with its glue"),
-                            ),
-                            (tr("Photo paper"), 0.25, tr("Photo paper or thin card")),
-                            (
-                                tr("Laminated"),
-                                0.3,
-                                tr("Paper laminated before it is wrapped"),
-                            ),
-                        ];
-                        let chosen = materials
-                            .iter()
-                            .find(|(_, thickness, _)| {
-                                (turret.thickness_mm - thickness).abs() < 1e-6
-                            })
-                            .map_or(tr("Your own"), |(name, _, _)| name);
-                        egui::ComboBox::from_id_salt("turret-material")
-                            .selected_text(chosen)
-                            .show_ui(ui, |ui| {
-                                for (name, thickness, hint) in materials {
-                                    ui.selectable_value(&mut turret.thickness_mm, thickness, name)
-                                        .on_hover_text(hint);
-                                }
-                            });
-                        ui.add(
-                            egui::DragValue::new(&mut turret.thickness_mm)
-                                .range(0.0..=1.0)
-                                .speed(0.01)
-                                .max_decimals(2)
-                                .suffix(tr(" mm thick")),
-                        )
-                        .on_hover_text(tr(
-                            "It wraps round its middle, so the strip is made π × thickness longer. \
-                     Tape over it afterwards doesn't count.",
-                        ));
-                    });
-                    ui.end_row();
-                    ui.label(tr("Clicks a turn"));
-                    ui.horizontal(|ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut turret.clicks_per_turn)
-                                .range(10..=400)
-                                .speed(1.0),
-                        );
-                        ui.weak(trf!(
-                            "= {turn:.1} {unit} a turn",
-                            turn = f64::from(turret.clicks_per_turn) * rifle.click_value,
-                            unit = unit
-                        ));
-                    });
-                    ui.end_row();
-                    ui.label(tr("Dialling up turns"));
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut turret.clockwise, false, tr("anticlockwise"))
-                            .on_hover_text(tr("Seen from above; most scopes"));
-                        ui.selectable_value(&mut turret.clockwise, true, tr("clockwise"));
-                    });
-                    ui.end_row();
-                });
-                ui.weak(trf!(
-                    "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
-             clicks of {} {}.",
-                    turret.circumference_mm(),
-                    turret.height_mm,
-                    std::f64::consts::PI * turret.thickness_mm,
-                    turret.clicks_per_turn,
-                    rifle.click_value,
-                    unit
-                ));
-            },
         );
         let per_turn = i64::from(turret.clicks_per_turn.max(1));
 
@@ -861,201 +1018,10 @@ impl CardsPage {
             });
         }
 
-        ui.add_space(6.0);
-        ui.strong(tr("Temperature"));
-        ui.horizontal_wrapped(|ui| {
-            let today = subject.conditions.temperature_c;
-            ui.selectable_value(
-                &mut options.temperature,
-                Temperature::Today,
-                trf!("Today ({})", u.format(Quantity::Temperature, today)),
-            );
-            match subject.zero_weather {
-                Some(zero) => {
-                    ui.selectable_value(
-                        &mut options.temperature,
-                        Temperature::Zero,
-                        trf!(
-                            "Zeroing ({})",
-                            u.format(Quantity::Temperature, zero.temperature_c)
-                        ),
-                    )
-                    .on_hover_text(tr("The weather the rifle (or this bullet) was zeroed in"));
-                }
-                None => {
-                    ui.add_enabled(false, egui::Button::new(tr("Zeroing")))
-                        .on_disabled_hover_text(tr(
-                            "This bullet is zeroed in the shot's own weather",
-                        ));
-                }
-            }
-            let chosen = matches!(options.temperature, Temperature::Chosen(_));
-            if ui.selectable_label(chosen, tr("Chosen")).clicked() && !chosen {
-                options.temperature = Temperature::Chosen(today.round());
-            }
-            if let Temperature::Chosen(temperature) = &mut options.temperature {
-                units::drag(ui, temperature, Quantity::Temperature, -40.0..=50.0, 1.0);
-            }
-        });
-        ui.weak(tr(
-            "Cold air and cartridges need more clicks: a label for the season.",
-        ));
+        temperature_controls(ui, &mut options.temperature, subject, &u);
 
-        ui.add_space(6.0);
-        let look = trf!(
-            "{} · numbers {:.0} % · {}",
-            options.font.name(),
-            options.number_size * 100.0,
-            match options.marker {
-                Marker::None => tr("no marker"),
-                Marker::Tick => tr("ticks"),
-                Marker::Triangle => tr("triangles"),
-                Marker::Line => tr("lines"),
-            }
-        );
-        fold_with(ui, "turret-look", tr("Look"), &look, false, |ui| {
-            ui.strong(tr("Lettering"));
-            grid(ui, "turret-lettering", |ui| {
-                ui.label(tr("Font"));
-                egui::ComboBox::from_id_salt("turret-font")
-                    .selected_text(RichText::new(options.font.name()).family(options.font.family()))
-                    .show_ui(ui, |ui| {
-                        for font in fonts::Font::ALL {
-                            ui.selectable_value(
-                                &mut options.font,
-                                font,
-                                RichText::new(format!("{}  123", font.name()))
-                                    .family(font.family())
-                                    .size(16.0),
-                            )
-                            .on_hover_text(font.hint());
-                        }
-                    });
-                ui.end_row();
-                ui.label(tr("Number size"));
-                ui.add(
-                    egui::Slider::new(&mut options.number_size, 0.35..=0.9)
-                        .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
-                        .custom_parser(|text| {
-                            text.trim_end_matches(['%', ' '])
-                                .parse::<f64>()
-                                .ok()
-                                .map(|value| value / 100.0)
-                        }),
-                )
-                .on_hover_text(tr("Of the band's height"));
-                ui.end_row();
-            });
-
-            ui.add_space(6.0);
-            marker_controls(ui, options);
-
-            ui.add_space(6.0);
-            ui.strong(tr("Colours"));
-            ui.horizontal_wrapped(|ui| {
-                for (name, background, ink, beyond) in turret::SCHEMES {
-                    let text = RichText::new(turret::scheme_name(name))
-                        .color(Color32::from_rgb(ink[0], ink[1], ink[2]))
-                        .background_color(Color32::from_rgb(
-                            background[0],
-                            background[1],
-                            background[2],
-                        ));
-                    if ui.button(text).clicked() {
-                        options.background = background;
-                        options.ink = ink;
-                        options.beyond = beyond;
-                        options.bands.clear();
-                        options.description_colours = turret::Colours::default();
-                        options.ruler_colours = turret::Colours::default();
-                    }
-                }
-            });
-            grid(ui, "turret-colours", |ui| {
-                ui.label(tr("Label"));
-                ui.horizontal(|ui| {
-                    egui::color_picker::color_edit_button_srgb(ui, &mut options.background)
-                        .on_hover_text(tr("Background"));
-                    egui::color_picker::color_edit_button_srgb(ui, &mut options.ink)
-                        .on_hover_text(tr("Marks and text"));
-                    ui.weak(tr("background, marks"));
-                });
-                ui.end_row();
-                if hunting {
-                    ui.label(tr("Beyond the limit"));
-                    egui::color_picker::color_edit_button_srgb(ui, &mut options.beyond);
-                    ui.end_row();
-                }
-                if options.description {
-                    ui.label(tr("Description"));
-                    part_colours(
-                        ui,
-                        &mut options.description_colours,
-                        options.background,
-                        options.ink,
-                    );
-                    ui.end_row();
-                }
-                for turn in 0..turns {
-                    if options.bands.len() <= turn {
-                        options.bands.resize(turn + 1, turret::Colours::default());
-                    }
-                    ui.label(trf!("Turn {}", turn + 1));
-                    let (background, ink) = (options.background, options.ink);
-                    part_colours(ui, &mut options.bands[turn], background, ink);
-                    ui.end_row();
-                }
-                if options.ruler {
-                    ui.label(tr("Ruler"));
-                    part_colours(
-                        ui,
-                        &mut options.ruler_colours,
-                        options.background,
-                        options.ink,
-                    );
-                    ui.end_row();
-                }
-            });
-            egui::CollapsingHeader::new(tr("Colours of single ranges"))
-                .id_salt("turret-range-colours")
-                .show(ui, |ui| {
-                    ui.weak(tr(
-                        "Give a range a colour of its own, say the ones you shoot most.",
-                    ));
-                    egui::Grid::new("turret-range-colour-grid")
-                        .num_columns(3)
-                        .spacing([10.0, 3.0])
-                        .show(ui, |ui| {
-                            for mark in &marks {
-                                let key = turret::range_key(mark.range_m);
-                                let turn = (mark.clicks / per_turn) as usize;
-                                let mut colour = options.mark_colour(mark, turn);
-                                ui.label(u.format(Quantity::Distance, mark.range_m));
-                                ui.weak(if mark.crowded {
-                                    trf!("{} clicks, left off", mark.clicks)
-                                } else {
-                                    trf!("{} clicks", mark.clicks)
-                                });
-                                ui.horizontal(|ui| {
-                                    if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
-                                        .changed()
-                                    {
-                                        options.range_colours.insert(key, colour);
-                                    }
-                                    if options.range_colours.contains_key(&key)
-                                        && ui
-                                            .small_button("↺")
-                                            .on_hover_text(tr("Back to its band's"))
-                                            .clicked()
-                                    {
-                                        options.range_colours.remove(&key);
-                                    }
-                                });
-                                ui.end_row();
-                            }
-                        });
-                });
-        });
+        let bands: Vec<String> = (0..turns).map(|turn| trf!("Turn {}", turn + 1)).collect();
+        look_controls(ui, options, &bands, hunting, Some((&marks, per_turn)), &u);
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(tr("Copies on the sheet"));
@@ -1667,6 +1633,342 @@ fn chips(
     *values != before
 }
 
+/// A turret's size and turning, measured by hand and kept for the rifle.
+/// `direction` is the turning's label and its hint.
+#[allow(clippy::too_many_arguments)]
+fn turret_measures(
+    ui: &mut egui::Ui,
+    id: &str,
+    intro: &str,
+    direction: (&str, &str),
+    turret: &mut Turret,
+    rifle: &Rifle,
+    open: bool,
+) {
+    let unit = ballistics_shot::unit_label(rifle.click_unit);
+    let summary = trf!(
+        "{:.1} mm × {:.1} mm · {} clicks · {}",
+        turret.diameter_mm,
+        turret.height_mm,
+        turret.clicks_per_turn,
+        if turret.clockwise {
+            tr("clockwise")
+        } else {
+            tr("anticlockwise")
+        }
+    );
+    fold_with(ui, id, tr("Your turret"), &summary, open, |ui| {
+        ui.weak(intro);
+        grid(ui, "turret-size", |ui| {
+            ui.label(tr("Diameter"));
+            ui.add(
+                egui::DragValue::new(&mut turret.diameter_mm)
+                    .range(10.0..=80.0)
+                    .speed(0.1)
+                    .max_decimals(1)
+                    .suffix(" mm"),
+            );
+            ui.end_row();
+            ui.label(tr("Height"));
+            ui.add(
+                egui::DragValue::new(&mut turret.height_mm)
+                    .range(5.0..=40.0)
+                    .speed(0.1)
+                    .max_decimals(1)
+                    .suffix(" mm"),
+            );
+            ui.end_row();
+            ui.label(tr("Label"));
+            ui.horizontal(|ui| {
+                let materials: [(&str, f64, &str); 4] = [
+                    (tr("Paper"), 0.1, tr("Ordinary printer paper, about 0.1 mm")),
+                    (
+                        tr("Sticker"),
+                        0.15,
+                        tr("Printable vinyl or sticker paper with its glue"),
+                    ),
+                    (tr("Photo paper"), 0.25, tr("Photo paper or thin card")),
+                    (
+                        tr("Laminated"),
+                        0.3,
+                        tr("Paper laminated before it is wrapped"),
+                    ),
+                ];
+                let chosen = materials
+                    .iter()
+                    .find(|(_, thickness, _)| (turret.thickness_mm - thickness).abs() < 1e-6)
+                    .map_or(tr("Your own"), |(name, _, _)| name);
+                egui::ComboBox::from_id_salt("turret-material")
+                    .selected_text(chosen)
+                    .show_ui(ui, |ui| {
+                        for (name, thickness, hint) in materials {
+                            ui.selectable_value(&mut turret.thickness_mm, thickness, name)
+                                .on_hover_text(hint);
+                        }
+                    });
+                ui.add(
+                    egui::DragValue::new(&mut turret.thickness_mm)
+                        .range(0.0..=1.0)
+                        .speed(0.01)
+                        .max_decimals(2)
+                        .suffix(tr(" mm thick")),
+                )
+                .on_hover_text(tr(
+                    "It wraps round its middle, so the strip is made π × thickness longer. \
+                 Tape over it afterwards doesn't count.",
+                ));
+            });
+            ui.end_row();
+            ui.label(tr("Clicks a turn"));
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::DragValue::new(&mut turret.clicks_per_turn)
+                        .range(10..=400)
+                        .speed(1.0),
+                );
+                ui.weak(trf!(
+                    "= {turn:.1} {unit} a turn",
+                    turn = f64::from(turret.clicks_per_turn) * rifle.click_value,
+                    unit = unit
+                ));
+            });
+            ui.end_row();
+            ui.label(direction.0);
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut turret.clockwise, false, tr("anticlockwise"))
+                    .on_hover_text(direction.1);
+                ui.selectable_value(&mut turret.clockwise, true, tr("clockwise"));
+            });
+            ui.end_row();
+        });
+        ui.weak(trf!(
+            "The strip: {:.1} × {:.1} mm ({:.1} mm longer for the label's thickness), {} \
+         clicks of {} {}.",
+            turret.circumference_mm(),
+            turret.height_mm,
+            std::f64::consts::PI * turret.thickness_mm,
+            turret.clicks_per_turn,
+            rifle.click_value,
+            unit
+        ));
+    });
+}
+
+/// Which temperature a label is for.
+fn temperature_controls(
+    ui: &mut egui::Ui,
+    temperature: &mut Temperature,
+    subject: &Subject,
+    u: &UnitPrefs,
+) {
+    ui.add_space(6.0);
+    ui.strong(tr("Temperature"));
+    ui.horizontal_wrapped(|ui| {
+        let today = subject.conditions.temperature_c;
+        ui.selectable_value(
+            temperature,
+            Temperature::Today,
+            trf!("Today ({})", u.format(Quantity::Temperature, today)),
+        );
+        match subject.zero_weather {
+            Some(zero) => {
+                ui.selectable_value(
+                    temperature,
+                    Temperature::Zero,
+                    trf!(
+                        "Zeroing ({})",
+                        u.format(Quantity::Temperature, zero.temperature_c)
+                    ),
+                )
+                .on_hover_text(tr("The weather the rifle (or this bullet) was zeroed in"));
+            }
+            None => {
+                ui.add_enabled(false, egui::Button::new(tr("Zeroing")))
+                    .on_disabled_hover_text(tr("This bullet is zeroed in the shot's own weather"));
+            }
+        }
+        let chosen = matches!(*temperature, Temperature::Chosen(_));
+        if ui.selectable_label(chosen, tr("Chosen")).clicked() && !chosen {
+            *temperature = Temperature::Chosen(today.round());
+        }
+        if let Temperature::Chosen(chosen) = temperature {
+            units::drag(ui, chosen, Quantity::Temperature, -40.0..=50.0, 1.0);
+        }
+    });
+    ui.weak(tr(
+        "Cold air and cartridges need more clicks: a label for the season.",
+    ));
+}
+
+/// A label's lettering, marker and colours. `bands` names each band;
+/// `ranges` gives the elevation label's marks for colours of their own.
+fn look_controls(
+    ui: &mut egui::Ui,
+    options: &mut TurretOptions,
+    bands: &[String],
+    hunting: bool,
+    ranges: Option<(&[turret::RangeMark], i64)>,
+    u: &UnitPrefs,
+) {
+    ui.add_space(6.0);
+    let look = trf!(
+        "{} · numbers {:.0} % · {}",
+        options.font.name(),
+        options.number_size * 100.0,
+        match options.marker {
+            Marker::None => tr("no marker"),
+            Marker::Tick => tr("ticks"),
+            Marker::Triangle => tr("triangles"),
+            Marker::Line => tr("lines"),
+        }
+    );
+    fold_with(ui, "turret-look", tr("Look"), &look, false, |ui| {
+        ui.strong(tr("Lettering"));
+        grid(ui, "turret-lettering", |ui| {
+            ui.label(tr("Font"));
+            egui::ComboBox::from_id_salt("turret-font")
+                .selected_text(RichText::new(options.font.name()).family(options.font.family()))
+                .show_ui(ui, |ui| {
+                    for font in fonts::Font::ALL {
+                        ui.selectable_value(
+                            &mut options.font,
+                            font,
+                            RichText::new(format!("{}  123", font.name()))
+                                .family(font.family())
+                                .size(16.0),
+                        )
+                        .on_hover_text(font.hint());
+                    }
+                });
+            ui.end_row();
+            ui.label(tr("Number size"));
+            ui.add(
+                egui::Slider::new(&mut options.number_size, 0.35..=0.9)
+                    .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
+                    .custom_parser(|text| {
+                        text.trim_end_matches(['%', ' '])
+                            .parse::<f64>()
+                            .ok()
+                            .map(|value| value / 100.0)
+                    }),
+            )
+            .on_hover_text(tr("Of the band's height"));
+            ui.end_row();
+        });
+
+        ui.add_space(6.0);
+        marker_controls(ui, options);
+
+        ui.add_space(6.0);
+        ui.strong(tr("Colours"));
+        ui.horizontal_wrapped(|ui| {
+            for (name, background, ink, beyond) in turret::SCHEMES {
+                let text = RichText::new(turret::scheme_name(name))
+                    .color(Color32::from_rgb(ink[0], ink[1], ink[2]))
+                    .background_color(Color32::from_rgb(
+                        background[0],
+                        background[1],
+                        background[2],
+                    ));
+                if ui.button(text).clicked() {
+                    options.background = background;
+                    options.ink = ink;
+                    options.beyond = beyond;
+                    options.bands.clear();
+                    options.description_colours = turret::Colours::default();
+                    options.ruler_colours = turret::Colours::default();
+                }
+            }
+        });
+        grid(ui, "turret-colours", |ui| {
+            ui.label(tr("Label"));
+            ui.horizontal(|ui| {
+                egui::color_picker::color_edit_button_srgb(ui, &mut options.background)
+                    .on_hover_text(tr("Background"));
+                egui::color_picker::color_edit_button_srgb(ui, &mut options.ink)
+                    .on_hover_text(tr("Marks and text"));
+                ui.weak(tr("background, marks"));
+            });
+            ui.end_row();
+            if hunting {
+                ui.label(tr("Beyond the limit"));
+                egui::color_picker::color_edit_button_srgb(ui, &mut options.beyond);
+                ui.end_row();
+            }
+            if options.description {
+                ui.label(tr("Description"));
+                part_colours(
+                    ui,
+                    &mut options.description_colours,
+                    options.background,
+                    options.ink,
+                );
+                ui.end_row();
+            }
+            for (turn, name) in bands.iter().enumerate() {
+                if options.bands.len() <= turn {
+                    options.bands.resize(turn + 1, turret::Colours::default());
+                }
+                ui.label(name);
+                let (background, ink) = (options.background, options.ink);
+                part_colours(ui, &mut options.bands[turn], background, ink);
+                ui.end_row();
+            }
+            if options.ruler {
+                ui.label(tr("Ruler"));
+                part_colours(
+                    ui,
+                    &mut options.ruler_colours,
+                    options.background,
+                    options.ink,
+                );
+                ui.end_row();
+            }
+        });
+        if let Some((marks, per_turn)) = ranges {
+            egui::CollapsingHeader::new(tr("Colours of single ranges"))
+                .id_salt("turret-range-colours")
+                .show(ui, |ui| {
+                    ui.weak(tr(
+                        "Give a range a colour of its own, say the ones you shoot most.",
+                    ));
+                    egui::Grid::new("turret-range-colour-grid")
+                        .num_columns(3)
+                        .spacing([10.0, 3.0])
+                        .show(ui, |ui| {
+                            for mark in marks {
+                                let key = turret::range_key(mark.range_m);
+                                let turn = (mark.clicks / per_turn) as usize;
+                                let mut colour = options.mark_colour(mark, turn);
+                                ui.label(u.format(Quantity::Distance, mark.range_m));
+                                ui.weak(if mark.crowded {
+                                    trf!("{} clicks, left off", mark.clicks)
+                                } else {
+                                    trf!("{} clicks", mark.clicks)
+                                });
+                                ui.horizontal(|ui| {
+                                    if egui::color_picker::color_edit_button_srgb(ui, &mut colour)
+                                        .changed()
+                                    {
+                                        options.range_colours.insert(key, colour);
+                                    }
+                                    if options.range_colours.contains_key(&key)
+                                        && ui
+                                            .small_button("↺")
+                                            .on_hover_text(tr("Back to its band's"))
+                                            .clicked()
+                                    {
+                                        options.range_colours.remove(&key);
+                                    }
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+        }
+    });
+}
+
 /// A part's own background and marks, or the label's; ↺ goes back.
 fn part_colours(
     ui: &mut egui::Ui,
@@ -2099,8 +2401,24 @@ mod tests {
             )],
             "Turret label",
         );
+        let windage_options = WindageOptions::default();
+        let mut wind_plan = WindPlan::compute(&subject, &turret, &windage_options, &u).unwrap();
+        let wind_strip = windage::strip(&subject, &turret, &windage_options, &mut wind_plan, &u);
+        assert!((wind_strip.width - turret.circumference_mm()).abs() < 1e-3);
+        let windage_pdf = pdf::write(
+            &[windage::page(
+                &subject,
+                &turret,
+                &windage_options,
+                &wind_plan,
+                &wind_strip,
+                &u,
+            )],
+            "Windage label",
+        );
         if let Ok(folder) = std::env::var("MXSC_CARDS_OUT") {
             let folder = std::path::Path::new(&folder);
+            std::fs::write(folder.join("windage.pdf"), &windage_pdf).unwrap();
             std::fs::write(folder.join("turret.pdf"), &turret_pdf).unwrap();
             std::fs::write(folder.join("turret-dark.pdf"), &dark_pdf).unwrap();
             std::fs::write(folder.join("dope-a4.pdf"), &sheet_pdf).unwrap();

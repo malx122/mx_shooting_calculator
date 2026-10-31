@@ -483,6 +483,22 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      colours, number formatting, markers, ruler and description visibility,
      and the number of printed copies. They stay on this device and are not
      included in backups or sync.
+   - **Windage label:** a strip to wrap round the windage turret, with a
+     band for each of up to six ranges (the nearest at the bottom) and in
+     it the wind speeds at the clicks they need. The 0 is in the middle of
+     the strip with the band's range on it; a wind from the right is marked
+     on the side the turret turns when dialling right, a wind from the left
+     on the other, and the ruler counts away from the 0 both ways with L
+     and R beside it. The marks are for a full-value wind (from 3 or 9
+     o'clock) and the wind alone, without spin drift, so the two sides are
+     alike: a number every 1, 2, 5 or 10 m/s (or the wind unit you use),
+     dots between, up to the strongest wind you choose. Winds needing more
+     than half a turn, where the two sides meet, are left off. The windage
+     turret is measured like the elevation turret (it starts from the
+     elevation turret's size) and kept for the rifle. The look has the same
+     choices as the turret label, and label designs apply to both. The A4
+     sheet has the copies, the 50 mm bar, how to wrap it and how to count a
+     wind at an angle, and a table of clicks for each range and wind.
 
 6. **Shot log** (in the ••• menu; on a phone, the menu): **Log this shot**
    under the hold on Calculate keeps the shot: the rifle, bullet and

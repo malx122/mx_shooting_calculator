@@ -8,6 +8,13 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Windage label:** a fourth card, a strip for the windage turret with a
+  band for each of up to six ranges and the wind speeds at their clicks,
+  right of the 0 for a wind from the right and left for a wind from the
+  left. Full-value wind, without spin drift; numbers every 1 to 10 m/s (or
+  your wind unit) with dots between. The windage turret is measured once
+  per rifle; the look and label designs are shared with the turret label.
+  The A4 sheet has a table of clicks for each range and wind.
 - A line option under label numbers and intermediate ticks and dots, with
   a two-handle control and editable percentages for its start and end. Both
   positions are included in named designs; existing length settings are kept

@@ -267,7 +267,7 @@ pub struct Plan {
 }
 
 /// A number with as few decimals as it needs (at most two).
-fn short(value: f64) -> String {
+pub(super) fn short(value: f64) -> String {
     let text = format!("{value:.2}");
     text.trim_end_matches('0').trim_end_matches('.').to_owned()
 }
@@ -389,139 +389,112 @@ impl Plan {
     }
 }
 
-/// The strip itself, `circumference × height`, as it is cut out. Marks too
-/// close to a more important one are left off (and flagged in `plan`).
-pub fn strip(
-    subject: &Subject,
-    turret: &Turret,
-    options: &TurretOptions,
-    plan: &mut Plan,
-    u: &UnitPrefs,
-) -> Sheet {
-    let width = turret.circumference_mm();
-    let height = turret.height_mm as f32;
-    let font = options.font;
-    let mut sheet = Sheet::new(width, height);
-    sheet.rect(0.0, 0.0, width, height, Ink::Rgb(options.background));
-    let ink = Ink::Rgb(options.ink);
-
-    let per_turn = turret.clicks_per_turn.max(1) as f32;
-    // Click 0 sits a little in from the end the numbers grow away from;
-    // the seam falls just past the last click of the turn.
-    let zero_inset = 3.0_f32.min(width * 0.05);
-    let x_of = |clicks: f32| {
-        let along = (clicks.rem_euclid(per_turn)) / per_turn * width;
-        if turret.clockwise {
-            let x = zero_inset + along;
-            if x > width { x - width } else { x }
-        } else {
-            let x = width - zero_inset - along;
-            if x < 0.0 { x + width } else { x }
-        }
-    };
-
-    let description_height = if options.description {
+/// The heights of the description at the top and the ruler at the bottom
+/// of a strip `height` high; 0 for a part that is off.
+pub(super) fn edges(options: &TurretOptions, height: f32) -> (f32, f32) {
+    let description = if options.description {
         (height * 0.17).clamp(1.8, 3.5)
     } else {
         0.0
     };
-    let ruler_height = if options.ruler {
+    let ruler = if options.ruler {
         (height * 0.3).clamp(2.5, 6.0)
     } else {
         0.0
     };
-    let bands_top = description_height;
-    let bands_bottom = height - ruler_height;
-    let band_height = (bands_bottom - bands_top) / plan.turns as f32;
+    (description, ruler)
+}
 
-    if options.description {
-        let colours = options.description_colours;
-        if let Some(background) = colours.background {
-            sheet.rect(0.0, 0.0, width, description_height, Ink::Rgb(background));
-        }
-        let size = description_height * 0.72 / PT;
-        let rifle = &subject.rifle;
-        let text = trf!(
-            "{} · {} · {} · zero {}",
-            subject.bullet.display_name(),
-            u.format(Quantity::Speed, plan.muzzle_velocity),
-            u.format(Quantity::Temperature, plan.temperature_c),
-            crate::calculator::zero_text(u, rifle),
-        );
-        sheet.text_font(
-            [width / 2.0, description_height * 0.78],
-            fit_font(&text, size, font, width - 2.0),
-            size,
-            font,
-            Align::Center,
-            Ink::Rgb(colours.ink.unwrap_or(options.ink)),
-        );
+/// The description line across the top of a strip, on its own background
+/// if it has one.
+pub(super) fn description(
+    sheet: &mut Sheet,
+    options: &TurretOptions,
+    description_height: f32,
+    text: &str,
+) {
+    let width = sheet.width;
+    let colours = options.description_colours;
+    if let Some(background) = colours.background {
+        sheet.rect(0.0, 0.0, width, description_height, Ink::Rgb(background));
     }
-    for turn in 0..plan.turns as usize {
-        let (background, _) = options.band(turn);
-        if background != options.background {
-            let top = bands_bottom - (turn + 1) as f32 * band_height;
-            sheet.rect(0.0, top, width, band_height, Ink::Rgb(background));
+    let size = description_height * 0.72 / PT;
+    sheet.text_font(
+        [width / 2.0, description_height * 0.78],
+        fit_font(text, size, options.font, width - 2.0),
+        size,
+        options.font,
+        Align::Center,
+        Ink::Rgb(colours.ink.unwrap_or(options.ink)),
+    );
+}
+
+/// The sizes of the marks in a band of the strip.
+pub(super) struct Band {
+    pub height: f32,
+    /// The numbers' size, points.
+    pub number_size: f32,
+    marker_height: f32,
+    gap: f32,
+}
+
+impl Band {
+    pub fn new(options: &TurretOptions, height: f32) -> Band {
+        Band {
+            height,
+            number_size: height * options.number_size.clamp(0.3, 0.95) / PT,
+            marker_height: match options.marker {
+                Marker::None => 0.0,
+                _ => height * 0.16,
+            },
+            gap: height * 0.12,
         }
-    }
-    if options.ruler
-        && let Some(background) = options.ruler_colours.background
-    {
-        sheet.rect(0.0, bands_bottom, width, ruler_height, Ink::Rgb(background));
     }
 
-    // The range marks, a band for each turn, the first turn lowest.
-    let marker_height = match options.marker {
-        Marker::None => 0.0,
-        _ => band_height * 0.16,
-    };
-    let number_size = band_height * options.number_size.clamp(0.3, 0.95) / PT;
-    let gap = band_height * 0.12;
-    let mut taken: Vec<Vec<(f32, f32)>> = vec![Vec::new(); plan.turns as usize];
-    let mut order: Vec<usize> = (0..plan.marks.len()).collect();
-    order.sort_by_key(|&index| {
-        let mark = &plan.marks[index];
-        let kind = match mark.kind {
-            Kind::Number => 0,
-            Kind::Line => 1,
-            Kind::Dot => 2,
-        };
-        (kind, mark.rank)
-    });
-    for index in order {
-        let mark = &mut plan.marks[index];
-        let turn = (mark.clicks / per_turn as i64) as usize;
-        let x = x_of(mark.clicks as f32);
-        let half = match mark.kind {
+    /// Half the room a mark takes along the strip.
+    pub fn half(&self, options: &TurretOptions, kind: Kind, text: &str) -> f32 {
+        match kind {
             // Numbers may sit close; the small marks keep their distance.
-            Kind::Number => font.width(&mark.text, number_size) / 2.0 + 0.15,
-            Kind::Line => 0.35 + gap,
-            Kind::Dot => band_height * 0.08 + gap,
-        };
-        let span = (x - half, x + half);
-        if taken[turn]
-            .iter()
-            .any(|other| span.0 < other.1 && other.0 < span.1)
-        {
-            mark.crowded = true;
-            continue;
+            Kind::Number => options.font.width(text, self.number_size) / 2.0 + 0.15,
+            Kind::Line => 0.35 + self.gap,
+            Kind::Dot => self.height * 0.08 + self.gap,
         }
-        taken[turn].push(span);
-        let bottom = bands_bottom - turn as f32 * band_height;
+    }
+
+    /// Where a number's baseline goes, at the middle of the band above the
+    /// marker (the font's capitals and figures are about 0.7 of its size
+    /// high).
+    pub fn baseline(&self, options: &TurretOptions, bottom: f32) -> f32 {
+        let centre = bottom - self.height / 2.0 - self.marker_height / 2.0;
+        let cap = options.font.metrics().cap_height as f32 / 1000.0;
+        centre + self.number_size * PT * cap / 2.0
+    }
+
+    /// A mark at `x` in the band whose lower edge is at `bottom`, with the
+    /// marker under it.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw(
+        &self,
+        sheet: &mut Sheet,
+        options: &TurretOptions,
+        kind: Kind,
+        text: &str,
+        x: f32,
+        bottom: f32,
+        colour: Ink,
+    ) {
+        let band_height = self.height;
+        let marker_height = self.marker_height;
+        let height = sheet.height;
         let middle = bottom - band_height / 2.0;
-        let colour = Ink::Rgb(options.mark_colour(mark, turn));
-        let line_start = match mark.kind {
+        let line_start = match kind {
             Kind::Number => {
-                // Centred in the band above the marker; the font's capitals
-                // and figures are about 0.7 of its size high.
-                let centre = middle - marker_height / 2.0;
-                let cap = font.metrics().cap_height as f32 / 1000.0;
-                let baseline = centre + number_size * PT * cap / 2.0;
+                let baseline = self.baseline(options, bottom);
                 sheet.text_font(
                     [x, baseline],
-                    &mark.text,
-                    number_size,
-                    font,
+                    text,
+                    self.number_size,
+                    options.font,
                     Align::Center,
                     colour,
                 );
@@ -575,6 +548,178 @@ pub fn strip(
             }
         }
     }
+}
+
+/// What the ruler drew its numbers with.
+pub(super) struct Ruler {
+    /// The numbers' size, points.
+    pub size: f32,
+    /// Their baseline.
+    pub baseline: f32,
+    /// The distance between two numbers along the strip, mm.
+    pub spacing: f32,
+}
+
+/// The ruler along the strip's lower edge: a tick for each click from
+/// `clicks`, longer at each mil (or MOA) and half, numbered at each whole,
+/// the numbers counting away from 0 both ways. `largest` is the largest
+/// number it may need.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn ruler(
+    sheet: &mut Sheet,
+    options: &TurretOptions,
+    click_value: f64,
+    clicks_per_turn: u32,
+    clicks: std::ops::RangeInclusive<i64>,
+    largest: u32,
+    ruler_height: f32,
+    x_of: impl Fn(f32) -> f32,
+) -> Ruler {
+    let (width, height) = (sheet.width, sheet.height);
+    let font = options.font;
+    let ruler_ink = Ink::Rgb(options.ruler_colours.ink.unwrap_or(options.ink));
+    let per_unit = (1.0 / click_value).round().max(1.0) as i64;
+    let spacing = width / clicks_per_turn.max(1) as f32;
+    // Ticks at least 0.4 mm apart, and numbers far enough apart to read
+    // (every 1, 2, 5 or 10 units on a small turret).
+    let every = [1, 2, 5, 10, 20, 50]
+        .into_iter()
+        .find(|every| *every as f32 * spacing >= 0.4)
+        .unwrap_or(100);
+    let bands_bottom = height - ruler_height;
+    sheet.line([0.0, bands_bottom], [width, bands_bottom], 0.2, ruler_ink);
+    let size = ruler_height * 0.36 / PT;
+    let widest = font.width(&format!("{largest}"), size) + 0.8;
+    let unit_spacing = spacing * per_unit as f32;
+    let numbered = [1, 2, 5, 10, 20, 50]
+        .into_iter()
+        .find(|every| *every as f32 * unit_spacing >= widest)
+        .unwrap_or(100);
+    let baseline = height - ruler_height * 0.55;
+    for click in clicks.filter(|click| click.rem_euclid(every) == 0) {
+        let whole = click.rem_euclid(per_unit) == 0;
+        let half = per_unit % 2 == 0 && click.rem_euclid(per_unit) == per_unit / 2;
+        let x = x_of(click as f32);
+        let length = ruler_height
+            * if whole {
+                0.45
+            } else if half {
+                0.32
+            } else {
+                0.2
+            };
+        sheet.line(
+            [x, height],
+            [x, height - length],
+            if whole { 0.22 } else { 0.12 },
+            ruler_ink,
+        );
+        let number = click.abs() / per_unit;
+        let text = format!("{number}");
+        // A number across the strip's end would be cut in two.
+        let half_text = font.width(&text, size) / 2.0;
+        if whole && number % numbered == 0 && x - half_text >= 0.0 && x + half_text <= width {
+            sheet.text_font([x, baseline], text, size, font, Align::Center, ruler_ink);
+        }
+    }
+    Ruler {
+        size,
+        baseline,
+        spacing: unit_spacing * numbered as f32,
+    }
+}
+
+/// The strip itself, `circumference × height`, as it is cut out. Marks too
+/// close to a more important one are left off (and flagged in `plan`).
+pub fn strip(
+    subject: &Subject,
+    turret: &Turret,
+    options: &TurretOptions,
+    plan: &mut Plan,
+    u: &UnitPrefs,
+) -> Sheet {
+    let width = turret.circumference_mm();
+    let height = turret.height_mm as f32;
+    let mut sheet = Sheet::new(width, height);
+    sheet.rect(0.0, 0.0, width, height, Ink::Rgb(options.background));
+    let ink = Ink::Rgb(options.ink);
+
+    let per_turn = turret.clicks_per_turn.max(1) as f32;
+    // Click 0 sits a little in from the end the numbers grow away from;
+    // the seam falls just past the last click of the turn.
+    let zero_inset = 3.0_f32.min(width * 0.05);
+    let x_of = |clicks: f32| {
+        let along = (clicks.rem_euclid(per_turn)) / per_turn * width;
+        if turret.clockwise {
+            let x = zero_inset + along;
+            if x > width { x - width } else { x }
+        } else {
+            let x = width - zero_inset - along;
+            if x < 0.0 { x + width } else { x }
+        }
+    };
+
+    let (description_height, ruler_height) = edges(options, height);
+    let bands_top = description_height;
+    let bands_bottom = height - ruler_height;
+    let band_height = (bands_bottom - bands_top) / plan.turns as f32;
+
+    if options.description {
+        let text = trf!(
+            "{} · {} · {} · zero {}",
+            subject.bullet.display_name(),
+            u.format(Quantity::Speed, plan.muzzle_velocity),
+            u.format(Quantity::Temperature, plan.temperature_c),
+            crate::calculator::zero_text(u, &subject.rifle),
+        );
+        description(&mut sheet, options, description_height, &text);
+    }
+    for turn in 0..plan.turns as usize {
+        let (background, _) = options.band(turn);
+        if background != options.background {
+            let top = bands_bottom - (turn + 1) as f32 * band_height;
+            sheet.rect(0.0, top, width, band_height, Ink::Rgb(background));
+        }
+    }
+    if options.ruler
+        && let Some(background) = options.ruler_colours.background
+    {
+        sheet.rect(0.0, bands_bottom, width, ruler_height, Ink::Rgb(background));
+    }
+
+    // The range marks, a band for each turn, the first turn lowest.
+    let band = Band::new(options, band_height);
+    let mut taken: Vec<Vec<(f32, f32)>> = vec![Vec::new(); plan.turns as usize];
+    let mut order: Vec<usize> = (0..plan.marks.len()).collect();
+    order.sort_by_key(|&index| {
+        let mark = &plan.marks[index];
+        let kind = match mark.kind {
+            Kind::Number => 0,
+            Kind::Line => 1,
+            Kind::Dot => 2,
+        };
+        (kind, mark.rank)
+    });
+    for index in order {
+        let mark = &mut plan.marks[index];
+        let turn = (mark.clicks / per_turn as i64) as usize;
+        let x = x_of(mark.clicks as f32);
+        let half = band.half(options, mark.kind, &mark.text);
+        let span = (x - half, x + half);
+        if taken[turn]
+            .iter()
+            .any(|other| span.0 < other.1 && other.0 < span.1)
+        {
+            mark.crowded = true;
+            continue;
+        }
+        taken[turn].push(span);
+        let bottom = bands_bottom - turn as f32 * band_height;
+        let colour = Ink::Rgb(options.mark_colour(mark, turn));
+        band.draw(
+            &mut sheet, options, mark.kind, &mark.text, x, bottom, colour,
+        );
+    }
     if options.description {
         sheet.line([0.0, bands_top], [width, bands_top], 0.12, ink);
     }
@@ -583,56 +728,19 @@ pub fn strip(
         sheet.line([0.0, y], [width, y], 0.12, ink);
     }
 
-    // The ruler: a tick for each click rising from the bottom edge, longer
-    // at each mil (or MOA) and half, numbered at each whole.
     if options.ruler {
-        let ruler_ink = Ink::Rgb(options.ruler_colours.ink.unwrap_or(options.ink));
-        let rifle = &subject.rifle;
-        let per_unit = (1.0 / rifle.click_value).round().max(1.0) as u32;
-        let spacing = width / per_turn;
-        // Ticks at least 0.4 mm apart, and numbers far enough apart to read
-        // (every 1, 2, 5 or 10 units on a small turret).
-        let every = [1, 2, 5, 10, 20, 50]
-            .into_iter()
-            .find(|every| *every as f32 * spacing >= 0.4)
-            .unwrap_or(100);
-        sheet.line([0.0, bands_bottom], [width, bands_bottom], 0.2, ruler_ink);
-        let size = ruler_height * 0.36 / PT;
-        let widest = font.width(&format!("{}", turret.clicks_per_turn / per_unit), size) + 0.8;
-        let unit_spacing = spacing * per_unit as f32;
-        let numbered = [1, 2, 5, 10, 20, 50]
-            .into_iter()
-            .find(|every| *every as f32 * unit_spacing >= widest)
-            .unwrap_or(100);
-        for click in (0..turret.clicks_per_turn).step_by(every as usize) {
-            let whole = click % per_unit == 0;
-            let half = per_unit.is_multiple_of(2) && click % per_unit == per_unit / 2;
-            let x = x_of(click as f32);
-            let length = ruler_height
-                * if whole {
-                    0.45
-                } else if half {
-                    0.32
-                } else {
-                    0.2
-                };
-            sheet.line(
-                [x, height],
-                [x, height - length],
-                if whole { 0.22 } else { 0.12 },
-                ruler_ink,
-            );
-            if whole && (click / per_unit).is_multiple_of(numbered) {
-                sheet.text_font(
-                    [x, height - ruler_height * 0.55],
-                    format!("{}", click / per_unit),
-                    size,
-                    font,
-                    Align::Center,
-                    ruler_ink,
-                );
-            }
-        }
+        let clicks = i64::from(turret.clicks_per_turn);
+        let per_unit = (1.0 / subject.rifle.click_value).round().max(1.0) as u32;
+        ruler(
+            &mut sheet,
+            options,
+            subject.rifle.click_value,
+            turret.clicks_per_turn,
+            0..=clicks - 1,
+            turret.clicks_per_turn / per_unit,
+            ruler_height,
+            x_of,
+        );
     }
     sheet
 }
