@@ -459,8 +459,8 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      is kept for the rifle. The marks come from the
      calculation at today's temperature, the zeroing temperature or a
      chosen one: a number every 10, 25, 50 or 100 m (as "1 2 3", "10 11 12"
-     or "100 110 120"), lines and dots between, optionally a tick or a
-     triangle under each number at its exact click, and a band for each
+     or "100 110 120"), lines and dots between, optionally a tick, triangle or
+     line under each number, and a band for each
      turn of the turret. Under them is a ruler with a tick for every click
      and the mil (or MOA) numbered. Lettering: Helvetica or one of four
      bundled fonts (Barlow Condensed, Bebas Neue, Share Tech Mono, Black
@@ -471,6 +471,18 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      colour of its own. Marks that would overlap are left off and listed.
      The A4 sheet has copies of the strip with cut marks, a 50 mm bar to
      check the print scale, and the clicks for every range.
+     Under **Look → Under the marks**, choose **a line**. **Line position**
+     has two handles for its start and end, with editable percentage values.
+     0% is just below each number or submark; 100% is the label's bottom edge,
+     including the ruler. The handles cannot cross.
+     All marker styles (tick, triangle and line) apply to intermediate ticks
+     and dots as well as the numbers.
+     **Label designs** keeps named appearances for each rifle: choose a saved
+     design to apply it, use **Update design** to replace its appearance, or
+     change the name and **Save as new** to make a copy. Designs include fonts,
+     colours, number formatting, markers, ruler and description visibility,
+     and the number of printed copies. They stay on this device and are not
+     included in backups or sync.
 
 6. **Shot log** (in the ••• menu; on a phone, the menu): **Log this shot**
    under the hold on Calculate keeps the shot: the rifle, bullet and

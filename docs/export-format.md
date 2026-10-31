@@ -14,6 +14,9 @@ describes the file so other programs can read and write it.
 
 The file is UTF-8 JSON, usually named `mxsc-backup.json`.
 
+Device-local settings are not included: calculator inputs, card layouts,
+stands and named label designs stay on the device and are not synced.
+
 ```json
 {
   "format": "mxsc/personal-data",

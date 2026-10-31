@@ -79,12 +79,13 @@ pub enum Temperature {
     Chosen(f64),
 }
 
-/// A small mark under each number, at its exact click.
+/// A mark under each number, at its exact click.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Marker {
     None,
     Tick,
     Triangle,
+    Line,
 }
 
 pub type Rgb = [u8; 3];
@@ -159,6 +160,11 @@ pub struct TurretOptions {
     /// The numbers' height as a share of their band.
     pub number_size: f32,
     pub marker: Marker,
+    /// Line start within the space below each mark, from 0 to 1.
+    pub marker_line_start: f32,
+    /// Line end within the space below each mark; 1 reaches the label's edge.
+    #[serde(alias = "marker_line_length")]
+    pub marker_line_end: f32,
     pub background: Rgb,
     pub ink: Rgb,
     /// Marks beyond the ethical limit.
@@ -187,6 +193,8 @@ impl Default for TurretOptions {
             font: Font::HelveticaBold,
             number_size: 0.62,
             marker: Marker::None,
+            marker_line_start: 0.0,
+            marker_line_end: 1.0,
             background,
             ink,
             beyond,
@@ -502,43 +510,69 @@ pub fn strip(
         let bottom = bands_bottom - turn as f32 * band_height;
         let middle = bottom - band_height / 2.0;
         let colour = Ink::Rgb(options.mark_colour(mark, turn));
-        match mark.kind {
+        let line_start = match mark.kind {
             Kind::Number => {
                 // Centred in the band above the marker; the font's capitals
                 // and figures are about 0.7 of its size high.
                 let centre = middle - marker_height / 2.0;
                 let cap = font.metrics().cap_height as f32 / 1000.0;
+                let baseline = centre + number_size * PT * cap / 2.0;
                 sheet.text_font(
-                    [x, centre + number_size * PT * cap / 2.0],
+                    [x, baseline],
                     &mark.text,
                     number_size,
                     font,
                     Align::Center,
                     colour,
                 );
-                let tip = bottom - 0.25;
-                match options.marker {
-                    Marker::None => {}
-                    Marker::Tick => {
-                        sheet.line([x, tip], [x, tip - marker_height], 0.3, colour);
-                    }
-                    Marker::Triangle => sheet.fill(
-                        vec![
-                            [x, tip],
-                            [x - marker_height * 0.6, tip - marker_height],
-                            [x + marker_height * 0.6, tip - marker_height],
-                        ],
-                        colour,
-                    ),
-                }
+                baseline + band_height * 0.04
             }
-            Kind::Line => sheet.line(
-                [x, middle - band_height * 0.25],
-                [x, middle + band_height * 0.25],
-                0.35,
+            Kind::Line => {
+                let bottom = middle + band_height * 0.25;
+                sheet.line([x, middle - band_height * 0.25], [x, bottom], 0.35, colour);
+                bottom
+            }
+            Kind::Dot => {
+                let radius = band_height * 0.08;
+                sheet.fill(arc([x, middle], radius, 0.0, 360.0), colour);
+                middle + radius
+            }
+        };
+        let tip = bottom - 0.25;
+        match options.marker {
+            Marker::None => {}
+            Marker::Tick => sheet.line([x, tip], [x, tip - marker_height], 0.3, colour),
+            Marker::Triangle => sheet.fill(
+                vec![
+                    [x, tip],
+                    [x - marker_height * 0.6, tip - marker_height],
+                    [x + marker_height * 0.6, tip - marker_height],
+                ],
                 colour,
             ),
-            Kind::Dot => sheet.fill(arc([x, middle], band_height * 0.08, 0.0, 360.0), colour),
+            Marker::Line => {
+                // The endpoints share a scale from below the mark to the
+                // strip's lower edge, including the ruler.
+                let space = height - 0.15 - line_start;
+                let end = if options.marker_line_end.is_finite() {
+                    options.marker_line_end.clamp(0.0, 1.0)
+                } else {
+                    1.0
+                };
+                let start = if options.marker_line_start.is_finite() {
+                    options.marker_line_start.clamp(0.0, end)
+                } else {
+                    0.0
+                };
+                if space > 0.0 && end > start {
+                    sheet.line(
+                        [x, line_start + space * start],
+                        [x, line_start + space * end],
+                        0.3,
+                        colour,
+                    );
+                }
+            }
         }
     }
     if options.description {
@@ -791,7 +825,408 @@ pub fn page(
 
 #[cfg(test)]
 mod tests {
+    use super::super::sheet::Mark;
     use super::*;
+
+    #[test]
+    fn number_lines_start_below_the_text_and_can_reach_the_labels_bottom_edge() {
+        let subject = super::super::tests::demo_subject();
+        let turret = Turret::default();
+        let plan = Plan {
+            marks: [0, 125]
+                .into_iter()
+                .enumerate()
+                .map(|(index, clicks)| RangeMark {
+                    range_m: 0.0,
+                    clicks,
+                    kind: Kind::Number,
+                    text: format!("{}", index + 1),
+                    rank: 0,
+                    beyond: false,
+                    crowded: false,
+                })
+                .collect(),
+            turns: 2,
+            ethical_m: None,
+            temperature_c: 0.0,
+            muzzle_velocity: 0.0,
+            out_of_travel: Vec::new(),
+        };
+        let mut preview = Vec::new();
+        for font in Font::ALL {
+            for length in [0.1, 0.5, 1.0] {
+                for ruler in [false, true] {
+                    let options = TurretOptions {
+                        font,
+                        marker: Marker::Line,
+                        marker_line_end: length,
+                        description: false,
+                        ruler,
+                        ..TurretOptions::default()
+                    };
+                    let sheet = strip(
+                        &subject,
+                        &turret,
+                        &options,
+                        &mut plan.clone(),
+                        &UnitPrefs::metric(),
+                    );
+                    let lines: Vec<_> = sheet
+                        .marks
+                        .iter()
+                        .filter_map(|mark| {
+                            if let Mark::Line { points, width, .. } = mark
+                                && *width == 0.3
+                            {
+                                return Some(points);
+                            }
+                            None
+                        })
+                        .collect();
+                    assert_eq!(lines.len(), 2);
+                    for points in lines {
+                        assert_eq!(points[0][0], points[1][0]);
+                        let baseline = sheet
+                            .marks
+                            .iter()
+                            .find_map(|mark| {
+                                if let Mark::Text { at, text, .. } = mark
+                                    && (text == "1" || text == "2")
+                                    && at[0] == points[0][0]
+                                {
+                                    return Some(at[1]);
+                                }
+                                None
+                            })
+                            .unwrap();
+                        assert!(points[0][1] > baseline, "line must start below the digits");
+                        let end = sheet.height - 0.15;
+                        assert!(
+                            (points[1][1] - (points[0][1] + (end - points[0][1]) * length)).abs()
+                                < 1e-5
+                        );
+                        if length == 1.0 {
+                            assert!((points[1][1] - end).abs() < 1e-5);
+                        }
+                    }
+                    if font == Font::HelveticaBold && ruler {
+                        let mut preview_plan = plan.clone();
+                        for (clicks, kind) in [
+                            (35, Kind::Line),
+                            (60, Kind::Dot),
+                            (135, Kind::Line),
+                            (160, Kind::Dot),
+                        ] {
+                            preview_plan.marks.push(RangeMark {
+                                range_m: 0.0,
+                                clicks,
+                                kind,
+                                text: String::new(),
+                                rank: 0,
+                                beyond: false,
+                                crowded: false,
+                            });
+                        }
+                        preview.push(strip(
+                            &subject,
+                            &turret,
+                            &options,
+                            &mut preview_plan,
+                            &UnitPrefs::metric(),
+                        ));
+                        if length == 1.0 {
+                            for marker in [Marker::Tick, Marker::Triangle] {
+                                let options = TurretOptions {
+                                    marker,
+                                    ..options.clone()
+                                };
+                                preview.push(strip(
+                                    &subject,
+                                    &turret,
+                                    &options,
+                                    &mut preview_plan.clone(),
+                                    &UnitPrefs::metric(),
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let Ok(path) = std::env::var("MXSC_LINE_PREVIEW_OUT") {
+            std::fs::write(
+                path,
+                super::super::pdf::write(&preview, "Line length preview"),
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn tick_and_triangle_styles_mark_every_visible_number_tick_and_dot() {
+        let subject = super::super::tests::demo_subject();
+        let turret = Turret::default();
+        let plan = Plan {
+            marks: [
+                (0, Kind::Number),
+                (25, Kind::Line),
+                (50, Kind::Dot),
+                (100, Kind::Number),
+                (125, Kind::Line),
+                (150, Kind::Dot),
+                (0, Kind::Line), // This overlaps a number and must stay hidden.
+            ]
+            .into_iter()
+            .map(|(clicks, kind)| RangeMark {
+                range_m: 0.0,
+                clicks,
+                kind,
+                text: "1".into(),
+                rank: 0,
+                beyond: false,
+                crowded: false,
+            })
+            .collect(),
+            turns: 2,
+            ethical_m: None,
+            temperature_c: 0.0,
+            muzzle_velocity: 0.0,
+            out_of_travel: Vec::new(),
+        };
+        for marker in [Marker::None, Marker::Tick, Marker::Triangle] {
+            let options = TurretOptions {
+                marker,
+                description: false,
+                ..TurretOptions::default()
+            };
+            let mut plan = plan.clone();
+            let sheet = strip(&subject, &turret, &options, &mut plan, &UnitPrefs::metric());
+            assert_eq!(plan.marks.iter().filter(|mark| !mark.crowded).count(), 6);
+            assert!(plan.marks.last().unwrap().crowded);
+            let ticks = sheet
+                .marks
+                .iter()
+                .filter(|mark| matches!(mark, Mark::Line { width, .. } if *width == 0.3))
+                .count();
+            let triangles = sheet
+                .marks
+                .iter()
+                .filter(|mark| matches!(mark, Mark::Fill { points, .. } if points.len() == 3))
+                .count();
+            assert_eq!(ticks, if marker == Marker::Tick { 6 } else { 0 });
+            assert_eq!(triangles, if marker == Marker::Triangle { 6 } else { 0 });
+        }
+    }
+
+    #[test]
+    fn lines_extend_from_intermediate_ticks_and_dots_when_the_line_style_is_selected() {
+        let subject = super::super::tests::demo_subject();
+        let turret = Turret::default();
+        let plan = Plan {
+            marks: [
+                (0, Kind::Line),
+                (25, Kind::Dot),
+                (100, Kind::Line),
+                (125, Kind::Dot),
+            ]
+            .into_iter()
+            .map(|(clicks, kind)| RangeMark {
+                range_m: 0.0,
+                clicks,
+                kind,
+                text: String::new(),
+                rank: 0,
+                beyond: false,
+                crowded: false,
+            })
+            .collect(),
+            turns: 2,
+            ethical_m: None,
+            temperature_c: 0.0,
+            muzzle_velocity: 0.0,
+            out_of_travel: Vec::new(),
+        };
+        for marker in [Marker::None, Marker::Line] {
+            for length in [0.25, 1.0] {
+                let options = TurretOptions {
+                    marker,
+                    marker_line_end: length,
+                    description: false,
+                    ..TurretOptions::default()
+                };
+                let sheet = strip(
+                    &subject,
+                    &turret,
+                    &options,
+                    &mut plan.clone(),
+                    &UnitPrefs::metric(),
+                );
+                let stems: Vec<_> = sheet
+                    .marks
+                    .iter()
+                    .filter_map(|mark| {
+                        if let Mark::Line { points, width, .. } = mark
+                            && *width == 0.3
+                        {
+                            return Some(points);
+                        }
+                        None
+                    })
+                    .collect();
+                if marker == Marker::None {
+                    assert!(stems.is_empty());
+                    continue;
+                }
+                assert_eq!(stems.len(), 4, "every visible submark needs a stem");
+                for points in stems {
+                    let [x, start] = points[0];
+                    let joined = sheet.marks.iter().any(|mark| {
+                        let bottom = match mark {
+                            Mark::Line { points, width, .. }
+                                if *width == 0.35 && points[0][0] == x =>
+                            {
+                                points[1][1]
+                            }
+                            Mark::Fill { points, ink, .. } if *ink == Ink::Rgb(options.ink) => {
+                                let left = points
+                                    .iter()
+                                    .map(|point| point[0])
+                                    .fold(f32::INFINITY, f32::min);
+                                let right = points
+                                    .iter()
+                                    .map(|point| point[0])
+                                    .fold(f32::NEG_INFINITY, f32::max);
+                                if ((left + right) * 0.5 - x).abs() > 0.001 {
+                                    return false;
+                                }
+                                points
+                                    .iter()
+                                    .map(|point| point[1])
+                                    .fold(f32::NEG_INFINITY, f32::max)
+                            }
+                            _ => return false,
+                        };
+                        (bottom - start).abs() < 0.001
+                    });
+                    assert!(joined, "stem must join the bottom of its tick or dot");
+                    assert_eq!(points[1][0], x);
+                    if length == 1.0 {
+                        assert!((points[1][1] - (sheet.height - 0.15)).abs() < 1e-5);
+                    } else {
+                        assert!(points[1][1] > start && points[1][1] < sheet.height - 0.15);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn old_label_settings_keep_their_marker_and_default_line_endpoints() {
+        let options = TurretOptions {
+            marker: Marker::Tick,
+            ..TurretOptions::default()
+        };
+        let mut value = serde_json::to_value(&options).unwrap();
+        value.as_object_mut().unwrap().remove("marker_line_end");
+        value.as_object_mut().unwrap().remove("marker_line_start");
+        let restored: TurretOptions = serde_json::from_value(value).unwrap();
+        assert_eq!(restored, options);
+    }
+
+    #[test]
+    fn saved_line_lengths_become_end_positions_without_changing_the_start() {
+        let expected = TurretOptions {
+            marker: Marker::Line,
+            marker_line_end: 0.37,
+            ..TurretOptions::default()
+        };
+        let mut value = serde_json::to_value(&expected).unwrap();
+        let fields = value.as_object_mut().unwrap();
+        let end = fields.remove("marker_line_end").unwrap();
+        fields.remove("marker_line_start");
+        fields.insert("marker_line_length".into(), end);
+        let restored: TurretOptions = serde_json::from_value(value).unwrap();
+        assert_eq!(restored, expected);
+        let saved = serde_json::to_value(restored).unwrap();
+        assert!(saved.get("marker_line_length").is_none());
+    }
+
+    #[test]
+    fn both_line_endpoints_move_independently_for_numbers_ticks_and_dots() {
+        let subject = super::super::tests::demo_subject();
+        let turret = Turret::default();
+        let plan = Plan {
+            marks: [(0, Kind::Number), (25, Kind::Line), (50, Kind::Dot)]
+                .into_iter()
+                .map(|(clicks, kind)| RangeMark {
+                    range_m: 0.0,
+                    clicks,
+                    kind,
+                    text: "1".into(),
+                    rank: 0,
+                    beyond: false,
+                    crowded: false,
+                })
+                .collect(),
+            turns: 1,
+            ethical_m: None,
+            temperature_c: 0.0,
+            muzzle_velocity: 0.0,
+            out_of_travel: Vec::new(),
+        };
+        let render = |start, end| {
+            let options = TurretOptions {
+                marker: Marker::Line,
+                marker_line_start: start,
+                marker_line_end: end,
+                description: false,
+                ..TurretOptions::default()
+            };
+            strip(
+                &subject,
+                &turret,
+                &options,
+                &mut plan.clone(),
+                &UnitPrefs::metric(),
+            )
+        };
+        let lines = |sheet: &Sheet| -> Vec<Vec<[f32; 2]>> {
+            sheet
+                .marks
+                .iter()
+                .filter_map(|mark| match mark {
+                    Mark::Line { points, width, .. } if *width == 0.3 => Some(points.clone()),
+                    _ => None,
+                })
+                .collect()
+        };
+        let full = render(0.0, 1.0);
+        let cropped = render(0.25, 0.75);
+        let complete_lines = lines(&full);
+        let cropped_lines = lines(&cropped);
+        assert_eq!(complete_lines.len(), 3);
+        assert_eq!(cropped_lines.len(), 3);
+        for (full, cropped) in complete_lines.iter().zip(&cropped_lines) {
+            let space = full[1][1] - full[0][1];
+            assert_eq!(cropped[0][0], full[0][0]);
+            assert!((cropped[0][1] - (full[0][1] + space * 0.25)).abs() < 1e-5);
+            assert!((cropped[1][1] - (full[0][1] + space * 0.75)).abs() < 1e-5);
+        }
+        assert!(
+            lines(&render(0.5, 0.5)).is_empty(),
+            "collapsed endpoints must not leave dots behind"
+        );
+        assert!(lines(&render(0.9, 0.2)).is_empty());
+        assert_eq!(render(-1.0, 2.0), full);
+        assert_eq!(render(f32::NAN, f32::INFINITY), full);
+        if let Ok(path) = std::env::var("MXSC_LINE_POSITION_PREVIEW_OUT") {
+            std::fs::write(
+                path,
+                super::super::pdf::write(&[full, cropped], "Line position preview"),
+            )
+            .unwrap();
+        }
+    }
 
     #[test]
     fn a_turn_starts_from_the_rifles_clicks() {

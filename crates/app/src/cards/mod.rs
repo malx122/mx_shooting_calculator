@@ -3,8 +3,10 @@
 //! Each card is laid out once as a `Sheet` in millimetres, shown as the
 //! preview and saved as a PDF, so the preview is what prints.
 
+mod designs;
 pub mod dope;
 pub mod fonts;
+mod line_control;
 mod pdf;
 pub mod sheet;
 pub mod stand;
@@ -23,6 +25,7 @@ use crate::mobile;
 use crate::theme;
 use crate::units::{self, Quantity, UnitPrefs};
 use crate::widgets::{confirm_button, fold_with, grid};
+use designs::{DesignEditor, LabelDesigns};
 use dope::{DopeOptions, DopeTable, Measure};
 use sheet::Sheet;
 use stand::{Landmark, NoShoot, Stand, StandOptions, View};
@@ -197,6 +200,9 @@ pub struct CardSettings {
     pub turret: TurretOptions,
     /// Each rifle's elevation turret, by rifle id.
     pub turrets: std::collections::BTreeMap<String, Turret>,
+    /// Named label appearances for each rifle; device-local, like the other
+    /// card settings, and not included in personal-data backups or sync.
+    pub label_designs: std::collections::BTreeMap<String, LabelDesigns>,
 }
 
 /// A compass reading wanted for a field.
@@ -235,6 +241,7 @@ pub struct CardsPage {
     status: Option<(String, bool)>,
     /// Hunting: stand cards and the ethical limit. Off for target shooting.
     hunting: bool,
+    design_editor: DesignEditor,
 }
 
 impl CardsPage {
@@ -246,6 +253,7 @@ impl CardsPage {
             heading: None,
             status: None,
             hunting: true,
+            design_editor: DesignEditor::default(),
         }
     }
 
@@ -623,6 +631,16 @@ impl CardsPage {
 
     fn turret_controls(&mut self, ui: &mut egui::Ui, subject: &Subject) {
         let rifle = &subject.rifle;
+        self.design_editor.show(
+            ui,
+            &rifle.id,
+            self.settings
+                .label_designs
+                .entry(rifle.id.clone())
+                .or_default(),
+            &mut self.settings.turret,
+        );
+        ui.separator();
         let fallback = self.turret_for(subject);
         let u = units::prefs(ui.ctx());
         let ethical = self
@@ -892,6 +910,7 @@ impl CardsPage {
                 Marker::None => tr("no marker"),
                 Marker::Tick => tr("ticks"),
                 Marker::Triangle => tr("triangles"),
+                Marker::Line => tr("lines"),
             }
         );
         fold_with(ui, "turret-look", tr("Look"), &look, false, |ui| {
@@ -926,22 +945,10 @@ impl CardsPage {
                 )
                 .on_hover_text(tr("Of the band's height"));
                 ui.end_row();
-                ui.label(tr("Under the numbers"));
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut options.marker, Marker::None, tr("nothing"));
-                    ui.selectable_value(&mut options.marker, Marker::Tick, tr("a tick"));
-                    ui.selectable_value(&mut options.marker, Marker::Triangle, tr("a triangle"));
-                })
-                .response
-                .on_hover_text(tr("A small mark at the number's exact click"));
-                ui.end_row();
-                ui.label(tr("Show"));
-                ui.horizontal_wrapped(|ui| {
-                    toggle(ui, &mut options.ruler, tr("click ruler"));
-                    toggle(ui, &mut options.description, tr("description line"));
-                });
-                ui.end_row();
             });
+
+            ui.add_space(6.0);
+            marker_controls(ui, options);
 
             ui.add_space(6.0);
             ui.strong(tr("Colours"));
@@ -1691,6 +1698,34 @@ fn part_colours(
     });
 }
 
+/// Wrapped choices need the vertical layout's measured height, rather than a
+/// grid cell whose clipping height comes from the previous frame.
+fn marker_controls(ui: &mut egui::Ui, options: &mut TurretOptions) {
+    ui.label(tr("Under the marks"));
+    ui.horizontal_wrapped(|ui| {
+        ui.selectable_value(&mut options.marker, Marker::None, tr("nothing"));
+        ui.selectable_value(&mut options.marker, Marker::Tick, tr("a tick"));
+        ui.selectable_value(&mut options.marker, Marker::Triangle, tr("a triangle"));
+        ui.selectable_value(&mut options.marker, Marker::Line, tr("a line"));
+    })
+    .response
+    .on_hover_text(tr("Applies to numbers, intermediate ticks and dots."));
+    if options.marker == Marker::Line {
+        ui.add_space(4.0);
+        line_control::show(
+            ui,
+            &mut options.marker_line_start,
+            &mut options.marker_line_end,
+        );
+    }
+    ui.add_space(6.0);
+    ui.label(tr("Show"));
+    ui.horizontal_wrapped(|ui| {
+        toggle(ui, &mut options.ruler, tr("click ruler"));
+        toggle(ui, &mut options.description, tr("description line"));
+    });
+}
+
 fn toggle(ui: &mut egui::Ui, value: &mut bool, label: &str) {
     if ui.selectable_label(*value, label).clicked() {
         *value = !*value;
@@ -1828,6 +1863,91 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrapped_marker_choices_and_line_position_stay_clear_of_the_following_controls() {
+        use crate::i18n::{Language, set};
+        for language in Language::ALL {
+            set(language);
+            let context = egui::Context::default();
+            let mut options = TurretOptions::default();
+            // Exercise the first frame, resizing, and expanding/collapsing the
+            // line controls while the choices need several rows.
+            for (width, marker) in [
+                (390.0, Marker::None),
+                (180.0, Marker::Line),
+                (320.0, Marker::Line),
+                (240.0, Marker::Triangle),
+                (200.0, Marker::Line),
+                (600.0, Marker::Tick),
+            ] {
+                options.marker = marker;
+                let mut output = context.run_ui(
+                    egui::RawInput {
+                        screen_rect: Some(egui::Rect::from_min_size(
+                            egui::Pos2::ZERO,
+                            egui::vec2(width, 1000.0),
+                        )),
+                        ..Default::default()
+                    },
+                    |ui| {
+                        mobile::apply_style(&context);
+                        marker_controls(ui, &mut options);
+                        ui.add_space(6.0);
+                        ui.strong(tr("Colours"));
+                        assert!(
+                            ui.min_rect().right() <= width + 0.5,
+                            "controls overflow the available width"
+                        );
+                    },
+                );
+                let text_rect = |key: &'static str| {
+                    output.shapes.iter().find_map(|shape| {
+                        if let egui::epaint::Shape::Text(text) = &shape.shape
+                            && text.galley.job.text == tr(key)
+                        {
+                            let rect = egui::Rect::from_min_size(text.pos, text.galley.size());
+                            assert!(shape.clip_rect.expand(0.5).contains_rect(rect), "clipped {key}: {language:?}, width {width}, rect {rect:?}, clip {:?}", shape.clip_rect);
+                            return Some(rect);
+                        }
+                        None
+                    }).unwrap_or_else(|| panic!("missing control: {key}"))
+                };
+                let choices = ["nothing", "a tick", "a triangle", "a line"].map(text_rect);
+                let last_choice = choices
+                    .iter()
+                    .map(egui::Rect::bottom)
+                    .fold(0.0_f32, f32::max);
+                for (index, rect) in choices.iter().enumerate() {
+                    for other in &choices[index + 1..] {
+                        assert!(!rect.intersects(*other), "choices overlap");
+                    }
+                }
+                let show = text_rect("Show");
+                assert!(show.top() > last_choice);
+                if marker == Marker::Line {
+                    let position = text_rect("Line position");
+                    assert!(
+                        position.top() > last_choice,
+                        "line control must follow the marker choices"
+                    );
+                    let explanation = text_rect(
+                        "0% is just below each mark. 100% is the label's bottom edge, including the ruler.",
+                    );
+                    assert!(
+                        show.top() > explanation.bottom(),
+                        "Show must follow the complete line control"
+                    );
+                }
+                let ruler = text_rect("click ruler");
+                let description = text_rect("description line");
+                let colours = text_rect("Colours");
+                assert!(colours.top() > ruler.bottom().max(description.bottom()));
+                output.textures_delta.clear();
+            }
+        }
+        set(Language::English);
+    }
+
+    #[test]
     fn file_names_are_tidy() {
         assert_eq!(file_part("Browning X-Bolt .308"), "browning-x-bolt-308");
         assert_eq!(file_part("Tornet vid ån"), "tornet-vid-ån");
@@ -1844,7 +1964,7 @@ mod tests {
     }
 
     /// The demo's first rifle with a bullet for it, shooting at a moose.
-    fn demo_subject() -> Subject {
+    pub(super) fn demo_subject() -> Subject {
         let mut store = ballistics_store::Store::open_in_memory().unwrap();
         store.load_demo().unwrap();
         let rifle = store.rifles().unwrap().remove(0);

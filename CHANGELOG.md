@@ -6,8 +6,23 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- A line option under label numbers and intermediate ticks and dots, with
+  a two-handle control and editable percentages for its start and end. Both
+  positions are included in named designs; existing length settings are kept
+  as the end position.
+- Named label designs per rifle: save and apply appearance presets, make copies
+  with a new name, update, rename or delete them. Fonts, colours and print
+  choices are kept on the device, alongside the other card settings.
+
 ### Fixed
 
+- Inset the line-position slider so its end handles stay clear of the panel scrollbar.
+- Keep wrapped label marker choices fully visible, with line-position controls
+  immediately below the choices and above the display options.
+- Apply tick and triangle label markers beneath intermediate ticks and dots,
+  as well as beneath the numbers.
 - Keep mobile update messages fully visible above the bottom navigation from
   the first frame, without leaving space after the message expires.
 
