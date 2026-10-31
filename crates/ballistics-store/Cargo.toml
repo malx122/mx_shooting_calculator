@@ -25,4 +25,4 @@ uuid = { version = "1", features = ["v4", "v5", "js"] }
 
 [dev-dependencies]
 # Checks that an export matches the published schema.
-jsonschema = { version = "0.59", default-features = false }
+jsonschema = { version = "0.60", default-features = false }
