@@ -708,13 +708,19 @@ stay in one file because makers' scopes can share a reticle. They cover seven ma
 
 - **Kahles:** 8 scopes with their 4-Dot, G4B, 4-DH and SKMR4 reticles drawn.
   Kahles publishes dimensioned drawings for every hunting reticle.
-- **Vortex:** 43 scopes from Crossfire HD, Diamondback (and Tactical),
-  Strike Eagle, Venom, Viper HD, Viper PST Gen II, Razor HD Gen III and
-  Razor HD LHT.
-  - **Reticles:** 26 Vortex reticles are drawn, with one entry per scope
+- **Vortex:** 57 scopes from Crossfire HD, Diamondback (and Tactical),
+  Strike Eagle, Venom, Viper HD, Viper PST (first generation and Gen II),
+  Razor HD Gen III and Razor HD LHT.
+  - **Reticles:** 39 Vortex reticles are drawn, with one entry per scope
     where Vortex publishes per-model values. Each reticle's notes say what
     was published and what was measured from the picture or assumed; line
     widths were often assumed.
+  - **Viper PST, first generation.** Discontinued, but still on many
+    rifles. Vortex printed a sheet per model, and the EBR-1's posts, gap
+    and line width differ between them, so each model has its own EBR-1
+    (TMCQ on the 1-4x24); every line and post width is printed on the
+    sheets. `tools/reticles/vortex_pst_gen1.py` draws them and writes
+    their entries.
   - **Gaps.** Vortex loads many of its spec tables dynamically, so some
     fields are missing. Where the field of view is missing, the scope view
     estimates it from the magnification. Missing click values on scopes

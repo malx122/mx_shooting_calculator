@@ -36,7 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         # The oldest supported runners, so the apps run on older systems too.
-        os: [macos-14, windows-2022, ubuntu-22.04]
+        # The Mac build targets macOS 11 (MACOSX_DEPLOYMENT_TARGET in
+        # scripts/package.sh), so it runs on older Macs than the runner.
+        os: [macos-15, windows-2022, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     defaults:
       run:

@@ -6,6 +6,13 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Scopes:** the first-generation Vortex Viper PST (1-4x24, 2.5-10x32 FFP,
+  2.5-10x44, 4-16x50 FFP and SFP, 6-24x50 FFP and SFP, each in MOA and
+  MRAD) with their EBR-1 and TMCQ reticles, drawn from Vortex's sheet for
+  each model.
+
 ## [0.9.0] - 2026-10-31
 
 ### Added
