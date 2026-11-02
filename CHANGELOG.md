@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-02
+
 ### Added
 
 - **Scopes:** the first-generation Vortex Viper PST (1-4x24, 2.5-10x32 FFP,
@@ -562,7 +564,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/malx122/mx_shooting_calculator/compare/v0.8.6...v0.8.7
