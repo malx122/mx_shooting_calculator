@@ -28,6 +28,7 @@ mod trajectory3d;
 mod units;
 #[cfg(not(target_arch = "wasm32"))]
 mod updates;
+mod watch;
 mod weather;
 #[cfg(target_arch = "wasm32")]
 mod web;

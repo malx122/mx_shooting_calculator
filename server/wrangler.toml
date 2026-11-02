@@ -40,7 +40,20 @@ name = "REQUEST_LIMIT"
 namespace_id = "1003"
 simple = { limit = 120, period = 60 }
 
-# Clean-up every quarter of an hour: Google sign-ins nobody picked up, and
-# copies unused for two years.
+# New watch pairings.
+[[ratelimits]]
+name = "WATCH_LIMIT"
+namespace_id = "1004"
+simple = { limit = 10, period = 60 }
+
+# Watch codes looked up or sent to: slows anyone guessing codes.
+[[ratelimits]]
+name = "WATCH_LOOKUP_LIMIT"
+namespace_id = "1005"
+simple = { limit = 30, period = 60 }
+
+# Clean-up every quarter of an hour: Google sign-ins nobody picked up,
+# watch pairings past their ten minutes, watch links unused for 400 days,
+# and copies unused for two years.
 [triggers]
 crons = ["*/15 * * * *"]

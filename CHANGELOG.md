@@ -6,6 +6,16 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Garmin watch:** every rifle and load on a Garmin watch (the epix (Gen 2)
+  first), through a new watch app. Pair once with a code; after that the app
+  keeps the watch up to date while it is open, encrypted for that watch
+  only. On the watch you choose the rifle, set the range, the wind and the
+  temperature, and read the clicks and the centimetres; the watch reads the
+  air pressure itself, and counts the wind's drift, aerodynamic jump and
+  head- or tailwind.
+
 ## [0.9.0] - 2026-10-31
 
 ### Added

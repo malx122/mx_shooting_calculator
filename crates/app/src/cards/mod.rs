@@ -2161,7 +2161,7 @@ fn save(context: &egui::Context, file: &str, bytes: &[u8]) -> (String, bool) {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -2266,7 +2266,7 @@ mod tests {
     }
 
     /// The demo's first rifle with a bullet for it, shooting at a moose.
-    pub(super) fn demo_subject() -> Subject {
+    pub(crate) fn demo_subject() -> Subject {
         let mut store = ballistics_store::Store::open_in_memory().unwrap();
         store.load_demo().unwrap();
         let rifle = store.rifles().unwrap().remove(0);

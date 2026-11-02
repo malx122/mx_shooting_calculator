@@ -409,8 +409,51 @@ impl CalculatorPage {
                     .find(|bullet| &bullet.id == id)
             })
             .or_else(|| data.bullets.iter().find(fits))?;
+        Some(self.subject_for(data, rifle, bullet))
+    }
+
+    /// Every rifle with each of its loads (a rifle without loads with the
+    /// bullet chosen for it here, or the first that fits), for the watch.
+    pub fn watch_subjects(&self, data: &Data) -> Vec<crate::cards::Subject> {
+        let mut subjects = Vec::new();
+        for rifle in &data.rifles {
+            let mut bullets: Vec<&Bullet> = data
+                .loads
+                .iter()
+                .filter(|load| load.rifle_id == rifle.id)
+                .filter_map(|load| {
+                    data.bullets
+                        .iter()
+                        .find(|bullet| bullet.id == load.bullet_id)
+                })
+                .collect();
+            if bullets.is_empty() {
+                let fits = |bullet: &&Bullet| bullet.caliber == rifle.caliber;
+                let chosen = (self.inputs.rifle_id.as_ref() == Some(&rifle.id))
+                    .then_some(self.inputs.bullet_id.as_ref())
+                    .flatten()
+                    .and_then(|id| {
+                        data.bullets
+                            .iter()
+                            .filter(fits)
+                            .find(|bullet| &bullet.id == id)
+                    });
+                bullets.extend(chosen.or_else(|| data.bullets.iter().find(fits)));
+            }
+            subjects.extend(
+                bullets
+                    .into_iter()
+                    .map(|bullet| self.subject_for(data, rifle, bullet)),
+            );
+        }
+        subjects
+    }
+
+    /// The card's subject for a rifle and bullet, with the aim and weather
+    /// set here.
+    fn subject_for(&self, data: &Data, rifle: &Rifle, bullet: &Bullet) -> crate::cards::Subject {
         let aim = Aim::new(&self.inputs, data);
-        Some(crate::cards::Subject {
+        crate::cards::Subject {
             load: data
                 .loads
                 .iter()
@@ -444,7 +487,7 @@ impl CalculatorPage {
             },
             rifle: rifle.clone(),
             bullet: bullet.clone(),
-        })
+        }
     }
 
     /// The range table to show for the rifle: as being changed, or its own.

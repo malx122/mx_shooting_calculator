@@ -154,6 +154,8 @@ enum MenuSheet {
     Country,
     Purpose,
     Sync,
+    /// The rifles on the Garmin watch app.
+    Watch,
     WhatsNew,
     /// How to put the app on the home screen by hand.
     Install,
@@ -168,6 +170,7 @@ enum MenuChoice {
     Country,
     Purpose,
     Sync,
+    Watch,
     ShotLog,
     WhatsNew,
     Import,
@@ -208,6 +211,7 @@ pub struct App {
     /// The phone menu, when open.
     menu: Option<MenuSheet>,
     sync: Sync,
+    watch: crate::watch::WatchSync,
     country: Option<Country>,
     /// Hunting or target shooting; `None` until the first-run question is
     /// answered.
@@ -274,6 +278,7 @@ impl App {
         i18n::set(Language::chosen(language));
         let mut app = Self {
             sync,
+            watch: crate::watch::WatchSync::load(&store),
             country,
             purpose,
             asking_country: false,
@@ -657,10 +662,23 @@ impl eframe::App for App {
         self.welcome(context);
         self.persist_inputs(context);
         self.run_sync(context);
+        self.run_watch(context);
     }
 }
 
 impl App {
+    /// Keeps the Garmin watch's rifles up to date.
+    fn run_watch(&mut self, context: &egui::Context) {
+        let calculator = &self.calculator;
+        let data = &self.data;
+        self.watch.poll(
+            &self.store,
+            context,
+            || calculator.watch_subjects(data),
+            &self.units,
+        );
+    }
+
     /// Syncs with the hunter's other devices, and shows the sync window
     /// and any pairing offer.
     fn run_sync(&mut self, context: &egui::Context) {
@@ -860,6 +878,14 @@ impl App {
                 .clicked()
             {
                 sync = true;
+                ui.close();
+            }
+            if ui
+                .button(tr("Garmin watch…"))
+                .on_hover_text(tr("Every rifle and load on a Garmin watch"))
+                .clicked()
+            {
+                self.menu = Some(MenuSheet::Watch);
                 ui.close();
             }
             #[cfg(not(target_arch = "wasm32"))]
@@ -1234,6 +1260,11 @@ impl App {
                     if mobile::list_row(ui, tr("Sync"), &status, false).clicked() {
                         choice = Some(MenuChoice::Sync);
                     }
+                    if mobile::list_row(ui, tr("Garmin watch"), self.watch.short_status(), false)
+                        .clicked()
+                    {
+                        choice = Some(MenuChoice::Watch);
+                    }
                     #[cfg(not(target_arch = "wasm32"))]
                     if mobile::list_row(
                         ui,
@@ -1320,6 +1351,7 @@ impl App {
                     Some(MenuChoice::Country) => self.menu = Some(MenuSheet::Country),
                     Some(MenuChoice::Purpose) => self.menu = Some(MenuSheet::Purpose),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
+                    Some(MenuChoice::Watch) => self.menu = Some(MenuSheet::Watch),
                     #[cfg(not(target_arch = "wasm32"))]
                     Some(MenuChoice::Updates) => self.menu = Some(MenuSheet::Updates),
                     Some(MenuChoice::WhatsNew) => self.menu = Some(MenuSheet::WhatsNew),
@@ -1366,6 +1398,18 @@ impl App {
                          connection and keeps your data on this device. Export a backup now \
                          and then.",
                     ));
+                });
+                if shown.closed {
+                    self.menu = None;
+                }
+            }
+            MenuSheet::Watch => {
+                let subjects = self.calculator.watch_subjects(&self.data);
+                let units = &self.units;
+                let watch = &mut self.watch;
+                let store = &self.store;
+                let shown = mobile::sheet(context, "watch", tr("Garmin watch"), |ui| {
+                    watch.panel(ui, store, &subjects, units)
                 });
                 if shown.closed {
                     self.menu = None;

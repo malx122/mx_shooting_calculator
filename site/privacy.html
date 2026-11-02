@@ -86,13 +86,13 @@
   <main>
     <div class="wrap">
       <h1>Privacy</h1>
-      <p class="updated">MX Shooting Calculator · in effect from 31 October 2026</p>
+      <p class="updated">MX Shooting Calculator · in effect from 1 November 2026</p>
 
       <div class="summary">
         <p>Your rifles, bullets, targets, shot log and settings are kept on your own devices. The app
           has no accounts, no analytics and no advertising, and it sells nothing about you.
           It only sends something elsewhere when you use a feature that needs it: the
-          weather, sync, or updates on a computer.</p>
+          weather, sync, a Garmin watch, or updates on a computer.</p>
       </div>
 
       <h2>What the app keeps on your device</h2>
@@ -166,6 +166,35 @@
         <strong>Delete the synced copy</strong> to remove the file's contents from Drive too. You can also
         remove the app's access at
         <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.</p>
+
+      <h2>Your rifles on a Garmin watch</h2>
+      <p>If you pair a Garmin watch (<strong>Garmin watch</strong> in the app), the app works out
+        a profile for each of your rifles and loads: its name, its scope's click value, your
+        units, the ethical limit for the chosen target, the time it was made and the holds out
+        to a range in a spread of temperatures and air pressures. The watch app shows a code,
+        and you type it into the app. The profiles go through the app's sync server, encrypted
+        on your device with a key only that watch has (the watch and the app each make a key
+        pair and agree a key from them). While the app is open, that device sends them again
+        when your rifles, loads or units change, and the watch picks them up when you open it.
+        The device keeps its key, and the secret that lets it update the watch, in its own
+        settings, not in your synced data or backups.</p>
+      <p>For a paired watch the server keeps the two public keys, hashes of the watch's and the
+        app's secrets, the encrypted profiles, which version the watch says it has, and when
+        the pairing was made and last used: never anything readable, though it can see how many
+        profiles there are, how large they are and when they change. It deletes all of it as
+        soon as it hears that you have forgotten the watch in the app or the phone on the watch
+        (both keep trying until it does), or when neither has used it for 400 days. A pairing the watch doesn't take is deleted after ten minutes (within half
+        an hour at most). The server counts requests per IP address the same way as for sync,
+        without storing the address. When pairing, the keys aren't checked against each other,
+        so a server set on deceiving could swap them; that's why the watch lists the rifles and
+        asks before it pairs. After that, the watch takes profiles only from the app it paired
+        with.</p>
+      <p>On the watch, the profiles, its key and the paired app's public key, and the last
+        range, wind, temperature and pressure you set are kept in the watch app's own storage,
+        and nowhere else. The watch reads the air pressure from its own barometer; it doesn't
+        use or send your position. It reaches the server through Garmin Connect on your phone,
+        as every Connect IQ app's web requests do; Garmin's own terms and privacy policy cover
+        Garmin Connect and the watch.</p>
 
       <h2>Updates on a computer</h2>
       <p>The desktop app looks for a new version only if you turn on <strong>Check for

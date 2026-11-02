@@ -24,6 +24,13 @@ ballistics-shot.workspace = true
 sys-locale = { version = "0.3", features = ["js"] }
 # Font metrics for the cards' embedded fonts (egui already uses it).
 ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
+# Sending the rifles to a Garmin watch (docs/watch.md): what Connect IQ offers.
+p256 = { version = "0.14", default-features = false, features = ["ecdh"] }
+aes = "0.9"
+cbc = { version = "0.2", features = ["alloc"] }
+hmac = "0.13"
+sha2 = "0.11"
+base64 = "0.22"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Symbols and emoji the built-in fonts lack (arrows, ✖, ↺, ⚠, 📍) from the
@@ -34,7 +41,6 @@ ureq = "3"
 # Updates: the release's signature, the download's checksum, and putting
 # the new program in place of the running one.
 minisign-verify = "0.3"
-sha2 = "0.11"
 self-replace = "1"
 # The window icon, drawn from the SVG (egui_extras uses the same version).
 resvg = { version = "0.45", default-features = false }

@@ -21,9 +21,12 @@
 // so the hunters already syncing carry on.
 //
 // It also signs the app in to Google, for syncing through the hunter's own
-// Google Drive instead (see google.js).
+// Google Drive instead (see google.js), and passes the hunter's rifles on
+// to a Garmin watch paired with the phone, encrypted on the phone (see
+// watch.js).
 
 import { forgetStale, google } from './google.js';
+import { forgetExpired, watch } from './watch.js';
 
 // One copy holds everything a hunter keeps, the shot log included; D1 allows
 // rows up to 2 MB.
@@ -34,7 +37,7 @@ const COPY_PATH = /^\/v1\/copies\/([0-9a-f]{64})$/;
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'If-Match, If-None-Match, Content-Type',
+  'Access-Control-Allow-Headers': 'If-Match, If-None-Match, Content-Type, Authorization',
   'Access-Control-Expose-Headers': 'ETag',
   'Access-Control-Max-Age': '86400',
 };
@@ -45,7 +48,10 @@ export default {
       return await handle(request, env);
     } catch (error) {
       console.error(error);
-      return reply(500, 'server error');
+      // A watch reads JSON only.
+      return new URL(request.url).pathname.startsWith('/v1/watch/')
+        ? json(500, { error: 'server error' })
+        : reply(500, 'server error');
     }
   },
 
@@ -57,6 +63,7 @@ export default {
       .bind(now - 730 * DAY_MS, now - 30 * DAY_MS)
       .run();
     await forgetStale(env);
+    await forgetExpired(env);
   },
 };
 
@@ -69,11 +76,17 @@ async function handle(request, env) {
     return reply(200, 'MX Shooting Calculator sync');
   }
   const signingIn = /^\/v1\/google\/(start|callback|session\/)/.test(url.pathname);
+  const watching = url.pathname.startsWith('/v1/watch/');
   if (await tooMany(request, signingIn ? env.GOOGLE_LIMIT : env.REQUEST_LIMIT)) {
-    return reply(429, 'too many requests; try again in a minute');
+    // A watch reads JSON only.
+    const message = 'too many requests; try again in a minute';
+    return watching ? json(429, { error: message }) : reply(429, message);
   }
   if (url.pathname.startsWith('/v1/google/')) {
     return google(request, env, url, reply, json);
+  }
+  if (watching) {
+    return watch(request, env, url, json, tooMany, full);
   }
   const match = COPY_PATH.exec(url.pathname);
   if (!match) {
