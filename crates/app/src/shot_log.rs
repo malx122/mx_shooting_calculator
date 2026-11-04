@@ -17,10 +17,11 @@ use ballistics_store::{
 };
 use eframe::egui::{self, RichText, vec2};
 
-use crate::app::{Action, Data, Page};
+use crate::app::{Action, Data};
 use crate::calculator::{Aim, Inputs, clicks_text};
 use crate::i18n::{tr, tr_data, trf};
 use crate::mobile;
+use crate::number_field::NumberField;
 use crate::sensors::{self, Fix};
 use crate::theme;
 use crate::units::{self, Quantity};
@@ -131,6 +132,26 @@ impl Default for ShotLogPage {
 }
 
 impl ShotLogPage {
+    /// Views open over the log on a phone: a shot.
+    pub fn depth(&self) -> usize {
+        usize::from(self.open.is_some())
+    }
+
+    /// Back to the log, dropping the open shot's unsaved changes.
+    pub fn back(&mut self) {
+        self.close();
+    }
+
+    /// The open shot has changes that aren't saved.
+    pub fn unsaved(&self, data: &Data) -> bool {
+        self.open.as_ref().is_some_and(|shot| {
+            data.shots
+                .iter()
+                .find(|stored| stored.id == shot.id)
+                .is_none_or(|stored| stored != &**shot)
+        })
+    }
+
     /// Opens a shot, as when it was just logged.
     pub fn open(&mut self, shot: &Shot) {
         self.sensing.stop();
@@ -171,12 +192,12 @@ impl ShotLogPage {
             egui::CentralPanel::default().show(ui, |ui| {
                 if self.open.is_none() {
                     if mobile::back_button(ui, tr("Calculate")) {
-                        actions.push(Action::Goto(Page::Calculate));
+                        actions.push(Action::Back);
                     }
                     egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, true));
                 } else {
                     if mobile::back_button(ui, tr("Shot log")) {
-                        self.close();
+                        actions.push(Action::Back);
                         return;
                     }
                     egui::ScrollArea::vertical()
@@ -578,7 +599,7 @@ fn whereabouts(
                     let point = &mut position.point;
                     let before = *point;
                     ui.add(
-                        egui::DragValue::new(&mut point.latitude_degrees)
+                        NumberField::new(&mut point.latitude_degrees)
                             .range(-90.0..=90.0)
                             .speed(0.00001)
                             .fixed_decimals(6)
@@ -586,7 +607,7 @@ fn whereabouts(
                             .suffix("°"),
                     );
                     ui.add(
-                        egui::DragValue::new(&mut point.longitude_degrees)
+                        NumberField::new(&mut point.longitude_degrees)
                             .range(-180.0..=180.0)
                             .speed(0.00001)
                             .fixed_decimals(6)
@@ -655,7 +676,7 @@ fn whereabouts(
             match &mut shot.bearing_degrees {
                 Some(bearing) => {
                     ui.add(
-                        egui::DragValue::new(bearing)
+                        NumberField::new(bearing)
                             .range(0.0..=359.9)
                             .speed(1.0)
                             .fixed_decimals(0)

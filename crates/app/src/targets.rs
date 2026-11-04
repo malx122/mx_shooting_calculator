@@ -8,6 +8,7 @@ use crate::app::{Action, Data};
 use crate::figure::Figure;
 use crate::i18n::{self, target_name, tr, tr_data, trf};
 use crate::mobile;
+use crate::number_field::NumberField;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{confirm_button, grid, number, text};
@@ -37,6 +38,29 @@ impl Default for TargetsPage {
 }
 
 impl TargetsPage {
+    #[cfg(target_arch = "wasm32")]
+    /// Views open over the list on a phone: a target.
+    pub fn depth(&self) -> usize {
+        usize::from(!matches!(self.showing, Showing::Nothing))
+    }
+
+    /// Back to the list, dropping the open editor's unsaved changes.
+    pub fn back(&mut self) {
+        self.showing = Showing::Nothing;
+    }
+
+    /// The open editor has changes that aren't saved.
+    pub fn unsaved(&self, data: &Data) -> bool {
+        let Showing::Custom(target) = &self.showing else {
+            return false;
+        };
+        match data.targets.iter().find(|stored| stored.id == target.id) {
+            Some(stored) => stored != &**target,
+            // A new target: unsaved once it has a name.
+            None => !target.name.trim().is_empty(),
+        }
+    }
+
     /// Keeps the editor on the target that was just saved.
     pub fn saved(&mut self, target: &Target) {
         if matches!(&self.showing, Showing::Custom(editing) if editing.id == target.id) {
@@ -60,7 +84,7 @@ impl TargetsPage {
                     egui::ScrollArea::vertical().show(ui, |ui| self.phone_list(ui, data));
                 } else {
                     if mobile::back_button(ui, tr("Targets")) {
-                        self.showing = Showing::Nothing;
+                        actions.push(Action::Back);
                         return;
                     }
                     egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, &mut actions));
@@ -564,7 +588,7 @@ fn fields(ui: &mut egui::Ui, target: &mut Target, country: Option<Country>, hunt
                     " mm",
                 );
                 ui.label(tr("Rings"));
-                ui.add(egui::DragValue::new(count).range(1..=20));
+                ui.add(NumberField::new(count).range(1..=20));
                 ui.end_row();
                 number(ui, tr("Black"), black_mm, 0.0..=5000.0, 0.5, " mm");
             }

@@ -6,6 +6,27 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Number fields:** a decimal comma counts ("3,8" was read as 3), and a
+  typed unit is converted ("140 gr" in a gram field, "50 F" in a °C field,
+  "1,5\"" in a cm field). Text that can't be read, or a number outside the
+  field's range, keeps the value from before with a note saying why,
+  instead of quietly becoming the nearest allowed number. Escape puts the
+  old value back.
+- **Phones:** a swipe that starts on a number field scrolls the page; it
+  used to change the number.
+- **Delete:** a double click or double tap can't confirm a delete any more;
+  "Really delete?" takes clicks after a moment, and Cancel takes the first
+  button's place. Deleting the synced copy asks in a dialog of its own.
+- **Back and reload in the web version:** on a phone, Back (and the swipe
+  back) closes the open editor or sheet instead of leaving the app, and
+  asks before dropping unsaved changes, as the ‹ links now do too.
+  Leaving or reloading the page with unsaved changes asks first.
+- The bullet form warns about a muzzle velocity no rifle load has (a
+  number typed in fps in an m/s field, say). The rifle and bullet forms say
+  that the barrel and test-barrel lengths don't change the velocity used.
+
 ## [0.9.1] - 2026-11-02
 
 ### Added

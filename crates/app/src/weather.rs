@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::calculator::{Inputs, PressureSource};
 use crate::http::{self, Method, Request};
 use crate::i18n::{tr, trf};
+use crate::number_field::NumberField;
 use crate::units::{self, Quantity};
 
 const FORECAST: &str = "https://api.open-meteo.com/v1/forecast";
@@ -362,7 +363,7 @@ impl Weather {
         ui.horizontal_wrapped(|ui| {
             ui.label(tr("Shooting towards"));
             ui.add(
-                egui::DragValue::new(&mut inputs.azimuth_degrees)
+                NumberField::new(&mut inputs.azimuth_degrees)
                     .range(0.0..=359.0)
                     .speed(1.0)
                     .suffix("°"),

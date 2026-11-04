@@ -404,6 +404,24 @@ mod tests {
             &mut options,
             "Really delete?",
         );
+        assert_eq!(library.designs.len(), 2, "a double click can't confirm");
+        // A second later (frames are 1/60 s apart here).
+        for _ in 0..60 {
+            draw(
+                &context,
+                &mut editor,
+                &mut library,
+                &mut options,
+                Vec::new(),
+            );
+        }
+        click(
+            &context,
+            &mut editor,
+            &mut library,
+            &mut options,
+            "Really delete?",
+        );
         assert_eq!(library.designs.len(), 1);
         assert_eq!(library.designs[0].name, "Original");
         assert_eq!(editor.selected, None);

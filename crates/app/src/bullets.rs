@@ -13,6 +13,7 @@ use egui_plot::{Line, Plot, PlotPoints};
 use crate::app::{Action, Data};
 use crate::i18n::{tr, tr_data, trf};
 use crate::mobile;
+use crate::number_field::NumberField;
 use crate::theme;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{
@@ -34,6 +35,9 @@ pub struct BulletsPage {
     /// Text pasted into the drag curve editor.
     curve_paste: String,
     editing: Option<Bullet>,
+    /// A bullet added by hand as it was opened, so an untouched one isn't
+    /// taken for unsaved changes.
+    blank: Option<Bullet>,
     catalog_text: String,
     catalog_kind: Option<CatalogKind>,
     lead_free_only: bool,
@@ -50,6 +54,7 @@ impl Default for BulletsPage {
             editor_caliber_search: String::new(),
             curve_paste: String::new(),
             editing: None,
+            blank: None,
             catalog_text: String::new(),
             catalog_kind: None,
             lead_free_only: false,
@@ -59,6 +64,28 @@ impl Default for BulletsPage {
 }
 
 impl BulletsPage {
+    #[cfg(target_arch = "wasm32")]
+    /// Views open over the list on a phone: the editor.
+    pub fn depth(&self) -> usize {
+        usize::from(self.view == View::Collection && self.editing.is_some())
+    }
+
+    /// Back to the list, dropping the open editor's unsaved changes.
+    pub fn back(&mut self) {
+        self.editing = None;
+    }
+
+    /// The open editor has changes that aren't saved.
+    pub fn unsaved(&self, data: &Data) -> bool {
+        let Some(bullet) = &self.editing else {
+            return false;
+        };
+        match data.bullets.iter().find(|stored| stored.id == bullet.id) {
+            Some(stored) => stored != bullet,
+            None => self.blank.as_ref() != Some(bullet),
+        }
+    }
+
     pub fn show_caliber(&mut self, caliber: &str) {
         self.caliber = caliber.to_owned();
         self.view = View::Collection;
@@ -119,7 +146,7 @@ impl BulletsPage {
                 if self.editing.is_none() {
                     self.collection_list(ui, data, true);
                 } else if mobile::back_button(ui, tr("My bullets")) {
-                    self.editing = None;
+                    actions.push(Action::Back);
                 } else {
                     self.collection_editor(ui, data, actions);
                 }
@@ -155,10 +182,12 @@ impl BulletsPage {
             }
             if ui.button(tr("Add by hand")).clicked() {
                 let caliber = Catalog::builtin().caliber(&self.caliber);
-                self.editing = Some(match caliber {
+                let bullet = match caliber {
                     Some(caliber) => Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm),
                     None => Bullet::new_manual("", 0.0),
-                });
+                };
+                self.blank = Some(bullet.clone());
+                self.editing = Some(bullet);
             }
         });
         if !self.caliber.is_empty() {
@@ -433,7 +462,10 @@ impl BulletsPage {
                 });
             });
             if let Some(entry) = chosen {
-                self.editing = Some(entry.to_collection(caliber));
+                let bullet = entry.to_collection(caliber);
+                // Only looked at, it isn't an unsaved change.
+                self.blank = Some(bullet.clone());
+                self.editing = Some(bullet);
                 self.view = View::Collection;
             }
         });
@@ -511,6 +543,27 @@ fn editor(
             1.0,
         );
     });
+    // Rifle loads run from about 300 m/s (subsonic) to 1300 (.204 Ruger);
+    // outside that, the number was most likely typed in the wrong unit.
+    let velocity = bullet.muzzle_velocity_mps;
+    // 0 is a new bullet's "not entered yet", which the form already says.
+    if velocity > 0.0 && !(250.0..=1300.0).contains(&velocity) {
+        let shown = units::prefs(ui.ctx()).format(Quantity::Speed, velocity);
+        ui.colored_label(
+            ui.visuals().warn_fg_color,
+            if velocity > 1300.0 {
+                trf!(
+                    "{} is faster than any rifle load: check the number and unit.",
+                    shown
+                )
+            } else {
+                trf!(
+                    "{} is slower than any rifle load: check the number and unit.",
+                    shown
+                )
+            },
+        );
+    }
     if bullet.length_mm.is_none() {
         ui.weak(tr(
             "Without a length, stability, spin drift and aerodynamic jump are skipped.",
@@ -600,6 +653,13 @@ fn editor(
                 "A typical {} is filled in; measure your own for cold-weather accuracy.",
                 u.format(Quantity::Sensitivity, 0.5)
             ));
+            if bullet.test_barrel_mm.is_some() {
+                ui.weak(tr(
+                    "The velocity is used as given: a test barrel longer or shorter than \
+                     yours isn't corrected for. Add the velocity measured in your rifle \
+                     under the rifle's Loads.",
+                ));
+            }
         },
     );
     let construction = |ui: &mut egui::Ui, bullet: &mut Bullet| {
@@ -665,7 +725,7 @@ fn bc_band_rows(ui: &mut egui::Ui, bullet: &mut Bullet) {
         for (index, band) in bullet.bc_bands.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.add(
-                    egui::DragValue::new(&mut band.bc)
+                    NumberField::new(&mut band.bc)
                         .range(0.05..=1.2)
                         .speed(0.001)
                         .prefix("BC "),
@@ -731,8 +791,8 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
                 let mut remove = None;
                 for (index, point) in bullet.drag_curve.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.add(egui::DragValue::new(&mut point.mach).range(0.0..=10.0).speed(0.005).prefix("Mach "));
-                        ui.add(egui::DragValue::new(&mut point.cd).range(0.001..=2.999).speed(0.001).prefix("Cd "));
+                        ui.add(NumberField::new(&mut point.mach).range(0.0..=10.0).speed(0.005).prefix("Mach "));
+                        ui.add(NumberField::new(&mut point.cd).range(0.001..=2.999).speed(0.001).prefix("Cd "));
                         if ui.small_button("✖").on_hover_text(tr("Remove")).clicked() {
                             remove = Some(index);
                         }

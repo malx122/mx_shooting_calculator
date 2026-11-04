@@ -9,6 +9,7 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use crate::i18n::tr;
+use crate::number_field::{NumberField, TypedUnit};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Quantity {
@@ -158,6 +159,60 @@ const BULLET_MASS: [Unit; 2] = [unit("g", 1.0, 2), unit("gr", 15.432_358, 1)];
 const MILLIMETRES: [Unit; 2] = [unit("mm", 1.0, 2), unit("in", 1.0 / MM_PER_INCH, 3)];
 const TWIST: [Unit; 2] = [unit("in", 1.0, 2), unit("mm", MM_PER_INCH, 0)];
 
+impl Quantity {
+    /// Units a hunter may type in this quantity's fields besides those on
+    /// offer: "38 mm" for a sight height in cm.
+    fn extra_units(self) -> &'static [Unit] {
+        const SHORT: [Unit; 2] = [unit("mm", 10.0, 0), unit("m", 0.01, 2)];
+        const LONG: [Unit; 1] = [unit("km", 0.001, 3)];
+        const CENTIMETRES: [Unit; 1] = [unit("cm", 0.1, 1)];
+        const TWIST_CM: [Unit; 1] = [unit("cm", 2.54, 1)];
+        match self {
+            Quantity::ShortLength | Quantity::SightHeight => &SHORT,
+            Quantity::Distance => &LONG,
+            Quantity::BulletLength | Quantity::BulletDiameter | Quantity::BarrelLength => {
+                &CENTIMETRES
+            }
+            Quantity::Twist => &TWIST_CM,
+            _ => &[],
+        }
+    }
+
+    /// What a hunter may type in a field showing `field`, converted to it.
+    pub fn typed_units(self, field: Unit) -> Vec<TypedUnit> {
+        self.units()
+            .iter()
+            .chain(self.extra_units())
+            .map(|typed| {
+                // field = show(base(typed))
+                let scale = field.scale / typed.scale;
+                TypedUnit {
+                    labels: spellings(typed.label),
+                    scale,
+                    offset: field.offset - typed.offset * scale,
+                }
+            })
+            .collect()
+    }
+}
+
+/// The ways a unit is commonly written.
+fn spellings(label: &'static str) -> Vec<&'static str> {
+    let more: &[&'static str] = match label {
+        "in" => &["\"", "inch", "inches", "tum"],
+        "gr" => &["grain", "grains"],
+        "fps" => &["ft/s"],
+        "°C" => &["C"],
+        "°F" => &["F"],
+        "yd" => &["yds", "yard", "yards"],
+        "ft" => &["feet"],
+        "hPa" => &["mbar"],
+        "m/s" => &["ms"],
+        _ => &[],
+    };
+    std::iter::once(label).chain(more.iter().copied()).collect()
+}
+
 impl Unit {
     pub fn show(&self, base: f64) -> f64 {
         base * self.scale + self.offset
@@ -272,11 +327,12 @@ pub fn drag(
     let (low, high) = (unit.show(*range.start()), unit.show(*range.end()));
     let mut shown = unit.show(*value);
     let response = ui.add(
-        egui::DragValue::new(&mut shown)
+        NumberField::new(&mut shown)
             .range(low.min(high)..=low.max(high))
             .speed(speed * unit.scale.abs())
             .max_decimals(unit.decimals + 1)
-            .suffix(format!(" {}", unit.label)),
+            .suffix(format!(" {}", unit.label))
+            .units(quantity.typed_units(unit)),
     );
     if response.changed() {
         *value = unit.base(shown);

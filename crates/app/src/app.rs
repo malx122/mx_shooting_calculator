@@ -74,6 +74,8 @@ pub enum Page {
 
 pub enum Action {
     Goto(Page),
+    /// Back one view, as the ‹ links and the browser's Back do.
+    Back,
     ShowBulletsFor(String),
     /// Open a bullet's setup in a rifle (rifle id, bullet id).
     EditLoad(String, String),
@@ -220,6 +222,10 @@ pub struct App {
     whats_new_open: bool,
     /// The desktop's About window is open.
     about_open: bool,
+    /// When Back was asked for with unsaved changes: the dialog is open.
+    discard_asked: Option<f64>,
+    /// This frame's time (egui's clock).
+    now: f64,
     /// The hunter's data changed this frame: sync it.
     data_changed: bool,
     /// A backup picked in the browser, waiting to be previewed.
@@ -279,6 +285,8 @@ impl App {
             asking_country: false,
             whats_new_open: false,
             about_open: false,
+            discard_asked: None,
+            now: 0.0,
             status_seen: None,
             data_changed: false,
             store,
@@ -396,6 +404,10 @@ impl App {
         let result = match action {
             Action::Goto(page) => {
                 self.page = page;
+                return;
+            }
+            Action::Back => {
+                self.back();
                 return;
             }
             Action::EditLoad(rifle_id, bullet_id) => {
@@ -611,6 +623,11 @@ impl eframe::App for App {
         self.units.install(context);
         mobile::apply_style(context);
         let narrow = mobile::is_narrow(context);
+        self.now = context.input(|input| input.time);
+        #[cfg(target_arch = "wasm32")]
+        for _ in 0..crate::web::take_backs() {
+            self.back();
+        }
         if narrow {
             self.phone_header(ui);
             self.tab_bar(ui);
@@ -655,8 +672,119 @@ impl eframe::App for App {
         self.collect_picked_file();
         self.import_window(context);
         self.welcome(context);
+        self.discard_dialog(context);
         self.persist_inputs(context);
         self.run_sync(context);
+        #[cfg(target_arch = "wasm32")]
+        crate::web::navigation(context, self.depth(context), self.unsaved());
+    }
+}
+
+impl App {
+    #[cfg(target_arch = "wasm32")]
+    /// Views open over the page on a phone, each one a step for Back.
+    fn depth(&self, context: &egui::Context) -> usize {
+        if !mobile::is_narrow(context) {
+            return 0;
+        }
+        let overlays = usize::from(self.menu.is_some())
+            + usize::from(self.import.is_some())
+            + usize::from(self.sync.dialog_open());
+        overlays
+            + match self.page {
+                Page::Calculate => self.calculator.depth(),
+                Page::Rifles => self.rifles.depth(),
+                Page::Bullets => self.bullets.depth(),
+                Page::Targets => self.targets.depth(),
+                Page::Cards => 0,
+                // Over Calculate, where its ‹ link goes.
+                Page::ShotLog => 1 + self.shot_log.depth(),
+            }
+    }
+
+    /// Back one view: an open dialog or the menu first. Asks first when
+    /// that would drop unsaved changes.
+    fn back(&mut self) {
+        if self.discard_asked.is_some() {
+            return;
+        }
+        if self.sync.dialog_open() {
+            self.sync.close_dialog();
+            return;
+        }
+        if self.import.take().is_some() {
+            return;
+        }
+        if self.menu.take().is_some() {
+            return;
+        }
+        let unsaved = match self.page {
+            Page::Rifles => self.rifles.unsaved(&self.data),
+            Page::Bullets => self.bullets.unsaved(&self.data),
+            Page::Targets => self.targets.unsaved(&self.data),
+            Page::ShotLog => self.shot_log.unsaved(&self.data),
+            Page::Calculate | Page::Cards => false,
+        };
+        if unsaved {
+            self.discard_asked = Some(self.now);
+        } else {
+            self.go_back();
+        }
+    }
+
+    fn go_back(&mut self) {
+        match self.page {
+            Page::Calculate => self.calculator.back(),
+            Page::Rifles => self.rifles.back(),
+            Page::Bullets => self.bullets.back(),
+            Page::Targets => self.targets.back(),
+            Page::Cards => {}
+            Page::ShotLog if self.shot_log.depth() > 0 => self.shot_log.back(),
+            Page::ShotLog => self.page = Page::Calculate,
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    /// Some editor has changes that aren't saved.
+    fn unsaved(&self) -> bool {
+        self.rifles.unsaved(&self.data)
+            || self.bullets.unsaved(&self.data)
+            || self.targets.unsaved(&self.data)
+            || self.shot_log.unsaved(&self.data)
+    }
+
+    /// "Discard your changes?", when Back would drop them.
+    fn discard_dialog(&mut self, context: &egui::Context) {
+        let Some(asked_at) = self.discard_asked else {
+            return;
+        };
+        let width = (context.content_rect().width() - 48.0).min(400.0);
+        let mut keep = false;
+        let mut discard = false;
+        let modal = egui::Modal::new(egui::Id::unique("discard-changes")).show(context, |ui| {
+            ui.set_width(width);
+            ui.heading(tr("Discard your changes?"));
+            ui.label(tr("They aren't saved yet."));
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                keep = ui.button(tr("Keep editing")).clicked();
+                let ready = crate::widgets::confirm_ready(ui, asked_at);
+                discard = ui
+                    .add_enabled(
+                        ready,
+                        egui::Button::new(
+                            egui::RichText::new(tr("Discard")).color(ui.visuals().error_fg_color),
+                        ),
+                    )
+                    .clicked();
+            });
+        });
+        if keep || discard || modal.should_close() {
+            self.discard_asked = None;
+        }
+        if discard {
+            self.go_back();
+        }
     }
 }
 

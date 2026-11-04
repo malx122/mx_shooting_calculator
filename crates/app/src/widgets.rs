@@ -6,6 +6,7 @@ use ballistics_store::{Caliber, Catalog, FocalPlane, PLAIN_CROSSHAIR, Reticle, S
 use eframe::egui::{self, RichText};
 
 use crate::i18n::{tr, trf};
+use crate::number_field::NumberField;
 
 /// A folded section whose header also tells what is inside, so it needs
 /// opening only to change it: "Weather   3.6 °C · 1013 hPa · Mora".
@@ -71,7 +72,7 @@ pub fn number(
 ) {
     ui.label(label);
     ui.add(
-        egui::DragValue::new(value)
+        NumberField::new(value)
             .range(range)
             .speed(speed)
             .suffix(suffix),
@@ -98,7 +99,7 @@ pub fn optional_number(
         match value {
             Some(number) => {
                 ui.add(
-                    egui::DragValue::new(number)
+                    NumberField::new(number)
                         .range(range)
                         .speed(speed)
                         .suffix(suffix),
@@ -166,27 +167,52 @@ pub fn caliber_picker(
     chosen
 }
 
+/// How long a confirm button ignores clicks after it appears, so that the
+/// second click of a double click (or tap) can't confirm.
+const CONFIRM_AFTER_S: f64 = 0.6;
+
+/// Whether a confirm button shown at `shown_at` (egui time) takes clicks yet.
+pub fn confirm_ready(ui: &egui::Ui, shown_at: f64) -> bool {
+    let waited = ui.input(|input| input.time) - shown_at;
+    if waited < CONFIRM_AFTER_S {
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_secs_f64(CONFIRM_AFTER_S - waited));
+        false
+    } else {
+        true
+    }
+}
+
 /// A button that needs a second click to confirm. Returns true on confirm.
+/// Cancel takes the first button's place, and "Really …?" only takes
+/// clicks after a moment, so a double click can't confirm.
 pub fn confirm_button(ui: &mut egui::Ui, id: &str, label: &str) -> bool {
     let id = ui.scope_id().with(id);
-    let armed = ui.data(|data| data.get_temp::<bool>(id).unwrap_or(false));
-    if armed {
-        let confirmed = ui
-            .button(
+    let Some(shown_at) = ui.data(|data| data.get_temp::<f64>(id)) else {
+        if ui.button(label).clicked() {
+            let now = ui.input(|input| input.time);
+            ui.data_mut(|data| data.insert_temp(id, now));
+        }
+        return false;
+    };
+    if ui.button(tr("Cancel")).clicked() {
+        ui.data_mut(|data| data.remove::<f64>(id));
+        return false;
+    }
+    let ready = confirm_ready(ui, shown_at);
+    let confirmed = ui
+        .add_enabled(
+            ready,
+            egui::Button::new(
                 RichText::new(trf!("Really {}?", label.to_lowercase()))
                     .color(ui.visuals().error_fg_color),
-            )
-            .clicked();
-        if ui.button(tr("Cancel")).clicked() || confirmed {
-            ui.data_mut(|data| data.insert_temp(id, false));
-        }
-        confirmed
-    } else {
-        if ui.button(label).clicked() {
-            ui.data_mut(|data| data.insert_temp(id, true));
-        }
-        false
+            ),
+        )
+        .clicked();
+    if confirmed {
+        ui.data_mut(|data| data.remove::<f64>(id));
     }
+    confirmed
 }
 
 /// What the scope picker changed: a scope was chosen, or the scope removed.

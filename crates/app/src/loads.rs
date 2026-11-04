@@ -11,6 +11,7 @@ use eframe::egui::{self, RichText};
 
 use crate::app::Action;
 use crate::i18n::{tr, trf};
+use crate::number_field::NumberField;
 use crate::units::{self, Quantity, quantity};
 use crate::widgets::{confirm_button, grid, number};
 
@@ -112,6 +113,25 @@ pub fn summary(
 }
 
 impl LoadEditor {
+    /// The draft for `rifle` has changes that aren't saved.
+    pub fn unsaved(&self, rifle: &Rifle, data: &crate::app::Data) -> bool {
+        let Some(draft) = self
+            .draft
+            .as_ref()
+            .filter(|draft| draft.rifle_id == rifle.id)
+        else {
+            return false;
+        };
+        let saved = data
+            .loads
+            .iter()
+            .find(|load| load.rifle_id == draft.rifle_id && load.bullet_id == draft.bullet_id);
+        match saved {
+            Some(saved) => !same_content(saved, draft),
+            None => !draft.is_empty() || !draft.notes.is_empty(),
+        }
+    }
+
     /// Drops unsaved edits, e.g. after the load was reset.
     pub fn forget(&mut self) {
         self.draft = None;
@@ -368,7 +388,7 @@ impl LoadEditor {
                     ui.label(label);
                     let mut value = from_radians(unit, draft.impact_offset_mrad[index] / 1000.0);
                     let response = ui.add(
-                        egui::DragValue::new(&mut value)
+                        NumberField::new(&mut value)
                             .speed(0.01)
                             .fixed_decimals(2)
                             .suffix(format!(" {}", unit_label(unit))),
@@ -600,7 +620,7 @@ fn truing(
         ui.label(tr("It took"));
         ui.horizontal(|ui| {
             ui.add(
-                egui::DragValue::new(&mut form.elevation)
+                NumberField::new(&mut form.elevation)
                     .speed(0.05)
                     .fixed_decimals(2)
                     .suffix(format!(" {}", unit_label(unit))),

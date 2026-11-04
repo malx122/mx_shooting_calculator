@@ -10,6 +10,7 @@ use crate::app::{Action, Data};
 use crate::i18n::{tr, trf};
 use crate::loads::LoadEditor;
 use crate::mobile;
+use crate::number_field::NumberField;
 use crate::sight_picture::reticle_preview;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{
@@ -30,6 +31,10 @@ pub struct RiflesPage {
     /// The bullet whose load in the open rifle is shown.
     load_bullet: Option<String>,
     loads: LoadEditor,
+    /// A new rifle or scope as it was opened, so an untouched one isn't
+    /// taken for unsaved changes.
+    blank_rifle: Option<Rifle>,
+    blank_scope: Option<UserScope>,
 }
 
 impl Default for RiflesPage {
@@ -40,11 +45,51 @@ impl Default for RiflesPage {
             scope_search: String::new(),
             load_bullet: None,
             loads: LoadEditor::default(),
+            blank_rifle: None,
+            blank_scope: None,
         }
     }
 }
 
 impl RiflesPage {
+    #[cfg(target_arch = "wasm32")]
+    /// Views open over the list on a phone: the editor.
+    pub fn depth(&self) -> usize {
+        usize::from(!matches!(self.editing, Editing::Nothing))
+    }
+
+    /// Back to the list, dropping the open editor's unsaved changes.
+    pub fn back(&mut self) {
+        self.editing = Editing::Nothing;
+        self.loads.forget();
+    }
+
+    /// The open editor has changes that aren't saved.
+    pub fn unsaved(&self, data: &Data) -> bool {
+        match &self.editing {
+            Editing::Nothing => false,
+            Editing::Rifle(rifle) => {
+                let changed = match data.rifles.iter().find(|stored| stored.id == rifle.id) {
+                    Some(stored) => stored != rifle,
+                    None => self.blank_rifle.as_ref() != Some(rifle),
+                };
+                changed || self.loads.unsaved(rifle, data)
+            }
+            Editing::Scope(scope) => {
+                match data.scopes.iter().find(|stored| stored.id == scope.id) {
+                    Some(stored) => stored != scope,
+                    None => self.blank_scope.as_ref() != Some(scope),
+                }
+            }
+        }
+    }
+
+    fn new_scope(&mut self) {
+        let scope = UserScope::new();
+        self.blank_scope = Some(scope.clone());
+        self.editing = Editing::Scope(scope);
+    }
+
     /// Opens a rifle with one of its bullets' setup showing.
     pub fn edit_load(&mut self, rifle: &Rifle, bullet_id: &str) {
         if !matches!(&self.editing, Editing::Rifle(editing) if editing.id == rifle.id) {
@@ -64,6 +109,8 @@ impl RiflesPage {
             && editing.id == rifle.id
         {
             editing.table = rifle.table;
+            // The save's time too, or the draft would look changed.
+            editing.updated_at = rifle.updated_at;
         }
     }
 
@@ -108,11 +155,13 @@ impl RiflesPage {
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| self.phone_list(ui, data, &mut actions));
                 } else {
-                    let back = mobile::back_button(ui, tr("Rifles"));
+                    if mobile::back_button(ui, tr("Rifles")) {
+                        actions.push(Action::Back);
+                    }
                     let cancel = egui::ScrollArea::vertical()
                         .show(ui, |ui| self.editor(ui, data, &mut actions))
                         .inner;
-                    if back || cancel {
+                    if cancel {
                         self.editing = Editing::Nothing;
                     }
                 }
@@ -191,7 +240,7 @@ impl RiflesPage {
         ui.heading(tr("My scopes"));
         ui.weak(tr("For scopes that aren't in the catalog."));
         if ui.button(tr("+ New scope")).clicked() {
-            self.editing = Editing::Scope(UserScope::new());
+            self.new_scope();
         }
         for scope in &data.scopes {
             if mobile::list_row(ui, &scope.display_name(), "", false).clicked() {
@@ -204,7 +253,9 @@ impl RiflesPage {
         let caliber = Catalog::builtin()
             .caliber("308-win")
             .expect("308 Win is in the catalog");
-        self.editing = Editing::Rifle(Rifle::new("", &caliber.key, caliber.typical_twist_in));
+        let rifle = Rifle::new("", &caliber.key, caliber.typical_twist_in);
+        self.blank_rifle = Some(rifle.clone());
+        self.editing = Editing::Rifle(rifle);
     }
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
@@ -238,7 +289,7 @@ impl RiflesPage {
         ui.heading(tr("My scopes"));
         ui.weak(tr("For scopes that aren't in the catalog."));
         if ui.button(tr("+ New scope")).clicked() {
-            self.editing = Editing::Scope(UserScope::new());
+            self.new_scope();
         }
         ui.add_space(4.0);
         for scope in &data.scopes {
@@ -490,6 +541,10 @@ fn rifle_fields(
             });
             ui.end_row();
         });
+        ui.weak(tr(
+            "The barrel length is for your records: the calculation doesn't change the \
+             velocity for it. Add your measured velocity under Loads in this rifle.",
+        ));
     });
     let weather = format!(
         "{} · {} · {} %",
@@ -594,7 +649,7 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
                     };
                 }
                 ui.add(
-                    egui::DragValue::new(&mut rifle.click_value)
+                    NumberField::new(&mut rifle.click_value)
                         .range(0.01..=1.0)
                         .speed(0.005)
                         .suffix(tr(" a click")),
@@ -695,14 +750,14 @@ fn scope_editor(
         ui.label(tr("Magnification"));
         ui.horizontal(|ui| {
             ui.add(
-                egui::DragValue::new(&mut scope.magnification_min)
+                NumberField::new(&mut scope.magnification_min)
                     .range(1.0..=100.0)
                     .speed(0.1)
                     .suffix("×"),
             );
             ui.label(tr("to"));
             ui.add(
-                egui::DragValue::new(&mut scope.magnification_max)
+                NumberField::new(&mut scope.magnification_max)
                     .range(1.0..=100.0)
                     .speed(0.1)
                     .suffix("×"),
@@ -738,7 +793,7 @@ fn scope_editor(
                 .reticle_reference_magnification
                 .get_or_insert(scope.magnification_max);
             ui.add(
-                egui::DragValue::new(reference)
+                NumberField::new(reference)
                     .range(1.0..=100.0)
                     .speed(0.1)
                     .suffix("×"),
@@ -751,7 +806,7 @@ fn scope_editor(
                 ui.selectable_value(&mut scope.click_unit, unit, unit.label());
             }
             ui.add(
-                egui::DragValue::new(&mut scope.click_value)
+                NumberField::new(&mut scope.click_value)
                     .range(0.01..=5.0)
                     .speed(0.01)
                     .prefix(tr("per click ")),
@@ -777,14 +832,14 @@ fn scope_editor(
             match &mut scope.fov_m_at_100m {
                 Some([wide, narrow]) => {
                     ui.add(
-                        egui::DragValue::new(wide)
+                        NumberField::new(wide)
                             .range(0.1..=60.0)
                             .speed(0.1)
                             .suffix(" m"),
                     );
                     ui.label(tr("to"));
                     ui.add(
-                        egui::DragValue::new(narrow)
+                        NumberField::new(narrow)
                             .range(0.1..=60.0)
                             .speed(0.1)
                             .suffix(" m"),

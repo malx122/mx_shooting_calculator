@@ -372,6 +372,22 @@ pub struct CalculatorPage {
 }
 
 impl CalculatorPage {
+    #[cfg(target_arch = "wasm32")]
+    /// Views open over the results on a phone: the inputs page, a picker.
+    pub fn depth(&self) -> usize {
+        usize::from(self.phone_view != phone::PhoneView::Results)
+            + usize::from(self.picker.is_some())
+    }
+
+    /// Closes the picker, or goes back to the results.
+    pub fn back(&mut self) {
+        if self.picker.is_some() {
+            self.picker = None;
+        } else {
+            self.phone_view = phone::PhoneView::Results;
+        }
+    }
+
     pub fn new(inputs: Inputs) -> Self {
         Self {
             inputs,

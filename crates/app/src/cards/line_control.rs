@@ -3,6 +3,7 @@
 use eframe::egui;
 
 use crate::i18n::tr;
+use crate::number_field::NumberField;
 
 pub(super) fn show(ui: &mut egui::Ui, start: &mut f32, end: &mut f32) -> egui::Response {
     let normalized_end = if end.is_finite() {
@@ -22,7 +23,7 @@ pub(super) fn show(ui: &mut egui::Ui, start: &mut f32, end: &mut f32) -> egui::R
     ui.horizontal_wrapped(|ui| {
         ui.label(tr("Start"));
         ui.add(
-            egui::DragValue::new(&mut low)
+            NumberField::new(&mut low)
                 .range(0.0..=high)
                 .speed(0.1)
                 .fixed_decimals(1)
@@ -30,7 +31,7 @@ pub(super) fn show(ui: &mut egui::Ui, start: &mut f32, end: &mut f32) -> egui::R
         );
         ui.label(tr("End"));
         ui.add(
-            egui::DragValue::new(&mut high)
+            NumberField::new(&mut high)
                 .range(low..=100.0)
                 .speed(0.1)
                 .fixed_decimals(1)

@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use crate::app::{Action, Page};
 use crate::i18n::{tr, trf};
 use crate::mobile;
+use crate::number_field::NumberField;
 use crate::theme;
 use crate::units::{self, Quantity, UnitPrefs};
 use crate::widgets::{confirm_button, fold_with, grid};
@@ -874,7 +875,7 @@ impl CardsPage {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(tr("Copies on the sheet"));
-            ui.add(egui::DragValue::new(&mut options.look.copies).range(1..=8));
+            ui.add(NumberField::new(&mut options.look.copies).range(1..=8));
         });
     }
 
@@ -1025,7 +1026,7 @@ impl CardsPage {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(tr("Copies on the sheet"));
-            ui.add(egui::DragValue::new(&mut options.copies).range(1..=8));
+            ui.add(NumberField::new(&mut options.copies).range(1..=8));
         });
     }
 
@@ -1662,7 +1663,7 @@ fn turret_measures(
         grid(ui, "turret-size", |ui| {
             ui.label(tr("Diameter"));
             ui.add(
-                egui::DragValue::new(&mut turret.diameter_mm)
+                NumberField::new(&mut turret.diameter_mm)
                     .range(10.0..=80.0)
                     .speed(0.1)
                     .max_decimals(1)
@@ -1671,7 +1672,7 @@ fn turret_measures(
             ui.end_row();
             ui.label(tr("Height"));
             ui.add(
-                egui::DragValue::new(&mut turret.height_mm)
+                NumberField::new(&mut turret.height_mm)
                     .range(5.0..=40.0)
                     .speed(0.1)
                     .max_decimals(1)
@@ -1707,7 +1708,7 @@ fn turret_measures(
                         }
                     });
                 ui.add(
-                    egui::DragValue::new(&mut turret.thickness_mm)
+                    NumberField::new(&mut turret.thickness_mm)
                         .range(0.0..=1.0)
                         .speed(0.01)
                         .max_decimals(2)
@@ -1722,7 +1723,7 @@ fn turret_measures(
             ui.label(tr("Clicks a turn"));
             ui.horizontal(|ui| {
                 ui.add(
-                    egui::DragValue::new(&mut turret.clicks_per_turn)
+                    NumberField::new(&mut turret.clicks_per_turn)
                         .range(10..=400)
                         .speed(1.0),
                 );
@@ -2039,7 +2040,7 @@ fn bearing(ui: &mut egui::Ui, degrees: &mut f64) {
     let mut shown = degrees.rem_euclid(360.0);
     if ui
         .add(
-            egui::DragValue::new(&mut shown)
+            NumberField::new(&mut shown)
                 .range(0.0..=359.0)
                 .speed(1.0)
                 .max_decimals(0)

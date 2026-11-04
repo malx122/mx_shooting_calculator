@@ -23,7 +23,7 @@ use crate::google;
 use crate::http::{self, Method, Request};
 use crate::i18n::{tr, trf};
 use crate::theme;
-use crate::widgets::confirm_button;
+use crate::widgets::confirm_ready;
 
 /// The device-local setting with the key or Google sign-in (never exported).
 const SETTING: &str = "sync";
@@ -161,6 +161,8 @@ pub struct Sync {
     pub offered: Option<SyncKey>,
     /// The desktop window is open.
     pub window_open: bool,
+    /// When the hunter asked to delete the synced copy: the dialog is open.
+    asked_to_delete: Option<f64>,
 }
 
 impl Sync {
@@ -193,6 +195,7 @@ impl Sync {
             join_error: None,
             offered: None,
             window_open: false,
+            asked_to_delete: None,
         }
     }
 
@@ -777,13 +780,64 @@ impl Sync {
             {
                 self.turn_off(store);
             }
-            if !busy
-                && !self.needs_sign_in
-                && confirm_button(ui, "delete-synced-copy", tr("Delete the synced copy"))
+            if !busy && !self.needs_sign_in && ui.button(tr("Delete the synced copy…")).clicked()
             {
-                self.delete_shared(context);
+                self.asked_to_delete = Some(ui.input(|input| input.time));
             }
         });
+        if let Some(asked_at) = self.asked_to_delete {
+            self.delete_dialog(context, asked_at);
+        }
+    }
+
+    /// The delete dialog is open.
+    pub fn dialog_open(&self) -> bool {
+        self.asked_to_delete.is_some()
+    }
+
+    pub fn close_dialog(&mut self) {
+        self.asked_to_delete = None;
+    }
+
+    /// Deleting the copy every device syncs with gets a dialog of its own,
+    /// not a second click on the same spot.
+    fn delete_dialog(&mut self, context: &egui::Context, asked_at: f64) {
+        let width = (context.content_rect().width() - 48.0).min(400.0);
+        let mut delete = false;
+        let mut close = false;
+        let modal = egui::Modal::new(egui::Id::unique("delete-synced-copy")).show(context, |ui| {
+            ui.set_width(width);
+            ui.heading(tr("Delete the synced copy?"));
+            ui.label(tr(
+                "The copy your devices sync with is deleted, and sync stops on all of them. \
+                 Each device keeps the data it has.",
+            ));
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                if ui.button(tr("Cancel")).clicked() {
+                    close = true;
+                }
+                let ready = confirm_ready(ui, asked_at);
+                if ui
+                    .add_enabled(
+                        ready,
+                        egui::Button::new(
+                            RichText::new(tr("Delete the synced copy"))
+                                .color(ui.visuals().error_fg_color),
+                        ),
+                    )
+                    .clicked()
+                {
+                    delete = true;
+                }
+            });
+        });
+        if close || delete || modal.should_close() {
+            self.asked_to_delete = None;
+        }
+        if delete && self.phase == Phase::Idle && !self.needs_sign_in {
+            self.delete_shared(context);
+        }
     }
 
     fn off_panel(&mut self, ui: &mut egui::Ui, store: &Store, context: &egui::Context) {

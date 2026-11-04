@@ -19,6 +19,7 @@ use crate::app::{Action, Data, Page};
 use crate::figure::Figure;
 use crate::i18n::{tr, trf};
 use crate::mobile::{self, TOUCH};
+use crate::number_field::NumberField;
 use crate::sight_picture::{SightPicture, magnification_slider, magnification_text};
 use crate::theme;
 use crate::trajectory3d;
@@ -80,7 +81,7 @@ impl CalculatorPage {
         egui::CentralPanel::default().show(ui, |ui| match self.phone_view {
             PhoneView::Conditions => {
                 if mobile::back_button(ui, tr("Calculate")) {
-                    self.phone_view = PhoneView::Results;
+                    actions.push(Action::Back);
                 }
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     self.equipment(
@@ -367,7 +368,7 @@ impl CalculatorPage {
                     ui.scope(|ui| {
                         ui.style_mut().override_font_id = Some(FontId::proportional(36.0));
                         ui.add(
-                            egui::DragValue::new(&mut inputs.inclination_degrees)
+                            NumberField::new(&mut inputs.inclination_degrees)
                                 .range(-80.0..=80.0)
                                 .speed(0.5)
                                 .max_decimals(1)
@@ -392,7 +393,7 @@ impl CalculatorPage {
             ui.horizontal(|ui| {
                 ui.label(tr("Cant"));
                 ui.add(
-                    egui::DragValue::new(&mut inputs.cant_degrees)
+                    NumberField::new(&mut inputs.cant_degrees)
                         .range(-30.0..=30.0)
                         .speed(0.5)
                         .max_decimals(1)

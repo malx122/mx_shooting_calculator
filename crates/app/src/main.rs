@@ -17,6 +17,7 @@ mod i18n;
 mod import;
 mod loads;
 mod mobile;
+mod number_field;
 mod rifles;
 mod sensors;
 mod shot_log;

@@ -1,7 +1,7 @@
 //! Browser-only pieces: start-up in a canvas, saving a file as a download,
 //! and picking a file to import. The desktop build uses native dialogs.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use ballistics_store::Store;
@@ -597,5 +597,103 @@ pub fn prompt_install() {
             &"mxscInstallPrompt".into(),
             &wasm_bindgen::JsValue::UNDEFINED,
         );
+    }
+}
+
+thread_local! {
+    /// Phone views the browser's history has entries for.
+    static PUSHED: Cell<usize> = const { Cell::new(0) };
+    /// Steps taken with the browser's Back, not yet handled by the app.
+    static BACKS: Cell<usize> = const { Cell::new(0) };
+    /// Some editor has unsaved changes: leaving the page asks first.
+    static UNSAVED: Cell<bool> = const { Cell::new(false) };
+    static NAVIGATING: Cell<bool> = const { Cell::new(false) };
+}
+
+/// The key of the view depth in the history entries' state.
+const DEPTH_KEY: &str = "mxscDepth";
+
+fn depth_state(depth: usize) -> wasm_bindgen::JsValue {
+    let state = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&state, &DEPTH_KEY.into(), &(depth as f64).into());
+    state.into()
+}
+
+/// Steps back taken with the browser's (or the phone's) Back since the last
+/// frame: the app closes that many views.
+pub fn take_backs() -> usize {
+    BACKS.replace(0)
+}
+
+/// Keeps the browser's history in step with the views open over a page on
+/// a phone, `depth`, so Back closes them instead of leaving the app; and
+/// has the browser ask before the page is left or reloaded with `unsaved`
+/// changes.
+pub fn navigation(context: &egui::Context, depth: usize, unsaved: bool) {
+    UNSAVED.set(unsaved);
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Ok(history) = window.history() else {
+        return;
+    };
+    if !NAVIGATING.replace(true) {
+        let reloaded_at = history
+            .state()
+            .ok()
+            .and_then(|state| js_sys::Reflect::get(&state, &DEPTH_KEY.into()).ok())
+            .and_then(|depth| depth.as_f64())
+            .map_or(0, |depth| depth as usize);
+        if reloaded_at > 0 {
+            // Reloaded inside views that are gone now: back to the app's
+            // own entry, so the next Back doesn't seem to do nothing.
+            let _ = history.go_with_delta(-(reloaded_at as i32));
+        } else {
+            let _ = history.replace_state(&depth_state(0), "");
+        }
+        let repaint = context.clone();
+        let popstate = wasm_bindgen::closure::Closure::<dyn FnMut()>::new(move || {
+            let depth = web_sys::window()
+                .and_then(|window| window.history().ok())
+                .and_then(|history| history.state().ok())
+                .and_then(|state| js_sys::Reflect::get(&state, &DEPTH_KEY.into()).ok())
+                .and_then(|depth| depth.as_f64())
+                .map_or(0, |depth| depth as usize);
+            let pushed = PUSHED.replace(depth);
+            // Forward needs nothing: the views can't be opened again, so the
+            // next frame takes the entries off again.
+            if depth < pushed {
+                BACKS.set(BACKS.get() + pushed - depth);
+            }
+            repaint.request_repaint();
+        });
+        let _ =
+            window.add_event_listener_with_callback("popstate", popstate.as_ref().unchecked_ref());
+        popstate.forget();
+        let before_unload = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::Event)>::new(
+            |event: web_sys::Event| {
+                if UNSAVED.get() {
+                    event.prevent_default();
+                    // Older browsers ask only when this is set too.
+                    let _ = js_sys::Reflect::set(&event, &"returnValue".into(), &"".into());
+                }
+            },
+        );
+        let _ = window.add_event_listener_with_callback(
+            "beforeunload",
+            before_unload.as_ref().unchecked_ref(),
+        );
+        before_unload.forget();
+    }
+    let pushed = PUSHED.get();
+    if depth > pushed {
+        for level in pushed + 1..=depth {
+            let _ = history.push_state(&depth_state(level), "");
+        }
+        PUSHED.set(depth);
+    } else if depth < pushed {
+        // Closed in the app: take their entries off the history too.
+        let _ = history.go_with_delta(depth as i32 - pushed as i32);
+        PUSHED.set(depth);
     }
 }
