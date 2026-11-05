@@ -588,11 +588,11 @@
       ]
     },
     "BcBand": {
-      "description": "One BC band: the BC that applies at a velocity.",
+      "description": "One point of a velocity-dependent BC: the BC that applies at a velocity.\nBetween points the BC is interpolated linearly by the bullet's speed\nthrough the air; below the slowest point and above the fastest it stays\nat that point's BC.",
       "type": "object",
       "properties": {
         "velocity_mps": {
-          "description": "From this speed down to the next band's.",
+          "description": "The speed this BC applies at, in m/s. A maker's band that covers a\nrange of speeds (for example \"above 2600 ft/s\") is best given at the\nmiddle of that range.",
           "type": "number",
           "format": "double"
         },

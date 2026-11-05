@@ -759,6 +759,11 @@ fn bc_band_rows(ui: &mut egui::Ui, bullet: &mut Bullet) {
         }
         if bullet.bc_bands.is_empty() {
             ui.weak(tr("none: one BC for all velocities"));
+        } else {
+            ui.weak(tr(
+                "Each BC applies at its speed and is blended in between. For a maker's \
+                 bands, such as \"above 2600 ft/s\", enter each BC at the middle of its band.",
+            ));
         }
     });
     ui.end_row();

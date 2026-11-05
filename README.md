@@ -297,6 +297,9 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      Handloads need your own muzzle velocity before they can be saved.
    - **Manually:** for anything not in the catalog. A bullet can have up to
      five **BCs by velocity band**, interpolated by speed through the air.
+     Each BC applies at the speed given with it; for a maker's band that
+     covers a range of speeds (Sierra's "above 2600 ft/s"), give the BC at
+     the middle of that range.
    - **Own drag curve:** a bullet can use its own measured drag curve (Mach
      against Cd, for example a maker's Doppler-radar data) instead of G1/G7
      and a BC. Enter points or paste a whole table: spaces, tabs, commas,
@@ -981,7 +984,8 @@ Two effects are added to the point-mass flight:
   down as it leaves the muzzle. The app uses Bryan Litz's fit,
   (0.01·Sg − 0.0024·L + 0.032) MOA per mph of crosswind, with Sg the
   stability and L the bullet's length in calibres: with a right-hand twist,
-  wind from the left lifts the bullet and wind from the right lowers it.
+  wind from the right lifts the bullet and wind from the left lowers it
+  (Hornady's 4DOF calculator agrees).
   It needs the bullet's length, and can be switched off.
 - **Cant:** a rifle tilted about the line of sight turns the bore's own
   geometry (its height under the scope and its angle up to the line of
@@ -990,6 +994,19 @@ Two effects are added to the point-mass flight:
   over the line of sight times the sine of the cant (5° at 300 m: a few
   centimetres). The holds are worked out for the tilted reticle, and the
   calculator says how far a level shot would differ.
+
+The air is computed from temperature, pressure and humidity, including
+humidity's effect on the speed of sound. A sea-level pressure from a
+forecast is taken back to the hunter's altitude through air at the day's
+temperature, the way forecasts reduce it. With Coriolis on, gravity follows
+the latitude too (WGS-84), 0.3 % weaker at the equator than at the poles.
+
+**Comparing with ammunition boxes:** US makers' tables are usually worked
+out for the US Army Standard Metro day (59 °F, 29.53 inHg, 78 % humidity),
+about 1.8 % thinner air than the ICAO standard day (15 °C, 1013.25 hPa,
+dry). Enter their weather to compare; in ICAO air the app shows a little
+more drop at long range (about 2 cm at 500 m for a .308, 12 cm at 1000 m
+for a 6.5 Creedmoor).
 
 A point-mass model with one BC is very good at hunting ranges, but it is only
 as good as the BC and muzzle velocity you give it. Chronograph your rifle and

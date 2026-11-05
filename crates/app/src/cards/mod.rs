@@ -136,8 +136,17 @@ impl Subject {
         wind_mps: f64,
         max_range: f64,
     ) -> Result<Solution, SolveError> {
+        // Today's pressure where the hunter stands, kept as the temperature
+        // changes: a forecast's sea-level number would otherwise be taken
+        // back up through the card's colder or warmer air.
+        let pressure = ballistics_shot::Pressure::Station(
+            self.conditions
+                .pressure
+                .station_hpa(self.conditions.temperature_c),
+        );
         let conditions = ballistics_shot::Conditions {
             temperature_c,
+            pressure,
             powder_temperature_c,
             wind_speed_mps: wind_mps,
             wind_clock: 3.0,

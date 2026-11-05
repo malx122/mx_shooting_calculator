@@ -26,6 +26,24 @@ any release may still change things noticeably.
 - The bullet form warns about a muzzle velocity no rifle load has (a
   number typed in fps in an m/s field, say). The rifle and bullet forms say
   that the barrel and test-barrel lengths don't change the velocity used.
+- **Aerodynamic jump went the wrong way.** With a right-hand twist, wind
+  from the right now lifts the bullet and wind from the left lowers it, as
+  in Litz's work and Hornady's 4DOF calculator. Before, it was reversed:
+  in a 4 m/s full crosswind the hold was about 7 cm off at 300 m and 14 cm
+  at 600 m.
+- **Forecast pressure:** a sea-level pressure is taken back to your
+  altitude through air at the day's temperature, the way forecasts reduce
+  it, instead of through the standard atmosphere. On cold days in the
+  mountains the air pressure used was too high: about 1 % at 1000 m and
+  2 % at 2000 m on a −20 °C day.
+- **Air and gravity:** humid air now carries sound a little faster (it
+  changes the Mach number slightly on hot, humid days), and with Coriolis
+  on, gravity follows the latitude. Both are a couple of centimetres at
+  1000 m.
+- **BC by velocity:** the bullet form and the export format now say what
+  a band's speed means: the BC applies at that speed and is blended in
+  between, so a maker's band is best entered at its middle speed. The
+  format used to describe steps, which the calculation never did.
 
 ## [0.9.1] - 2026-11-02
 

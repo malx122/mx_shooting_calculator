@@ -30,10 +30,14 @@ pub enum Pressure {
 }
 
 impl Pressure {
-    pub fn station_hpa(self) -> f64 {
+    /// The pressure where the hunter stands. A sea-level pressure is taken
+    /// back up through air at `temperature_c`, the way forecasts reduce it.
+    pub fn station_hpa(self, temperature_c: f64) -> f64 {
         match self {
             Pressure::Station(hpa) => hpa,
-            Pressure::SeaLevel { hpa, altitude_m } => Atmosphere::station_pressure(hpa, altitude_m),
+            Pressure::SeaLevel { hpa, altitude_m } => {
+                Atmosphere::station_pressure(hpa, altitude_m, temperature_c)
+            }
         }
     }
 }
@@ -90,7 +94,7 @@ impl Conditions {
     pub fn atmosphere(&self) -> Atmosphere {
         Atmosphere {
             temperature_c: self.temperature_c,
-            pressure_hpa: self.pressure.station_hpa(),
+            pressure_hpa: self.pressure.station_hpa(self.temperature_c),
             humidity: self.humidity_percent / 100.0,
         }
     }
@@ -221,7 +225,7 @@ impl Conditions {
     pub fn weather(&self) -> ZeroWeather {
         ZeroWeather {
             temperature_c: self.temperature_c,
-            pressure_hpa: self.pressure.station_hpa(),
+            pressure_hpa: self.pressure.station_hpa(self.temperature_c),
             humidity_percent: self.humidity_percent,
             powder_temperature_c: self.powder_temperature_c(),
         }

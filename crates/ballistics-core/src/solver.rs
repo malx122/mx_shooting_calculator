@@ -15,6 +15,7 @@ use super::atmosphere::Atmosphere;
 use super::drag::{DragCurve, DragModel};
 use super::stability;
 
+/// Standard gravity, used when the latitude isn't known.
 pub const GRAVITY: f64 = 9.806_65;
 const EARTH_ROTATION_RAD_PER_S: f64 = 7.292_115e-5;
 /// BC in lb/in² (the number printed on ammunition boxes) to kg/m².
@@ -179,6 +180,8 @@ impl Wind {
     }
 }
 
+/// The Earth's rotation under the shot (Coriolis and Eötvös). Its latitude
+/// also sets gravity, which is 0.3 % weaker at the equator than at the poles.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Coriolis {
     pub latitude_degrees: f64,
@@ -357,6 +360,14 @@ impl Solution {
     }
 }
 
+/// Gravity at sea level at a latitude: the WGS-84 normal gravity
+/// (Somigliana's formula), 9.780 m/s² at the equator to 9.832 at the poles.
+pub fn normal_gravity(latitude_degrees: f64) -> f64 {
+    let sin2 = latitude_degrees.to_radians().sin().powi(2);
+    9.780_325_335_9 * (1.0 + 0.001_931_852_652_41 * sin2)
+        / (1.0 - 0.006_694_379_990_13 * sin2).sqrt()
+}
+
 pub fn kinetic_energy(mass_kg: f64, velocity: f64) -> f64 {
     0.5 * mass_kg * velocity * velocity
 }
@@ -424,7 +435,8 @@ fn fly_from_zero(scenario: &Scenario, max_range: f64, zero: (f64, f64)) -> Solut
 /// The vertical angle (radians, up positive) a crosswind gives the bullet
 /// at the muzzle: Litz's fit, (0.01·Sg − 0.0024·L + 0.032) MOA per mph of
 /// crosswind, L the bullet's length in calibres. With a right-hand twist,
-/// wind from the left throws it up, from the right down. Needs the
+/// wind from the right throws it up, from the left down (Litz; Hornady's
+/// 4DOF agrees). Needs the
 /// stability, so the bullet's length.
 pub fn aerodynamic_jump(scenario: &Scenario, stability: Option<f64>) -> Option<f64> {
     let sg = stability?;
@@ -439,7 +451,7 @@ pub fn aerodynamic_jump(scenario: &Scenario, stability: Option<f64>) -> Option<f
     } else {
         -1.0
     };
-    Some(-twist * moa_per_mph * from_right_mph * RAD_PER_MOA)
+    Some(twist * moa_per_mph * from_right_mph * RAD_PER_MOA)
 }
 
 /// Flies a level, calm-air shot in the shot's atmosphere with the bore
@@ -707,6 +719,8 @@ struct Flight {
     atmosphere: Atmosphere,
     bullet: Bullet,
     wind: Vec3,
+    /// Standard gravity, or the latitude's when Coriolis gives one.
+    gravity: f64,
     earth_rotation: Option<Vec3>,
     sight_position: Vec3,
     sight_direction: Vec3,
@@ -732,6 +746,9 @@ impl Flight {
             atmosphere: conditions.atmosphere,
             bullet: scenario.bullet.clone(),
             wind: conditions.wind.velocity(),
+            gravity: conditions.coriolis.map_or(GRAVITY, |coriolis| {
+                normal_gravity(coriolis.latitude_degrees)
+            }),
             earth_rotation,
             sight_position: sight_up * scenario.rifle.sight_height_m,
             sight_direction,
@@ -751,7 +768,7 @@ impl Flight {
         let drag_scale = density * std::f64::consts::PI / (8.0 * bc);
         let drag_coefficient = self.bullet.drag_coefficient(speed / speed_of_sound);
         let mut acceleration = airspeed * (-drag_scale * drag_coefficient * speed);
-        acceleration.y -= GRAVITY;
+        acceleration.y -= self.gravity;
         if let Some(rotation) = self.earth_rotation {
             acceleration = acceleration - rotation.cross(velocity) * 2.0;
         }

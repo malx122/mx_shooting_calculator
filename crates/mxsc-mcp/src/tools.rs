@@ -639,7 +639,7 @@ fn conditions(store: &Store, arguments: &Value) -> (Conditions, String) {
     let description = format!(
         "{:.0} °C, {:.0} hPa at the shooter, {:.0} % humidity{}, {wind}, {}",
         conditions.temperature_c,
-        conditions.pressure.station_hpa(),
+        conditions.pressure.station_hpa(conditions.temperature_c),
         conditions.humidity_percent,
         if from_app && number("temperature_c").is_none() {
             " (weather last entered in the app)"

@@ -3,18 +3,18 @@
 
 const DRY_AIR_GAS_CONSTANT: f64 = 287.058;
 const WATER_VAPOUR_GAS_CONSTANT: f64 = 461.495;
-const HEAT_CAPACITY_RATIO: f64 = 1.4;
 const KELVIN_OFFSET: f64 = 273.15;
 pub const STANDARD_SEA_LEVEL_PRESSURE_HPA: f64 = 1013.25;
 const LAPSE_RATE_K_PER_M: f64 = 0.0065;
 /// g·M / (R·L) for the troposphere.
 const BAROMETRIC_EXPONENT: f64 = 5.25588;
+const STANDARD_GRAVITY: f64 = 9.806_65;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Atmosphere {
     pub temperature_c: f64,
-    /// Station pressure, the absolute pressure where you stand (not the
-    /// sea-level QNH value from weather reports).
+    /// Station pressure, the absolute pressure where you stand (not a
+    /// sea-level value from a forecast or an airport).
     pub pressure_hpa: f64,
     /// Relative humidity, 0.0–1.0.
     pub humidity: f64,
@@ -30,10 +30,19 @@ impl Atmosphere {
         }
     }
 
-    /// Station pressure at an altitude from the sea-level pressure (QNH) a
-    /// weather report gives, or from 1013.25 hPa on a standard day.
-    pub fn station_pressure(sea_level_hpa: f64, altitude_m: f64) -> f64 {
-        sea_level_hpa * (1.0 - 2.25577e-5 * altitude_m).powf(BAROMETRIC_EXPONENT)
+    /// Station pressure at an altitude from the sea-level pressure a weather
+    /// forecast gives (MSLP), with the air temperature where you stand.
+    /// Forecasts reduce their pressure to sea level through the real air
+    /// column, not the standard one, so this undoes it the same way: the
+    /// hypsometric formula with the column's mean temperature, the station's
+    /// plus half the standard lapse over the height. An aviation QNH is
+    /// reduced through the standard atmosphere instead; on a standard day the
+    /// two agree.
+    pub fn station_pressure(sea_level_hpa: f64, altitude_m: f64, temperature_c: f64) -> f64 {
+        let mean_temperature_k =
+            temperature_c + KELVIN_OFFSET + LAPSE_RATE_K_PER_M * altitude_m / 2.0;
+        sea_level_hpa
+            * (-STANDARD_GRAVITY * altitude_m / (DRY_AIR_GAS_CONSTANT * mean_temperature_k)).exp()
     }
 
     /// The same air `height_m` higher up (or lower, if negative), following
@@ -69,8 +78,18 @@ impl Atmosphere {
     }
 
     /// Speed of sound in m/s; sets the Mach number the drag tables use.
+    /// Water vapour is lighter than dry air, so humid air carries sound a
+    /// little faster: the mixture's gas constant and heat-capacity ratio,
+    /// with vapour's molar heat capacity 4R against dry air's 3.5R.
     pub fn speed_of_sound(&self) -> f64 {
-        (HEAT_CAPACITY_RATIO * DRY_AIR_GAS_CONSTANT * self.temperature_k()).sqrt()
+        let total = self.pressure_hpa * 100.0;
+        let vapour =
+            (self.humidity.clamp(0.0, 1.0) * self.saturation_vapour_pressure_pa()).min(total);
+        let x = if total > 0.0 { vapour / total } else { 0.0 };
+        let gas_constant = 1.0 / ((1.0 - x) / DRY_AIR_GAS_CONSTANT + x / WATER_VAPOUR_GAS_CONSTANT);
+        let heat_capacity = 3.5 * (1.0 - x) + 4.0 * x;
+        let heat_capacity_ratio = heat_capacity / (heat_capacity - 1.0);
+        (heat_capacity_ratio * gas_constant * self.temperature_k()).sqrt()
     }
 }
 
@@ -101,9 +120,33 @@ mod tests {
     }
 
     #[test]
+    fn humid_air_carries_sound_faster() {
+        let dry = Atmosphere {
+            temperature_c: 30.0,
+            ..Atmosphere::standard()
+        };
+        let humid = Atmosphere {
+            humidity: 1.0,
+            ..dry
+        };
+        // About +0.7 % at 30 °C and saturation (Cramer 1993 gives the same).
+        let gain = humid.speed_of_sound() / dry.speed_of_sound() - 1.0;
+        assert!((gain - 0.0068).abs() < 0.0005, "{gain}");
+    }
+
+    #[test]
+    fn sea_level_pressure_is_reduced_through_the_real_air() {
+        // A standard day: the standard atmosphere's own pressure.
+        assert!((Atmosphere::station_pressure(1013.25, 0.0, 15.0) - 1013.25).abs() < 1e-9);
+        assert!((Atmosphere::station_pressure(1013.25, 1000.0, 8.5) - 898.75).abs() < 0.1);
+        // Cold air is denser, so pressure falls faster with height: a
+        // −15 °C day at 1000 m is about 1 % below the standard reduction.
+        let cold = Atmosphere::station_pressure(1013.25, 1000.0, -15.0);
+        assert!((cold / 898.75 - 1.0 + 0.0109).abs() < 0.001, "{cold}");
+    }
+
+    #[test]
     fn altitude_pressure_follows_standard_atmosphere() {
-        assert!((Atmosphere::station_pressure(1013.25, 0.0) - 1013.25).abs() < 1e-9);
-        assert!((Atmosphere::station_pressure(1013.25, 1000.0) - 898.75).abs() < 0.1);
         let up = Atmosphere::standard().at_height(1000.0);
         assert!((up.pressure_hpa - 898.75).abs() < 0.1);
         assert!((up.temperature_c - 8.5).abs() < 1e-9);

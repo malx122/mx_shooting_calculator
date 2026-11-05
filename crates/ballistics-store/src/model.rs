@@ -402,10 +402,15 @@ impl Construction {
     }
 }
 
-/// One BC band: the BC that applies at a velocity.
+/// One point of a velocity-dependent BC: the BC that applies at a velocity.
+/// Between points the BC is interpolated linearly by the bullet's speed
+/// through the air; below the slowest point and above the fastest it stays
+/// at that point's BC.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct BcBand {
-    /// From this speed down to the next band's.
+    /// The speed this BC applies at, in m/s. A maker's band that covers a
+    /// range of speeds (for example "above 2600 ft/s") is best given at the
+    /// middle of that range.
     pub velocity_mps: f64,
     /// The BC (of the bullet's `drag_model`) at that speed.
     pub bc: f64,

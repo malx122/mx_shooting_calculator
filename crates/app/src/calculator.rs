@@ -1253,7 +1253,7 @@ impl CalculatorPage {
                 ui.checkbox(&mut inputs.aerodynamic_jump, tr("include"))
                     .on_hover_text(tr(
                         "A crosswind throws a spinning bullet a little up or down as it leaves \
-                         the muzzle (with a right-hand twist, wind from the left lifts it). \
+                         the muzzle (with a right-hand twist, wind from the right lifts it). \
                          Needs the bullet's length.",
                     ));
                 ui.end_row();

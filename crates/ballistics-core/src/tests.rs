@@ -364,7 +364,7 @@ fn a_drag_curve_equal_to_the_g7_model_gives_the_same_trajectory() {
 }
 
 #[test]
-fn a_crosswind_from_the_right_throws_a_right_hand_twist_bullet_down() {
+fn a_crosswind_from_the_right_throws_a_right_hand_twist_bullet_up() {
     let windy = |from_degrees: f64, jump: bool, right_hand: bool| {
         let mut s = scenario();
         s.shot.wind = Wind {
@@ -378,12 +378,12 @@ fn a_crosswind_from_the_right_throws_a_right_hand_twist_bullet_down() {
     let from_right = windy(90.0, true, true) - windy(90.0, false, true);
     let from_left = windy(270.0, true, true) - windy(270.0, false, true);
     assert!(
-        from_right < 0.0 && from_left > 0.0,
+        from_right > 0.0 && from_left < 0.0,
         "{from_right} {from_left}"
     );
     assert!((from_right + from_left).abs() < 1e-3);
     // A left-hand twist turns it round.
-    assert!(windy(90.0, true, false) - windy(90.0, false, false) > 0.0);
+    assert!(windy(90.0, true, false) - windy(90.0, false, false) < 0.0);
     // Litz: (0.01·Sg − 0.0024·L + 0.032) MOA per mph, here about 0.3 MOA
     // for 4 m/s, a few centimetres at 300 m.
     let s = scenario();
@@ -735,4 +735,23 @@ mod dispersion {
         let half = hit_chance(spread, [0.0, 0.0], |[x, _]| x > 0.0);
         assert!((half - 0.5).abs() < 0.01, "{half}");
     }
+}
+
+#[test]
+fn gravity_follows_the_latitude() {
+    assert!((solver::normal_gravity(0.0) - 9.780_33).abs() < 1e-4);
+    assert!((solver::normal_gravity(45.0) - 9.806_20).abs() < 1e-4);
+    assert!((solver::normal_gravity(65.0) - 9.822_9).abs() < 1e-3);
+    assert!((solver::normal_gravity(-65.0) - solver::normal_gravity(65.0)).abs() < 1e-12);
+    // Shooting north-south, Coriolis only moves the bullet sideways, so the
+    // drop changes by the stronger gravity up north: a few millimetres at
+    // 600 m.
+    let mut north = scenario();
+    let level = row(&north, 600.0).drop;
+    north.shot.coriolis = Some(Coriolis {
+        latitude_degrees: 65.0,
+        azimuth_degrees: 0.0,
+    });
+    let change = row(&north, 600.0).drop - level;
+    assert!(change < -0.003 && change > -0.01, "{change}");
 }

@@ -55,7 +55,7 @@ pub fn from_solution(inputs: &Inputs, rifle: &Rifle, aim: &Aim, row: &RangeRow) 
             powder_temperature_c: conditions
                 .powder_temperature_c
                 .unwrap_or(conditions.temperature_c),
-            pressure_hpa: conditions.pressure.station_hpa(),
+            pressure_hpa: conditions.pressure.station_hpa(conditions.temperature_c),
             humidity_percent: conditions.humidity_percent,
         },
         hold: ShotHold {
