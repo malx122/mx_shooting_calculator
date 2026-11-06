@@ -1,0 +1,75 @@
+<strings>
+    <string id="AppName" translatable="false">MX Shooting</string>
+
+    <!-- Main screen -->
+    <string id="Up">UP</string>
+    <string id="Down">DOWN</string>
+    <string id="Left">LEFT</string>
+    <string id="Right">RIGHT</string>
+    <string id="Clock">$1$ o'clock</string>
+    <string id="PastEthical">past the ethical limit</string>
+    <string id="OutsideWeather">weather beyond the table</string>
+    <string id="BeyondTable">beyond the table</string>
+    <string id="NoRifles">No rifles yet</string>
+    <string id="NoRiflesHint">START: Pair with phone</string>
+
+    <!-- Between whole numbers and decimals: 7.5 -->
+    <string id="DecimalPoint">.</string>
+
+    <!-- Units, as the phone app writes them -->
+    <string id="UnitM" translatable="false">m</string>
+    <string id="UnitYd" translatable="false">yd</string>
+    <string id="UnitMps" translatable="false">m/s</string>
+    <string id="UnitKmh" translatable="false">km/h</string>
+    <string id="UnitMph" translatable="false">mph</string>
+    <string id="UnitCm" translatable="false">cm</string>
+    <string id="UnitIn" translatable="false">in</string>
+    <string id="UnitMil" translatable="false">mil</string>
+    <string id="UnitMoa" translatable="false">MOA</string>
+    <string id="UnitC" translatable="false">°C</string>
+    <string id="UnitF" translatable="false">°F</string>
+    <string id="UnitHpa" translatable="false">hPa</string>
+    <string id="UnitMmHg" translatable="false">mmHg</string>
+    <string id="UnitInHg" translatable="false">inHg</string>
+
+    <!-- Menu -->
+    <string id="Rifle">Rifle</string>
+    <string id="UpdateFromPhone">Update from phone</string>
+    <string id="PairWithPhone">Pair with phone</string>
+    <string id="AboutRifle">About this rifle</string>
+    <string id="ForgetPhone">Forget the phone</string>
+    <string id="ForgetPhoneQuestion">Forget the phone? The rifles stay on the watch.</string>
+
+    <!-- About this rifle -->
+    <string id="MadeAt">Sent $1$</string>
+    <string id="EthicalLimit">Ethical limit $1$</string>
+    <string id="NoEthicalLimit">No ethical limit</string>
+    <string id="LastRange">Table to $1$</string>
+    <string id="PressureFromBarometer">Pressure: barometer</string>
+    <string id="PressureByHand">Pressure: set by hand</string>
+    <string id="Paired">Paired with the phone</string>
+    <string id="NotPaired">Not paired: no updates</string>
+
+    <!-- Pair with phone -->
+    <string id="Saving">Saving...</string>
+    <string id="AskingForCode">Asking for a code...</string>
+    <string id="PairingHint">In the app: Garmin watch, then type this code</string>
+    <string id="UseRifles">Use these rifles?</string>
+    <string id="AndMore">and $1$ more</string>
+    <string id="Received">Paired: $1$</string>
+    <string id="NotKept">The rifles couldn't be kept</string>
+    <string id="NoPhone">No phone connection</string>
+    <string id="ConnectionError">Connection error $1$</string>
+    <string id="ServerError">Server error $1$</string>
+    <string id="Expired">The code has expired</string>
+    <string id="Busy">Server busy. Try again in a minute</string>
+    <string id="BadBox">The rifles can't be read</string>
+    <string id="TryAgain">START: try again</string>
+
+    <!-- Updates from the phone -->
+    <string id="Updating">Updating from the phone...</string>
+    <string id="Updated">Updated from the phone</string>
+    <string id="UpToDate">Up to date</string>
+    <string id="Unpaired">Not paired any more: pair again</string>
+    <string id="UpdateUnreadable">The update can't be read</string>
+</strings>

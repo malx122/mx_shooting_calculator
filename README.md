@@ -584,6 +584,19 @@ later edit work the same way. **Stop syncing here** leaves the device's data
 as it is; **Delete the synced copy** turns sync off on every device. Units
 and calculator inputs stay per device.
 
+**Garmin watch** (in the menu) puts every rifle and load on a Garmin watch
+running the app's watch app ([watch/](watch/README.md); the epix (Gen 2)
+first). Pair once: on the watch, **Pair with phone** shows an 8-digit code;
+type it in the app, and the watch lists the rifles and asks whether to use
+them. After that the app sends changes to your rifles, loads or units by
+itself while it is open, and the watch picks them up when it opens. On the
+watch you choose the rifle, set the range, the wind (speed and clock
+direction) and the temperature, and read the clicks up or down and right or
+left, with the angle and the centimetres at the target; the watch reads the
+air pressure from its barometer. The profiles are encrypted on the device
+for that one watch; the sync server only passes them on and keeps nothing it
+can read (see [docs/watch.md](docs/watch.md)).
+
 ## AI assistants
 
 `mxsc-mcp` lets an AI assistant answer questions with the app's own engine
@@ -649,6 +662,7 @@ claude mcp add --scope user mxsc -- "$PWD/scripts/mxsc-mcp.sh" --db "$PWD/target
 | `crates/ballistics-shot` | A shot from the hunter's records: the engine's scenario from a rifle, bullet, measured velocities and conditions, holds in the rifle's clicks, and the legal ammunition check for the hunter's country. Shared by the app and `mxsc-mcp`, so both give the same answers. |
 | `crates/mxsc-mcp` | The MCP server for AI assistants (see above). |
 | `server` | The sync server: a Cloudflare Worker with a D1 database. See [server/README.md](server/README.md). |
+| `watch` | The Garmin watch app, in Monkey C: shows the holds from the profiles the app sends (`crates/app/src/watch/`). See [watch/README.md](watch/README.md) and [docs/watch.md](docs/watch.md). |
 
 `ballistics-core` and `ballistics-store` build on desktop and mobile targets
 (SQLite is compiled in), and in the browser, where SQLite is compiled to

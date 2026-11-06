@@ -22,6 +22,9 @@ anything it doesn't strictly need. Keep it that way:
   - Google Drive, for sync, if the user chooses it;
   - GitHub, for the desktop apps' update check and downloads, if the user
     turns updates on (off by default).
+  - The watch app reaches the sync server through Garmin Connect on the
+    hunter's phone (how every Connect IQ web request goes), only once it is
+    paired or pairing: when it opens, and on **Update from phone**.
 
   Pages ship with no third-party scripts, fonts or cookies.
 - **The sync server keeps nothing readable.** Sync copies are encrypted on
