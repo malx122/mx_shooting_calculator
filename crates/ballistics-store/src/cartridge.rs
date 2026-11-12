@@ -617,16 +617,32 @@ mod tests {
                     (at(middle) - (shoulder.diameter + shoulder.neck_diameter) / 2.0).abs() < 1e-6,
                     "{name}: the shoulder's line"
                 );
-                // The corners are rounded, so measure just off them.
-                let body_end = shoulder.start - shoulder.radius;
+                // The corners are rounded: measure the body and the neck half
+                // way along their straight parts, past the roundings.
+                let body_line = [case.body_start, case.body_diameter / 2.0];
+                let corner = [shoulder.start, shoulder.diameter / 2.0];
+                let neck_corner = [shoulder.neck_start, shoulder.neck_diameter / 2.0];
+                let mouth = [case.length, case.mouth_diameter / 2.0];
+                let reach = rounding_reach(body_line, corner, neck_corner, shoulder.radius);
+                let neck_reach = rounding_reach(corner, neck_corner, mouth, shoulder.neck_radius);
+                let slant = (neck_corner[0] - corner[0]).hypot(neck_corner[1] - corner[1]);
+                assert!(
+                    reach + neck_reach < slant,
+                    "{name}: the shoulder's roundings fit it"
+                );
+                assert!(
+                    neck_reach < case.length - shoulder.neck_start,
+                    "{name}: and the neck's"
+                );
+                let body_point = (case.body_start + shoulder.start - reach) / 2.0;
                 let expected = case.body_diameter
-                    + (shoulder.diameter - case.body_diameter) * (body_end - case.body_start)
+                    + (shoulder.diameter - case.body_diameter) * (body_point - case.body_start)
                         / (shoulder.start - case.body_start);
                 assert!(
-                    (at(body_end) - expected).abs() < 1e-6,
+                    (at(body_point) - expected).abs() < 1e-6,
                     "{name}: the body's taper"
                 );
-                let neck = shoulder.neck_start + shoulder.neck_radius;
+                let neck = (shoulder.neck_start + neck_reach + case.length) / 2.0;
                 let expected = shoulder.neck_diameter
                     + (case.mouth_diameter - shoulder.neck_diameter) * (neck - shoulder.neck_start)
                         / (case.length - shoulder.neck_start);
@@ -695,6 +711,13 @@ mod tests {
                 solid.triangles.len()
             );
         }
+    }
+
+    /// How far along each line a rounding of `radius` at `corner` reaches.
+    fn rounding_reach(before: [f64; 2], corner: [f64; 2], after: [f64; 2], radius: f64) -> f64 {
+        let into = (corner[1] - before[1]).atan2(corner[0] - before[0]);
+        let out = (after[1] - corner[1]).atan2(after[0] - corner[0]);
+        radius * ((out - into).abs() / 2.0).tan()
     }
 
     #[test]
