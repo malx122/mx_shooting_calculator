@@ -23,11 +23,10 @@ struct Turn {
     pitch: f32,
 }
 
-/// Draws the cartridge across the available width, `height` points tall.
-pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, height: f32) {
+/// Draws the cartridge in a box of `size` points, as large as fits.
+pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, size: egui::Vec2) {
     let id = egui::Id::unique("cartridge3d");
-    let (rect, response) =
-        ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::click_and_drag());
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click_and_drag());
     let mut turn = ui.data(|data| data.get_temp::<Turn>(id)).unwrap_or(Turn {
         yaw: YAW,
         pitch: PITCH,

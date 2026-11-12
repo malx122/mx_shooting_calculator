@@ -8,6 +8,7 @@
       "case": {
         "rim_diameter": 7.47, "rim_thickness": 1.27,
         "head_bevel": null,
+        "rim_radius": 0.635,
         "groove": null,
         "body_start": 1.27, "body_diameter": 6.15,
         "shoulder": { "start": 22.20, "diameter": 6.15, "neck_start": 23.54, "neck_diameter": 4.90, "radius": 0.00, "neck_radius": 0.00 },

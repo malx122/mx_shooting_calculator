@@ -365,7 +365,7 @@ impl BulletsPage {
             };
 
             if let Some(cartridge) = &caliber.cartridge {
-                crate::cartridge3d::show(ui, cartridge, 110.0);
+                crate::cartridge3d::show(ui, cartridge, egui::vec2(ui.available_width(), 110.0));
                 ui.vertical_centered(|ui| {
                     ui.weak(format!("{} · {} · {}", caliber.name, cartridge.bullet.name, cartridge.source));
                     if ui

@@ -446,48 +446,71 @@ fn rifle_fields(
     scope_search: &mut String,
 ) {
     let u = units::prefs(ui.ctx());
-    grid(ui, "rifle-editor", |ui| {
-        text(ui, tr("Name"), &mut rifle.name);
-        ui.label(tr("Caliber"));
-        if let Some(caliber) = caliber_picker(ui, "rifle-caliber", &rifle.caliber, caliber_search) {
-            rifle.caliber = caliber.key.clone();
-            rifle.twist_in = caliber.typical_twist_in;
-        }
-        ui.end_row();
-        scope_rows(ui, rifle, data, scope_search);
-        click_rows(ui, rifle, data);
-        quantity(
-            ui,
-            tr("Sight height"),
-            &mut rifle.sight_height_cm,
-            Quantity::SightHeight,
-            0.0..=15.0,
-            0.1,
-        );
-        ui.label(tr("Zero"));
-        ui.horizontal(|ui| {
-            units::drag(
+    // The cartridge beside the fields when there is room, else below them.
+    let wide = ui.available_width() >= 760.0;
+    let cartridge = |rifle: &Rifle| {
+        Catalog::builtin()
+            .caliber(&rifle.caliber)
+            .and_then(|caliber| caliber.cartridge.as_ref())
+    };
+    ui.horizontal_top(|ui| {
+        grid(ui, "rifle-editor", |ui| {
+            text(ui, tr("Name"), &mut rifle.name);
+            ui.label(tr("Caliber"));
+            if let Some(caliber) =
+                caliber_picker(ui, "rifle-caliber", &rifle.caliber, caliber_search)
+            {
+                rifle.caliber = caliber.key.clone();
+                rifle.twist_in = caliber.typical_twist_in;
+            }
+            ui.end_row();
+            scope_rows(ui, rifle, data, scope_search);
+            click_rows(ui, rifle, data);
+            quantity(
                 ui,
-                &mut rifle.zero_range_m,
-                Quantity::Distance,
-                10.0..=1000.0,
-                1.0,
-            );
-            ui.label(tr("hitting"));
-            units::drag(
-                ui,
-                &mut rifle.zero_height_cm,
-                Quantity::ShortLength,
-                -50.0..=50.0,
+                tr("Sight height"),
+                &mut rifle.sight_height_cm,
+                Quantity::SightHeight,
+                0.0..=15.0,
                 0.1,
-            )
-            .on_hover_text(tr(
-                "0 on the crosshair; + high, − low (\"4 cm high at 100 m\")",
-            ));
-            ui.weak(tr("above the aim"));
+            );
+            ui.label(tr("Zero"));
+            ui.horizontal(|ui| {
+                units::drag(
+                    ui,
+                    &mut rifle.zero_range_m,
+                    Quantity::Distance,
+                    10.0..=1000.0,
+                    1.0,
+                );
+                ui.label(tr("hitting"));
+                units::drag(
+                    ui,
+                    &mut rifle.zero_height_cm,
+                    Quantity::ShortLength,
+                    -50.0..=50.0,
+                    0.1,
+                )
+                .on_hover_text(tr(
+                    "0 on the crosshair; + high, − low (\"4 cm high at 100 m\")",
+                ));
+                ui.weak(tr("above the aim"));
+            });
+            ui.end_row();
         });
-        ui.end_row();
+        if wide && let Some(cartridge) = cartridge(rifle) {
+            ui.add_space(32.0);
+            let width = ui.available_width().min(560.0);
+            crate::cartridge3d::show(ui, cartridge, egui::vec2(width, 150.0));
+        }
     });
+    if !wide && let Some(cartridge) = cartridge(rifle) {
+        crate::cartridge3d::show(
+            ui,
+            cartridge,
+            egui::vec2(ui.available_width().min(360.0), 64.0),
+        );
+    }
     ui.add_space(4.0);
 
     let short = |quantity: Quantity, value: f64| {

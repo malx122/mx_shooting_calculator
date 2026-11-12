@@ -34,6 +34,10 @@ pub struct CaseShape {
     pub rim_thickness: f64,
     /// The bevel round the back of the rim; none on a rimfire case.
     pub head_bevel: Option<HeadBevel>,
+    /// The rounding of the rim's outer edges, back and front: a rimfire's
+    /// rim is folded brass, drawn fully round (half its thickness).
+    #[serde(default)]
+    pub rim_radius: Option<f64>,
     /// The extractor groove ahead of the rim; none on a rimmed case.
     pub groove: Option<Groove>,
     /// From the head to where the body starts (E), and its diameter there
@@ -140,14 +144,37 @@ impl Cartridge {
         if let Some(primer) = self.primer_diameter {
             stretches.push((Material::Primer, vec![[0.0, primer / 2.0]]));
         }
-        let mut brass = match &case.head_bevel {
-            Some(bevel) => vec![[0.0, rim - bevel.inset()], [bevel.length, rim]],
-            None => vec![[0.0, rim]],
-        };
-
-        // The rim, the extractor groove and the body.
-        brass.push([case.rim_thickness, rim]);
         let body = case.body_diameter / 2.0;
+        // From where the head's middle ends, dropped once the rim is drawn.
+        let mut brass = vec![[0.0, self.primer_diameter.map_or(0.0, |primer| primer / 2.0)]];
+        match (&case.head_bevel, case.rim_radius) {
+            (Some(bevel), _) => {
+                brass.push([0.0, rim - bevel.inset()]);
+                brass.push([bevel.length, rim]);
+                brass.push([case.rim_thickness, rim]);
+            }
+            (None, Some(radius)) => {
+                fillet(&mut brass, [0.0, rim], [case.rim_thickness, rim], radius);
+                // Down the rim's front, to the groove or the body.
+                let front = match &case.groove {
+                    Some(groove) => groove.diameter / 2.0,
+                    None => body.min(rim - radius),
+                };
+                fillet(
+                    &mut brass,
+                    [case.rim_thickness, rim],
+                    [case.rim_thickness, front],
+                    radius,
+                );
+            }
+            (None, None) => {
+                brass.push([0.0, rim]);
+                brass.push([case.rim_thickness, rim]);
+            }
+        }
+        brass.remove(0);
+
+        // The extractor groove and the body.
         if let Some(groove) = &case.groove {
             let depth = groove.diameter / 2.0;
             let bevel = (body - depth) / groove.bevel_degrees.to_radians().tan();
@@ -474,9 +501,14 @@ mod tests {
                 .head_bevel
                 .as_ref()
                 .map_or((0.0, 0.0), |bevel| (bevel.inset(), bevel.length));
+            let rounded = case.rim_radius.unwrap_or(0.0);
             assert!(
-                (head * 2.0 - (case.rim_diameter - 2.0 * inset)).abs() < 1e-9,
-                "{name}: the head's bevel"
+                (head * 2.0 - (case.rim_diameter - 2.0 * (inset + rounded))).abs() < 1e-9,
+                "{name}: the head's bevel or rounding"
+            );
+            assert!(
+                rounded <= case.rim_thickness / 2.0 + 1e-9,
+                "{name}: the rim's rounding fits it"
             );
             assert!(
                 bevel_length < case.rim_thickness,
