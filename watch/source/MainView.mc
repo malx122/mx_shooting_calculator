@@ -6,7 +6,8 @@ import Toybox.Math;
 import Toybox.WatchUi;
 
 class MainView extends WatchUi.View {
-    // What UP and DOWN change.
+    // The values set on the main screen; UP and DOWN change the range, the
+    // others are set in their own view (START, or a tap on them).
     enum Field {
         FIELD_RANGE,
         FIELD_SPEED,
@@ -31,7 +32,6 @@ class MainView extends WatchUi.View {
     // In the profile's wind unit.
     private var _wind as Double = 0.0d;
     private var _clock as Number = 3;
-    private var _focus as Number = FIELD_RANGE;
     // Where each field was last drawn: [left, top, right, bottom].
     private var _boxes as Array<Array<Number> or Null> = new Array<Array<Number> or Null>[FIELDS + 1];
 
@@ -39,14 +39,19 @@ class MainView extends WatchUi.View {
         View.initialize();
     }
 
-    // Reads the settings again only when the profile changed.
     function onShow() as Void {
-        var profile = Store.profile();
-        if (profile != _profile) {
-            _profile = profile;
+        refresh();
+        WatchUi.requestUpdate();
+    }
+
+    // Picks up an update, or another rifle chosen, and then reads the
+    // settings again in its units.
+    function refresh() as Void {
+        var latest = Store.profile();
+        if (latest != _profile) {
+            _profile = latest;
             load();
         }
-        WatchUi.requestUpdate();
     }
 
     // Reads the last settings, fitted to the profile's units.
@@ -74,9 +79,6 @@ class MainView extends WatchUi.View {
         _wind = clampWind(Math.round(wind.toDouble() / step) * step);
         var clock = Store.number(Store.CLOCK);
         _clock = clock != null && clock >= 1 && clock <= 12 ? clock.toNumber() : 3;
-        if (_focus == FIELD_PRESSURE && !manualPressure()) {
-            _focus = FIELD_RANGE;
-        }
     }
 
     function hasProfile() as Boolean {
@@ -84,52 +86,124 @@ class MainView extends WatchUi.View {
     }
 
     // The pressure is set by hand when the barometer gives none.
-    private function manualPressure() as Boolean {
+    function manualPressure() as Boolean {
         return Weather.barometerHpa() == null;
     }
 
-    function nextFocus() as Void {
+    // UP (+1) or DOWN (-1): the range.
+    function changeRange(direction as Number) as Void {
         Updater.seen();
-        _focus = (_focus + 1) % FIELDS;
-        if (_focus == FIELD_PRESSURE && !manualPressure()) {
-            _focus = FIELD_RANGE;
+        if (_profile == null) {
+            return;
         }
-        WatchUi.requestUpdate();
+        set(FIELD_RANGE, stepped(FIELD_RANGE, _range.toDouble(), direction));
     }
 
-    function focus(field as Number) as Void {
-        Updater.seen();
-        _focus = field;
-        WatchUi.requestUpdate();
+    // What a field is called, over its value while it is set.
+    static function titleOf(field as Number) as ResourceId {
+        if (field == FIELD_RANGE) {
+            return Rez.Strings.Range;
+        }
+        if (field == FIELD_SPEED) {
+            return Rez.Strings.Wind;
+        }
+        if (field == FIELD_CLOCK) {
+            return Rez.Strings.WindFrom;
+        }
+        if (field == FIELD_TEMPERATURE) {
+            return Rez.Strings.Temperature;
+        }
+        return Rez.Strings.AirPressure;
     }
 
-    // UP (+1) or DOWN (-1) on the focused field.
-    function change(direction as Number) as Void {
-        Updater.seen();
+    // A field's value as it is set: the range and the wind in the
+    // profile's units, the clock 1 to 12, whole degrees in the hunter's
+    // unit, hPa.
+    function valueOf(field as Number) as Double {
+        var profile = _profile;
+        if (field == FIELD_RANGE) {
+            return _range.toDouble();
+        }
+        if (field == FIELD_SPEED) {
+            return _wind;
+        }
+        if (field == FIELD_CLOCK) {
+            return _clock.toDouble();
+        }
+        if (field == FIELD_TEMPERATURE) {
+            var unit = profile != null ? profile.temperatureUnit : Units.TEMPERATURE_C;
+            return Math.round(Units.fromCelsius(Weather.temperatureC(), unit)).toDouble();
+        }
+        return Weather.pressureHpa();
+    }
+
+    // One step up (+1) or down (-1) from `value`, kept within bounds.
+    function stepped(field as Number, value as Double, direction as Number) as Double {
+        var profile = _profile;
+        if (profile == null) {
+            return value;
+        }
+        if (field == FIELD_RANGE) {
+            return clampRange(value.toNumber() + direction * RANGE_STEP).toDouble();
+        }
+        if (field == FIELD_SPEED) {
+            return clampWind(value + direction * windStep());
+        }
+        if (field == FIELD_CLOCK) {
+            return ((value.toNumber() - 1 + direction + 12) % 12 + 1).toDouble();
+        }
+        if (field == FIELD_TEMPERATURE) {
+            var next = value + direction;
+            var celsius = Units.toCelsius(next, profile.temperatureUnit);
+            return celsius < MIN_C || celsius > MAX_C ? value : next;
+        }
+        var hpa = value + direction * pressureStep(profile);
+        return hpa < MIN_HPA ? MIN_HPA : hpa > MAX_HPA ? MAX_HPA : hpa;
+    }
+
+    // A field's value with its unit.
+    function textOf(field as Number, value as Double) as String {
+        var profile = _profile;
+        if (profile == null) {
+            return "";
+        }
+        if (field == FIELD_RANGE) {
+            return value.toNumber() + " " + Ui.rangeUnit(profile.rangeUnit);
+        }
+        if (field == FIELD_SPEED) {
+            return Ui.speed(value) + " " + Ui.windUnit(profile.windUnit);
+        }
+        if (field == FIELD_CLOCK) {
+            return Lang.format(Ui.str(Rez.Strings.Clock), [value.toNumber()]);
+        }
+        if (field == FIELD_TEMPERATURE) {
+            return value.toNumber() + " " + Ui.temperatureUnit(profile.temperatureUnit);
+        }
+        return Ui.pressure(value, profile.pressureUnit);
+    }
+
+    // Keeps a field's value, here and for next time.
+    function set(field as Number, value as Double) as Void {
         var profile = _profile;
         if (profile == null) {
             return;
         }
-        if (_focus == FIELD_RANGE) {
-            _range = clampRange(_range + direction * RANGE_STEP);
+        if (field == FIELD_RANGE) {
+            _range = value.toNumber();
             Store.save(Store.RANGE, _range);
             Store.save(Store.RANGE_UNIT, profile.rangeUnit);
-        } else if (_focus == FIELD_SPEED) {
-            _wind = clampWind(_wind + direction * windStep());
+        } else if (field == FIELD_SPEED) {
+            _wind = value;
             Store.save(Store.WIND, _wind.toFloat());
             Store.save(Store.WIND_UNIT, profile.windUnit);
-        } else if (_focus == FIELD_CLOCK) {
-            _clock = (_clock - 1 + direction + 12) % 12 + 1;
+        } else if (field == FIELD_CLOCK) {
+            _clock = value.toNumber();
             Store.save(Store.CLOCK, _clock);
-        } else if (_focus == FIELD_TEMPERATURE) {
-            // Whole degrees in the hunter's unit.
-            var unit = profile.temperatureUnit;
-            var shown = Math.round(Units.fromCelsius(Weather.temperatureC(), unit)) + direction;
-            var celsius = Units.toCelsius(shown, unit);
+        } else if (field == FIELD_TEMPERATURE) {
+            var celsius = Units.toCelsius(value, profile.temperatureUnit);
             Weather.setTemperatureC(celsius < MIN_C ? MIN_C : celsius > MAX_C ? MAX_C : celsius);
-        } else if (_focus == FIELD_PRESSURE) {
-            var hpa = Weather.pressureHpa() + direction * pressureStep(profile);
-            Weather.setPressureHpa(hpa < MIN_HPA ? MIN_HPA : hpa > MAX_HPA ? MAX_HPA : hpa);
+        } else if (field == FIELD_PRESSURE) {
+            Weather.setPressureHpa(value);
         }
         WatchUi.requestUpdate();
     }
@@ -195,11 +269,7 @@ class MainView extends WatchUi.View {
         dc.clear();
         _boxes = new Array<Array<Number> or Null>[FIELDS + 1];
         // An update, or another rifle chosen, while the screen was up.
-        var latest = Store.profile();
-        if (latest != _profile) {
-            _profile = latest;
-            load();
-        }
+        refresh();
         var profile = _profile;
         if (profile == null) {
             drawNoProfile(dc);
@@ -236,7 +306,10 @@ class MainView extends WatchUi.View {
             [" " + Ui.rangeUnit(profile.rangeUnit), Graphics.FONT_SMALL, rangeColor]
         ] as Array<Array>);
         var rangeHalf = dc.getFontHeight(rangeFont) / 2;
-        _boxes[FIELD_RANGE] = [spans[0][0], (rangeY - rangeHalf).toNumber(), spans[1][1], (rangeY + rangeHalf).toNumber()];
+        // UP and DOWN change it; a tap on the arrows too sets it.
+        var arrowsX = spans[0][0] - h * 0.05;
+        Ui.arrows(dc, arrowsX, rangeY, h * 0.03, h * 0.022, Ui.QUIET);
+        _boxes[FIELD_RANGE] = [(arrowsX - h * 0.022).toNumber(), (rangeY - rangeHalf).toNumber(), spans[1][1], (rangeY + rangeHalf).toNumber()];
 
         // The wind: speed and clock.
         var windY = h * 0.385;
@@ -272,13 +345,6 @@ class MainView extends WatchUi.View {
         _boxes[FIELD_TEMPERATURE] = [spans[0][0], weatherTop, spans[0][1], weatherBottom];
         if (manualPressure()) {
             _boxes[FIELD_PRESSURE] = [spans[2][0], weatherTop, spans[2][1], weatherBottom];
-        }
-
-        // Which one UP and DOWN change.
-        var focused = _boxes[_focus];
-        if (focused != null) {
-            dc.setColor(Ui.FOCUS, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(focused[0], focused[3] - 2, focused[2] - focused[0], 5, 2);
         }
 
         // One note: the ethical limit first, then weather past the grid,

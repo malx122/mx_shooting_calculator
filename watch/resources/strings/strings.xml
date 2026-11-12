@@ -32,6 +32,14 @@
     <string id="UnitMmHg" translatable="false">mmHg</string>
     <string id="UnitInHg" translatable="false">inHg</string>
 
+    <!-- Conditions: START on the main screen, and setting a value -->
+    <string id="Conditions">Conditions</string>
+    <string id="Range">Range</string>
+    <string id="Wind">Wind</string>
+    <string id="WindFrom">Wind from</string>
+    <string id="Temperature">Temperature</string>
+    <string id="AirPressure">Air pressure</string>
+
     <!-- Menu -->
     <string id="Rifle">Rifle</string>
     <string id="UpdateFromPhone">Update from phone</string>

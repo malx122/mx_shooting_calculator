@@ -10,40 +10,47 @@ class MainDelegate extends WatchUi.BehaviorDelegate {
         _view = view;
     }
 
-    // START: the next field; with no rifles, Pair with phone.
+    // START: the wind and the weather; with no rifles, Pair with phone.
     function onSelect() as Boolean {
+        Updater.seen();
         if (_view.hasProfile()) {
-            _view.nextFocus();
+            openConditions(_view);
         } else {
             openPairing();
         }
         return true;
     }
 
-    // DOWN.
+    // DOWN: a shorter range.
     function onNextPage() as Boolean {
-        _view.change(-1);
+        _view.changeRange(-1);
         return true;
     }
 
-    // UP.
+    // UP: a longer range.
     function onPreviousPage() as Boolean {
-        _view.change(1);
+        _view.changeRange(1);
         return true;
     }
 
-    // A tap on a field focuses it; on the rifle's name, lists the rifles.
+    // A tap on a value sets it; on the rifle's name, lists the rifles (when
+    // there are several); anywhere else, as START.
     function onTap(event as WatchUi.ClickEvent) as Boolean {
         if (!_view.hasProfile()) {
             openPairing();
             return true;
         }
+        Updater.seen();
         var at = event.getCoordinates();
         var field = _view.fieldAt(at[0], at[1]);
-        if (field == MainView.FIELD_NAME) {
-            openRifles();
+        if (field == MainView.FIELD_NAME && Store.names().size() > 1) {
+            openRifles(null);
+        } else if (field == MainView.FIELD_NAME) {
+            openConditions(_view);
         } else if (field != null) {
-            _view.focus(field);
+            openEdit(_view, field, null);
+        } else {
+            openConditions(_view);
         }
         return true;
     }
@@ -93,8 +100,79 @@ function riflesMenu() as WatchUi.Menu2 {
     return menu;
 }
 
-function openRifles() as Void {
-    WatchUi.pushView(riflesMenu(), new RiflesDelegate(), WatchUi.SLIDE_UP);
+// `chosen` is told when a rifle was chosen.
+function openRifles(chosen as Method() as Void or Null) as Void {
+    WatchUi.pushView(riflesMenu(), new RiflesDelegate(chosen), WatchUi.SLIDE_LEFT);
+}
+
+// START on the main screen: the wind, the weather and (with more than one)
+// the rifle, each with its value; START on one sets it.
+function openConditions(main as MainView) as Void {
+    var menu = new WatchUi.Menu2({ :title => Rez.Strings.Conditions });
+    var fields = [MainView.FIELD_SPEED, MainView.FIELD_CLOCK, MainView.FIELD_TEMPERATURE] as Array<Number>;
+    if (main.manualPressure()) {
+        fields.add(MainView.FIELD_PRESSURE);
+    }
+    for (var i = 0; i < fields.size(); i++) {
+        var field = fields[i];
+        menu.addItem(new WatchUi.MenuItem(MainView.titleOf(field), main.textOf(field, main.valueOf(field)), field, null));
+    }
+    if (Store.names().size() > 1) {
+        var profile = Store.profile();
+        menu.addItem(new WatchUi.MenuItem(Rez.Strings.Rifle, profile != null ? profile.name : null, :rifle, null));
+    }
+    WatchUi.pushView(menu, new ConditionsDelegate(main, menu), WatchUi.SLIDE_LEFT);
+}
+
+class ConditionsDelegate extends WatchUi.Menu2InputDelegate {
+    private var _main as MainView;
+    private var _menu as WatchUi.Menu2;
+    // The item being set, to show its new value.
+    private var _item as WatchUi.MenuItem or Null = null;
+
+    function initialize(main as MainView, menu as WatchUi.Menu2) {
+        Menu2InputDelegate.initialize();
+        _main = main;
+        _menu = menu;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var id = item.getId();
+        if (id == :rifle) {
+            openRifles(method(:onRifle));
+            return;
+        }
+        // An update from the phone may have come in since the list opened.
+        onRifle();
+        _item = item;
+        openEdit(_main, id as Number, method(:onKept));
+    }
+
+    function onKept(text as String) as Void {
+        var item = _item;
+        if (item != null) {
+            item.setSubLabel(text);
+        }
+    }
+
+    // Another rifle, or an update: every value again, in its units.
+    function onRifle() as Void {
+        _main.refresh();
+        var profile = Store.profile();
+        for (var i = 0; ; i++) {
+            var item = _menu.getItem(i);
+            if (item == null) {
+                break;
+            }
+            var id = item.getId();
+            if (id == :rifle) {
+                item.setSubLabel(profile != null ? profile.name : null);
+            } else {
+                item.setSubLabel(_main.textOf(id as Number, _main.valueOf(id as Number)));
+            }
+        }
+        WatchUi.requestUpdate();
+    }
 }
 
 class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
@@ -105,7 +183,7 @@ class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         if (id == :rifle) {
-            WatchUi.switchToView(riflesMenu(), new RiflesDelegate(), WatchUi.SLIDE_LEFT);
+            WatchUi.switchToView(riflesMenu(), new RiflesDelegate(null), WatchUi.SLIDE_LEFT);
         } else if (id == :update) {
             Updater.start(true);
             WatchUi.popView(WatchUi.SLIDE_DOWN);
@@ -122,13 +200,20 @@ class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
 }
 
 class RiflesDelegate extends WatchUi.Menu2InputDelegate {
-    function initialize() {
+    private var _chosen as Method() as Void or Null;
+
+    function initialize(chosen as Method() as Void or Null) {
         Menu2InputDelegate.initialize();
+        _chosen = chosen;
     }
 
     function onSelect(item as WatchUi.MenuItem) as Void {
         Store.choose(item.getId() as Number);
-        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        var chosen = _chosen;
+        if (chosen != null) {
+            chosen.invoke();
+        }
     }
 }
 

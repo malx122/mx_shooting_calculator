@@ -4,6 +4,8 @@
 #   ./build.sh          bin/mxsc-watch.prg, to sideload or run in the simulator
 #   ./build.sh test     builds with the unit tests and runs them in the simulator
 #   ./build.sh run      builds and runs the app in the simulator
+#   ./build.sh package  bin/mxsc-watch.iq, for the Connect IQ Store (also as
+#                       a beta app), for every watch in manifest.xml
 #
 # DEVICE=... picks another device the SDK Manager has downloaded.
 set -euo pipefail
@@ -27,7 +29,7 @@ if [ ! -f "$KEY" ]; then
     echo "No developer key at $KEY (see README.md)." >&2
     exit 1
 fi
-if [ ! -d "$CIQ/Devices/$DEVICE" ]; then
+if [ "$MODE" != package ] && [ ! -d "$CIQ/Devices/$DEVICE" ]; then
     echo "The SDK has no $DEVICE yet: download it in the SDK Manager (see README.md)." >&2
     exit 1
 fi
@@ -57,8 +59,12 @@ case "$MODE" in
         simulator
         "$SDK/bin/monkeydo" bin/mxsc-watch-test.prg "$DEVICE" -t
         ;;
+    package)
+        "$SDK/bin/monkeyc" -f monkey.jungle -e -r -y "$KEY" -w -o bin/mxsc-watch.iq
+        echo "Built bin/mxsc-watch.iq."
+        ;;
     *)
-        echo "usage: ./build.sh [build|run|test]" >&2
+        echo "usage: ./build.sh [build|run|test|package]" >&2
         exit 2
         ;;
 esac

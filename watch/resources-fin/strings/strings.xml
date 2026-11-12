@@ -43,4 +43,12 @@
     <string id="UpToDate">Ajan tasalla</string>
     <string id="Unpaired">Ei enää yhdistetty: yhdistä uudelleen</string>
     <string id="UpdateUnreadable">Päivitystä ei voi lukea</string>
+    <!-- Conditions: START on the main screen, and setting a value -->
+    <string id="Conditions">Olosuhteet</string>
+    <string id="Range">Etäisyys</string>
+    <string id="Wind">Tuuli</string>
+    <string id="WindFrom">Tuulen suunta</string>
+    <string id="Temperature">Lämpötila</string>
+    <string id="AirPressure">Ilmanpaine</string>
+
 </strings>

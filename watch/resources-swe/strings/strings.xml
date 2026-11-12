@@ -43,4 +43,12 @@
     <string id="UpToDate">Aktuell</string>
     <string id="Unpaired">Inte längre parkopplad: parkoppla igen</string>
     <string id="UpdateUnreadable">Uppdateringen går inte att läsa</string>
+    <!-- Conditions: START on the main screen, and setting a value -->
+    <string id="Conditions">Förhållanden</string>
+    <string id="Range">Avstånd</string>
+    <string id="Wind">Vind</string>
+    <string id="WindFrom">Vind från</string>
+    <string id="Temperature">Temperatur</string>
+    <string id="AirPressure">Lufttryck</string>
+
 </strings>

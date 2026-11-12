@@ -8,10 +8,16 @@ through the app's sync server (see [docs/watch.md](../docs/watch.md)).
 
 On the watch:
 
-- **UP** and **DOWN** change the range, the wind speed, the wind's clock or
-  the temperature (and the air pressure, when the barometer gives none);
-  **START** moves between them, and a tap picks one. A tap on the rifle's
-  name at the top lists the others.
+- **UP** and **DOWN** change the range. **BACK** leaves the app.
+- **START** lists the conditions with their values: the wind, where it
+  comes from, the temperature (and the air pressure, when the barometer
+  gives none), and the rifle when there are several. **START** on one sets
+  it: **UP** and **DOWN** change it, **START** keeps it, **BACK** leaves it
+  as it was.
+- A tap on a value sets it the same way, and a tap anywhere else lists the
+  conditions; a tap on the rifle's name at the top lists the rifles. When
+  setting a value, a tap on the upper or lower arrow changes it and a tap on
+  the value keeps it.
 - **MENU** (hold UP): **Rifle** chooses the rifle and load. **Pair with
   phone** shows an 8-digit code: in the app, choose **Garmin watch** and type
   it. The watch then lists the rifles and asks **Use these rifles?**: check
@@ -20,7 +26,6 @@ On the watch:
   was sent, the ethical limit in this weather, how far the table goes and
   where the pressure comes from. **Forget the phone** stops the updates; the
   rifles stay.
-- **BACK** leaves the app.
 
 The watch keeps the rifles, its own key pair and the paired app's public
 key, and the last range, wind and weather set, and nothing else. It reads
@@ -80,3 +85,10 @@ Sideload the `.prg` over USB:
 
 To remove it, delete the file again, or remove it from the watch's app
 list.
+
+Or, without the cable, as a beta app: `./build.sh package` makes
+`bin/mxsc-watch.iq`. Upload it in the
+[Connect IQ developer dashboard](https://apps.garmin.com/developer/) as a
+**beta app**: only the developer's own Garmin account sees it, and it
+installs from the Connect IQ app on the phone. Each new upload needs a
+higher version.

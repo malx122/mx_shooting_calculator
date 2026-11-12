@@ -115,6 +115,17 @@ module Ui {
         return Math.round(value).toNumber() + " " + str(unit == Units.PRESSURE_MMHG ? Rez.Strings.UnitMmHg : Rez.Strings.UnitHpa);
     }
 
+    // A small triangle `gap` above (x, y) pointing up and one as far below
+    // pointing down: what UP and DOWN change.
+    function arrows(dc as Graphics.Dc, x as Numeric, y as Numeric, gap as Numeric, size as Numeric,
+            color as Graphics.ColorType) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        var top = y - gap;
+        var bottom = y + gap;
+        dc.fillPolygon([[x - size, top + size / 2], [x + size, top + size / 2], [x, top - size / 2]] as Array<Graphics.Point2D>);
+        dc.fillPolygon([[x - size, bottom - size / 2], [x + size, bottom - size / 2], [x, bottom + size / 2]] as Array<Graphics.Point2D>);
+    }
+
     function clickUnit(unit as Number) as String {
         return str(unit == Units.CLICK_MOA ? Rez.Strings.UnitMoa : Rez.Strings.UnitMil);
     }
