@@ -216,8 +216,10 @@ impl Cartridge {
             let start = [shoulder.start, shoulder.diameter / 2.0];
             let neck = [shoulder.neck_start, shoulder.neck_diameter / 2.0];
             let end = [case.length, mouth];
-            fillet(&mut brass, start, neck, shoulder.radius);
-            fillet(&mut brass, neck, end, shoulder.neck_radius);
+            let before = *brass.last().expect("the body has started");
+            let [radius, neck_radius] = shoulder_radii(before, start, neck, end, shoulder);
+            fillet(&mut brass, start, neck, radius);
+            fillet(&mut brass, neck, end, neck_radius);
         }
         brass.push([case.length, mouth]);
 
@@ -393,6 +395,35 @@ impl Solid {
 
 fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+/// How far along the lines either side a rounding of `radius` at `corner`
+/// reaches.
+pub fn rounding_reach(before: [f64; 2], corner: [f64; 2], after: [f64; 2], radius: f64) -> f64 {
+    let into = (corner[1] - before[1]).atan2(corner[0] - before[0]);
+    let out = (after[1] - corner[1]).atan2(after[0] - corner[0]);
+    radius * ((out - into).abs() / 2.0).tan()
+}
+
+/// The shoulder's two roundings (r1, r2). On a "venturi" shoulder they fill
+/// the whole shoulder line, two arcs meeting on it; when the drawing's
+/// rounded numbers make them overlap by a hair, both shrink alike to meet.
+fn shoulder_radii(
+    body: [f64; 2],
+    start: [f64; 2],
+    neck: [f64; 2],
+    mouth: [f64; 2],
+    shoulder: &Shoulder,
+) -> [f64; 2] {
+    let reach = rounding_reach(body, start, neck, shoulder.radius);
+    let neck_reach = rounding_reach(start, neck, mouth, shoulder.neck_radius);
+    let line = (neck[0] - start[0]).hypot(neck[1] - start[1]);
+    let scale = if reach + neck_reach > line {
+        line / (reach + neck_reach)
+    } else {
+        1.0
+    };
+    [shoulder.radius * scale, shoulder.neck_radius * scale]
 }
 
 /// Adds the corner at `corner` of the line from the last point to it and
@@ -609,14 +640,6 @@ mod tests {
                 );
             }
             if let Some(shoulder) = &case.shoulder {
-                // Half way along the shoulder it is straight, between the
-                // rounded corners: with the body and the neck, that puts the
-                // corners at (L1, P2) and (L2, H1).
-                let middle = (shoulder.start + shoulder.neck_start) / 2.0;
-                assert!(
-                    (at(middle) - (shoulder.diameter + shoulder.neck_diameter) / 2.0).abs() < 1e-6,
-                    "{name}: the shoulder's line"
-                );
                 // The corners are rounded: measure the body and the neck half
                 // way along their straight parts, past the roundings.
                 let body_line = [case.body_start, case.body_diameter / 2.0];
@@ -626,13 +649,28 @@ mod tests {
                 let reach = rounding_reach(body_line, corner, neck_corner, shoulder.radius);
                 let neck_reach = rounding_reach(corner, neck_corner, mouth, shoulder.neck_radius);
                 let slant = (neck_corner[0] - corner[0]).hypot(neck_corner[1] - corner[1]);
+                // A venturi shoulder's roundings fill the line, two arcs
+                // meeting on it; the drawing's rounding may overlap them by
+                // a hair, no more.
+                let venturi = reach + neck_reach >= slant;
                 assert!(
-                    reach + neck_reach < slant,
-                    "{name}: the shoulder's roundings fit it"
+                    reach + neck_reach < slant + 0.05,
+                    "{name}: the shoulder's roundings fit it: {reach:.3} + {neck_reach:.3} against {slant:.3}"
                 );
                 assert!(
                     neck_reach < case.length - shoulder.neck_start,
                     "{name}: and the neck's"
+                );
+                // Between the rounded corners the shoulder is straight: with
+                // the body and the neck, its line puts the corners at
+                // (L1, P2) and (L2, H1).
+                let along = (reach + slant - neck_reach) / 2.0 / slant;
+                let middle = shoulder.start + along * (shoulder.neck_start - shoulder.start);
+                let expected =
+                    shoulder.diameter + along * (shoulder.neck_diameter - shoulder.diameter);
+                assert!(
+                    venturi || (at(middle) - expected).abs() < 1e-6,
+                    "{name}: the shoulder's line"
                 );
                 let body_point = (case.body_start + shoulder.start - reach) / 2.0;
                 let expected = case.body_diameter
@@ -713,11 +751,30 @@ mod tests {
         }
     }
 
-    /// How far along each line a rounding of `radius` at `corner` reaches.
-    fn rounding_reach(before: [f64; 2], corner: [f64; 2], after: [f64; 2], radius: f64) -> f64 {
-        let into = (corner[1] - before[1]).atan2(corner[0] - before[0]);
-        let out = (after[1] - corner[1]).atan2(after[0] - corner[0]);
-        radius * ((out - into).abs() / 2.0).tan()
+    #[test]
+    fn overlapping_shoulder_roundings_shrink_to_meet() {
+        let shoulder = Shoulder {
+            start: 59.62,
+            diameter: 12.49,
+            neck_start: 61.86,
+            neck_diameter: 8.56,
+            radius: 3.4,
+            neck_radius: 4.7,
+        };
+        let (body, start, neck, mouth): ([f64; 2], [f64; 2], [f64; 2], [f64; 2]) =
+            ([5.56, 6.5], [59.62, 6.245], [61.86, 4.28], [71.75, 4.28]);
+        let line = (neck[0] - start[0]).hypot(neck[1] - start[1]);
+        assert!(
+            rounding_reach(body, start, neck, 3.4) + rounding_reach(start, neck, mouth, 4.7) > line
+        );
+        let [radius, neck_radius] = shoulder_radii(body, start, neck, mouth, &shoulder);
+        let meet = rounding_reach(body, start, neck, radius)
+            + rounding_reach(start, neck, mouth, neck_radius);
+        assert!((meet - line).abs() < 1e-9, "{meet} against {line}");
+        assert!(
+            (radius / neck_radius - 3.4 / 4.7).abs() < 1e-12,
+            "both shrink alike"
+        );
     }
 
     #[test]

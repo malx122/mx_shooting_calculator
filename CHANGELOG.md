@@ -19,7 +19,14 @@ any release may still change things noticeably.
   3D, true to its C.I.P. drawing, with a typical bullet; drag to turn it.
   **Save for 3D printing (STL)** saves it in millimetres, standing on its
   head, to try magazines and feeding. The rifle editor shows it too. For
-  59 of the 80 calibers, each from its C.I.P. drawing.
+  every caliber in the catalog, each from its C.I.P. drawing.
+- **.50 BMG** in the caliber catalog.
+
+### Fixed
+
+- **Caliber catalog:** 6.5×52R takes .257 in bullets (6.53 mm) and 8×57 JR
+  .318 in (8.08 mm); the catalog had 6.71 and 8.20 mm, so it offered
+  component bullets of the wrong size for them.
 
 ## [0.9.2] - 2026-11-05
 

@@ -1,5 +1,24 @@
 [
-  { "key": "17-hornet", "name": ".17 Hornet", "aliases": ["17 Hornet"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9 },
+  { "key": "17-hornet", "name": ".17 Hornet", "aliases": ["17 Hornet"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 17 Hornet, date 2014-05-20 (no revision): cartridge maximum",
+      "overall_length": 43.69,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 8.89, "rim_thickness": 1.65,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": null,
+        "body_start": 1.65, "body_diameter": 7.59,
+        "shoulder": { "start": 26.60, "diameter": 7.47, "neck_start": 29.32, "neck_diameter": 4.93, "radius": 0.64, "neck_radius": 1.91 },
+        "mouth_diameter": 4.93, "length": 34.29
+      },
+      "bullet": {
+        "name": "20 gr polymer tip",
+        "source": "Estimated: no catalog length for a 20 gr .17 polymer tip; length from its mass",
+        "diameter": 4.37, "length": 13.50, "nose_length": 7.5, "tip_diameter": 0.6,
+        "boat_tail": null
+      }
+    } },
   { "key": "17-hmr", "name": ".17 HMR", "aliases": [".17 Hornady Magnum Rimfire"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
     "cartridge": {
       "source": "C.I.P. TAB. V, 17 HMR, revision 2006-05-16: cartridge maximum",
@@ -21,7 +40,27 @@
         "boat_tail": null
       }
     } },
-  { "key": "17-mach-2", "name": ".17 Mach 2", "aliases": [".17 Mach II"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9 },
+  { "key": "17-mach-2", "name": ".17 Mach 2", "aliases": [".17 Mach II"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 17 Mach 2, revision 2007-05-14: cartridge maximum",
+      "overall_length": 25.40,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 7.06, "rim_thickness": 1.09,
+        "head_bevel": null,
+        "rim_radius": 0.545,
+        "groove": null,
+        "body_start": 1.09, "body_diameter": 5.74,
+        "shoulder": { "start": 14.23, "diameter": 5.74, "neck_start": 15.48, "neck_diameter": 4.83, "radius": 0.25, "neck_radius": 1.27 },
+        "mouth_diameter": 4.83, "length": 18.14
+      },
+      "bullet": {
+        "name": "17 gr polymer tip",
+        "source": "Estimated: a jacketed polymer-tipped bullet inside the case mouth (G1 4.38); length from its mass at about 10 g/cm³ overall",
+        "diameter": 4.38, "length": 10.00, "nose_length": 6.2, "tip_diameter": 0.6,
+        "boat_tail": null
+      }
+    } },
   { "key": "22-lr", "name": ".22 LR", "aliases": [".22 Long Rifle"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Long Rifle, revision 2008-09-23: cartridge maximum",
@@ -43,8 +82,48 @@
         "boat_tail": null
       }
     } },
-  { "key": "22-long", "name": ".22 Long", "aliases": ["22 Long"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16 },
-  { "key": "22-short", "name": ".22 Short", "aliases": ["22 Short"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16 },
+  { "key": "22-long", "name": ".22 Long", "aliases": ["22 Long"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 22 Long, revision 2000-06-07: cartridge maximum",
+      "overall_length": 22.56,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 7.06, "rim_thickness": 1.09,
+        "head_bevel": null,
+        "rim_radius": 0.545,
+        "groove": null,
+        "body_start": 1.09, "body_diameter": 5.74,
+        "shoulder": null,
+        "mouth_diameter": 5.72, "length": 15.57
+      },
+      "bullet": {
+        "name": "29 gr round nose",
+        "source": "Estimated: a heeled lead bullet, as wide as the case (G1 5.72); length from its mass at 11.3 g/cm³ with a 5.2 mm heel, allowing for lube grooves",
+        "diameter": 5.72, "length": 8.00, "nose_length": 3.4, "tip_diameter": 1.6,
+        "boat_tail": null
+      }
+    } },
+  { "key": "22-short", "name": ".22 Short", "aliases": ["22 Short"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 22 Short, revision 2008-09-23: cartridge maximum",
+      "overall_length": 17.65,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 7.06, "rim_thickness": 1.09,
+        "head_bevel": null,
+        "rim_radius": 0.545,
+        "groove": null,
+        "body_start": 1.09, "body_diameter": 5.74,
+        "shoulder": null,
+        "mouth_diameter": 5.72, "length": 10.69
+      },
+      "bullet": {
+        "name": "29 gr round nose",
+        "source": "Estimated: a heeled lead bullet, as wide as the case (G1 5.72); length from its mass at 11.3 g/cm³ with a 5.2 mm heel, allowing for lube grooves",
+        "diameter": 5.72, "length": 8.00, "nose_length": 3.4, "tip_diameter": 1.6,
+        "boat_tail": null
+      }
+    } },
   { "key": "22-wmr", "name": ".22 WMR", "aliases": [".22 Magnum", ".22 Winchester Magnum Rimfire"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Win. Mag. R.F., revision 2008-09-23: cartridge maximum",
@@ -66,8 +145,48 @@
         "boat_tail": null
       }
     } },
-  { "key": "22-wrf", "name": ".22 WRF", "aliases": [".22 Winchester Rimfire"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16 },
-  { "key": "22-win-auto", "name": ".22 Win Auto", "aliases": [".22 Winchester Automatic"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16 },
+  { "key": "22-wrf", "name": ".22 WRF", "aliases": [".22 Winchester Rimfire"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 22 Win. R.F. et 22 Rem. Spl., revision 2000-06-07: cartridge maximum",
+      "overall_length": 29.97,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 7.62, "rim_thickness": 1.27,
+        "head_bevel": null,
+        "rim_radius": 0.635,
+        "groove": null,
+        "body_start": 1.27, "body_diameter": 6.24,
+        "shoulder": null,
+        "mouth_diameter": 6.18, "length": 24.51
+      },
+      "bullet": {
+        "name": "45 gr round nose",
+        "source": "Estimated: an inside-lubricated lead bullet inside the case mouth; diameter 5.72 (G1 5.80 is more than 0.03 over the caliber's 5.69); length from its mass at 11.3 g/cm³",
+        "diameter": 5.72, "length": 11.30, "nose_length": 3.4, "tip_diameter": 2.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "22-win-auto", "name": ".22 Win Auto", "aliases": [".22 Winchester Automatic"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 22 Win. Auto, revision 2000-06-07: cartridge maximum",
+      "overall_length": 23.24,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 8.00, "rim_thickness": 1.42,
+        "head_bevel": null,
+        "rim_radius": 0.71,
+        "groove": null,
+        "body_start": 1.42, "body_diameter": 6.36,
+        "shoulder": null,
+        "mouth_diameter": 6.36, "length": 16.92
+      },
+      "bullet": {
+        "name": "45 gr round nose",
+        "source": "Estimated: an inside-lubricated lead bullet inside the case mouth; diameter 5.72 (G1 5.78 is more than 0.03 over the caliber's 5.69); length from its mass at 11.3 g/cm³",
+        "diameter": 5.72, "length": 11.40, "nose_length": 3.6, "tip_diameter": 1.8,
+        "boat_tail": null
+      }
+    } },
   { "key": "22-hornet", "name": ".22 Hornet", "aliases": ["5.6×35R"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
     "cartridge": {
       "source": "C.I.P. TAB. II, 22 Hornet, revision 2002-05-15: cartridge maximum",
@@ -188,7 +307,26 @@
         "boat_tail": null
       }
     } },
-  { "key": "5mm-rem-rimfire-magnum", "name": "5mm Remington Rimfire Magnum", "aliases": ["5mm RRM"], "bullet_diameter_mm": 5.18, "typical_twist_in": 10 },
+  { "key": "5mm-rem-rimfire-magnum", "name": "5mm Remington Rimfire Magnum", "aliases": ["5mm RRM"], "bullet_diameter_mm": 5.18, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. V, 5 mm Rem. Mag., revision 2000-06-07: cartridge maximum",
+      "overall_length": 32.89,
+      "primer_diameter": null,
+      "case": {
+        "rim_diameter": 8.26, "rim_thickness": 1.26,
+        "head_bevel": null,
+        "groove": null,
+        "body_start": 1.26, "body_diameter": 6.58,
+        "shoulder": { "start": 20.22, "diameter": 6.58, "neck_start": 21.15, "neck_diameter": 5.72, "radius": 1.14, "neck_radius": 1.78 },
+        "mouth_diameter": 5.72, "length": 25.91
+      },
+      "bullet": {
+        "name": "38 gr pointed soft point",
+        "source": "Estimated: a jacketed bullet inside the case mouth (G1 5.21); length from its mass at about 10.9 g/cm³",
+        "diameter": 5.21, "length": 12.70, "nose_length": 5.4, "tip_diameter": 1.2,
+        "boat_tail": null
+      }
+    } },
   { "key": "222-rem", "name": ".222 Rem", "aliases": [".222 Remington"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
     "cartridge": {
       "source": "C.I.P. TAB. I, 222 Rem., revision 2008-09-13: cartridge maximum",
@@ -269,7 +407,26 @@
         "boat_tail": { "length": 2.8, "base_diameter": 4.9 }
       }
     } },
-  { "key": "6mm-creedmoor", "name": "6mm Creedmoor", "aliases": ["6 CM"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5 },
+  { "key": "6mm-creedmoor", "name": "6mm Creedmoor", "aliases": ["6 CM"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 mm Creedmoor, revision 2021-11-09: cartridge maximum",
+      "overall_length": 71.12,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.99, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 37.84, "diameter": 11.74, "neck_start": 41.94, "neck_diameter": 7.01, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 7.01, "length": 48.77
+      },
+      "bullet": {
+        "name": "108 gr hollow point boat tail",
+        "source": "Length from the app's catalog (Berger Elite Hunter 108 gr, 32.0 mm); nose, tip and base estimated",
+        "diameter": 6.17, "length": 32.00, "nose_length": 18.5, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.2, "base_diameter": 4.9 }
+      }
+    } },
   { "key": "25-06-rem", "name": ".25-06 Rem", "aliases": [".25-06 Remington"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
     "cartridge": {
       "source": "C.I.P. TAB. I, 25-06 Rem., revision 2008-09-23: cartridge maximum",
@@ -390,7 +547,26 @@
         "boat_tail": { "length": 2.8, "base_diameter": 5.6 }
       }
     } },
-  { "key": "6-5-grendel", "name": "6.5 Grendel", "aliases": ["6.5×39 Grendel"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8 },
+  { "key": "6-5-grendel", "name": "6.5 Grendel", "aliases": ["6.5×39 Grendel"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6,5 Grendel, revision 2015-05-19: cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 11.20, "rim_thickness": 1.50,
+        "head_bevel": { "length": 0.25, "degrees": 55 },
+        "groove": { "diameter": 9.60, "bevel_degrees": 45, "floor_min": 1.19 },
+        "body_start": 3.50, "body_diameter": 11.22,
+        "shoulder": { "start": 29.23, "diameter": 10.92, "neck_start": 32.25, "neck_diameter": 7.44, "radius": 0.76, "neck_radius": 1.27 },
+        "mouth_diameter": 7.44, "length": 38.61
+      },
+      "bullet": {
+        "name": "125 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 125 gr, 29.7 mm); nose, tip and base estimated",
+        "diameter": 6.71, "length": 29.70, "nose_length": 16.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
   { "key": "6-5-284-norma", "name": "6.5-284 Norma", "aliases": ["6.5×284 Norma", "6.5-284"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 - 284 Norma, revision 2008-04-15: cartridge maximum",
@@ -431,7 +607,26 @@
         "boat_tail": { "length": 3.0, "base_diameter": 5.5 }
       }
     } },
-  { "key": "6-5x52r", "name": "6.5×52R", "aliases": ["6.5×52 R", "6,5×52R", "6.5x52R"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8.66 },
+  { "key": "6-5x52r", "name": "6.5×52R", "aliases": ["6.5×52 R", "6,5×52R", "6.5x52R"], "bullet_diameter_mm": 6.53, "typical_twist_in": 8.66,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 6,5 x 52 R, revision 2002-05-15: cartridge maximum",
+      "overall_length": 64.50,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.60, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.60, "body_diameter": 10.60,
+        "shoulder": { "start": 35.00, "diameter": 9.20, "neck_start": 40.00, "neck_diameter": 7.18, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 7.18, "length": 52.00
+      },
+      "bullet": {
+        "name": "117 gr soft point",
+        "source": "Estimated: a semi-pointed soft point, a .257 in bore (the sheet's G1 is 6.58); length from its mass at 10.6 g/cm³; nose, tip and base estimated",
+        "diameter": 6.53, "length": 24.50, "nose_length": 10.5, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
   { "key": "6-5-creedmoor", "name": "6.5 Creedmoor", "aliases": ["6.5 CM", "6.5 Creed"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 Creedmoor, revision 2020-04-21: cartridge maximum",
@@ -532,8 +727,46 @@
         "boat_tail": { "length": 2.8, "base_diameter": 5.8 }
       }
     } },
-  { "key": "6-8-rem-spc", "name": "6.8 Rem SPC", "aliases": ["6.8 mm Rem SPC", "6.8 SPC", "6.8×43"], "bullet_diameter_mm": 7.04, "typical_twist_in": 11 },
-  { "key": "6-8-western", "name": "6.8 Western", "aliases": [], "bullet_diameter_mm": 7.04, "typical_twist_in": 8 },
+  { "key": "6-8-rem-spc", "name": "6.8 Rem SPC", "aliases": ["6.8 mm Rem SPC", "6.8 SPC", "6.8×43"], "bullet_diameter_mm": 7.04, "typical_twist_in": 11,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6,8 mm Rem. SPC, date 2006-05-16 (no revision): cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 10.72, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 9.09, "bevel_degrees": 36, "floor_min": 0.84 },
+        "body_start": 3.20, "body_diameter": 10.72,
+        "shoulder": { "start": 33.05, "diameter": 10.20, "neck_start": 35.91, "neck_diameter": 7.77, "radius": 0.64, "neck_radius": 2.54 },
+        "mouth_diameter": 7.77, "length": 42.84
+      },
+      "bullet": {
+        "name": "110 gr spitzer soft point",
+        "source": "Estimated: a 110 gr flat-base spitzer soft point; length from its mass at 9.5 g/cm³ (about 24.4 mm); nose and tip estimated",
+        "diameter": 7.04, "length": 24.40, "nose_length": 13.5, "tip_diameter": 1.8,
+        "boat_tail": null
+      }
+    } },
+  { "key": "6-8-western", "name": "6.8 Western", "aliases": [], "bullet_diameter_mm": 7.04, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6,8 Western, date 2022-11-08 (no revision): cartridge maximum",
+      "overall_length": 75.06,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.59, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.35, "degrees": 35 },
+        "groove": { "diameter": 12.19, "bevel_degrees": 45, "floor_min": 1.02 },
+        "body_start": 3.35, "body_diameter": 14.12,
+        "shoulder": { "start": 40.22, "diameter": 13.67, "neck_start": 44.29, "neck_diameter": 7.98, "radius": 1.27, "neck_radius": 2.54 },
+        "mouth_diameter": 7.98, "length": 51.31
+      },
+      "bullet": {
+        "name": "170 gr Elite Hunter",
+        "source": "Length from the app's catalog (Berger Elite Hunter 170 gr, 37.8 mm); nose, tip and base estimated",
+        "diameter": 7.04, "length": 37.80, "nose_length": 22.0, "tip_diameter": 1.3,
+        "boat_tail": { "length": 4.0, "base_diameter": 5.7 }
+      }
+    } },
   { "key": "7x57", "name": "7×57", "aliases": ["7x57 Mauser", "7mm Mauser"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 x 57, revision 2002-05-15: cartridge maximum",
@@ -675,7 +908,26 @@
         "boat_tail": { "length": 3.0, "base_diameter": 5.9 }
       }
     } },
-  { "key": "7mm-prc", "name": "7mm PRC", "aliases": ["7mm Precision Rifle Cartridge"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8 },
+  { "key": "7mm-prc", "name": "7mm PRC", "aliases": ["7mm Precision Rifle Cartridge"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7 mm Precision Rifle Cartridge, date 2023-05-09 (no revision): cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.51, "rim_thickness": 1.27,
+        "head_bevel": null,
+        "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
+        "body_start": 3.24, "body_diameter": 13.51,
+        "shoulder": { "start": 46.21, "diameter": 13.15, "neck_start": 50.63, "neck_diameter": 8.05, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 8.05, "length": 57.91
+      },
+      "bullet": {
+        "name": "175 gr Elite Hunter",
+        "source": "Length from the app's catalog (Berger Elite Hunter 175 gr, 38.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 38.20, "nose_length": 22.5, "tip_diameter": 1.3,
+        "boat_tail": { "length": 4.2, "base_diameter": 5.9 }
+      }
+    } },
   { "key": "30-30-win", "name": ".30-30 Win", "aliases": [".30-30 Winchester", ".30 WCF"], "bullet_diameter_mm": 7.82, "typical_twist_in": 12,
     "cartridge": {
       "source": "C.I.P. TAB. II, 30-30 Win., revision 2002-05-15: cartridge maximum",
@@ -696,7 +948,26 @@
         "boat_tail": null
       }
     } },
-  { "key": "30-carbine", "name": ".30 Carbine", "aliases": ["30 Carbine", "7.62×33"], "bullet_diameter_mm": 7.82, "typical_twist_in": 20 },
+  { "key": "30-carbine", "name": ".30 Carbine", "aliases": ["30 Carbine", "7.62×33"], "bullet_diameter_mm": 7.82, "typical_twist_in": 20,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 30 Carbine, revision 2002-05-15: cartridge maximum",
+      "overall_length": 42.67,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 9.14, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 7.87, "bevel_degrees": 37, "floor_min": 0.84 },
+        "body_start": 2.90, "body_diameter": 9.06,
+        "shoulder": null,
+        "mouth_diameter": 8.53, "length": 32.77
+      },
+      "bullet": {
+        "name": "110 gr round-nose soft point",
+        "source": "Estimated: a 110 gr round-nose soft point, flat base; length from its mass at 9.5 g/cm³ (about 17.8 mm); nose and tip estimated",
+        "diameter": 7.82, "length": 17.80, "nose_length": 7.0, "tip_diameter": 3.0,
+        "boat_tail": null
+      }
+    } },
   { "key": "308-win", "name": ".308 Win", "aliases": [".308 Winchester", "7.62×51"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11,
     "cartridge": {
       "source": "C.I.P. TAB. I, 308 Win., revision 2008-09-23: cartridge maximum",
@@ -818,8 +1089,47 @@
         "boat_tail": { "length": 3.0, "base_diameter": 6.4 }
       }
     } },
-  { "key": "300-wby-mag", "name": ".300 Wby Mag", "aliases": [".300 Weatherby Magnum"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10 },
-  { "key": "300-prc", "name": ".300 PRC", "aliases": [".300 Precision Rifle Cartridge"], "bullet_diameter_mm": 7.82, "typical_twist_in": 9 },
+  { "key": "300-wby-mag", "name": ".300 Wby Mag", "aliases": [".300 Weatherby Magnum"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. III, 300 Weath. Mag., revision 2002-05-15: cartridge maximum",
+      "overall_length": 90.42,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.50, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 11.61, "bevel_degrees": 45, "floor_min": 1.24 },
+        "belt_diameter": 13.50,
+        "body_start": 5.56, "body_diameter": 13.00,
+        "shoulder": { "start": 59.62, "diameter": 12.49, "neck_start": 61.86, "neck_diameter": 8.56, "radius": 3.30, "neck_radius": 4.62 },
+        "mouth_diameter": 8.56, "length": 71.75
+      },
+      "bullet": {
+        "name": "180 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 180 gr, 35.1 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 35.10, "nose_length": 17.5, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.4 }
+      }
+    } },
+  { "key": "300-prc", "name": ".300 PRC", "aliases": [".300 Precision Rifle Cartridge"], "bullet_diameter_mm": 7.82, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 300 Precision Rifle Cartridge, revision 2020-11-10: cartridge maximum",
+      "overall_length": 93.98,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.51, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
+        "body_start": 3.25, "body_diameter": 13.53,
+        "shoulder": { "start": 53.89, "diameter": 13.08, "neck_start": 57.72, "neck_diameter": 8.66, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 8.66, "length": 65.53
+      },
+      "bullet": {
+        "name": "217 gr Elite Hunter",
+        "source": "Length from the app's catalog (Berger Elite Hunter 217 gr, 40.6 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 40.60, "nose_length": 24.0, "tip_diameter": 1.3,
+        "boat_tail": { "length": 4.5, "base_diameter": 6.4 }
+      }
+    } },
   { "key": "308-norma-mag", "name": ".308 Norma Magnum", "aliases": [".308 Norma Mag"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
     "cartridge": {
       "source": "C.I.P. TAB. III, 308 Norma Mag., revision 2016-10-18: cartridge maximum",
@@ -921,7 +1231,26 @@
         "boat_tail": null
       }
     } },
-  { "key": "8x57-jr", "name": "8×57 JR", "aliases": ["8x57 JR"], "bullet_diameter_mm": 8.20, "typical_twist_in": 9.45 },
+  { "key": "8x57-jr", "name": "8×57 JR", "aliases": ["8x57 JR"], "bullet_diameter_mm": 8.080, "typical_twist_in": 9.45,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 8 x 57 IR, revision 2002-05-15: cartridge maximum",
+      "overall_length": 82.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.32, "rim_thickness": 1.40,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.40, "body_diameter": 11.92,
+        "shoulder": { "start": 46.00, "diameter": 10.95, "neck_start": 48.99, "neck_diameter": 8.99, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 8.99, "length": 57.00
+      },
+      "bullet": {
+        "name": "196 gr soft point",
+        "source": "Estimated: a semi-pointed soft point, a .318 in bore (the sheet's G1 is 8.09); length from its mass at 10.6 g/cm³; nose, tip and base estimated",
+        "diameter": 8.08, "length": 28.40, "nose_length": 15.0, "tip_diameter": 3.0,
+        "boat_tail": null
+      }
+    } },
   { "key": "8x57-jrs", "name": "8×57 JRS", "aliases": ["8x57 JRS"], "bullet_diameter_mm": 8.20, "typical_twist_in": 9.45,
     "cartridge": {
       "source": "C.I.P. TAB. II, 8 x 57 IRS, revision 2002-05-15: cartridge maximum",
@@ -1063,7 +1392,26 @@
         "boat_tail": { "length": 2.5, "base_diameter": 8.0 }
       }
     } },
-  { "key": "350-legend", "name": ".350 Legend", "aliases": ["350 Legend"], "bullet_diameter_mm": 9.02, "typical_twist_in": 16 },
+  { "key": "350-legend", "name": ".350 Legend", "aliases": ["350 Legend"], "bullet_diameter_mm": 9.02, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 350 Legend, date 2020-04-21 (no revision): cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 9.60, "rim_thickness": 1.14,
+        "head_bevel": { "length": 0.45, "degrees": 55 },
+        "groove": { "diameter": 8.43, "bevel_degrees": 25, "floor_min": 0.76 },
+        "body_start": 3.50, "body_diameter": 9.92,
+        "shoulder": null,
+        "mouth_diameter": 9.60, "length": 43.43
+      },
+      "bullet": {
+        "name": "180 gr soft point",
+        "source": "Estimated: a 180 gr flat-base soft point; length from its mass at 9.5 g/cm³ (about 22.1 mm); nose and tip estimated",
+        "diameter": 9.02, "length": 22.10, "nose_length": 9.0, "tip_diameter": 3.5,
+        "boat_tail": null
+      }
+    } },
   { "key": "358-norma-mag", "name": ".358 Norma Mag", "aliases": [".358 Norma Magnum"], "bullet_diameter_mm": 9.09, "typical_twist_in": 12,
     "cartridge": {
       "source": "C.I.P. TAB. III, 358 Norma Mag., revision 2002-05-15: cartridge maximum",
@@ -1186,8 +1534,46 @@
         "boat_tail": { "length": 3.0, "base_diameter": 8.2 }
       }
     } },
-  { "key": "416-rigby", "name": ".416 Rigby", "aliases": [], "bullet_diameter_mm": 10.57, "typical_twist_in": 14 },
-  { "key": "450-bushmaster", "name": ".450 Bushmaster", "aliases": ["450 Bushmaster"], "bullet_diameter_mm": 11.47, "typical_twist_in": 24 },
+  { "key": "416-rigby", "name": ".416 Rigby", "aliases": [], "bullet_diameter_mm": 10.57, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum",
+      "overall_length": 95.25,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 14.99, "rim_thickness": 1.65,
+        "head_bevel": null,
+        "groove": { "diameter": 12.70, "bevel_degrees": 39.93, "floor_min": 0.81 },
+        "body_start": 3.81, "body_diameter": 14.96,
+        "shoulder": { "start": 59.77, "diameter": 13.72, "neck_start": 60.96, "neck_diameter": 11.35, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 11.33, "length": 73.66
+      },
+      "bullet": {
+        "name": "400 gr round-nose soft point",
+        "source": "Estimated: a round-nosed soft point; length from its mass at 10.6 g/cm³; nose, tip and base estimated",
+        "diameter": 10.57, "length": 31.60, "nose_length": 12.0, "tip_diameter": 4.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "450-bushmaster", "name": ".450 Bushmaster", "aliases": ["450 Bushmaster"], "bullet_diameter_mm": 11.47, "typical_twist_in": 24,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 450 Bushmaster, date 2010-05-26 (no revision): cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.86, "degrees": 45 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 40, "floor_min": 1.02 },
+        "body_start": 3.77, "body_diameter": 12.70,
+        "shoulder": null,
+        "mouth_diameter": 12.19, "length": 43.18
+      },
+      "bullet": {
+        "name": "250 gr polymer-tipped flat base",
+        "source": "Estimated: a 250 gr polymer-tipped flat-base bullet; length from its mass at 9.2 g/cm³ (about 21.6 mm); nose and tip estimated",
+        "diameter": 11.47, "length": 21.60, "nose_length": 12.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
   { "key": "45-70-govt", "name": ".45-70 Govt", "aliases": [".45-70 Government"], "bullet_diameter_mm": 11.63, "typical_twist_in": 20,
     "cartridge": {
       "source": "C.I.P. TAB. II, 45-70 Govt., revision 2002-05-15: cartridge maximum",
@@ -1208,5 +1594,45 @@
         "boat_tail": null
       }
     } },
-  { "key": "458-win-mag", "name": ".458 Win Mag", "aliases": [".458 Winchester Magnum"], "bullet_diameter_mm": 11.63, "typical_twist_in": 14 }
+  { "key": "458-win-mag", "name": ".458 Win Mag", "aliases": [".458 Winchester Magnum"], "bullet_diameter_mm": 11.63, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. III, 458 Win. Mag., revision 2002-05-15: cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.51, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
+        "belt_diameter": 13.51,
+        "body_start": 5.59, "body_diameter": 13.03,
+        "shoulder": null,
+        "mouth_diameter": 12.22, "length": 63.50
+      },
+      "bullet": {
+        "name": "500 gr round-nose soft point",
+        "source": "Estimated: a round-nosed soft point; length from its mass at 10.6 g/cm³; nose, tip and base estimated",
+        "diameter": 11.63, "length": 32.40, "nose_length": 12.0, "tip_diameter": 5.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "50-bmg", "name": ".50 BMG", "aliases": [".50 Browning Machine Gun", "12.7×99", "12,7x99", "12.7×99 NATO"], "bullet_diameter_mm": 12.98, "typical_twist_in": 15,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 50 Browning, revision 2010-05-26: cartridge maximum",
+      "overall_length": 138.43,
+      "primer_diameter": 8.00,
+      "case": {
+        "rim_diameter": 20.42, "rim_thickness": 2.26,
+        "head_bevel": { "length": 0.84, "degrees": 45 },
+        "groove": { "diameter": 17.27, "bevel_degrees": 36, "floor_min": 1.80 },
+        "body_start": 6.23, "body_diameter": 20.42,
+        "shoulder": { "start": 76.34, "diameter": 18.14, "neck_start": 83.30, "neck_diameter": 14.22, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 14.22, "length": 99.31
+      },
+      "bullet": {
+        "name": "661 gr FMJ boat tail (ball)",
+        "source": "Estimated: an M33-type steel-core ball bullet; length from its mass at 9.0 g/cm³; nose, tip and base estimated",
+        "diameter": 12.98, "length": 50.50, "nose_length": 32.0, "tip_diameter": 1.5,
+        "boat_tail": { "length": 6.0, "base_diameter": 11.2 }
+      }
+    } }
 ]
