@@ -521,9 +521,16 @@ mod tests {
                     "{name}: the bullet fits"
                 );
             }
+            // A long nose may start inside a short neck, but the neck must
+            // still grip the bullet near its full width.
+            let at_mouth = radius_at(
+                &bullet.outline(cartridge.overall_length - bullet.length),
+                case.length,
+            ) * 2.0;
             assert!(
-                bullet.nose_length <= cartridge.overall_length - case.length,
-                "{name}: the nose starts outside the case"
+                at_mouth >= 0.95 * bullet.diameter,
+                "{name}: the bullet at the case mouth is {at_mouth:.2} of {:.2}",
+                bullet.diameter
             );
             let seated = cartridge.overall_length - bullet.length;
             assert!(

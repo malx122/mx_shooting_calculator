@@ -14,8 +14,8 @@
       },
       "bullet": {
         "name": "20 gr polymer tip",
-        "source": "Estimated: no catalog length for a 20 gr .17 polymer tip; length from its mass",
-        "diameter": 4.37, "length": 13.50, "nose_length": 7.5, "tip_diameter": 0.6,
+        "source": "Length from Nosler (Varmageddon 20 gr FB Tipped), nosler.com; nose, tip and base estimated",
+        "diameter": 4.37, "length": 14.10, "nose_length": 7.5, "tip_diameter": 0.6,
         "boat_tail": null
       }
     } },
@@ -202,8 +202,8 @@
       },
       "bullet": {
         "name": "40 gr flat base varmint",
-        "source": "Length from the app's catalog (Berger FB Varmint 40 gr, 15.5 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 15.50, "nose_length": 7.8, "tip_diameter": 0.8,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 40 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 15.47, "nose_length": 10.54, "tip_diameter": 0.8,
         "boat_tail": null
       }
     } },
@@ -222,9 +222,9 @@
       },
       "bullet": {
         "name": "40 gr boat tail varmint",
-        "source": "Length from the app's catalog (Berger BT Varmint 40 gr, 17.3 mm); nose, tip and base estimated",
-        "diameter": 5.18, "length": 17.30, "nose_length": 9.8, "tip_diameter": 0.8,
-        "boat_tail": { "length": 1.8, "base_diameter": 4.4 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger BT Varmint 40 gr); tip and base diameters estimated",
+        "diameter": 5.18, "length": 17.27, "nose_length": 10.44, "tip_diameter": 0.8,
+        "boat_tail": { "length": 2.79, "base_diameter": 4.4 }
       }
     } },
   { "key": "5-6x50-mag", "name": "5.6×50 Magnum", "aliases": ["5,6 x 50 Mag.", "5,6×50 Magnum", "5.6x50 Mag."], "bullet_diameter_mm": 5.69, "typical_twist_in": 12,
@@ -242,8 +242,8 @@
       },
       "bullet": {
         "name": "55 gr flat base",
-        "source": "Length from the app's catalog (Berger FB Varmint 55 gr, 19.1 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 19.10, "nose_length": 10.5, "tip_diameter": 1.2,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 55 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 19.13, "nose_length": 11.61, "tip_diameter": 1.2,
         "boat_tail": null
       }
     } },
@@ -262,8 +262,8 @@
       },
       "bullet": {
         "name": "55 gr flat base",
-        "source": "Length from the app's catalog (Berger FB Varmint 55 gr, 19.1 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 19.10, "nose_length": 10.5, "tip_diameter": 1.2,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 55 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 19.13, "nose_length": 11.61, "tip_diameter": 1.2,
         "boat_tail": null
       }
     } },
@@ -302,8 +302,8 @@
       },
       "bullet": {
         "name": "64 gr flat base",
-        "source": "Length from the app's catalog (Berger FB Varmint 64 gr, 20.8 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 20.80, "nose_length": 11.5, "tip_diameter": 1.0,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 64 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 20.80, "nose_length": 12.85, "tip_diameter": 1.0,
         "boat_tail": null
       }
     } },
@@ -342,8 +342,8 @@
       },
       "bullet": {
         "name": "52 gr flat base varmint",
-        "source": "Length from the app's catalog (Berger FB Varmint 52 gr, 18.2 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 18.20, "nose_length": 10.5, "tip_diameter": 1.2,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 52 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 18.21, "nose_length": 11.07, "tip_diameter": 1.2,
         "boat_tail": null
       }
     } },
@@ -382,8 +382,8 @@
       },
       "bullet": {
         "name": "55 gr flat base varmint",
-        "source": "Length from the app's catalog (Berger FB Varmint 55 gr, 19.1 mm); nose, tip and base estimated",
-        "diameter": 5.69, "length": 19.10, "nose_length": 11.0, "tip_diameter": 1.2,
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 55 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 19.13, "nose_length": 11.61, "tip_diameter": 1.2,
         "boat_tail": null
       }
     } },
@@ -402,9 +402,9 @@
       },
       "bullet": {
         "name": "95 gr hollow point boat tail",
-        "source": "Length from the app's catalog (Berger Classic Hunter 95 gr, 27.2 mm); nose, tip and base estimated",
-        "diameter": 6.17, "length": 27.20, "nose_length": 15.5, "tip_diameter": 1.2,
-        "boat_tail": { "length": 2.8, "base_diameter": 4.9 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Classic Hunter 95 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 27.15, "nose_length": 13.82, "tip_diameter": 1.2,
+        "boat_tail": { "length": 4.19, "base_diameter": 4.9 }
       }
     } },
   { "key": "6mm-creedmoor", "name": "6mm Creedmoor", "aliases": ["6 CM"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
@@ -422,9 +422,9 @@
       },
       "bullet": {
         "name": "108 gr hollow point boat tail",
-        "source": "Length from the app's catalog (Berger Elite Hunter 108 gr, 32.0 mm); nose, tip and base estimated",
-        "diameter": 6.17, "length": 32.00, "nose_length": 18.5, "tip_diameter": 1.2,
-        "boat_tail": { "length": 3.2, "base_diameter": 4.9 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 108 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 32.00, "nose_length": 16.54, "tip_diameter": 1.2,
+        "boat_tail": { "length": 4.70, "base_diameter": 4.9 }
       }
     } },
   { "key": "25-06-rem", "name": ".25-06 Rem", "aliases": [".25-06 Remington"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
@@ -582,9 +582,9 @@
       },
       "bullet": {
         "name": "140 gr VLD Hunting",
-        "source": "Length from the app's catalog (Berger VLD Hunting 140 gr, 35.3 mm); nose, tip and base estimated",
-        "diameter": 6.71, "length": 35.30, "nose_length": 21.0, "tip_diameter": 1.4,
-        "boat_tail": { "length": 3.3, "base_diameter": 5.3 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger VLD Hunting 140 gr); tip and base diameters estimated",
+        "diameter": 6.71, "length": 35.31, "nose_length": 18.57, "tip_diameter": 1.4,
+        "boat_tail": { "length": 5.69, "base_diameter": 5.3 }
       }
     } },
   { "key": "6-5x47-lapua", "name": "6.5×47 Lapua", "aliases": ["6.5x47"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
@@ -642,19 +642,19 @@
       },
       "bullet": {
         "name": "140 gr hollow point boat tail",
-        "source": "Length from the app's catalog (Berger Elite Hunter 140 gr, 35.6 mm); nose, tip and base estimated",
-        "diameter": 6.71, "length": 35.60, "nose_length": 20.0, "tip_diameter": 1.3,
-        "boat_tail": { "length": 3.6, "base_diameter": 5.4 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 140 gr); tip and base diameters estimated",
+        "diameter": 6.71, "length": 35.64, "nose_length": 18.90, "tip_diameter": 1.3,
+        "boat_tail": { "length": 4.83, "base_diameter": 5.4 }
       }
     } },
   { "key": "6-5-prc", "name": "6.5 PRC", "aliases": ["6.5 Precision Rifle Cartridge"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
     "cartridge": {
-      "source": "C.I.P. TAB. I, 6,5 PRC, date 2018-10-17 (no revision): cartridge maximum",
+      "source": "C.I.P. TAB. I, 6,5 PRC, date 2018-10-17 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 75.06,
       "primer_diameter": 5.33,
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
-        "head_bevel": null,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
         "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
         "body_start": 3.24, "body_diameter": 13.51,
         "shoulder": { "start": 39.84, "diameter": 13.10, "neck_start": 44.65, "neck_diameter": 7.54, "radius": 0.76, "neck_radius": 3.18 },
@@ -702,9 +702,9 @@
       },
       "bullet": {
         "name": "130 gr hollow point boat tail",
-        "source": "Length from the app's catalog (Berger Classic Hunter 130 gr, 30.7 mm); nose, tip and base estimated",
-        "diameter": 7.04, "length": 30.70, "nose_length": 17.5, "tip_diameter": 1.3,
-        "boat_tail": { "length": 3.2, "base_diameter": 5.6 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Classic Hunter 130 gr); tip and base diameters estimated",
+        "diameter": 7.04, "length": 30.73, "nose_length": 17.42, "tip_diameter": 1.3,
+        "boat_tail": { "length": 6.22, "base_diameter": 5.6 }
       }
     } },
   { "key": "270-wsm", "name": ".270 WSM", "aliases": [".270 Winchester Short Magnum"], "bullet_diameter_mm": 7.04, "typical_twist_in": 10,
@@ -741,9 +741,9 @@
         "mouth_diameter": 7.77, "length": 42.84
       },
       "bullet": {
-        "name": "110 gr spitzer soft point",
-        "source": "Estimated: a 110 gr flat-base spitzer soft point; length from its mass at 9.5 g/cm³ (about 24.4 mm); nose and tip estimated",
-        "diameter": 7.04, "length": 24.40, "nose_length": 13.5, "tip_diameter": 1.8,
+        "name": "115 gr soft point",
+        "source": "Length from Federal (Fusion MSR 115 gr soft point), federalpremium.com; nose, tip and base estimated",
+        "diameter": 7.04, "length": 24.64, "nose_length": 13.5, "tip_diameter": 1.8,
         "boat_tail": null
       }
     } },
@@ -762,9 +762,9 @@
       },
       "bullet": {
         "name": "170 gr Elite Hunter",
-        "source": "Length from the app's catalog (Berger Elite Hunter 170 gr, 37.8 mm); nose, tip and base estimated",
-        "diameter": 7.04, "length": 37.80, "nose_length": 22.0, "tip_diameter": 1.3,
-        "boat_tail": { "length": 4.0, "base_diameter": 5.7 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 170 gr (EOL)); tip and base diameters estimated",
+        "diameter": 7.04, "length": 37.85, "nose_length": 21.06, "tip_diameter": 1.3,
+        "boat_tail": { "length": 6.45, "base_diameter": 5.7 }
       }
     } },
   { "key": "7x57", "name": "7×57", "aliases": ["7x57 Mauser", "7mm Mauser"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
@@ -822,9 +822,9 @@
       },
       "bullet": {
         "name": "150 gr Classic Hunter",
-        "source": "Length from the app's catalog (Berger Classic Hunter 150 gr, 31.8 mm); nose, tip and base estimated",
-        "diameter": 7.21, "length": 31.80, "nose_length": 17.0, "tip_diameter": 1.4,
-        "boat_tail": { "length": 3.0, "base_diameter": 5.9 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Classic Hunter 150 gr); tip and base diameters estimated",
+        "diameter": 7.21, "length": 31.83, "nose_length": 14.63, "tip_diameter": 1.4,
+        "boat_tail": { "length": 5.23, "base_diameter": 5.9 }
       }
     } },
   { "key": "7x64", "name": "7×64", "aliases": ["7x64 Brenneke"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
@@ -910,12 +910,12 @@
     } },
   { "key": "7mm-prc", "name": "7mm PRC", "aliases": ["7mm Precision Rifle Cartridge"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8,
     "cartridge": {
-      "source": "C.I.P. TAB. I, 7 mm Precision Rifle Cartridge, date 2023-05-09 (no revision): cartridge maximum",
+      "source": "C.I.P. TAB. I, 7 mm Precision Rifle Cartridge, date 2023-05-09 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
-        "head_bevel": null,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
         "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
         "body_start": 3.24, "body_diameter": 13.51,
         "shoulder": { "start": 46.21, "diameter": 13.15, "neck_start": 50.63, "neck_diameter": 8.05, "radius": 0.76, "neck_radius": 3.18 },
@@ -923,9 +923,9 @@
       },
       "bullet": {
         "name": "175 gr Elite Hunter",
-        "source": "Length from the app's catalog (Berger Elite Hunter 175 gr, 38.2 mm); nose, tip and base estimated",
-        "diameter": 7.21, "length": 38.20, "nose_length": 22.5, "tip_diameter": 1.3,
-        "boat_tail": { "length": 4.2, "base_diameter": 5.9 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 175 gr); tip and base diameters estimated",
+        "diameter": 7.21, "length": 38.15, "nose_length": 20.4, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.3, "base_diameter": 5.9 }
       }
     } },
   { "key": "30-30-win", "name": ".30-30 Win", "aliases": [".30-30 Winchester", ".30 WCF"], "bullet_diameter_mm": 7.82, "typical_twist_in": 12,
@@ -963,8 +963,8 @@
       },
       "bullet": {
         "name": "110 gr round-nose soft point",
-        "source": "Estimated: a 110 gr round-nose soft point, flat base; length from its mass at 9.5 g/cm³ (about 17.8 mm); nose and tip estimated",
-        "diameter": 7.82, "length": 17.80, "nose_length": 7.0, "tip_diameter": 3.0,
+        "source": "Length from Federal (Power-Shok 110 gr jacketed soft point), federalpremium.com; nose, tip and base estimated",
+        "diameter": 7.82, "length": 16.51, "nose_length": 7.0, "tip_diameter": 3.0,
         "boat_tail": null
       }
     } },
@@ -1125,9 +1125,9 @@
       },
       "bullet": {
         "name": "217 gr Elite Hunter",
-        "source": "Length from the app's catalog (Berger Elite Hunter 217 gr, 40.6 mm); nose, tip and base estimated",
-        "diameter": 7.82, "length": 40.60, "nose_length": 24.0, "tip_diameter": 1.3,
-        "boat_tail": { "length": 4.5, "base_diameter": 6.4 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 217 gr); tip and base diameters estimated",
+        "diameter": 7.82, "length": 40.61, "nose_length": 22.12, "tip_diameter": 1.3,
+        "boat_tail": { "length": 6.65, "base_diameter": 6.4 }
       }
     } },
   { "key": "308-norma-mag", "name": ".308 Norma Magnum", "aliases": [".308 Norma Mag"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
@@ -1166,8 +1166,8 @@
       },
       "bullet": {
         "name": "123 gr soft point",
-        "source": "Estimated: a 123 gr flat-base soft point (none of this diameter has a length in the app's catalog)",
-        "diameter": 7.90, "length": 23.00, "nose_length": 12.5, "tip_diameter": 2.5,
+        "source": "Length from Federal (Power-Shok 123 gr jacketed soft point), federalpremium.com; nose, tip and base estimated",
+        "diameter": 7.90, "length": 21.56, "nose_length": 12.5, "tip_diameter": 2.5,
         "boat_tail": null
       }
     } },
@@ -1185,9 +1185,9 @@
         "mouth_diameter": 8.53, "length": 53.72
       },
       "bullet": {
-        "name": "180 gr soft point",
-        "source": "Estimated: a 180 gr flat-base soft point, as long as the catalog's Federal Power-Shok 180 gr .303 British (28.96 mm), same 7.9 mm diameter",
-        "diameter": 7.90, "length": 28.96, "nose_length": 14.0, "tip_diameter": 3.0,
+        "name": "174 gr soft nose",
+        "source": "Length from Woodleigh (174 gr PP SN, .312 in), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 7.90, "length": 27.89, "nose_length": 14.0, "tip_diameter": 3.0,
         "boat_tail": null
       }
     } },
@@ -1245,9 +1245,9 @@
         "mouth_diameter": 8.99, "length": 57.00
       },
       "bullet": {
-        "name": "196 gr soft point",
-        "source": "Estimated: a semi-pointed soft point, a .318 in bore (the sheet's G1 is 8.09); length from its mass at 10.6 g/cm³; nose, tip and base estimated",
-        "diameter": 8.08, "length": 28.40, "nose_length": 15.0, "tip_diameter": 3.0,
+        "name": "200 gr round-nose soft point",
+        "source": "Length from Woodleigh (200 gr RN SN, .318 in), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 8.08, "length": 29.26, "nose_length": 15.0, "tip_diameter": 3.0,
         "boat_tail": null
       }
     } },
@@ -1334,7 +1334,7 @@
     } },
   { "key": "338-lapua-mag", "name": ".338 Lapua Mag", "aliases": [".338 Lapua Magnum", "8.6×70"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
     "cartridge": {
-      "source": "C.I.P. TAB. I, 338 Lapua Mag., revision 2006-09-14: cartridge maximum",
+      "source": "C.I.P. TAB. I, 338 Lapua Mag., revision 2006-09-14: cartridge maximum; r1 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 93.50,
       "primer_diameter": 5.33,
       "case": {
@@ -1342,14 +1342,14 @@
         "head_bevel": { "length": 0.50, "degrees": 45 },
         "groove": { "diameter": 13.24, "bevel_degrees": 50.08, "floor_min": 0.90 },
         "body_start": 3.12, "body_diameter": 14.91,
-        "shoulder": { "start": 54.90, "diameter": 13.82, "neck_start": 60.89, "neck_diameter": 9.46, "radius": 0.00, "neck_radius": 2.50 },
+        "shoulder": { "start": 54.90, "diameter": 13.82, "neck_start": 60.89, "neck_diameter": 9.46, "radius": 0.80, "neck_radius": 2.50 },
         "mouth_diameter": 9.41, "length": 69.20
       },
       "bullet": {
         "name": "250 gr Elite Hunter",
-        "source": "Length from the app's catalog (Berger Elite Hunter 250 gr, 41.3 mm); nose, tip and base estimated",
-        "diameter": 8.59, "length": 41.30, "nose_length": 23.0, "tip_diameter": 1.3,
-        "boat_tail": { "length": 4.6, "base_diameter": 7.0 }
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 250 gr); tip and base diameters estimated",
+        "diameter": 8.59, "length": 41.33, "nose_length": 24.4, "tip_diameter": 1.3,
+        "boat_tail": { "length": 8.3, "base_diameter": 7.0 }
       }
     } },
   { "key": "8-5x55-blaser", "name": "8.5×55 Blaser", "aliases": ["8.5x55 Blaser"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
@@ -1386,10 +1386,10 @@
         "mouth_diameter": 9.86, "length": 63.35
       },
       "bullet": {
-        "name": "225 gr GameKing",
-        "source": "Estimated: a spitzer boat tail like the catalog's Sierra GameKing 225 gr; length from its mass at 9.6 g/cm³; nose, tip and base estimated",
-        "diameter": 9.09, "length": 30.10, "nose_length": 16.0, "tip_diameter": 1.8,
-        "boat_tail": { "length": 2.5, "base_diameter": 8.0 }
+        "name": "225 gr Partition",
+        "source": "Length from Nosler (Partition 225 gr), nosler.com; nose, tip and base estimated",
+        "diameter": 9.09, "length": 29.84, "nose_length": 16.0, "tip_diameter": 1.8,
+        "boat_tail": null
       }
     } },
   { "key": "350-legend", "name": ".350 Legend", "aliases": ["350 Legend"], "bullet_diameter_mm": 9.02, "typical_twist_in": 16,
@@ -1407,8 +1407,8 @@
       },
       "bullet": {
         "name": "180 gr soft point",
-        "source": "Estimated: a 180 gr flat-base soft point; length from its mass at 9.5 g/cm³ (about 22.1 mm); nose and tip estimated",
-        "diameter": 9.02, "length": 22.10, "nose_length": 9.0, "tip_diameter": 3.5,
+        "source": "Length from Federal (Power-Shok 180 gr soft point), federalpremium.com; nose, tip and base estimated",
+        "diameter": 9.02, "length": 25.15, "nose_length": 9.0, "tip_diameter": 3.5,
         "boat_tail": null
       }
     } },
@@ -1428,8 +1428,8 @@
       },
       "bullet": {
         "name": "250 gr round nose soft point",
-        "source": "Estimated: a round-nosed soft point like the catalog's Woodleigh Weldcore 250 gr; length from its mass at 9.6 g/cm³; nose, tip and base estimated",
-        "diameter": 9.09, "length": 28.80, "nose_length": 10.0, "tip_diameter": 4.5,
+        "source": "Length from Woodleigh (Weldcore 250 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 9.09, "length": 28.57, "nose_length": 10.0, "tip_diameter": 4.5,
         "boat_tail": null
       }
     } },
@@ -1515,7 +1515,7 @@
     } },
   { "key": "375-hh-mag", "name": ".375 H&H Mag", "aliases": [".375 Holland & Holland Magnum"], "bullet_diameter_mm": 9.53, "typical_twist_in": 12,
     "cartridge": {
-      "source": "C.I.P. TAB. III, 375 H&H Mag., revision 2002-05-15: cartridge maximum",
+      "source": "C.I.P. TAB. III, 375 H&H Mag., revision 2002-05-15: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 91.44,
       "primer_diameter": 5.33,
       "case": {
@@ -1524,7 +1524,7 @@
         "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
         "belt_diameter": 13.56,
         "body_start": 5.59, "body_diameter": 13.03,
-        "shoulder": { "start": 61.27, "diameter": 11.37, "neck_start": 63.44, "neck_diameter": 10.21, "radius": 0.00, "neck_radius": 0.00 },
+        "shoulder": { "start": 61.27, "diameter": 11.37, "neck_start": 63.44, "neck_diameter": 10.21, "radius": 2.54, "neck_radius": 2.54 },
         "mouth_diameter": 10.21, "length": 72.39
       },
       "bullet": {
@@ -1536,21 +1536,21 @@
     } },
   { "key": "416-rigby", "name": ".416 Rigby", "aliases": [], "bullet_diameter_mm": 10.57, "typical_twist_in": 14,
     "cartridge": {
-      "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum",
+      "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum; r1, r2 and the rim's bevel from ANSI/SAAMI Z299.4-2025",
       "overall_length": 95.25,
       "primer_diameter": 5.33,
       "case": {
         "rim_diameter": 14.99, "rim_thickness": 1.65,
-        "head_bevel": null,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
         "groove": { "diameter": 12.70, "bevel_degrees": 39.93, "floor_min": 0.81 },
         "body_start": 3.81, "body_diameter": 14.96,
-        "shoulder": { "start": 59.77, "diameter": 13.72, "neck_start": 60.96, "neck_diameter": 11.35, "radius": 0.00, "neck_radius": 0.00 },
+        "shoulder": { "start": 59.77, "diameter": 13.72, "neck_start": 60.96, "neck_diameter": 11.35, "radius": 1.50, "neck_radius": 1.50 },
         "mouth_diameter": 11.33, "length": 73.66
       },
       "bullet": {
         "name": "400 gr round-nose soft point",
-        "source": "Estimated: a round-nosed soft point; length from its mass at 10.6 g/cm³; nose, tip and base estimated",
-        "diameter": 10.57, "length": 31.60, "nose_length": 12.0, "tip_diameter": 4.5,
+        "source": "Length from Woodleigh (Weldcore 400 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 10.57, "length": 33.10, "nose_length": 12.0, "tip_diameter": 4.5,
         "boat_tail": null
       }
     } },
@@ -1568,10 +1568,10 @@
         "mouth_diameter": 12.19, "length": 43.18
       },
       "bullet": {
-        "name": "250 gr polymer-tipped flat base",
-        "source": "Estimated: a 250 gr polymer-tipped flat-base bullet; length from its mass at 9.2 g/cm³ (about 21.6 mm); nose and tip estimated",
-        "diameter": 11.47, "length": 21.60, "nose_length": 12.0, "tip_diameter": 2.5,
-        "boat_tail": null
+        "name": "250 gr TTSX",
+        "source": "Length from Barnes (TTSX 250 gr BT), as a retailer quotes it, midwestgunworks.com; nose, tip and base estimated",
+        "diameter": 11.47, "length": 28.40, "nose_length": 12.0, "tip_diameter": 2.5,
+        "boat_tail": { "length": 2.5, "base_diameter": 9.7 }
       }
     } },
   { "key": "45-70-govt", "name": ".45-70 Govt", "aliases": [".45-70 Government"], "bullet_diameter_mm": 11.63, "typical_twist_in": 20,
@@ -1589,8 +1589,8 @@
       },
       "bullet": {
         "name": "405 gr lead flat nose",
-        "source": "Estimated: a flat-nosed lead bullet; length from its mass at 10.6 g/cm³; nose, tip and base estimated",
-        "diameter": 11.63, "length": 25.30, "nose_length": 9.5, "tip_diameter": 7.5,
+        "source": "Length from Lee (mould 457-405-F, cast 405 gr flat nose), support.leeprecision.net; nose, tip and base estimated",
+        "diameter": 11.63, "length": 26.42, "nose_length": 9.5, "tip_diameter": 7.5,
         "boat_tail": null
       }
     } },
@@ -1610,8 +1610,8 @@
       },
       "bullet": {
         "name": "500 gr round-nose soft point",
-        "source": "Estimated: a round-nosed soft point; length from its mass at 10.6 g/cm³; nose, tip and base estimated",
-        "diameter": 11.63, "length": 32.40, "nose_length": 12.0, "tip_diameter": 5.0,
+        "source": "Length from Woodleigh (Weldcore 500 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 11.63, "length": 33.15, "nose_length": 12.0, "tip_diameter": 5.0,
         "boat_tail": null
       }
     } },
@@ -1629,9 +1629,9 @@
         "mouth_diameter": 14.22, "length": 99.31
       },
       "bullet": {
-        "name": "661 gr FMJ boat tail (ball)",
-        "source": "Estimated: an M33-type steel-core ball bullet; length from its mass at 9.0 g/cm³; nose, tip and base estimated",
-        "diameter": 12.98, "length": 50.50, "nose_length": 32.0, "tip_diameter": 1.5,
+        "name": "653 gr ball (M33 type)",
+        "source": "Length from Armatec (12.7×99 ball, 653 gr steel core), armatec.bg; nose, tip and base estimated",
+        "diameter": 12.98, "length": 58.67, "nose_length": 32.0, "tip_diameter": 1.5,
         "boat_tail": { "length": 6.0, "base_diameter": 11.2 }
       }
     } }
