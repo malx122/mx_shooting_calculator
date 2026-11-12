@@ -18,7 +18,8 @@ any release may still change things noticeably.
 - **Cartridges in 3D:** the bullet catalog shows the caliber's cartridge in
   3D, true to its C.I.P. drawing, with a typical bullet; drag to turn it.
   **Save for 3D printing (STL)** saves it in millimetres, standing on its
-  head, to try magazines and feeding. .223 Rem first.
+  head, to try magazines and feeding. For .17 HMR, .223 Rem, .243 Win,
+  .270 Win, .30-06, .308 Win, 6.5 Creedmoor, 6.5×55 SE, 8×57 IS and 9.3×62.
 
 ## [0.9.2] - 2026-11-05
 

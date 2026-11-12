@@ -32,10 +32,8 @@ pub struct CaseShape {
     pub rim_diameter: f64,
     /// Rim thickness (R).
     pub rim_thickness: f64,
-    /// The bevel round the back of the rim: its length along the axis (f)
-    /// and its angle to the head's face (β).
-    pub head_bevel_length: f64,
-    pub head_bevel_degrees: f64,
+    /// The bevel round the back of the rim; none on a rimfire case.
+    pub head_bevel: Option<HeadBevel>,
     /// The extractor groove ahead of the rim; none on a rimmed case.
     pub groove: Option<Groove>,
     /// From the head to where the body starts (E), and its diameter there
@@ -51,11 +49,29 @@ pub struct CaseShape {
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct HeadBevel {
+    /// Its length along the axis (f).
+    pub length: f64,
+    /// Its angle to the head's face (β).
+    pub degrees: f64,
+}
+
+impl HeadBevel {
+    /// How far in from the rim's edge it starts on the head's face.
+    pub fn inset(&self) -> f64 {
+        self.length / self.degrees.to_radians().tan()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Groove {
     /// Diameter in the groove (E1).
     pub diameter: f64,
     /// The angle of its front bevel, up to the body, to the axis (δ).
     pub bevel_degrees: f64,
+    /// The shortest floor the drawing allows (e min): only to check the
+    /// other measurements, which give the floor's length.
+    pub floor_min: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -121,11 +137,13 @@ impl Cartridge {
         let rim = case.rim_diameter / 2.0;
 
         // The head: the primer, then the brass out to the rim's bevel.
-        let bevel_inset = case.head_bevel_length / case.head_bevel_degrees.to_radians().tan();
         if let Some(primer) = self.primer_diameter {
             stretches.push((Material::Primer, vec![[0.0, primer / 2.0]]));
         }
-        let mut brass = vec![[0.0, rim - bevel_inset], [case.head_bevel_length, rim]];
+        let mut brass = match &case.head_bevel {
+            Some(bevel) => vec![[0.0, rim - bevel.inset()], [bevel.length, rim]],
+            None => vec![[0.0, rim]],
+        };
 
         // The rim, the extractor groove and the body.
         brass.push([case.rim_thickness, rim]);
@@ -442,7 +460,8 @@ mod tests {
             // The drawing's measurements are where the drawing puts them.
             let at = |along: f64| radius_at(&outline, along) * 2.0;
             assert!(
-                (at(case.body_start) - case.body_diameter).abs() < 1e-6,
+                // Just past E: on a rimfire case the rim steps down there.
+                (at(case.body_start + 1e-6) - case.body_diameter).abs() < 1e-4,
                 "{name}: P1 at E"
             );
             // The head: its bevel, f long at β to the face, then the rim.
@@ -451,18 +470,20 @@ mod tests {
                 .filter(|p| p[0] == 0.0)
                 .map(|p| p[1])
                 .fold(0.0, f64::max);
-            let inset = case.head_bevel_length / case.head_bevel_degrees.to_radians().tan();
+            let (inset, bevel_length) = case
+                .head_bevel
+                .as_ref()
+                .map_or((0.0, 0.0), |bevel| (bevel.inset(), bevel.length));
             assert!(
                 (head * 2.0 - (case.rim_diameter - 2.0 * inset)).abs() < 1e-9,
                 "{name}: the head's bevel"
             );
             assert!(
-                case.head_bevel_length < case.rim_thickness,
+                bevel_length < case.rim_thickness,
                 "{name}: f inside the rim"
             );
             assert!(
-                (at((case.head_bevel_length + case.rim_thickness) / 2.0) - case.rim_diameter).abs()
-                    < 1e-9,
+                (at((bevel_length + case.rim_thickness) / 2.0) - case.rim_diameter).abs() < 1e-9,
                 "{name}: R1 up to R"
             );
             if let Some(groove) = &case.groove {
@@ -472,9 +493,13 @@ mod tests {
                     / 2.0
                     / groove.bevel_degrees.to_radians().tan();
                 let floor_end = case.body_start - bevel;
+                // The measurements give the floor; the drawing's own e min
+                // checks them (and how its angles were read).
+                let floor = floor_end - case.rim_thickness;
                 assert!(
-                    floor_end > case.rim_thickness,
-                    "{name}: the groove has a floor"
+                    floor >= groove.floor_min - 0.02 && floor < groove.floor_min + 0.1,
+                    "{name}: the groove's floor {floor:.3} against e min {}",
+                    groove.floor_min
                 );
                 assert!(
                     (at((case.rim_thickness + floor_end) / 2.0) - groove.diameter).abs() < 1e-9,
@@ -520,55 +545,59 @@ mod tests {
 
     #[test]
     fn the_solid_is_closed_faces_out_and_has_the_outlines_volume() {
-        let cartridge = Catalog::builtin()
-            .caliber("223-rem")
-            .unwrap()
-            .cartridge
-            .clone()
-            .unwrap();
-        let solid = cartridge.solid(128);
-        // Closed: each edge is used once each way.
-        let mut edges = std::collections::HashMap::new();
-        for t in &solid.triangles {
-            for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
-                assert_ne!(a, b, "no flat triangles");
-                *edges.entry((a, b)).or_insert(0) += 1;
+        for caliber in &Catalog::builtin().calibers {
+            let Some(cartridge) = &caliber.cartridge else {
+                continue;
+            };
+            let name = &caliber.name;
+            let solid = cartridge.solid(128);
+            // Closed: each edge is used once each way.
+            let mut edges = std::collections::HashMap::new();
+            for t in &solid.triangles {
+                for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
+                    assert_ne!(a, b, "{name}: no flat triangles");
+                    *edges.entry((a, b)).or_insert(0) += 1;
+                }
             }
-        }
-        for (&(a, b), &count) in &edges {
-            assert_eq!(count, 1, "edge {a}-{b} used once");
-            assert_eq!(edges.get(&(b, a)), Some(&1), "edge {a}-{b} has its twin");
-        }
-        // The outline turned round its axis (Pappus), as cones' frustums.
-        let points = points(&cartridge.outline());
-        let exact: f64 = points
-            .windows(2)
-            .map(|p| {
-                let (h, r1, r2) = (p[1][0] - p[0][0], p[0][1], p[1][1]);
-                std::f64::consts::PI * h * (r1 * r1 + r1 * r2 + r2 * r2) / 3.0
-            })
-            .sum();
-        let volume = solid.volume();
-        assert!(volume > 0.0, "faces out");
-        assert!(
-            (volume / exact - 1.0).abs() < 0.001,
-            "{volume} against {exact}"
-        );
-        // Stands on its head, as tall as the cartridge.
-        let lowest = solid.vertices.iter().map(|v| v[2]).fold(f64::MAX, f64::min);
-        let highest = solid.vertices.iter().map(|v| v[2]).fold(f64::MIN, f64::max);
-        assert_eq!(lowest, 0.0);
-        assert!(
-            (highest - cartridge.overall_length).abs() < 1e-9,
-            "{highest}"
-        );
+            for (&(a, b), &count) in &edges {
+                assert_eq!(count, 1, "{name}: edge {a}-{b} used once");
+                assert_eq!(
+                    edges.get(&(b, a)),
+                    Some(&1),
+                    "{name}: edge {a}-{b} has its twin"
+                );
+            }
+            // The outline turned round its axis (Pappus), as cones' frustums.
+            let points = points(&cartridge.outline());
+            let exact: f64 = points
+                .windows(2)
+                .map(|p| {
+                    let (h, r1, r2) = (p[1][0] - p[0][0], p[0][1], p[1][1]);
+                    std::f64::consts::PI * h * (r1 * r1 + r1 * r2 + r2 * r2) / 3.0
+                })
+                .sum();
+            let volume = solid.volume();
+            assert!(volume > 0.0, "{name}: faces out");
+            assert!(
+                (volume / exact - 1.0).abs() < 0.001,
+                "{name}: {volume} against {exact}"
+            );
+            // Stands on its head, as tall as the cartridge.
+            let lowest = solid.vertices.iter().map(|v| v[2]).fold(f64::MAX, f64::min);
+            let highest = solid.vertices.iter().map(|v| v[2]).fold(f64::MIN, f64::max);
+            assert_eq!(lowest, 0.0);
+            assert!(
+                (highest - cartridge.overall_length).abs() < 1e-9,
+                "{name}: {highest}"
+            );
 
-        let stl = solid.stl("223 Rem");
-        assert_eq!(stl.len(), 84 + 50 * solid.triangles.len());
-        assert_eq!(
-            u32::from_le_bytes(stl[80..84].try_into().unwrap()) as usize,
-            solid.triangles.len()
-        );
+            let stl = solid.stl(name);
+            assert_eq!(stl.len(), 84 + 50 * solid.triangles.len());
+            assert_eq!(
+                u32::from_le_bytes(stl[80..84].try_into().unwrap()) as usize,
+                solid.triangles.len()
+            );
+        }
     }
 
     #[test]
