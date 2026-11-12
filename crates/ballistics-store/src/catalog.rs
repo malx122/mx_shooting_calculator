@@ -9,6 +9,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
+use crate::cartridge::Cartridge;
 use crate::drawings::{Drawing, RENAMED};
 use crate::model::{BcModel, Bullet, BulletKind, Construction, DataAttribution, new_id};
 use crate::optics::{Reticle, Scope};
@@ -42,6 +43,9 @@ pub struct Caliber {
     pub bullet_diameter_mm: f64,
     /// A common twist for new rifles in this caliber; check your barrel.
     pub typical_twist_in: f64,
+    /// Its outside from the standard drawing, for drawing it in 3D.
+    #[serde(default)]
+    pub cartridge: Option<Cartridge>,
 }
 
 impl Caliber {

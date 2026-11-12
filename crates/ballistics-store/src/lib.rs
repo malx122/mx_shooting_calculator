@@ -5,6 +5,7 @@
 //!
 //! Nothing here depends on the UI, so a mobile front end can reuse it.
 
+pub mod cartridge;
 pub mod catalog;
 pub mod chrono;
 pub mod db;
@@ -26,6 +27,7 @@ mod tests;
 
 use std::fmt;
 
+pub use cartridge::{Cartridge, Material, Outline, Solid};
 pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};

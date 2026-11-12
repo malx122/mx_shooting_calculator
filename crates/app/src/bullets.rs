@@ -43,6 +43,9 @@ pub struct BulletsPage {
     lead_free_only: bool,
     /// The legal level of catalog bullets, worked out once each.
     levels: HashMap<(String, String, Country), Option<u8>>,
+    /// How saving a caliber's cartridge for printing went: the caliber,
+    /// the message and whether it failed.
+    printed: Option<(String, String, bool)>,
 }
 
 impl Default for BulletsPage {
@@ -59,6 +62,7 @@ impl Default for BulletsPage {
             catalog_kind: None,
             lead_free_only: false,
             levels: HashMap::new(),
+            printed: None,
         }
     }
 }
@@ -359,6 +363,31 @@ impl BulletsPage {
                 }
                 return;
             };
+
+            if let Some(cartridge) = &caliber.cartridge {
+                crate::cartridge3d::show(ui, cartridge, 110.0);
+                ui.vertical_centered(|ui| {
+                    ui.weak(format!("{} · {} · {}", caliber.name, cartridge.bullet.name, cartridge.source));
+                    if ui
+                        .button(tr("Save for 3D printing (STL)"))
+                        .on_hover_text(tr("The case as large as its drawing allows, in millimetres, standing on its head: to try magazines and feeding"))
+                        .clicked()
+                    {
+                        let (message, failed) = crate::cartridge3d::save_stl(caliber);
+                        self.printed = Some((caliber.key.clone(), message, failed));
+                    }
+                    if let Some((key, message, failed)) = &self.printed
+                        && *key == caliber.key
+                    {
+                        if *failed {
+                            ui.colored_label(ui.visuals().error_fg_color, message);
+                        } else {
+                            ui.weak(message);
+                        }
+                    }
+                });
+                ui.separator();
+            }
 
             ui.horizontal_wrapped(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.catalog_text).hint_text(tr("Search maker or product")));

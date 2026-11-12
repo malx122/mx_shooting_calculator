@@ -16,7 +16,25 @@
   { "key": "5-6x57", "name": "5.6×57", "aliases": ["5,6 x 57", "5,6×57", "5.6x57"], "bullet_diameter_mm": 5.69, "typical_twist_in": 9.84 },
   { "key": "5mm-rem-rimfire-magnum", "name": "5mm Remington Rimfire Magnum", "aliases": ["5mm RRM"], "bullet_diameter_mm": 5.18, "typical_twist_in": 10 },
   { "key": "222-rem", "name": ".222 Rem", "aliases": [".222 Remington"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14 },
-  { "key": "223-rem", "name": ".223 Rem", "aliases": [".223 Remington", "5.56×45"], "bullet_diameter_mm": 5.69, "typical_twist_in": 9 },
+  { "key": "223-rem", "name": ".223 Rem", "aliases": [".223 Remington", "5.56×45"], "bullet_diameter_mm": 5.69, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 223 Rem., revision 2017-05-17: cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 9.60, "rim_thickness": 1.14, "head_bevel_length": 0.45, "head_bevel_degrees": 35,
+        "groove": { "diameter": 8.43, "bevel_degrees": 25 },
+        "body_start": 3.13, "body_diameter": 9.58,
+        "shoulder": { "start": 36.52, "diameter": 9.00, "neck_start": 39.55, "neck_diameter": 6.43, "radius": 0.64, "neck_radius": 2.54 },
+        "mouth_diameter": 6.43, "length": 44.70
+      },
+      "bullet": {
+        "name": "55 gr FMJ boat tail",
+        "source": "Length from Berry's 55 gr FMJBT (0.745 in); nose, tip and boat tail estimated",
+        "diameter": 5.69, "length": 18.92, "nose_length": 10.7, "tip_diameter": 1.3,
+        "boat_tail": { "length": 1.8, "base_diameter": 4.7 }
+      }
+    } },
   { "key": "22-250-rem", "name": ".22-250 Rem", "aliases": [".22-250 Remington"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14 },
   { "key": "243-win", "name": ".243 Win", "aliases": [".243 Winchester"], "bullet_diameter_mm": 6.17, "typical_twist_in": 10 },
   { "key": "6mm-creedmoor", "name": "6mm Creedmoor", "aliases": ["6 CM"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5 },

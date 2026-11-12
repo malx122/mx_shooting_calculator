@@ -5,6 +5,7 @@ mod app;
 mod bullets;
 mod calculator;
 mod cards;
+mod cartridge3d;
 mod changelog;
 mod figure;
 mod files;

@@ -15,6 +15,10 @@ any release may still change things noticeably.
   temperature, and read the clicks and the centimetres; the watch reads the
   air pressure itself, and counts the wind's drift, aerodynamic jump and
   head- or tailwind.
+- **Cartridges in 3D:** the bullet catalog shows the caliber's cartridge in
+  3D, true to its C.I.P. drawing, with a typical bullet; drag to turn it.
+  **Save for 3D printing (STL)** saves it in millimetres, standing on its
+  head, to try magazines and feeding. .223 Rem first.
 
 ## [0.9.2] - 2026-11-05
 
