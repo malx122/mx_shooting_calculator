@@ -1,9 +1,9 @@
 //! A cartridge in 3D, true to its drawing: the outline from the catalog
-//! turned round its axis and shaded as brass, copper and the primer. Drag
-//! to turn it; double-click to put it back.
+//! turned round its axis and shaded as brass, copper and the primer, with a
+//! millimetre ruler beside it. Drag to turn it; double-click to put it back.
 
 use ballistics_store::{Caliber, Cartridge, Material};
-use eframe::egui::{self, Color32, Pos2, Rect, Sense, vec2};
+use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, vec2};
 
 use crate::i18n::{tr, trf};
 
@@ -45,8 +45,28 @@ pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, size: egui::Vec2) {
     ui.data_mut(|data| data.insert_temp(id, turn));
     let inside = rect.shrink(6.0);
     if ui.is_rect_visible(rect) && inside.width() > 1.0 && inside.height() > 1.0 {
-        ui.painter()
-            .add(egui::Shape::mesh(mesh(cartridge, turn, inside)));
+        let ink = ui.visuals().weak_text_color();
+        let scene = scene(cartridge, turn, inside, ink);
+        let painter = ui.painter();
+        let paint_ruler = |painter: &egui::Painter| {
+            painter.extend(scene.ruler.iter().cloned());
+            for (at, text) in &scene.labels {
+                painter.text(
+                    *at,
+                    Align2::CENTER_CENTER,
+                    text,
+                    FontId::proportional(LABEL_SIZE),
+                    ink,
+                );
+            }
+        };
+        if scene.ruler_behind {
+            paint_ruler(painter);
+        }
+        painter.add(Shape::mesh(scene.mesh));
+        if !scene.ruler_behind {
+            paint_ruler(painter);
+        }
     }
     response.on_hover_text(tr("Drag to turn · double-click to reset"));
 }
@@ -90,6 +110,25 @@ pub fn save_stl(caliber: &Caliber) -> (String, bool) {
     }
 }
 
+/// The ruler: its gap below the cartridge, its ticks (1, 5 and 10 mm) and
+/// how far beyond a 10 mm tick its number sits, all in millimetres.
+const RULER_GAP: f32 = 1.5;
+const TICKS: [f32; 3] = [1.0, 1.7, 2.6];
+const LABEL_GAP: f32 = 2.2;
+/// Points for the ruler's numbers.
+const LABEL_SIZE: f32 = 10.0;
+/// The 1 mm ticks only when they are at least this many points apart.
+const FINE_TICKS_SPACING: f32 = 3.0;
+
+/// The shaded cartridge and its ruler, fitted into a rect.
+struct Scene {
+    mesh: egui::Mesh,
+    ruler: Vec<Shape>,
+    labels: Vec<(Pos2, String)>,
+    /// Paint the ruler before the cartridge: it is behind it.
+    ruler_behind: bool,
+}
+
 /// A point turned into the view: x right, y up, z towards the viewer.
 fn view(turn: Turn, p: [f32; 3]) -> [f32; 3] {
     let (sy, cy) = turn.yaw.sin_cos();
@@ -102,7 +141,7 @@ fn view(turn: Turn, p: [f32; 3]) -> [f32; 3] {
     [x, y, z]
 }
 
-fn mesh(cartridge: &Cartridge, turn: Turn, rect: Rect) -> egui::Mesh {
+fn scene(cartridge: &Cartridge, turn: Turn, rect: Rect, ink: Color32) -> Scene {
     let outline = cartridge.outline();
     let middle = cartridge.overall_length as f32 / 2.0;
     let light = normalized([-0.35, 0.75, 0.55]);
@@ -164,12 +203,46 @@ fn mesh(cartridge: &Cartridge, turn: Turn, rect: Rect) -> egui::Mesh {
     // Back to front.
     quads.sort_by(|a, b| a.depth.total_cmp(&b.depth));
 
-    // Fit the whole cartridge in the rect, whichever way it is turned.
+    // The ruler, in the cartridge's own frame: along its axis, from the head
+    // (0) to the tip, just below it, its ticks pointing away from it.
+    let widest = outline
+        .stretches
+        .iter()
+        .flat_map(|(_, points)| points.iter().map(|p| p[1] as f32))
+        .fold(0.0, f32::max);
+    let length = cartridge.overall_length as f32;
+    let below = -(widest + RULER_GAP);
+    let on_ruler = |along: f32, out: f32| view(turn, [along - middle, below - out, 0.0]);
+    let mut marks: Vec<(f32, f32, Option<String>)> = Vec::new();
+    for mm in 0..=(length.floor() as u32) {
+        let (tick, label) = match mm {
+            mm if mm % 10 == 0 => (TICKS[2], Some(mm.to_string())),
+            mm if mm % 5 == 0 => (TICKS[1], None),
+            _ => (TICKS[0], None),
+        };
+        marks.push((mm as f32, tick, label));
+    }
+    marks.push((
+        length,
+        TICKS[2],
+        Some(format!("{:.2} mm", cartridge.overall_length)),
+    ));
+
+    // Fit the cartridge and its ruler in the rect, whichever way it is turned.
     let (mut min, mut max) = ([f32::MAX; 2], [f32::MIN; 2]);
+    let mut fit = |p: [f32; 3]| {
+        min = [min[0].min(p[0]), min[1].min(p[1])];
+        max = [max[0].max(p[0]), max[1].max(p[1])];
+    };
     for quad in &quads {
         for (p, _) in &quad.corners {
-            min = [min[0].min(p[0]), min[1].min(p[1])];
-            max = [max[0].max(p[0]), max[1].max(p[1])];
+            fit(*p);
+        }
+    }
+    for &(along, tick, ref label) in &marks {
+        fit(on_ruler(along, tick));
+        if label.is_some() {
+            fit(on_ruler(along, tick + LABEL_GAP * 1.6));
         }
     }
     let scale = (rect.width() / (max[0] - min[0]).max(1e-3))
@@ -188,7 +261,49 @@ fn mesh(cartridge: &Cartridge, turn: Turn, rect: Rect) -> egui::Mesh {
         mesh.add_triangle(base, base + 1, base + 2);
         mesh.add_triangle(base, base + 2, base + 3);
     }
-    mesh
+
+    let stroke = Stroke::new(1.0, ink);
+    let mm_apart = to_screen(on_ruler(1.0, 0.0)).distance(to_screen(on_ruler(0.0, 0.0)));
+    let fine = mm_apart >= FINE_TICKS_SPACING;
+    let mut ruler = vec![Shape::line_segment(
+        [
+            to_screen(on_ruler(0.0, 0.0)),
+            to_screen(on_ruler(length, 0.0)),
+        ],
+        stroke,
+    )];
+    let mut labels = Vec::new();
+    for (along, tick, label) in marks {
+        if tick == TICKS[0] && !fine {
+            continue;
+        }
+        ruler.push(Shape::line_segment(
+            [
+                to_screen(on_ruler(along, 0.0)),
+                to_screen(on_ruler(along, tick)),
+            ],
+            stroke,
+        ));
+        if let Some(label) = label {
+            labels.push((to_screen(on_ruler(along, tick + LABEL_GAP)), label));
+        }
+    }
+    // The last full number would crowd the overall length: drop it if close.
+    if labels.len() >= 2 {
+        let [.., before, last] = labels.as_slice() else {
+            unreachable!()
+        };
+        if before.0.distance(last.0) < LABEL_SIZE * 4.0 {
+            labels.remove(labels.len() - 2);
+        }
+    }
+    let ruler_behind = on_ruler(middle, 0.0)[2] < 0.0;
+    Scene {
+        mesh,
+        ruler,
+        labels,
+        ruler_behind,
+    }
 }
 
 /// Metal: some light all round, the light's side brighter, and a shine.
@@ -225,22 +340,33 @@ mod tests {
         let caliber = Catalog::builtin().caliber("223-rem").unwrap();
         let cartridge = caliber.cartridge.as_ref().unwrap();
         let rect = Rect::from_min_size(pos2(0.0, 0.0), vec2(600.0, 120.0));
-        let mesh = mesh(
+        let scene = scene(
             cartridge,
             Turn {
                 yaw: YAW,
                 pitch: PITCH,
             },
             rect,
+            Color32::WHITE,
         );
-        assert!(!mesh.indices.is_empty());
-        let bounds = mesh.calc_bounds();
-        assert!(rect.expand(0.5).contains_rect(bounds), "{bounds:?}");
-        // It touches two opposite sides.
+        assert!(!scene.mesh.indices.is_empty());
+        let mut bounds = scene.mesh.calc_bounds();
+        for shape in &scene.ruler {
+            bounds = bounds.union(shape.visual_bounding_rect());
+        }
+        for (at, _) in &scene.labels {
+            bounds.extend_with(*at);
+        }
+        assert!(rect.expand(1.5).contains_rect(bounds), "{bounds:?}");
+        // It fills the rect one way, less the room kept for the numbers'
+        // text.
         assert!(
-            (bounds.width() - rect.width()).abs() < 1.0
-                || (bounds.height() - rect.height()).abs() < 1.0,
+            (bounds.width() - rect.width()).abs() < 2.0
+                || (bounds.height() - rect.height()).abs() < 10.0,
             "{bounds:?}"
         );
+        // Every 10 mm numbered, up to 50, and the overall length at the tip.
+        let labels: Vec<&str> = scene.labels.iter().map(|(_, text)| text.as_str()).collect();
+        assert_eq!(labels, ["0", "10", "20", "30", "40", "50", "57.40 mm"]);
     }
 }
