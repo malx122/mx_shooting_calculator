@@ -40,6 +40,10 @@ pub struct CaseShape {
     pub rim_radius: Option<f64>,
     /// The extractor groove ahead of the rim; none on a rimmed case.
     pub groove: Option<Groove>,
+    /// A belted magnum's belt (R3): its diameter. It runs from the top of
+    /// the groove's bevel to E, where the body steps in to P1.
+    #[serde(default)]
+    pub belt_diameter: Option<f64>,
     /// From the head to where the body starts (E), and its diameter there
     /// (P1).
     pub body_start: f64,
@@ -60,6 +64,22 @@ pub struct HeadBevel {
     pub degrees: f64,
 }
 
+impl CaseShape {
+    /// Where the groove's floor ends and where its bevel ends: at the body
+    /// (E) on a rimless case, at the belt on a belted one.
+    pub fn groove_ends(&self, groove: &Groove) -> [f64; 2] {
+        let top = self.belt_diameter.unwrap_or(self.body_diameter);
+        let bevel = (top - groove.diameter) / 2.0 / groove.bevel_degrees.to_radians().tan();
+        match self.belt_diameter {
+            Some(_) => {
+                let floor_end = self.rim_thickness + groove.floor_min;
+                [floor_end, floor_end + bevel]
+            }
+            None => [self.body_start - bevel, self.body_start],
+        }
+    }
+}
+
 impl HeadBevel {
     /// How far in from the rim's edge it starts on the head's face.
     pub fn inset(&self) -> f64 {
@@ -73,8 +93,9 @@ pub struct Groove {
     pub diameter: f64,
     /// The angle of its front bevel, up to the body, to the axis (δ).
     pub bevel_degrees: f64,
-    /// The shortest floor the drawing allows (e min): only to check the
-    /// other measurements, which give the floor's length.
+    /// The shortest floor the drawing allows (e min). On a rimless case
+    /// the other measurements give the floor's length, and this checks
+    /// them; on a belted case the floor is this long.
     pub floor_min: f64,
 }
 
@@ -174,12 +195,16 @@ impl Cartridge {
         }
         brass.remove(0);
 
-        // The extractor groove and the body.
+        // The extractor groove, the belt and the body.
         if let Some(groove) = &case.groove {
-            let depth = groove.diameter / 2.0;
-            let bevel = (body - depth) / groove.bevel_degrees.to_radians().tan();
-            brass.push([case.rim_thickness, depth]);
-            brass.push([case.body_start - bevel, depth]);
+            let [floor_end, bevel_end] = case.groove_ends(groove);
+            let top = case.belt_diameter.map_or(body, |belt| belt / 2.0);
+            brass.push([case.rim_thickness, groove.diameter / 2.0]);
+            brass.push([floor_end, groove.diameter / 2.0]);
+            brass.push([bevel_end, top]);
+            if case.belt_diameter.is_some() {
+                brass.push([case.body_start, top]);
+            }
         } else if rim > body {
             brass.push([case.rim_thickness, body]);
         }
@@ -197,9 +222,13 @@ impl Cartridge {
         brass.push([case.length, mouth]);
 
         // The bullet from where it leaves the case mouth.
-        let bullet = self
+        let mut bullet = self
             .bullet
             .outline(self.overall_length - self.bullet.length);
+        // The tip exactly at the overall length, whatever the rounding.
+        for point in bullet.iter_mut().rev().take(2) {
+            point[0] = self.overall_length;
+        }
         let at_mouth = radius_at(&bullet, case.length);
         brass.push([case.length, at_mouth]);
         stretches.push((Material::Case, brass));
@@ -446,12 +475,24 @@ mod tests {
             let case = &cartridge.case;
             let bullet = &cartridge.bullet;
             assert!(
-                (bullet.diameter - caliber.bullet_diameter_mm).abs() < 0.03,
+                (bullet.diameter - caliber.bullet_diameter_mm).abs() <= 0.03 + 1e-9,
                 "{name}: the bullet's diameter is the caliber's"
             );
+            if cartridge.primer_diameter.is_some() {
+                assert!(
+                    case.mouth_diameter - bullet.diameter >= 0.4,
+                    "{name}: the neck's wall round the bullet is at least 0.2 mm"
+                );
+            } else {
+                // A rimfire's heeled bullet may be as wide as the case.
+                assert!(
+                    bullet.diameter <= case.mouth_diameter + 1e-9,
+                    "{name}: the bullet fits"
+                );
+            }
             assert!(
-                case.mouth_diameter - bullet.diameter >= 0.4,
-                "{name}: the neck's wall round the bullet is at least 0.2 mm"
+                bullet.nose_length <= cartridge.overall_length - case.length,
+                "{name}: the nose starts outside the case"
             );
             let seated = cartridge.overall_length - bullet.length;
             assert!(
@@ -480,7 +521,13 @@ mod tests {
             }
             let widest = outline.iter().map(|p| p[1]).fold(0.0, f64::max);
             assert!(
-                widest <= case.rim_diameter.max(case.body_diameter) / 2.0 + 1e-9,
+                widest
+                    <= case
+                        .rim_diameter
+                        .max(case.body_diameter)
+                        .max(case.belt_diameter.unwrap_or(0.0))
+                        / 2.0
+                        + 1e-9,
                 "{name}"
             );
 
@@ -520,26 +567,44 @@ mod tests {
             );
             if let Some(groove) = &case.groove {
                 // The groove's floor (e), then its bevel at δ to the axis up
-                // to P1 at E.
-                let bevel = (case.body_diameter - groove.diameter)
-                    / 2.0
-                    / groove.bevel_degrees.to_radians().tan();
-                let floor_end = case.body_start - bevel;
-                // The measurements give the floor; the drawing's own e min
-                // checks them (and how its angles were read).
-                let floor = floor_end - case.rim_thickness;
-                assert!(
-                    floor >= groove.floor_min - 0.02 && floor < groove.floor_min + 0.1,
-                    "{name}: the groove's floor {floor:.3} against e min {}",
-                    groove.floor_min
-                );
+                // to P1 at E, or to the belt.
+                let top = case.belt_diameter.unwrap_or(case.body_diameter);
+                let bevel = (top - groove.diameter) / 2.0 / groove.bevel_degrees.to_radians().tan();
+                let floor_end = match case.belt_diameter {
+                    Some(belt) => {
+                        let floor_end = case.rim_thickness + groove.floor_min;
+                        let belt_start = floor_end + bevel;
+                        assert!(
+                            belt_start < case.body_start,
+                            "{name}: the belt has a length"
+                        );
+                        assert!(belt > case.body_diameter, "{name}: the belt stands out");
+                        assert!(
+                            (at((belt_start + case.body_start) / 2.0) - belt).abs() < 1e-9,
+                            "{name}: R3 on the belt"
+                        );
+                        floor_end
+                    }
+                    None => {
+                        let floor_end = case.body_start - bevel;
+                        // The measurements give the floor; the drawing's own
+                        // e min checks them (and how its angles were read).
+                        let floor = floor_end - case.rim_thickness;
+                        assert!(
+                            floor >= groove.floor_min - 0.02 && floor < groove.floor_min + 0.1,
+                            "{name}: the groove's floor {floor:.3} against e min {}",
+                            groove.floor_min
+                        );
+                        floor_end
+                    }
+                };
                 assert!(
                     (at((case.rim_thickness + floor_end) / 2.0) - groove.diameter).abs() < 1e-9,
                     "{name}: E1 in the groove"
                 );
                 let half_way = floor_end + bevel / 2.0;
                 assert!(
-                    (at(half_way) - (groove.diameter + case.body_diameter) / 2.0).abs() < 1e-9,
+                    (at(half_way) - (groove.diameter + top) / 2.0).abs() < 1e-9,
                     "{name}: the groove's bevel"
                 );
             }
