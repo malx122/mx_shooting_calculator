@@ -2787,6 +2787,27 @@
         "boat_tail": { "length": 5.0, "base_diameter": 9.0 }
       }
     } },
+  { "key": "416-hellfire", "name": ".416 Hellfire", "aliases": ["416 Hellfire", "416HF", ".416 HF"], "bullet_diameter_mm": 10.57, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 5, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "Manson Precision Reamers' public chamber print, 416 Hellfire (Public), revision 2, 2020-11-18 (designed by Aaron Jones): body, 38° shoulder, neck and length, less C.I.P.-like clearances (diameters 0.03 mm, neck 0.07 mm, length 0.25 mm); head (rim, groove) assumed the C.I.P. .375 CheyTac's, which the print doesn't give",
+      "overall_length": 123.97,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 16.25, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.50, "degrees": 35.3331 },
+        "groove": { "diameter": 13.80, "bevel_degrees": 53.7333, "floor_min": 2.00 },
+        "body_start": 4.47, "body_diameter": 16.11,
+        "shoulder": { "start": 70.56, "diameter": 15.36, "neck_start": 73.17, "neck_diameter": 11.23, "radius": 0.00, "neck_radius": 3.05 },
+        "mouth_diameter": 11.23, "length": 83.11
+      },
+      "bullet": {
+        "name": "444 gr MTH",
+        "source": "Length from Cutting Edge Bullets' 2025 tech data sheet (.416 444 gr MTH Single Feed, 2.000 in); nose, tip and base estimated; seated with its base at the neck’s start",
+        "diameter": 10.57, "length": 50.80, "nose_length": 26.0, "tip_diameter": 1.8,
+        "boat_tail": { "length": 5.0, "base_diameter": 9.0 }
+      }
+    } },
   { "key": "404-jeffery", "name": ".404 Jeffery", "aliases": ["404 Riml. N.E.", ".404 Rimless Nitro Express", "404 Jeffery", "10.75×73", "10,75x73"], "bullet_diameter_mm": 10.72, "typical_twist_in": 16.5,
     "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {

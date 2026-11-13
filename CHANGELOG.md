@@ -27,7 +27,7 @@ any release may still change things noticeably.
   the Blaser and Nosler magnums, .300 Norma Mag, 6.5×54 M-S, the
   benchrest and F-class sixes (6mm BR, Dasher, PPC, 6XC, 6mm GT), 6mm ARC,
   the PRS quarter-bores (25 Creedmoor, 25×47 Lapua, 25 GT) and 6mm BRA,
-  7.5×55 Swiss, the CheyTacs, .416 Barrett, .50 BMG and the Nitro
+  7.5×55 Swiss, the CheyTacs, .416 Barrett and Hellfire, .50 BMG and the Nitro
   Expresses. Each caliber has rough popularity grades for hunting and
   competition.
 
