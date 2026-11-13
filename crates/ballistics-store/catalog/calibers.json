@@ -61,6 +61,26 @@
         "boat_tail": null
       }
     } },
+  { "key": "17-rem", "name": ".17 Rem", "aliases": [".17 Remington", "17 Rem.", "17 Remington"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 17 Rem., revision 2002-05-15: cartridge maximum",
+      "overall_length": 54.61,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 9.60, "rim_thickness": 1.14,
+        "head_bevel": { "length": 0.45, "degrees": 35 },
+        "groove": { "diameter": 8.43, "bevel_degrees": 25, "floor_min": 0.76 },
+        "body_start": 3.13, "body_diameter": 9.58,
+        "shoulder": { "start": 34.31, "diameter": 9.04, "neck_start": 39.01, "neck_diameter": 5.05, "radius": 0.64, "neck_radius": 2.54 },
+        "mouth_diameter": 5.05, "length": 45.62
+      },
+      "bullet": {
+        "name": "25 gr flat base varmint",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 25 gr); tip and base diameters estimated",
+        "diameter": 4.37, "length": 14.35, "nose_length": 7.8, "tip_diameter": 0.8,
+        "boat_tail": null
+      }
+    } },
   { "key": "22-lr", "name": ".22 LR", "aliases": [".22 Long Rifle"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Long Rifle, revision 2008-09-23: cartridge maximum",
@@ -267,6 +287,86 @@
         "boat_tail": null
       }
     } },
+  { "key": "220-swift", "name": ".220 Swift", "aliases": ["220 Swift", "5.6×56 Swift"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 220 Swift, revision 2008-09-23: cartridge maximum",
+      "overall_length": 68.07,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 10.82, "bevel_degrees": 15, "floor_min": 0.64 },
+        "body_start": 2.89, "body_diameter": 11.36,
+        "shoulder": { "start": 43.76, "diameter": 10.21, "neck_start": 48.41, "neck_diameter": 6.64, "radius": 0.76, "neck_radius": 2.54 },
+        "mouth_diameter": 6.60, "length": 56.01
+      },
+      "bullet": {
+        "name": "55 gr flat base varmint",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 55 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 19.13, "nose_length": 11.6, "tip_diameter": 1.2,
+        "boat_tail": null
+      }
+    } },
+  { "key": "222-rem-mag", "name": ".222 Rem Mag", "aliases": [".222 Remington Magnum", "222 Rem. Mag.", "5.7×47"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 222 Rem. Mag., revision 2022-04-26: cartridge maximum",
+      "overall_length": 57.91,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 9.60, "rim_thickness": 1.14,
+        "head_bevel": { "length": 0.45, "degrees": 35 },
+        "groove": { "diameter": 8.43, "bevel_degrees": 25, "floor_min": 0.76 },
+        "body_start": 3.11, "body_diameter": 9.56,
+        "shoulder": { "start": 37.18, "diameter": 9.07, "neck_start": 40.29, "neck_diameter": 6.43, "radius": 0.64, "neck_radius": 2.54 },
+        "mouth_diameter": 6.43, "length": 46.99
+      },
+      "bullet": {
+        "name": "55 gr flat base varmint",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 55 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 19.13, "nose_length": 11.6, "tip_diameter": 1.2,
+        "boat_tail": null
+      }
+    } },
+  { "key": "218-bee", "name": ".218 Bee", "aliases": ["218 Bee", ".218 Winchester Bee"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 218 Bee, revision 2002-05-15: cartridge maximum",
+      "overall_length": 42.67,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 10.36, "rim_thickness": 1.65,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": null,
+        "body_start": 1.65, "body_diameter": 8.87,
+        "shoulder": { "start": 23.45, "diameter": 8.44, "neck_start": 27.67, "neck_diameter": 6.18, "radius": 1.02, "neck_radius": 4.70 },
+        "mouth_diameter": 6.15, "length": 34.16
+      },
+      "bullet": {
+        "name": "40 gr flat base varmint",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 40 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 15.47, "nose_length": 10.5, "tip_diameter": 0.8,
+        "boat_tail": null
+      }
+    } },
+  { "key": "224-valkyrie", "name": ".224 Valkyrie", "aliases": ["224 Valkyrie", ".224 Valk"], "bullet_diameter_mm": 5.69, "typical_twist_in": 7,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 224 Valkyrie, revision 2023-05-09: cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 10.72, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 9.09, "bevel_degrees": 36, "floor_min": 0.84 },
+        "body_start": 3.20, "body_diameter": 10.72,
+        "shoulder": { "start": 30.56, "diameter": 10.24, "neck_start": 33.80, "neck_diameter": 6.50, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 6.50, "length": 40.64
+      },
+      "bullet": {
+        "name": "60 gr flat base varmint",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Varmint 60 gr); tip and base diameters estimated",
+        "diameter": 5.69, "length": 20.57, "nose_length": 12.6, "tip_diameter": 1.0,
+        "boat_tail": null
+      }
+    } },
   { "key": "5-6x52r", "name": "5.6×52R", "aliases": ["5.6×52 R", "5.6x52R", "5,6×52R", "5,6x52 R"], "bullet_diameter_mm": 5.79, "typical_twist_in": 14,
     "cartridge": {
       "source": "C.I.P. TAB. II, 5,6 x 52 R, revision 2002-05-15: cartridge maximum",
@@ -427,6 +527,146 @@
         "boat_tail": { "length": 4.70, "base_diameter": 4.9 }
       }
     } },
+  { "key": "6mm-rem", "name": "6mm Rem", "aliases": ["6mm Remington", "6 mm Rem.", ".244 Rem", ".244 Remington"], "bullet_diameter_mm": 6.17, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 mm Rem., revision 2023-05-09: cartridge maximum",
+      "overall_length": 71.76,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 10.36, "bevel_degrees": 34, "floor_min": 0.94 },
+        "body_start": 3.40, "body_diameter": 12.01,
+        "shoulder": { "start": 43.81, "diameter": 10.91, "neck_start": 47.81, "neck_diameter": 7.01, "radius": 0.64, "neck_radius": 2.54 },
+        "mouth_diameter": 7.01, "length": 56.72
+      },
+      "bullet": {
+        "name": "95 gr Classic Hunter",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Classic Hunter 95 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 27.15, "nose_length": 13.8, "tip_diameter": 1.2,
+        "boat_tail": { "length": 4.2, "base_diameter": 4.9 }
+      }
+    } },
+  { "key": "6mm-br-norma", "name": "6mm BR Norma", "aliases": ["6mm BR", "6 BR", "6mm Norma BR", "6 mm BR Norma"], "bullet_diameter_mm": 6.17, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6mm BR Norma, revision 2002-05-15: cartridge maximum",
+      "overall_length": 62.00,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 27.30, "diameter": 11.68, "neck_start": 31.44, "neck_diameter": 6.90, "radius": 0.64, "neck_radius": 1.50 },
+        "mouth_diameter": 6.87, "length": 39.62
+      },
+      "bullet": {
+        "name": "105 gr Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Hybrid Target 105 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 31.90, "nose_length": 17.8, "tip_diameter": 1.2,
+        "boat_tail": { "length": 5.4, "base_diameter": 4.8 }
+      }
+    } },
+  { "key": "6mm-dasher", "name": "6mm Dasher", "aliases": ["6 Dasher", "6 mm Dasher", "6mm BR Dasher"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.75,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 mm Dasher, date 2023-05-09 (no revision): cartridge maximum",
+      "overall_length": 60.00,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 30.37, "diameter": 11.65, "neck_start": 33.20, "neck_diameter": 6.90, "radius": 0.64, "neck_radius": 1.10 },
+        "mouth_diameter": 6.88, "length": 39.24
+      },
+      "bullet": {
+        "name": "105 gr Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Hybrid Target 105 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 31.90, "nose_length": 17.8, "tip_diameter": 1.2,
+        "boat_tail": { "length": 5.4, "base_diameter": 4.8 }
+      }
+    } },
+  { "key": "6mm-ppc", "name": "6mm PPC", "aliases": ["6 PPC", "6mm PPC USA", "6 mm PPC-USA", "6 PPC-USA", "6 mm PPC"], "bullet_diameter_mm": 6.17, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 mm PPC-USA, revision 2002-05-15: cartridge maximum",
+      "overall_length": 55.70,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 11.30, "rim_thickness": 1.50,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 9.60, "bevel_degrees": 42.72, "floor_min": 1.10 },
+        "body_start": 3.50, "body_diameter": 11.26,
+        "shoulder": { "start": 27.30, "diameter": 10.95, "neck_start": 30.87, "neck_diameter": 6.82, "radius": 1.00, "neck_radius": 3.00 },
+        "mouth_diameter": 6.82, "length": 38.48
+      },
+      "bullet": {
+        "name": "68 gr flat base target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Target 68 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 21.16, "nose_length": 13.5, "tip_diameter": 1.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "6xc", "name": "6XC", "aliases": ["6 XC", "6mm XC", "6 mm XC", "6XC Tubb"], "bullet_diameter_mm": 6.17, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 XC, date 2008-04-15 (no revision): cartridge maximum",
+      "overall_length": 70.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.95, "rim_thickness": 1.35,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 10.30, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.86, "body_diameter": 11.92,
+        "shoulder": { "start": 36.85, "diameter": 11.53, "neck_start": 40.81, "neck_diameter": 6.96, "radius": 1.00, "neck_radius": 1.50 },
+        "mouth_diameter": 6.96, "length": 48.30
+      },
+      "bullet": {
+        "name": "109 gr Long Range Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Long Range Hybrid Target 109 gr); tip and base diameters estimated",
+        "diameter": 6.17, "length": 32.44, "nose_length": 16.6, "tip_diameter": 1.2,
+        "boat_tail": { "length": 4.3, "base_diameter": 5.0 }
+      }
+    } },
+  { "key": "6mm-arc", "name": "6mm ARC", "aliases": ["6mm Advanced Rifle Cartridge", "6 mm Advanced Rifle Cartridge", "6 mm ARC"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6 mm Advanced Rifle Cartridge, revision 2024-05-14: cartridge maximum",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 11.20, "rim_thickness": 1.50,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 9.55, "bevel_degrees": 45, "floor_min": 1.19 },
+        "body_start": 3.52, "body_diameter": 11.20,
+        "shoulder": { "start": 28.47, "diameter": 10.92, "neck_start": 31.90, "neck_diameter": 6.96, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 6.96, "length": 37.85
+      },
+      "bullet": {
+        "name": "108 gr BT Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (6 mm 108 gr BT Target, 1.217 in long, nose 0.656 in, boat tail 0.217 in); tip and base diameters estimated",
+        "diameter": 6.17, "length": 30.91, "nose_length": 16.7, "tip_diameter": 1.4,
+        "boat_tail": { "length": 5.5, "base_diameter": 4.9 }
+      }
+    } },
+  { "key": "6mm-gt", "name": "6mm GT", "aliases": ["6 GT", "6 mm GT"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "cartridge": {
+      "source": "ANSI/SAAMI Z299.4-2025, 6mm GT (p. 33): cartridge maximum",
+      "overall_length": 67.06,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 11.96, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 33.12, "diameter": 11.66, "neck_start": 36.50, "neck_diameter": 6.93, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 6.93, "length": 43.82
+      },
+      "bullet": {
+        "name": "105 gr BT Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (6 mm 105 gr BT Target, 1.189 in long, nose 0.631 in, boat tail 0.216 in); tip and base diameters estimated",
+        "diameter": 6.17, "length": 30.20, "nose_length": 16.0, "tip_diameter": 1.4,
+        "boat_tail": { "length": 5.5, "base_diameter": 4.9 }
+      }
+    } },
   { "key": "25-06-rem", "name": ".25-06 Rem", "aliases": [".25-06 Remington"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
     "cartridge": {
       "source": "C.I.P. TAB. I, 25-06 Rem., revision 2008-09-23: cartridge maximum",
@@ -445,6 +685,47 @@
         "source": "Length from the app's catalog (Speer Boat-Tail 120 gr, 28.6 mm); nose, tip and base estimated",
         "diameter": 6.53, "length": 28.60, "nose_length": 16.0, "tip_diameter": 2.0,
         "boat_tail": { "length": 2.8, "base_diameter": 5.6 }
+      }
+    } },
+  { "key": "257-wby-mag", "name": ".257 Wby Mag", "aliases": [".257 Weatherby Magnum", "257 Weath. Mag.", "257 Weatherby"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. III, 257 Weath. Mag., revision 2018-10-17: cartridge maximum",
+      "overall_length": 81.51,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.50, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 11.61, "bevel_degrees": 45, "floor_min": 1.24 },
+        "belt_diameter": 13.50,
+        "body_start": 5.56, "body_diameter": 13.00,
+        "shoulder": { "start": 52.68, "diameter": 12.48, "neck_start": 54.82, "neck_diameter": 7.24, "radius": 3.30, "neck_radius": 3.84 },
+        "mouth_diameter": 7.24, "length": 64.74
+      },
+      "bullet": {
+        "name": "120 gr soft point boat tail",
+        "source": "Length from the app's catalog (Speer Boat-Tail 120 gr, 28.6 mm); nose, tip and base estimated",
+        "diameter": 6.53, "length": 28.60, "nose_length": 15.0, "tip_diameter": 1.8,
+        "boat_tail": { "length": 2.8, "base_diameter": 5.4 }
+      }
+    } },
+  { "key": "6-5x54-ms", "name": "6.5×54 MS", "aliases": ["6,5 x 54 Mannl. Sch.", "6.5×54 Mannlicher-Schönauer", "6.5x54 Mannlicher-Schoenauer", "6.5x54 MS", "6,5x54 MS", "6.5×54 M-Sch"], "bullet_diameter_mm": 6.7, "typical_twist_in": 7.87,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6,5 x 54 Mannl. Sch., revision 2002-05-15: cartridge maximum",
+      "overall_length": 77.80,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.52, "rim_thickness": 1.05,
+        "head_bevel": null,
+        "groove": { "diameter": 9.70, "bevel_degrees": 33.25, "floor_min": 1.00 },
+        "body_start": 3.40, "body_diameter": 11.47,
+        "shoulder": { "start": 41.82, "diameter": 10.87, "neck_start": 45.60, "neck_diameter": 7.56, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 7.49, "length": 53.65
+      },
+      "bullet": {
+        "name": "140 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 140 gr, 32.8 mm); nose, tip and base estimated",
+        "diameter": 6.70, "length": 32.80, "nose_length": 17.0, "tip_diameter": 2.5,
+        "boat_tail": null
       }
     } },
   { "key": "6-5x55-se", "name": "6.5×55 SE", "aliases": ["6.5×55 Swedish", "6.5×55 Mauser", "6.5x55", "6,5x55"], "bullet_diameter_mm": 6.71, "typical_twist_in": 7.87,
@@ -685,6 +966,26 @@
         "source": "Length from the app's catalog (Nosler Partition 125 gr, 29.7 mm); nose, tip and base estimated",
         "diameter": 6.71, "length": 29.70, "nose_length": 16.0, "tip_diameter": 2.5,
         "boat_tail": null
+      }
+    } },
+  { "key": "26-nosler", "name": "26 Nosler", "aliases": ["26 Nos", ".26 Nosler"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 26 Nosler, date 2021-11-09 (no revision): cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.56, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 32, "floor_min": 0.94 },
+        "body_start": 3.75, "body_diameter": 13.99,
+        "shoulder": { "start": 55.01, "diameter": 13.40, "neck_start": 59.20, "neck_diameter": 7.54, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 7.54, "length": 65.79
+      },
+      "bullet": {
+        "name": "140 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 140 gr, 34.7 mm); nose, tip and base estimated",
+        "diameter": 6.71, "length": 34.70, "nose_length": 18.0, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 5.6 }
       }
     } },
   { "key": "270-win", "name": ".270 Win", "aliases": [".270 Winchester"], "bullet_diameter_mm": 7.04, "typical_twist_in": 10,
@@ -928,6 +1229,207 @@
         "boat_tail": { "length": 5.3, "base_diameter": 5.9 }
       }
     } },
+  { "key": "7mm-blaser-mag", "name": "7mm Blaser Mag", "aliases": ["7 mm Blaser Mag.", "7mm Blaser Magnum", "7 mm Blaser"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7 mm Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
+      "overall_length": 80.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.59, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.30, "degrees": 35 },
+        "groove": { "diameter": 12.19, "bevel_degrees": 45, "floor_min": 1.42 },
+        "body_start": 3.61, "body_diameter": 13.84,
+        "shoulder": { "start": 47.24, "diameter": 13.09, "neck_start": 51.65, "neck_diameter": 8.00, "radius": 1.50, "neck_radius": 2.00 },
+        "mouth_diameter": 8.00, "length": 59.70
+      },
+      "bullet": {
+        "name": "160 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 160 gr, 35.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 35.20, "nose_length": 18.0, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 5.8 }
+      }
+    } },
+  { "key": "7x75r-se", "name": "7×75R SE vom Hofe", "aliases": ["7 x 75 R SE.v.H.", "7x75R SE vom Hofe", "7×75R Super Express", "7x75R", "7×75R"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.45,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 7 x 75 R SE.v.H., revision 2002-05-15: cartridge maximum",
+      "overall_length": 97.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.35, "rim_thickness": 1.40,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.40, "body_diameter": 11.90,
+        "shoulder": { "start": 59.00, "diameter": 10.70, "neck_start": 66.80, "neck_diameter": 7.95, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 7.95, "length": 75.00
+      },
+      "bullet": {
+        "name": "160 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 160 gr, 35.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 35.20, "nose_length": 18.0, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 5.8 }
+      }
+    } },
+  { "key": "28-nosler", "name": "28 Nosler", "aliases": ["28 Nos", ".28 Nosler"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 28 Nosler, date 2023-05-09 (no revision): cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.56, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.38, "degrees": 45 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 32, "floor_min": 0.94 },
+        "body_start": 3.74, "body_diameter": 13.98,
+        "shoulder": { "start": 55.02, "diameter": 13.40, "neck_start": 58.79, "neck_diameter": 8.13, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 8.13, "length": 65.79
+      },
+      "bullet": {
+        "name": "160 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 160 gr, 35.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 35.20, "nose_length": 18.0, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.0 }
+      }
+    } },
+  { "key": "7mm-rem-ultra-mag", "name": "7mm Rem Ultra Mag", "aliases": ["7mm Remington Ultra Magnum", "7mm RUM", "7 mm Rem. Ultra Mag."], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7 mm Rem. Ultra Mag., revision 2002-05-15: cartridge maximum",
+      "overall_length": 91.44,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.56, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 32, "floor_min": 0.94 },
+        "body_start": 3.75, "body_diameter": 13.99,
+        "shoulder": { "start": 60.64, "diameter": 13.33, "neck_start": 65.10, "neck_diameter": 8.18, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 8.18, "length": 72.39
+      },
+      "bullet": {
+        "name": "175 gr Elite Hunter",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 175 gr); tip and base diameters estimated",
+        "diameter": 7.21, "length": 38.15, "nose_length": 20.4, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.3, "base_diameter": 5.9 }
+      }
+    } },
+  { "key": "7mm-wsm", "name": "7mm WSM", "aliases": ["7mm Winchester Short Magnum", "7 mm Win. Short Mag.", "7mm Win Short Mag"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7 mm Win. Short Mag., revision 2011-05-25: cartridge maximum",
+      "overall_length": 72.64,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.59, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.36, "degrees": 35 },
+        "groove": { "diameter": 12.19, "bevel_degrees": 45, "floor_min": 1.02 },
+        "body_start": 3.35, "body_diameter": 14.12,
+        "shoulder": { "start": 43.23, "diameter": 13.66, "neck_start": 47.17, "neck_diameter": 8.15, "radius": 1.27, "neck_radius": 2.54 },
+        "mouth_diameter": 8.15, "length": 53.34
+      },
+      "bullet": {
+        "name": "150 gr Classic Hunter",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Classic Hunter 150 gr); tip and base diameters estimated",
+        "diameter": 7.21, "length": 31.83, "nose_length": 14.6, "tip_diameter": 1.4,
+        "boat_tail": { "length": 5.2, "base_diameter": 5.9 }
+      }
+    } },
+  { "key": "284-win", "name": ".284 Win", "aliases": [".284 Winchester", "284 Win."], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 284 Win., revision 2005-05-25: cartridge maximum",
+      "overall_length": 71.12,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 40, "floor_min": 1.02 },
+        "body_start": 3.78, "body_diameter": 12.72,
+        "shoulder": { "start": 45.08, "diameter": 12.06, "neck_start": 47.88, "neck_diameter": 8.13, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 8.13, "length": 55.12
+      },
+      "bullet": {
+        "name": "168 gr VLD Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger VLD Target 168 gr); tip and base diameters estimated",
+        "diameter": 7.21, "length": 36.35, "nose_length": 19.5, "tip_diameter": 1.4,
+        "boat_tail": { "length": 6.2, "base_diameter": 5.6 }
+      }
+    } },
+  { "key": "280-ackley-improved", "name": ".280 Ackley Improved", "aliases": [".280 AI", "280 Ackley Improved", "280 ACK IMP", ".280 Remington Ackley Improved", "280 AI"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9,
+    "cartridge": {
+      "source": "ANSI/SAAMI Z299.4-2025, 280 Ackley Improved (p. 92): cartridge maximum",
+      "overall_length": 84.58,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.99, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 0.84 },
+        "body_start": 3.13, "body_diameter": 11.91,
+        "shoulder": { "start": 53.25, "diameter": 11.53, "neck_start": 55.36, "neck_diameter": 8.00, "radius": 1.00, "neck_radius": 1.75 },
+        "mouth_diameter": 8.00, "length": 64.14
+      },
+      "bullet": {
+        "name": "160 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 160 gr, 35.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 35.20, "nose_length": 19.0, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.0 }
+      }
+    } },
+  { "key": "7mm-saum", "name": "7mm SAUM", "aliases": ["7mm Rem SAUM", "7mm Remington Short Action Ultra Magnum", "7 mm Rem. SA Ultra Mag.", "7mm RSAUM", "7 SAUM"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7 mm Rem. SA Ultra Mag., revision 2004-09-27: cartridge maximum",
+      "overall_length": 71.76,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.56, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 32, "floor_min": 0.94 },
+        "body_start": 3.75, "body_diameter": 14.00,
+        "shoulder": { "start": 39.07, "diameter": 13.58, "neck_start": 43.79, "neck_diameter": 8.13, "radius": 0.00, "neck_radius": 3.18 },
+        "mouth_diameter": 8.13, "length": 51.69
+      },
+      "bullet": {
+        "name": "160 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 160 gr, 32.3 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 32.30, "nose_length": 17.0, "tip_diameter": 1.8,
+        "boat_tail": null
+      }
+    } },
+  { "key": "7mm-wby-mag", "name": "7mm Wby Mag", "aliases": ["7mm Weatherby Magnum", "7mm Weath. Mag.", "7 mm Weatherby Mag"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. III, 7 mm Weath. Mag., revision 2002-05-15: cartridge maximum",
+      "overall_length": 85.34,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.50, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 11.61, "bevel_degrees": 45, "floor_min": 1.24 },
+        "belt_diameter": 13.50,
+        "body_start": 5.56, "body_diameter": 13.00,
+        "shoulder": { "start": 52.55, "diameter": 12.49, "neck_start": 54.66, "neck_diameter": 7.92, "radius": 3.30, "neck_radius": 3.84 },
+        "mouth_diameter": 7.92, "length": 64.74
+      },
+      "bullet": {
+        "name": "160 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 160 gr, 35.2 mm); nose, tip and base estimated",
+        "diameter": 7.21, "length": 35.20, "nose_length": 18.5, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.0 }
+      }
+    } },
+  { "key": "7-5x55-swiss", "name": "7.5×55 Swiss", "aliases": ["7,5 x 55 Suisse", "7,5 x 55 Swiss", "7.5x55 Swiss", "7.5 Swiss", "GP 11", "GP11", "7.5×55 Schmidt-Rubin"], "bullet_diameter_mm": 7.78, "typical_twist_in": 10.63,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 7,5 x 55 Suisse, revision 2016-05-18: cartridge maximum",
+      "overall_length": 77.70,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.65, "rim_thickness": 1.65,
+        "head_bevel": { "length": 0.50, "degrees": 45 },
+        "groove": { "diameter": 10.30, "bevel_degrees": 51.8211, "floor_min": 0.89 },
+        "body_start": 3.46, "body_diameter": 12.64,
+        "shoulder": { "start": 44.58, "diameter": 11.63, "neck_start": 47.08, "neck_diameter": 8.68, "radius": 2.00, "neck_radius": 2.00 },
+        "mouth_diameter": 8.58, "length": 55.60
+      },
+      "bullet": {
+        "name": "174 gr GP 11 FMJ boat tail",
+        "source": "Length of the Swiss Army GP 11 bullet (35.0 mm, 1.378 in, as listed for GP 11 on Wikipedia's 7.5×55mm Swiss page); nose, tip and base estimated",
+        "diameter": 7.78, "length": 35.00, "nose_length": 19.0, "tip_diameter": 1.6,
+        "boat_tail": { "length": 4.5, "base_diameter": 6.6 }
+      }
+    } },
   { "key": "30-30-win", "name": ".30-30 Win", "aliases": [".30-30 Winchester", ".30 WCF"], "bullet_diameter_mm": 7.82, "typical_twist_in": 12,
     "cartridge": {
       "source": "C.I.P. TAB. II, 30-30 Win., revision 2002-05-15: cartridge maximum",
@@ -1151,6 +1653,127 @@
         "boat_tail": { "length": 3.0, "base_diameter": 6.4 }
       }
     } },
+  { "key": "7-62x53r", "name": "7.62×53R", "aliases": ["7.62×53 R", "7,62 x 53 R", "7.62x53R", "7.62×53R Finnish", "7.62x53R Finnish"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11.81,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 7,62 x 53 R, revision 2002-05-15: cartridge maximum",
+      "overall_length": 77.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 14.40, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.60, "degrees": 20 },
+        "groove": null,
+        "body_start": 1.60, "body_diameter": 12.42,
+        "shoulder": { "start": 39.61, "diameter": 11.61, "neck_start": 44.05, "neck_diameter": 8.55, "radius": 0.50, "neck_radius": 3.00 },
+        "mouth_diameter": 8.50, "length": 53.50
+      },
+      "bullet": {
+        "name": "180 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 180 gr, 32.0 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 32.00, "nose_length": 16.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "300-blaser-mag", "name": ".300 Blaser Mag", "aliases": [".300 Blaser Magnum", "300 Blaser Mag.", ".300 Blaser"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 300 Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.59, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.30, "degrees": 35 },
+        "groove": { "diameter": 12.19, "bevel_degrees": 45, "floor_min": 1.42 },
+        "body_start": 3.61, "body_diameter": 13.84,
+        "shoulder": { "start": 52.12, "diameter": 13.00, "neck_start": 55.92, "neck_diameter": 8.61, "radius": 1.50, "neck_radius": 2.00 },
+        "mouth_diameter": 8.61, "length": 64.20
+      },
+      "bullet": {
+        "name": "180 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 180 gr, 35.1 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 35.10, "nose_length": 17.5, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.4 }
+      }
+    } },
+  { "key": "300-norma-mag", "name": ".300 Norma Mag", "aliases": [".300 Norma Magnum", "300 Norma Mag", ".300 NM"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 300 Norma Mag, date 2012-05-30 (no revision): cartridge maximum",
+      "overall_length": 93.50,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 14.93, "rim_thickness": 1.52,
+        "head_bevel": { "length": 0.50, "degrees": 45 },
+        "groove": { "diameter": 13.24, "bevel_degrees": 50, "floor_min": 0.95 },
+        "body_start": 3.15, "body_diameter": 14.87,
+        "shoulder": { "start": 48.06, "diameter": 14.29, "neck_start": 55.52, "neck_diameter": 8.71, "radius": 0.00, "neck_radius": 2.50 },
+        "mouth_diameter": 8.68, "length": 63.30
+      },
+      "bullet": {
+        "name": "205 gr Elite Hunter",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger Elite Hunter 205 gr); tip and base diameters estimated",
+        "diameter": 7.82, "length": 37.77, "nose_length": 18.9, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.8, "base_diameter": 6.3 }
+      }
+    } },
+  { "key": "300-rem-ultra-mag", "name": ".300 Rem Ultra Mag", "aliases": [".300 Remington Ultra Magnum", ".300 RUM", "300 Rem. Ultra Mag."], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 300 Rem. Ultra Mag., revision 2008-09-23: cartridge maximum",
+      "overall_length": 91.44,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.56, "rim_thickness": 1.27,
+        "head_bevel": null,
+        "groove": { "diameter": 12.07, "bevel_degrees": 32, "floor_min": 0.94 },
+        "body_start": 3.75, "body_diameter": 13.97,
+        "shoulder": { "start": 60.64, "diameter": 13.34, "neck_start": 64.62, "neck_diameter": 8.74, "radius": 0.00, "neck_radius": 3.17 },
+        "mouth_diameter": 8.74, "length": 72.39
+      },
+      "bullet": {
+        "name": "180 gr TTSX",
+        "source": "Length from the app's catalog (Barnes TTSX BT 180 gr, 37.8 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 37.80, "nose_length": 19.5, "tip_diameter": 1.2,
+        "boat_tail": { "length": 3.3, "base_diameter": 6.6 }
+      }
+    } },
+  { "key": "30-br", "name": ".30 BR", "aliases": ["30 BR", ".30 Benchrest", "30BR"], "bullet_diameter_mm": 7.82, "typical_twist_in": 17,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 30 BR, date 2011-05-25 (no revision): cartridge maximum",
+      "overall_length": 58.00,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 10.40, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.83, "body_diameter": 11.94,
+        "shoulder": { "start": 27.17, "diameter": 11.66, "neck_start": 30.05, "neck_diameter": 8.33, "radius": 0.64, "neck_radius": 1.50 },
+        "mouth_diameter": 8.33, "length": 38.41
+      },
+      "bullet": {
+        "name": "115 gr flat base target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (Berger FB Target 115 gr); tip and base diameters estimated",
+        "diameter": 7.82, "length": 23.88, "nose_length": 17.8, "tip_diameter": 1.2,
+        "boat_tail": null
+      }
+    } },
+  { "key": "300-hh-mag", "name": ".300 H&H Mag", "aliases": [".300 Holland & Holland Magnum", "300 H&H Magnum", ".300 Super Belted Rimless H&H", "30 Super Belt. Riml. H&H"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. III, 300 H&H Mag., revision 2011-05-25: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
+      "overall_length": 91.44,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.51, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 45 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
+        "belt_diameter": 13.56,
+        "body_start": 5.59, "body_diameter": 13.03,
+        "shoulder": { "start": 53.46, "diameter": 11.43, "neck_start": 62.96, "neck_diameter": 8.59, "radius": 2.54, "neck_radius": 2.54 },
+        "mouth_diameter": 8.59, "length": 72.39
+      },
+      "bullet": {
+        "name": "180 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 180 gr, 32.0 mm); nose, tip and base estimated",
+        "diameter": 7.82, "length": 32.00, "nose_length": 16.0, "tip_diameter": 2.0,
+        "boat_tail": null
+      }
+    } },
   { "key": "7-62x39", "name": "7.62×39", "aliases": ["7.62x39"], "bullet_diameter_mm": 7.90, "typical_twist_in": 9.45,
     "cartridge": {
       "source": "C.I.P. TAB. I, 7,62 x 39, revision 2002-05-15: cartridge maximum",
@@ -1311,6 +1934,46 @@
         "boat_tail": { "length": 3.0, "base_diameter": 6.9 }
       }
     } },
+  { "key": "8x60-s", "name": "8×60 S", "aliases": ["8 x 60 S", "8x60S", "8x60 S"], "bullet_diameter_mm": 8.2, "typical_twist_in": 9.45,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 8 x 60 S, revision 2006-09-19: cartridge maximum",
+      "overall_length": 83.60,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.95, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 10.50, "bevel_degrees": 39.43, "floor_min": 1.00 },
+        "body_start": 3.20, "body_diameter": 11.98,
+        "shoulder": { "start": 48.20, "diameter": 10.95, "neck_start": 50.90, "neck_diameter": 9.08, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 9.08, "length": 60.00
+      },
+      "bullet": {
+        "name": "200 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 200 gr, 31.5 mm); nose, tip and base estimated",
+        "diameter": 8.20, "length": 31.50, "nose_length": 15.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "8x75-rs", "name": "8×75 RS", "aliases": ["8 x 75 RS", "8x75RS", "8x75 RS"], "bullet_diameter_mm": 8.2, "typical_twist_in": 9.45,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 8 x 75 RS, revision 2002-05-15: cartridge maximum",
+      "overall_length": 96.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.35, "rim_thickness": 1.40,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.40, "body_diameter": 11.90,
+        "shoulder": { "start": 66.20, "diameter": 10.40, "neck_start": 69.06, "neck_diameter": 9.08, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 9.08, "length": 74.60
+      },
+      "bullet": {
+        "name": "200 gr AccuBond",
+        "source": "Length from the app's catalog (Nosler AccuBond 200 gr, 35.1 mm); nose, tip and base estimated",
+        "diameter": 8.20, "length": 35.10, "nose_length": 18.0, "tip_diameter": 1.3,
+        "boat_tail": { "length": 3.0, "base_diameter": 6.9 }
+      }
+    } },
   { "key": "338-win-mag", "name": ".338 Win Mag", "aliases": [".338 Winchester Magnum"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
     "cartridge": {
       "source": "C.I.P. TAB. III, 338 Win. Mag., revision 2002-05-15: cartridge maximum",
@@ -1372,6 +2035,26 @@
         "boat_tail": { "length": 3.0, "base_diameter": 7.4 }
       }
     } },
+  { "key": "338-federal", "name": ".338 Federal", "aliases": ["338 Fed", ".338 Fed"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 338 Federal, revision 2011-05-25: cartridge maximum",
+      "overall_length": 71.63,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 39.62, "diameter": 11.53, "neck_start": 42.55, "neck_diameter": 9.40, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 9.40, "length": 51.18
+      },
+      "bullet": {
+        "name": "200 gr copper hollow point",
+        "source": "Length from the app's catalog (Tarvas Trumpeting 200 gr, 32.2 mm); nose, tip and base estimated",
+        "diameter": 8.59, "length": 32.20, "nose_length": 17.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
   { "key": "35-whelen", "name": ".35 Whelen", "aliases": [], "bullet_diameter_mm": 9.09, "typical_twist_in": 16,
     "cartridge": {
       "source": "C.I.P. TAB. I, 35 Whelen, revision 2002-05-15: cartridge maximum",
@@ -1430,6 +2113,46 @@
         "name": "250 gr round nose soft point",
         "source": "Length from Woodleigh (Weldcore 250 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
         "diameter": 9.09, "length": 28.57, "nose_length": 10.0, "tip_diameter": 4.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "35-rem", "name": ".35 Rem", "aliases": [".35 Remington", "35 Remington"], "bullet_diameter_mm": 9.09, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 35 Rem., revision 2002-05-15: cartridge maximum",
+      "overall_length": 64.14,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.68, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 10.16, "bevel_degrees": 34, "floor_min": 0.76 },
+        "body_start": 3.14, "body_diameter": 11.66,
+        "shoulder": { "start": 39.10, "diameter": 10.82, "neck_start": 40.24, "neck_diameter": 9.83, "radius": 0.64, "neck_radius": 1.27 },
+        "mouth_diameter": 9.75, "length": 48.77
+      },
+      "bullet": {
+        "name": "200 gr round-nose soft point",
+        "source": "Length from Federal (Power-Shok 35 Rem 200 gr jacketed soft point, 25.15 mm), federalpremium.com; nose, tip and base estimated",
+        "diameter": 9.09, "length": 25.15, "nose_length": 9.5, "tip_diameter": 3.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "360-buckhammer", "name": ".360 Buckhammer", "aliases": ["360 BHMR", ".360 BHMR", "360 Buckhammer"], "bullet_diameter_mm": 9.09, "typical_twist_in": 12,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 360 Buckhammer, date 2023-11-08 (no revision): cartridge maximum",
+      "overall_length": 63.50,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.85, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": null,
+        "body_start": 1.60, "body_diameter": 10.74,
+        "shoulder": null,
+        "mouth_diameter": 9.65, "length": 45.72
+      },
+      "bullet": {
+        "name": "200 gr soft point",
+        "source": "Length assumed from Federal's .35 Rem 200 gr soft point (Power-Shok, 25.15 mm, federalpremium.com): Federal gives none for its .360 Buckhammer load; nose, tip and base estimated",
+        "diameter": 9.09, "length": 25.15, "nose_length": 9.5, "tip_diameter": 3.5,
         "boat_tail": null
       }
     } },
@@ -1513,6 +2236,86 @@
         "boat_tail": null
       }
     } },
+  { "key": "9-3x66-sako", "name": "9.3×66 Sako", "aliases": [".370 Sako Magnum", ".370 Sako Mag", "9,3 x 66 Sako", "9.3x66 Sako", "9.3x66"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 9,3 x 66 Sako, revision 2002-05-15: cartridge maximum",
+      "overall_length": 85.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 11.95, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 10.50, "bevel_degrees": 41, "floor_min": 1.00 },
+        "body_start": 3.24, "body_diameter": 12.13,
+        "shoulder": { "start": 55.80, "diameter": 11.43, "neck_start": 58.20, "neck_diameter": 9.92, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 9.92, "length": 66.00
+      },
+      "bullet": {
+        "name": "286 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 286 gr, 34.9 mm); nose, tip and base estimated",
+        "diameter": 9.30, "length": 34.90, "nose_length": 15.5, "tip_diameter": 3.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "9-3x64-brenneke", "name": "9.3×64 Brenneke", "aliases": ["9,3 x 64 Brenneke", "9.3x64", "9,3x64", "9.3×64"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14.17,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 9,3 x 64 Brenneke, revision 2002-05-15: cartridge maximum",
+      "overall_length": 85.60,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 12.60, "rim_thickness": 1.30,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": { "diameter": 11.20, "bevel_degrees": 43, "floor_min": 1.00 },
+        "body_start": 3.20, "body_diameter": 12.88,
+        "shoulder": { "start": 52.09, "diameter": 12.05, "neck_start": 55.28, "neck_diameter": 10.04, "radius": 0.50, "neck_radius": 0.50 },
+        "mouth_diameter": 10.04, "length": 64.00
+      },
+      "bullet": {
+        "name": "286 gr Partition",
+        "source": "Length from the app's catalog (Nosler Partition 286 gr, 34.9 mm); nose, tip and base estimated",
+        "diameter": 9.30, "length": 34.90, "nose_length": 15.5, "tip_diameter": 3.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "9-3x53r", "name": "9.3×53R Finnish", "aliases": ["9,3 x 53 R Finnish", "9.3x53R", "9,3x53R", "9.3×53R", "9.3×53 R"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14.96,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 9,3 x 53 R Finnish, revision 2002-05-15: cartridge maximum",
+      "overall_length": 76.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 14.40, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.60, "degrees": 70 },
+        "groove": null,
+        "body_start": 1.60, "body_diameter": 12.42,
+        "shoulder": { "start": 39.61, "diameter": 11.61, "neck_start": 41.94, "neck_diameter": 9.96, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 9.90, "length": 53.30
+      },
+      "bullet": {
+        "name": "250 gr Trumpeting",
+        "source": "Length from the app's catalog (Tarvas Trumpeting 250 gr, 34.2 mm); nose, tip and base estimated",
+        "diameter": 9.30, "length": 34.20, "nose_length": 17.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "375-cheytac", "name": ".375 CheyTac", "aliases": [".375 Chey Tac", "375 CT", ".375 CT", "9,5 x 77", "9.5×77"], "bullet_diameter_mm": 9.52, "typical_twist_in": 9.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 375 Chey Tac, date 2017-05-17 (no revision): cartridge maximum",
+      "overall_length": 113.40,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 16.25, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.50, "degrees": 35.3331 },
+        "groove": { "diameter": 13.80, "bevel_degrees": 53.7333, "floor_min": 2.00 },
+        "body_start": 4.47, "body_diameter": 16.18,
+        "shoulder": { "start": 62.28, "diameter": 15.22, "neck_start": 68.37, "neck_diameter": 10.31, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 10.31, "length": 76.91
+      },
+      "bullet": {
+        "name": "352 gr solid copper match",
+        "source": "Length from Cutting Edge Bullets' data sheet (MTAC L09 352 gr, 2.002 in); nose, tip and base estimated",
+        "diameter": 9.52, "length": 50.85, "nose_length": 26.0, "tip_diameter": 1.5,
+        "boat_tail": { "length": 6.0, "base_diameter": 7.9 }
+      }
+    } },
   { "key": "375-hh-mag", "name": ".375 H&H Mag", "aliases": [".375 Holland & Holland Magnum"], "bullet_diameter_mm": 9.53, "typical_twist_in": 12,
     "cartridge": {
       "source": "C.I.P. TAB. III, 375 H&H Mag., revision 2002-05-15: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
@@ -1534,6 +2337,86 @@
         "boat_tail": { "length": 3.0, "base_diameter": 8.2 }
       }
     } },
+  { "key": "375-ruger", "name": ".375 Ruger", "aliases": ["375 Ruger"], "bullet_diameter_mm": 9.53, "typical_twist_in": 12,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 375 Ruger, date 2009-05-05 (no revision): cartridge maximum",
+      "overall_length": 84.84,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.51, "rim_thickness": 1.27,
+        "head_bevel": { "length": 0.41, "degrees": 35 },
+        "groove": { "diameter": 12.07, "bevel_degrees": 35, "floor_min": 0.94 },
+        "body_start": 3.24, "body_diameter": 13.52,
+        "shoulder": { "start": 55.36, "diameter": 13.08, "neck_start": 57.78, "neck_diameter": 10.29, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 10.29, "length": 65.53
+      },
+      "bullet": {
+        "name": "270 gr soft point boat tail",
+        "source": "Length from the app's catalog (Speer Boat-Tail 270 gr, 33.0 mm); nose, tip and base estimated",
+        "diameter": 9.53, "length": 33.00, "nose_length": 16.0, "tip_diameter": 2.5,
+        "boat_tail": { "length": 3.0, "base_diameter": 8.4 }
+      }
+    } },
+  { "key": "400-legend", "name": ".400 Legend", "aliases": ["400 LGND", "400 Legend"], "bullet_diameter_mm": 10.17, "typical_twist_in": 16,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 400 Legend, date 2023-11-08 (no revision): cartridge maximum; the rim's bevel angle from ANSI/SAAMI Z299.4-2025 (the C.I.P. sheet prints 0°)",
+      "overall_length": 57.40,
+      "primer_diameter": 4.45,
+      "case": {
+        "rim_diameter": 10.72, "rim_thickness": 1.24,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 9.09, "bevel_degrees": 36, "floor_min": 0.84 },
+        "body_start": 3.53, "body_diameter": 11.19,
+        "shoulder": null,
+        "mouth_diameter": 10.84, "length": 41.91
+      },
+      "bullet": {
+        "name": "215 gr soft point",
+        "source": "Estimated: Winchester's 215 gr Power-Point load, a .4005 in pointed soft point; length from its mass at 10.7 g/cm³; nose, tip and base estimated",
+        "diameter": 10.17, "length": 19.70, "nose_length": 10.0, "tip_diameter": 2.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "408-cheytac", "name": ".408 CheyTac", "aliases": [".408 Chey Tac", "408 CT", ".408 CT", "10,36 x 77 mm", "10.36×77"], "bullet_diameter_mm": 10.36, "typical_twist_in": 10,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 408 Chey Tac, revision 2016-10-18: cartridge maximum",
+      "overall_length": 115.50,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 16.25, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.50, "degrees": 35.3331 },
+        "groove": { "diameter": 13.80, "bevel_degrees": 53.7333, "floor_min": 2.00 },
+        "body_start": 4.47, "body_diameter": 16.18,
+        "shoulder": { "start": 62.23, "diameter": 15.24, "neck_start": 67.31, "neck_diameter": 11.12, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 11.12, "length": 77.21
+      },
+      "bullet": {
+        "name": "420 gr solid copper match",
+        "source": "Length from Cutting Edge Bullets' data sheet (MTAC U420 420 gr, 2.003 in); nose, tip and base estimated",
+        "diameter": 10.36, "length": 50.88, "nose_length": 27.0, "tip_diameter": 1.5,
+        "boat_tail": { "length": 6.0, "base_diameter": 8.8 }
+      }
+    } },
+  { "key": "10-3x60r", "name": "10.3×60R", "aliases": ["10,3 x 60 R", "10.3x60R", "10.3×60R Swiss", "10,3x60R"], "bullet_diameter_mm": 10.54, "typical_twist_in": 17.72,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 10,3 x 60 R, revision 2025-05-13: cartridge maximum",
+      "overall_length": 85.00,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 15.70, "rim_thickness": 1.10,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.10, "body_diameter": 13.85,
+        "shoulder": { "start": 40.80, "diameter": 12.50, "neck_start": 46.80, "neck_diameter": 11.40, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 11.26, "length": 60.80
+      },
+      "bullet": {
+        "name": "330 gr round-nose soft point",
+        "source": "Estimated: a 330 gr (21.4 g) round-nose soft point at the sheet's G1 10.54; length from its mass at about 11 g/cm³; nose, tip and base estimated",
+        "diameter": 10.54, "length": 27.00, "nose_length": 11.0, "tip_diameter": 4.0,
+        "boat_tail": null
+      }
+    } },
   { "key": "416-rigby", "name": ".416 Rigby", "aliases": [], "bullet_diameter_mm": 10.57, "typical_twist_in": 14,
     "cartridge": {
       "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum; r1, r2 and the rim's bevel from ANSI/SAAMI Z299.4-2025",
@@ -1551,6 +2434,46 @@
         "name": "400 gr round-nose soft point",
         "source": "Length from Woodleigh (Weldcore 400 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
         "diameter": 10.57, "length": 33.10, "nose_length": 12.0, "tip_diameter": 4.5,
+        "boat_tail": null
+      }
+    } },
+  { "key": "404-jeffery", "name": ".404 Jeffery", "aliases": ["404 Riml. N.E.", ".404 Rimless Nitro Express", "404 Jeffery", "10.75×73", "10,75x73"], "bullet_diameter_mm": 10.72, "typical_twist_in": 16.5,
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 404 Riml. N.E., revision 2020-04-21: cartridge maximum",
+      "overall_length": 89.66,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.79, "rim_thickness": 1.27,
+        "head_bevel": null,
+        "groove": { "diameter": 12.37, "bevel_degrees": 36.044, "floor_min": 1.02 },
+        "body_start": 3.30, "body_diameter": 13.84,
+        "shoulder": { "start": 50.82, "diameter": 13.46, "neck_start": 57.18, "neck_diameter": 11.56, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 11.48, "length": 73.02
+      },
+      "bullet": {
+        "name": "400 gr round nose soft point",
+        "source": "Estimated: 400 gr (25.9 g) lead-core round nose soft point of .422 in, about 31 mm long; nose and tip estimated",
+        "diameter": 10.72, "length": 31.20, "nose_length": 12.0, "tip_diameter": 4.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "444-marlin", "name": ".444 Marlin", "aliases": ["444 Marlin"], "bullet_diameter_mm": 10.92, "typical_twist_in": 20,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 444 Marlin, revision 2002-05-15: cartridge maximum",
+      "overall_length": 65.28,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 13.06, "rim_thickness": 1.60,
+        "head_bevel": { "length": 0.38, "degrees": 35 },
+        "groove": { "diameter": 11.43, "bevel_degrees": 45, "floor_min": 0.64 },
+        "body_start": 2.50, "body_diameter": 11.95,
+        "shoulder": null,
+        "mouth_diameter": 11.51, "length": 56.52
+      },
+      "bullet": {
+        "name": "280 gr flat-nose soft point",
+        "source": "Length from Woodleigh (Weldcore .430 in 280 gr FN SN, 0.828 in), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 10.92, "length": 21.03, "nose_length": 5.5, "tip_diameter": 7.0,
         "boat_tail": null
       }
     } },
@@ -1612,6 +2535,46 @@
         "name": "500 gr round-nose soft point",
         "source": "Length from Woodleigh (Weldcore 500 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
         "diameter": 11.63, "length": 33.15, "nose_length": 12.0, "tip_diameter": 5.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "470-ne", "name": ".470 NE", "aliases": [".470 Nitro Express", "470 N.E.", "470 Nitro"], "bullet_diameter_mm": 12.04, "typical_twist_in": 21,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 470 N.E., revision 2013-05-22: cartridge maximum",
+      "overall_length": 101.09,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 16.64, "rim_thickness": 1.02,
+        "head_bevel": { "length": 0.30, "degrees": 45 },
+        "groove": null,
+        "body_start": 1.02, "body_diameter": 14.55,
+        "shoulder": { "start": 60.96, "diameter": 13.49, "neck_start": 63.50, "neck_diameter": 12.85, "radius": 6.35, "neck_radius": 6.35 },
+        "mouth_diameter": 12.80, "length": 82.55
+      },
+      "bullet": {
+        "name": "500 gr round-nose soft point",
+        "source": "Length from Woodleigh (Weldcore .474 in 500 gr RN SN, 1.247 in), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 12.04, "length": 31.67, "nose_length": 12.0, "tip_diameter": 5.0,
+        "boat_tail": null
+      }
+    } },
+  { "key": "500-ne-3", "name": ".500 NE 3\"", "aliases": [".500 Nitro Express 3\"", "500 N.E. 3\"", ".500 Nitro Express", ".500 NE"], "bullet_diameter_mm": 12.95, "typical_twist_in": 15,
+    "cartridge": {
+      "source": "C.I.P. TAB. II, 500 N. E. 3'', revision 2005-07-20: cartridge maximum",
+      "overall_length": 95.25,
+      "primer_diameter": 5.33,
+      "case": {
+        "rim_diameter": 16.64, "rim_thickness": 1.02,
+        "head_bevel": null,
+        "groove": null,
+        "body_start": 1.02, "body_diameter": 14.58,
+        "shoulder": null,
+        "mouth_diameter": 13.51, "length": 76.20
+      },
+      "bullet": {
+        "name": "570 gr round-nose soft point",
+        "source": "Length from Woodleigh (Weldcore .510 in 570 gr RN SN, 1.258 in), woodleighbullets.com.au; nose, tip and base estimated",
+        "diameter": 12.95, "length": 31.95, "nose_length": 13.0, "tip_diameter": 5.5,
         "boat_tail": null
       }
     } },

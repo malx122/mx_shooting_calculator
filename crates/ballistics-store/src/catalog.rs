@@ -383,6 +383,28 @@ mod tests {
     }
 
     #[test]
+    fn no_two_calibers_share_a_key_or_a_name() {
+        let catalog = Catalog::builtin();
+        let mut keys = std::collections::HashSet::new();
+        let mut names = std::collections::HashMap::new();
+        for caliber in &catalog.calibers {
+            assert!(
+                keys.insert(caliber.key.as_str()),
+                "{}: key used twice",
+                caliber.key
+            );
+            for name in std::iter::once(&caliber.name).chain(&caliber.aliases) {
+                // The same caliber may list a name twice; two may not share one.
+                if let Some(other) = names.insert(normalise(name), caliber.key.as_str())
+                    && other != caliber.key
+                {
+                    panic!("{name:?} names both {other} and {}", caliber.key);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn sellier_bellot_profiles_include_both_published_bc_models() {
         let profiles: Vec<_> = Catalog::builtin()
             .bullets
