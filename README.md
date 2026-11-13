@@ -891,7 +891,9 @@ app:
 
 - **`calibers.json`:** 129 calibers, each with bullet diameter, a typical
   twist and its cartridge from the C.I.P. (or SAAMI) drawing, for the 3D view
-  and the printable STL; see [docs/cartridges.md](docs/cartridges.md).
+  and the printable STL (see [docs/cartridges.md](docs/cartridges.md)), and
+  rough popularity grades for hunting and competition (see
+  [docs/caliber-popularity.md](docs/caliber-popularity.md)).
 - **`bullets/`:** 1529 bullets and loads, one file per maker (for example
   `bullets/norma.json`). These are factory loads from Norma, Lapua, Sako,
   Hornady, Barnes, Geco, Federal (275 rifle and rimfire loads), CCI

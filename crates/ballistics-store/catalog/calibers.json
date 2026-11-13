@@ -1,5 +1,6 @@
 [
   { "key": "17-hornet", "name": ".17 Hornet", "aliases": ["17 Hornet"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 17 Hornet, date 2014-05-20 (no revision): cartridge maximum",
       "overall_length": 43.69,
@@ -21,6 +22,7 @@
       }
     } },
   { "key": "17-hmr", "name": ".17 HMR", "aliases": [".17 Hornady Magnum Rimfire"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 17 HMR, revision 2006-05-16: cartridge maximum",
       "overall_length": 34.67,
@@ -43,6 +45,7 @@
       }
     } },
   { "key": "17-mach-2", "name": ".17 Mach 2", "aliases": [".17 Mach II"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 17 Mach 2, revision 2007-05-14: cartridge maximum",
       "overall_length": 25.40,
@@ -65,6 +68,7 @@
       }
     } },
   { "key": "17-rem", "name": ".17 Rem", "aliases": [".17 Remington", "17 Rem.", "17 Remington"], "bullet_diameter_mm": 4.37, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 17 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 54.61,
@@ -86,6 +90,7 @@
       }
     } },
   { "key": "22-lr", "name": ".22 LR", "aliases": [".22 Long Rifle"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 4, "hunting_north_america": 4, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 5, "nordic_field": 4 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Long Rifle, revision 2008-09-23: cartridge maximum",
       "overall_length": 25.40,
@@ -108,6 +113,7 @@
       }
     } },
   { "key": "22-long", "name": ".22 Long", "aliases": ["22 Long"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Long, revision 2000-06-07: cartridge maximum",
       "overall_length": 22.56,
@@ -130,6 +136,7 @@
       }
     } },
   { "key": "22-short", "name": ".22 Short", "aliases": ["22 Short"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Short, revision 2008-09-23: cartridge maximum",
       "overall_length": 17.65,
@@ -152,6 +159,7 @@
       }
     } },
   { "key": "22-wmr", "name": ".22 WMR", "aliases": [".22 Magnum", ".22 Winchester Magnum Rimfire"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Win. Mag. R.F., revision 2008-09-23: cartridge maximum",
       "overall_length": 34.29,
@@ -174,6 +182,7 @@
       }
     } },
   { "key": "22-wrf", "name": ".22 WRF", "aliases": [".22 Winchester Rimfire"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Win. R.F. et 22 Rem. Spl., revision 2000-06-07: cartridge maximum",
       "overall_length": 29.97,
@@ -196,6 +205,7 @@
       }
     } },
   { "key": "22-win-auto", "name": ".22 Win Auto", "aliases": [".22 Winchester Automatic"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 22 Win. Auto, revision 2000-06-07: cartridge maximum",
       "overall_length": 23.24,
@@ -218,6 +228,7 @@
       }
     } },
   { "key": "22-hornet", "name": ".22 Hornet", "aliases": ["5.6×35R"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 22 Hornet, revision 2002-05-15: cartridge maximum",
       "overall_length": 43.76,
@@ -239,6 +250,7 @@
       }
     } },
   { "key": "204-ruger", "name": ".204 Ruger", "aliases": [], "bullet_diameter_mm": 5.18, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 204 Ruger, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 57.40,
@@ -260,6 +272,7 @@
       }
     } },
   { "key": "5-6x50-mag", "name": "5.6×50 Magnum", "aliases": ["5,6 x 50 Mag.", "5,6×50 Magnum", "5.6x50 Mag."], "bullet_diameter_mm": 5.69, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 5,6 x 50 Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 61.30,
@@ -281,6 +294,7 @@
       }
     } },
   { "key": "5-6x50r-mag", "name": "5.6×50R Magnum", "aliases": ["5.6×50 R Magnum", "5,6×50 R Magnum", "5.6x50R Magnum"], "bullet_diameter_mm": 5.69, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 5,6 x 50 R Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 61.00,
@@ -302,6 +316,7 @@
       }
     } },
   { "key": "220-swift", "name": ".220 Swift", "aliases": ["220 Swift", "5.6×56 Swift"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 220 Swift, revision 2008-09-23: cartridge maximum",
       "overall_length": 68.07,
@@ -323,6 +338,7 @@
       }
     } },
   { "key": "222-rem-mag", "name": ".222 Rem Mag", "aliases": [".222 Remington Magnum", "222 Rem. Mag.", "5.7×47"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 222 Rem. Mag., revision 2022-04-26: cartridge maximum",
       "overall_length": 57.91,
@@ -344,6 +360,7 @@
       }
     } },
   { "key": "218-bee", "name": ".218 Bee", "aliases": ["218 Bee", ".218 Winchester Bee"], "bullet_diameter_mm": 5.69, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 218 Bee, revision 2002-05-15: cartridge maximum",
       "overall_length": 42.67,
@@ -365,6 +382,7 @@
       }
     } },
   { "key": "224-valkyrie", "name": ".224 Valkyrie", "aliases": ["224 Valkyrie", ".224 Valk"], "bullet_diameter_mm": 5.69, "typical_twist_in": 7,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 224 Valkyrie, revision 2023-05-09: cartridge maximum",
       "overall_length": 57.40,
@@ -386,6 +404,7 @@
       }
     } },
   { "key": "5-6x52r", "name": "5.6×52R", "aliases": ["5.6×52 R", "5.6x52R", "5,6×52R", "5,6x52 R"], "bullet_diameter_mm": 5.79, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 5,6 x 52 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 63.75,
@@ -407,6 +426,7 @@
       }
     } },
   { "key": "5-6x57", "name": "5.6×57", "aliases": ["5,6 x 57", "5,6×57", "5.6x57"], "bullet_diameter_mm": 5.69, "typical_twist_in": 9.84,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 5,6 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 69.00,
@@ -428,6 +448,7 @@
       }
     } },
   { "key": "5mm-rem-rimfire-magnum", "name": "5mm Remington Rimfire Magnum", "aliases": ["5mm RRM"], "bullet_diameter_mm": 5.18, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. V, 5 mm Rem. Mag., revision 2000-06-07: cartridge maximum",
       "overall_length": 32.89,
@@ -449,6 +470,7 @@
       }
     } },
   { "key": "222-rem", "name": ".222 Rem", "aliases": [".222 Remington"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 222 Rem., revision 2008-09-13: cartridge maximum",
       "overall_length": 54.10,
@@ -470,6 +492,7 @@
       }
     } },
   { "key": "223-rem", "name": ".223 Rem", "aliases": [".223 Remington", "5.56×45"], "bullet_diameter_mm": 5.69, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 4, "precision": 3, "f_class": 3, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 223 Rem., revision 2017-05-17: cartridge maximum",
       "overall_length": 57.40,
@@ -491,6 +514,7 @@
       }
     } },
   { "key": "22-250-rem", "name": ".22-250 Rem", "aliases": [".22-250 Remington"], "bullet_diameter_mm": 5.69, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 3, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 22-250 Rem, revision 2002-05-15: cartridge maximum",
       "overall_length": 59.69,
@@ -512,6 +536,7 @@
       }
     } },
   { "key": "243-win", "name": ".243 Win", "aliases": [".243 Winchester"], "bullet_diameter_mm": 6.17, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 243 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 68.83,
@@ -533,6 +558,7 @@
       }
     } },
   { "key": "6mm-creedmoor", "name": "6mm Creedmoor", "aliases": ["6 CM"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 2, "hunting_north_america": 3, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 mm Creedmoor, revision 2021-11-09: cartridge maximum",
       "overall_length": 71.12,
@@ -554,6 +580,7 @@
       }
     } },
   { "key": "6mm-rem", "name": "6mm Rem", "aliases": ["6mm Remington", "6 mm Rem.", ".244 Rem", ".244 Remington"], "bullet_diameter_mm": 6.17, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 mm Rem., revision 2023-05-09: cartridge maximum",
       "overall_length": 71.76,
@@ -575,6 +602,7 @@
       }
     } },
   { "key": "6mm-br-norma", "name": "6mm BR Norma", "aliases": ["6mm BR", "6 BR", "6mm Norma BR", "6 mm BR Norma"], "bullet_diameter_mm": 6.17, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 4, "long_range": 1, "rimfire": 1, "nordic_field": 4 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6mm BR Norma, revision 2002-05-15: cartridge maximum",
       "overall_length": 62.00,
@@ -596,6 +624,7 @@
       }
     } },
   { "key": "6mm-dasher", "name": "6mm Dasher", "aliases": ["6 Dasher", "6 mm Dasher", "6mm BR Dasher"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.75,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 5, "f_class": 1, "benchrest": 4, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 mm Dasher, date 2023-05-09 (no revision): cartridge maximum",
       "overall_length": 60.00,
@@ -617,6 +646,7 @@
       }
     } },
   { "key": "6mm-ppc", "name": "6mm PPC", "aliases": ["6 PPC", "6mm PPC USA", "6 mm PPC-USA", "6 PPC-USA", "6 mm PPC"], "bullet_diameter_mm": 6.17, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 5, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 mm PPC-USA, revision 2002-05-15: cartridge maximum",
       "overall_length": 55.70,
@@ -638,6 +668,7 @@
       }
     } },
   { "key": "6xc", "name": "6XC", "aliases": ["6 XC", "6mm XC", "6 mm XC", "6XC Tubb"], "bullet_diameter_mm": 6.17, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 3 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 XC, date 2008-04-15 (no revision): cartridge maximum",
       "overall_length": 70.00,
@@ -659,6 +690,7 @@
       }
     } },
   { "key": "6mm-arc", "name": "6mm ARC", "aliases": ["6mm Advanced Rifle Cartridge", "6 mm Advanced Rifle Cartridge", "6 mm ARC"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6 mm Advanced Rifle Cartridge, revision 2024-05-14: cartridge maximum",
       "overall_length": 57.40,
@@ -680,6 +712,7 @@
       }
     } },
   { "key": "6mm-gt", "name": "6mm GT", "aliases": ["6 GT", "6 mm GT"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 4, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "ANSI/SAAMI Z299.4-2025, 6mm GT (p. 33): cartridge maximum",
       "overall_length": 67.06,
@@ -701,6 +734,7 @@
       }
     } },
   { "key": "25-06-rem", "name": ".25-06 Rem", "aliases": [".25-06 Remington"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 25-06 Rem., revision 2008-09-23: cartridge maximum",
       "overall_length": 82.55,
@@ -722,6 +756,7 @@
       }
     } },
   { "key": "257-wby-mag", "name": ".257 Wby Mag", "aliases": [".257 Weatherby Magnum", "257 Weath. Mag.", "257 Weatherby"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 257 Weath. Mag., revision 2018-10-17: cartridge maximum",
       "overall_length": 81.51,
@@ -744,6 +779,7 @@
       }
     } },
   { "key": "6-5x54-ms", "name": "6.5×54 MS", "aliases": ["6,5 x 54 Mannl. Sch.", "6.5×54 Mannlicher-Schönauer", "6.5x54 Mannlicher-Schoenauer", "6.5x54 MS", "6,5x54 MS", "6.5×54 M-Sch"], "bullet_diameter_mm": 6.7, "typical_twist_in": 7.87,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 54 Mannl. Sch., revision 2002-05-15: cartridge maximum",
       "overall_length": 77.80,
@@ -765,6 +801,7 @@
       }
     } },
   { "key": "6-5x55-se", "name": "6.5×55 SE", "aliases": ["6.5×55 Swedish", "6.5×55 Mauser", "6.5x55", "6,5x55"], "bullet_diameter_mm": 6.71, "typical_twist_in": 7.87,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 5 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 55 SE, revision 2013-05-22: cartridge maximum",
       "overall_length": 80.00,
@@ -786,6 +823,7 @@
       }
     } },
   { "key": "6-5x57", "name": "6.5×57", "aliases": ["6.5x57 Mauser", "6,5x57"], "bullet_diameter_mm": 6.71, "typical_twist_in": 7.87,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
@@ -807,6 +845,7 @@
       }
     } },
   { "key": "6-5x57r", "name": "6.5×57R", "aliases": ["6.5×57 R", "6.5x57R", "6,5x57R"], "bullet_diameter_mm": 6.68, "typical_twist_in": 8.66,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 6,5 x 57 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
@@ -828,6 +867,7 @@
       }
     } },
   { "key": "6-5x65-rws", "name": "6.5×65 RWS", "aliases": ["6,5 x 65 RWS", "6,5×65 RWS", "6.5x65 RWS"], "bullet_diameter_mm": 6.71, "typical_twist_in": 9.84,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 65 RWS, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
@@ -849,6 +889,7 @@
       }
     } },
   { "key": "6-5x68", "name": "6.5×68", "aliases": ["6,5 x 68", "6,5×68", "6.5x68"], "bullet_diameter_mm": 6.71, "typical_twist_in": 9.84,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 68, revision 2002-05-15: cartridge maximum",
       "overall_length": 86.50,
@@ -870,6 +911,7 @@
       }
     } },
   { "key": "6-5-grendel", "name": "6.5 Grendel", "aliases": ["6.5×39 Grendel"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 Grendel, revision 2015-05-19: cartridge maximum",
       "overall_length": 57.40,
@@ -891,6 +933,7 @@
       }
     } },
   { "key": "6-5-284-norma", "name": "6.5-284 Norma", "aliases": ["6.5×284 Norma", "6.5-284"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 3, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 - 284 Norma, revision 2008-04-15: cartridge maximum",
       "overall_length": 82.00,
@@ -912,6 +955,7 @@
       }
     } },
   { "key": "6-5x47-lapua", "name": "6.5×47 Lapua", "aliases": ["6.5x47"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 3, "rimfire": 1, "nordic_field": 4 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 x 47 Lapua, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 71.00,
@@ -933,6 +977,7 @@
       }
     } },
   { "key": "6-5x52r", "name": "6.5×52R", "aliases": ["6.5×52 R", "6,5×52R", "6.5x52R"], "bullet_diameter_mm": 6.53, "typical_twist_in": 8.66,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 6,5 x 52 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 64.50,
@@ -954,6 +999,7 @@
       }
     } },
   { "key": "6-5-creedmoor", "name": "6.5 Creedmoor", "aliases": ["6.5 CM", "6.5 Creed"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 Creedmoor, revision 2020-04-21: cartridge maximum",
       "overall_length": 71.76,
@@ -975,6 +1021,7 @@
       }
     } },
   { "key": "6-5-prc", "name": "6.5 PRC", "aliases": ["6.5 Precision Rifle Cartridge"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 4, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 3, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,5 PRC, date 2018-10-17 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 75.06,
@@ -996,6 +1043,7 @@
       }
     } },
   { "key": "260-rem", "name": ".260 Rem", "aliases": [".260 Remington"], "bullet_diameter_mm": 6.71, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 2, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 260 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 71.12,
@@ -1017,6 +1065,7 @@
       }
     } },
   { "key": "26-nosler", "name": "26 Nosler", "aliases": ["26 Nos", ".26 Nosler"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 26 Nosler, date 2021-11-09 (no revision): cartridge maximum",
       "overall_length": 84.84,
@@ -1038,6 +1087,7 @@
       }
     } },
   { "key": "270-win", "name": ".270 Win", "aliases": [".270 Winchester"], "bullet_diameter_mm": 7.04, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 270 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
@@ -1059,6 +1109,7 @@
       }
     } },
   { "key": "270-wsm", "name": ".270 WSM", "aliases": [".270 Winchester Short Magnum"], "bullet_diameter_mm": 7.04, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 4, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 270 Win. Short Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 72.64,
@@ -1080,6 +1131,7 @@
       }
     } },
   { "key": "6-8-rem-spc", "name": "6.8 Rem SPC", "aliases": ["6.8 mm Rem SPC", "6.8 SPC", "6.8×43"], "bullet_diameter_mm": 7.04, "typical_twist_in": 11,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,8 mm Rem. SPC, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 57.40,
@@ -1101,6 +1153,7 @@
       }
     } },
   { "key": "6-8-western", "name": "6.8 Western", "aliases": [], "bullet_diameter_mm": 7.04, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 6,8 Western, date 2022-11-08 (no revision): cartridge maximum",
       "overall_length": 75.06,
@@ -1122,6 +1175,7 @@
       }
     } },
   { "key": "7x57", "name": "7×57", "aliases": ["7x57 Mauser", "7mm Mauser"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 78.00,
@@ -1143,6 +1197,7 @@
       }
     } },
   { "key": "7x57r", "name": "7×57R", "aliases": ["7×57 R", "7x57R"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 7 x 57 R, revision 2006-09-19: cartridge maximum",
       "overall_length": 78.00,
@@ -1164,6 +1219,7 @@
       }
     } },
   { "key": "7mm-08-rem", "name": "7mm-08 Rem", "aliases": ["7mm-08 Remington"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 3, "hunting_north_america": 4, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm - 08 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 71.12,
@@ -1185,6 +1241,7 @@
       }
     } },
   { "key": "7x64", "name": "7×64", "aliases": ["7x64 Brenneke"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8.66,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 4, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 x 64, revision 2002-05-15: cartridge maximum",
       "overall_length": 84.00,
@@ -1206,6 +1263,7 @@
       }
     } },
   { "key": "7x65r", "name": "7×65R", "aliases": ["7×65 R", "7x65R"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 7 x 65 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 83.60,
@@ -1227,6 +1285,7 @@
       }
     } },
   { "key": "280-rem", "name": ".280 Rem", "aliases": [".280 Remington", "7mm Express"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 280 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.58,
@@ -1248,6 +1307,7 @@
       }
     } },
   { "key": "7mm-rem-mag", "name": "7mm Rem Mag", "aliases": ["7mm Remington Magnum", "7mm RM"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 7 mm Rem. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 83.57,
@@ -1270,6 +1330,7 @@
       }
     } },
   { "key": "7mm-prc", "name": "7mm PRC", "aliases": ["7mm Precision Rifle Cartridge"], "bullet_diameter_mm": 7.21, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 3, "hunting_north_america": 4, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm Precision Rifle Cartridge, date 2023-05-09 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 84.84,
@@ -1291,6 +1352,7 @@
       }
     } },
   { "key": "7mm-blaser-mag", "name": "7mm Blaser Mag", "aliases": ["7 mm Blaser Mag.", "7mm Blaser Magnum", "7 mm Blaser"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 80.00,
@@ -1312,6 +1374,7 @@
       }
     } },
   { "key": "7x75r-se", "name": "7×75R SE vom Hofe", "aliases": ["7 x 75 R SE.v.H.", "7x75R SE vom Hofe", "7×75R Super Express", "7x75R", "7×75R"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 7 x 75 R SE.v.H., revision 2002-05-15: cartridge maximum",
       "overall_length": 97.00,
@@ -1333,6 +1396,7 @@
       }
     } },
   { "key": "28-nosler", "name": "28 Nosler", "aliases": ["28 Nos", ".28 Nosler"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 28 Nosler, date 2023-05-09 (no revision): cartridge maximum",
       "overall_length": 84.84,
@@ -1354,6 +1418,7 @@
       }
     } },
   { "key": "7mm-rem-ultra-mag", "name": "7mm Rem Ultra Mag", "aliases": ["7mm Remington Ultra Magnum", "7mm RUM", "7 mm Rem. Ultra Mag."], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm Rem. Ultra Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 91.44,
@@ -1375,6 +1440,7 @@
       }
     } },
   { "key": "7mm-wsm", "name": "7mm WSM", "aliases": ["7mm Winchester Short Magnum", "7 mm Win. Short Mag.", "7mm Win Short Mag"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 3, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm Win. Short Mag., revision 2011-05-25: cartridge maximum",
       "overall_length": 72.64,
@@ -1396,6 +1462,7 @@
       }
     } },
   { "key": "284-win", "name": ".284 Win", "aliases": [".284 Winchester", "284 Win."], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 5, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 284 Win., revision 2005-05-25: cartridge maximum",
       "overall_length": 71.12,
@@ -1417,6 +1484,7 @@
       }
     } },
   { "key": "280-ackley-improved", "name": ".280 Ackley Improved", "aliases": [".280 AI", "280 Ackley Improved", "280 ACK IMP", ".280 Remington Ackley Improved", "280 AI"], "bullet_diameter_mm": 7.21, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "ANSI/SAAMI Z299.4-2025, 280 Ackley Improved (p. 92): cartridge maximum",
       "overall_length": 84.58,
@@ -1438,6 +1506,7 @@
       }
     } },
   { "key": "7mm-saum", "name": "7mm SAUM", "aliases": ["7mm Rem SAUM", "7mm Remington Short Action Ultra Magnum", "7 mm Rem. SA Ultra Mag.", "7mm RSAUM", "7 SAUM"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 4, "benchrest": 1, "long_range": 3, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7 mm Rem. SA Ultra Mag., revision 2004-09-27: cartridge maximum",
       "overall_length": 71.76,
@@ -1459,6 +1528,7 @@
       }
     } },
   { "key": "7mm-wby-mag", "name": "7mm Wby Mag", "aliases": ["7mm Weatherby Magnum", "7mm Weath. Mag.", "7 mm Weatherby Mag"], "bullet_diameter_mm": 7.21, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 7 mm Weath. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 85.34,
@@ -1481,6 +1551,7 @@
       }
     } },
   { "key": "7-5x55-swiss", "name": "7.5×55 Swiss", "aliases": ["7,5 x 55 Suisse", "7,5 x 55 Swiss", "7.5x55 Swiss", "7.5 Swiss", "GP 11", "GP11", "7.5×55 Schmidt-Rubin"], "bullet_diameter_mm": 7.78, "typical_twist_in": 10.63,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7,5 x 55 Suisse, revision 2016-05-18: cartridge maximum",
       "overall_length": 77.70,
@@ -1502,6 +1573,7 @@
       }
     } },
   { "key": "30-30-win", "name": ".30-30 Win", "aliases": [".30-30 Winchester", ".30 WCF"], "bullet_diameter_mm": 7.82, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 30-30 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.77,
@@ -1523,6 +1595,7 @@
       }
     } },
   { "key": "30-carbine", "name": ".30 Carbine", "aliases": ["30 Carbine", "7.62×33"], "bullet_diameter_mm": 7.82, "typical_twist_in": 20,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 30 Carbine, revision 2002-05-15: cartridge maximum",
       "overall_length": 42.67,
@@ -1544,6 +1617,7 @@
       }
     } },
   { "key": "308-win", "name": ".308 Win", "aliases": [".308 Winchester", "7.62×51"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 3, "f_class": 5, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 3 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 308 Win., revision 2008-09-23: cartridge maximum",
       "overall_length": 71.12,
@@ -1565,6 +1639,7 @@
       }
     } },
   { "key": "30-06-sprg", "name": ".30-06 Springfield", "aliases": [".30-06", "7.62×63"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 30-06 Spring., revision 2008-09-23: cartridge maximum",
       "overall_length": 84.84,
@@ -1586,6 +1661,7 @@
       }
     } },
   { "key": "30r-blaser", "name": ".30R Blaser", "aliases": [], "bullet_diameter_mm": 7.82, "typical_twist_in": 11,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 30 R Blaser, revision 2007-07-06: cartridge maximum",
       "overall_length": 95.00,
@@ -1607,6 +1683,7 @@
       }
     } },
   { "key": "300-wsm", "name": ".300 WSM", "aliases": [".300 Winchester Short Magnum"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 4, "hunting_europe": 4, "hunting_north_america": 3, "precision": 1, "f_class": 4, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 Win. Short Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 72.64,
@@ -1628,6 +1705,7 @@
       }
     } },
   { "key": "300-aac-blackout", "name": ".300 AAC Blackout", "aliases": [".300 Blackout", ".300 BLK", "7.62×35", "7.62x35mm"], "bullet_diameter_mm": 7.82, "typical_twist_in": 8,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 AAC Blackout, revision 2018-10-17: cartridge maximum",
       "overall_length": 57.40,
@@ -1649,6 +1727,7 @@
       }
     } },
   { "key": "300-win-mag", "name": ".300 Win Mag", "aliases": [".300 Winchester Magnum", ".300 WM"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 5, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 300 Win. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
@@ -1671,6 +1750,7 @@
       }
     } },
   { "key": "300-wby-mag", "name": ".300 Wby Mag", "aliases": [".300 Weatherby Magnum"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 300 Weath. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 90.42,
@@ -1693,6 +1773,7 @@
       }
     } },
   { "key": "300-prc", "name": ".300 PRC", "aliases": [".300 Precision Rifle Cartridge"], "bullet_diameter_mm": 7.82, "typical_twist_in": 9,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 3, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 Precision Rifle Cartridge, revision 2020-11-10: cartridge maximum",
       "overall_length": 93.98,
@@ -1714,6 +1795,7 @@
       }
     } },
   { "key": "308-norma-mag", "name": ".308 Norma Magnum", "aliases": [".308 Norma Mag"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 308 Norma Mag., revision 2016-10-18: cartridge maximum",
       "overall_length": 85.00,
@@ -1736,6 +1818,7 @@
       }
     } },
   { "key": "7-62x53r", "name": "7.62×53R", "aliases": ["7.62×53 R", "7,62 x 53 R", "7.62x53R", "7.62×53R Finnish", "7.62x53R Finnish"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11.81,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 3 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 7,62 x 53 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 77.00,
@@ -1757,6 +1840,7 @@
       }
     } },
   { "key": "300-blaser-mag", "name": ".300 Blaser Mag", "aliases": [".300 Blaser Magnum", "300 Blaser Mag.", ".300 Blaser"], "bullet_diameter_mm": 7.82, "typical_twist_in": 11,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 84.84,
@@ -1778,6 +1862,7 @@
       }
     } },
   { "key": "300-norma-mag", "name": ".300 Norma Mag", "aliases": [".300 Norma Magnum", "300 Norma Mag", ".300 NM"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 4, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 Norma Mag, date 2012-05-30 (no revision): cartridge maximum",
       "overall_length": 93.50,
@@ -1799,6 +1884,7 @@
       }
     } },
   { "key": "300-rem-ultra-mag", "name": ".300 Rem Ultra Mag", "aliases": [".300 Remington Ultra Magnum", ".300 RUM", "300 Rem. Ultra Mag."], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 300 Rem. Ultra Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 91.44,
@@ -1820,6 +1906,7 @@
       }
     } },
   { "key": "30-br", "name": ".30 BR", "aliases": ["30 BR", ".30 Benchrest", "30BR"], "bullet_diameter_mm": 7.82, "typical_twist_in": 17,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 5, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 30 BR, date 2011-05-25 (no revision): cartridge maximum",
       "overall_length": 58.00,
@@ -1841,6 +1928,7 @@
       }
     } },
   { "key": "300-hh-mag", "name": ".300 H&H Mag", "aliases": [".300 Holland & Holland Magnum", "300 H&H Magnum", ".300 Super Belted Rimless H&H", "30 Super Belt. Riml. H&H"], "bullet_diameter_mm": 7.82, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 300 H&H Mag., revision 2011-05-25: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 91.44,
@@ -1863,6 +1951,7 @@
       }
     } },
   { "key": "7-62x39", "name": "7.62×39", "aliases": ["7.62x39"], "bullet_diameter_mm": 7.90, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 7,62 x 39, revision 2002-05-15: cartridge maximum",
       "overall_length": 56.00,
@@ -1884,6 +1973,7 @@
       }
     } },
   { "key": "7-62x54r", "name": "7.62×54R", "aliases": ["7.62×54 R", "7.62x54R"], "bullet_diameter_mm": 7.90, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 7,62 x 54 R, revision 2007-05-14: cartridge maximum",
       "overall_length": 77.16,
@@ -1904,6 +1994,7 @@
       }
     } },
   { "key": "303-british", "name": ".303 British", "aliases": [".303"], "bullet_diameter_mm": 7.90, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 303 British, revision 2008-09-23: cartridge maximum",
       "overall_length": 78.11,
@@ -1925,6 +2016,7 @@
       }
     } },
   { "key": "8x57-is", "name": "8×57 IS", "aliases": ["8x57 JS", "8mm Mauser", "8x57 IRS"], "bullet_diameter_mm": 8.20, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 8 x 57 IS, revision 2016-05-18: cartridge maximum",
       "overall_length": 82.00,
@@ -1946,6 +2038,7 @@
       }
     } },
   { "key": "8x57-jr", "name": "8×57 JR", "aliases": ["8x57 JR"], "bullet_diameter_mm": 8.080, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 8 x 57 IR, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
@@ -1967,6 +2060,7 @@
       }
     } },
   { "key": "8x57-jrs", "name": "8×57 JRS", "aliases": ["8x57 JRS"], "bullet_diameter_mm": 8.20, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 8 x 57 IRS, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
@@ -1988,6 +2082,7 @@
       }
     } },
   { "key": "8x64-s", "name": "8×64 S", "aliases": ["8x64S"], "bullet_diameter_mm": 8.20, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 8 x 64 S, revision 2002-05-15: cartridge maximum",
       "overall_length": 87.50,
@@ -2009,6 +2104,7 @@
       }
     } },
   { "key": "8x68-s", "name": "8×68 S", "aliases": ["8x68S"], "bullet_diameter_mm": 8.20, "typical_twist_in": 11,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 8 x 68 S, revision 2006-09-19: cartridge maximum",
       "overall_length": 87.00,
@@ -2030,6 +2126,7 @@
       }
     } },
   { "key": "8x60-s", "name": "8×60 S", "aliases": ["8 x 60 S", "8x60S", "8x60 S"], "bullet_diameter_mm": 8.2, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 8 x 60 S, revision 2006-09-19: cartridge maximum",
       "overall_length": 83.60,
@@ -2051,6 +2148,7 @@
       }
     } },
   { "key": "8x75-rs", "name": "8×75 RS", "aliases": ["8 x 75 RS", "8x75RS", "8x75 RS"], "bullet_diameter_mm": 8.2, "typical_twist_in": 9.45,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 8 x 75 RS, revision 2002-05-15: cartridge maximum",
       "overall_length": 96.00,
@@ -2072,6 +2170,7 @@
       }
     } },
   { "key": "338-win-mag", "name": ".338 Win Mag", "aliases": [".338 Winchester Magnum"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 338 Win. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
@@ -2093,6 +2192,7 @@
       }
     } },
   { "key": "338-lapua-mag", "name": ".338 Lapua Mag", "aliases": [".338 Lapua Magnum", "8.6×70"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 338 Lapua Mag., revision 2006-09-14: cartridge maximum (its P2 tolerance printed +0.20, which would not fit its own minimum chamber, taken as −0.20); r1 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 93.50,
@@ -2114,6 +2214,7 @@
       }
     } },
   { "key": "8-5x55-blaser", "name": "8.5×55 Blaser", "aliases": ["8.5x55 Blaser"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 8,5 x 55 Blaser, date 2019-05-22 (no revision): cartridge maximum",
       "overall_length": 75.84,
@@ -2135,6 +2236,7 @@
       }
     } },
   { "key": "338-federal", "name": ".338 Federal", "aliases": ["338 Fed", ".338 Fed"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 338 Federal, revision 2011-05-25: cartridge maximum",
       "overall_length": 71.63,
@@ -2156,6 +2258,7 @@
       }
     } },
   { "key": "35-whelen", "name": ".35 Whelen", "aliases": [], "bullet_diameter_mm": 9.09, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 35 Whelen, revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
@@ -2177,6 +2280,7 @@
       }
     } },
   { "key": "350-legend", "name": ".350 Legend", "aliases": ["350 Legend"], "bullet_diameter_mm": 9.02, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 2, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 350 Legend, date 2020-04-21 (no revision): cartridge maximum",
       "overall_length": 57.40,
@@ -2198,6 +2302,7 @@
       }
     } },
   { "key": "358-norma-mag", "name": ".358 Norma Mag", "aliases": [".358 Norma Magnum"], "bullet_diameter_mm": 9.09, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 358 Norma Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
@@ -2220,6 +2325,7 @@
       }
     } },
   { "key": "35-rem", "name": ".35 Rem", "aliases": [".35 Remington", "35 Remington"], "bullet_diameter_mm": 9.09, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 35 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.14,
@@ -2241,6 +2347,7 @@
       }
     } },
   { "key": "360-buckhammer", "name": ".360 Buckhammer", "aliases": ["360 BHMR", ".360 BHMR", "360 Buckhammer"], "bullet_diameter_mm": 9.09, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 360 Buckhammer, date 2023-11-08 (no revision): cartridge maximum",
       "overall_length": 63.50,
@@ -2262,6 +2369,7 @@
       }
     } },
   { "key": "9-3x57", "name": "9.3×57", "aliases": ["9,3x57"], "bullet_diameter_mm": 9.30, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 9,3 x 57, date 2007-05-14 (no revision): cartridge maximum",
       "overall_length": 82.00,
@@ -2283,6 +2391,7 @@
       }
     } },
   { "key": "9-3x62", "name": "9.3×62", "aliases": ["9,3x62"], "bullet_diameter_mm": 9.30, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 5, "hunting_europe": 5, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 9,3 x 62, revision 2002-05-15: cartridge maximum",
       "overall_length": 83.60,
@@ -2304,6 +2413,7 @@
       }
     } },
   { "key": "9-3x72r", "name": "9.3×72R", "aliases": ["9.3×72 R", "9,3x72R"], "bullet_diameter_mm": 9.30, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 9,3 x 72 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 86.00,
@@ -2325,6 +2435,7 @@
       }
     } },
   { "key": "9-3x74r", "name": "9.3×74R", "aliases": ["9,3x74R"], "bullet_diameter_mm": 9.30, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 2, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 9,3 x 74 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 94.50,
@@ -2346,6 +2457,7 @@
       }
     } },
   { "key": "9-3x66-sako", "name": "9.3×66 Sako", "aliases": [".370 Sako Magnum", ".370 Sako Mag", "9,3 x 66 Sako", "9.3x66 Sako", "9.3x66"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 9,3 x 66 Sako, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
@@ -2367,6 +2479,7 @@
       }
     } },
   { "key": "9-3x64-brenneke", "name": "9.3×64 Brenneke", "aliases": ["9,3 x 64 Brenneke", "9.3x64", "9,3x64", "9.3×64"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14.17,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 9,3 x 64 Brenneke, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.60,
@@ -2388,6 +2501,7 @@
       }
     } },
   { "key": "9-3x53r", "name": "9.3×53R Finnish", "aliases": ["9,3 x 53 R Finnish", "9.3x53R", "9,3x53R", "9.3×53R", "9.3×53 R"], "bullet_diameter_mm": 9.3, "typical_twist_in": 14.96,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 9,3 x 53 R Finnish, revision 2002-05-15: cartridge maximum",
       "overall_length": 76.00,
@@ -2409,6 +2523,7 @@
       }
     } },
   { "key": "375-cheytac", "name": ".375 CheyTac", "aliases": [".375 Chey Tac", "375 CT", ".375 CT", "9,5 x 77", "9.5×77"], "bullet_diameter_mm": 9.52, "typical_twist_in": 9.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 5, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 375 Chey Tac, date 2017-05-17 (no revision): cartridge maximum",
       "overall_length": 113.40,
@@ -2430,6 +2545,7 @@
       }
     } },
   { "key": "375-hh-mag", "name": ".375 H&H Mag", "aliases": [".375 Holland & Holland Magnum"], "bullet_diameter_mm": 9.53, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 3, "hunting_europe": 3, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 375 H&H Mag., revision 2002-05-15: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 91.44,
@@ -2452,6 +2568,7 @@
       }
     } },
   { "key": "375-ruger", "name": ".375 Ruger", "aliases": ["375 Ruger"], "bullet_diameter_mm": 9.53, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 375 Ruger, date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 84.84,
@@ -2473,6 +2590,7 @@
       }
     } },
   { "key": "400-legend", "name": ".400 Legend", "aliases": ["400 LGND", "400 Legend"], "bullet_diameter_mm": 10.17, "typical_twist_in": 16,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 400 Legend, date 2023-11-08 (no revision): cartridge maximum; the rim's bevel angle from ANSI/SAAMI Z299.4-2025 (the C.I.P. sheet prints 0°)",
       "overall_length": 57.40,
@@ -2494,6 +2612,7 @@
       }
     } },
   { "key": "408-cheytac", "name": ".408 CheyTac", "aliases": [".408 Chey Tac", "408 CT", ".408 CT", "10,36 x 77 mm", "10.36×77"], "bullet_diameter_mm": 10.36, "typical_twist_in": 10,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 408 Chey Tac, revision 2016-10-18: cartridge maximum",
       "overall_length": 115.50,
@@ -2515,6 +2634,7 @@
       }
     } },
   { "key": "10-3x60r", "name": "10.3×60R", "aliases": ["10,3 x 60 R", "10.3x60R", "10.3×60R Swiss", "10,3x60R"], "bullet_diameter_mm": 10.54, "typical_twist_in": 17.72,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 3, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 10,3 x 60 R, revision 2025-05-13: cartridge maximum",
       "overall_length": 85.00,
@@ -2536,6 +2656,7 @@
       }
     } },
   { "key": "416-rigby", "name": ".416 Rigby", "aliases": [], "bullet_diameter_mm": 10.57, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 2, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum; r1, r2 and the rim's bevel from ANSI/SAAMI Z299.4-2025",
       "overall_length": 95.25,
@@ -2557,6 +2678,7 @@
       }
     } },
   { "key": "404-jeffery", "name": ".404 Jeffery", "aliases": ["404 Riml. N.E.", ".404 Rimless Nitro Express", "404 Jeffery", "10.75×73", "10,75x73"], "bullet_diameter_mm": 10.72, "typical_twist_in": 16.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 404 Riml. N.E., revision 2020-04-21: cartridge maximum",
       "overall_length": 89.66,
@@ -2578,6 +2700,7 @@
       }
     } },
   { "key": "444-marlin", "name": ".444 Marlin", "aliases": ["444 Marlin"], "bullet_diameter_mm": 10.92, "typical_twist_in": 20,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 444 Marlin, revision 2002-05-15: cartridge maximum",
       "overall_length": 65.28,
@@ -2599,6 +2722,7 @@
       }
     } },
   { "key": "450-bushmaster", "name": ".450 Bushmaster", "aliases": ["450 Bushmaster"], "bullet_diameter_mm": 11.47, "typical_twist_in": 24,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 3, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 450 Bushmaster, date 2010-05-26 (no revision): cartridge maximum",
       "overall_length": 57.40,
@@ -2620,6 +2744,7 @@
       }
     } },
   { "key": "45-70-govt", "name": ".45-70 Govt", "aliases": [".45-70 Government"], "bullet_diameter_mm": 11.63, "typical_twist_in": 20,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 45-70 Govt., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.77,
@@ -2641,6 +2766,7 @@
       }
     } },
   { "key": "458-win-mag", "name": ".458 Win Mag", "aliases": [".458 Winchester Magnum"], "bullet_diameter_mm": 11.63, "typical_twist_in": 14,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. III, 458 Win. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
@@ -2663,6 +2789,7 @@
       }
     } },
   { "key": "470-ne", "name": ".470 NE", "aliases": [".470 Nitro Express", "470 N.E.", "470 Nitro"], "bullet_diameter_mm": 12.04, "typical_twist_in": 21,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 470 N.E., revision 2013-05-22: cartridge maximum",
       "overall_length": 101.09,
@@ -2684,6 +2811,7 @@
       }
     } },
   { "key": "500-ne-3", "name": ".500 NE 3\"", "aliases": [".500 Nitro Express 3\"", "500 N.E. 3\"", ".500 Nitro Express", ".500 NE"], "bullet_diameter_mm": 12.95, "typical_twist_in": 15,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. II, 500 N. E. 3'', revision 2005-07-20: cartridge maximum",
       "overall_length": 95.25,
@@ -2705,6 +2833,7 @@
       }
     } },
   { "key": "50-bmg", "name": ".50 BMG", "aliases": [".50 Browning Machine Gun", "12.7×99", "12,7x99", "12.7×99 NATO"], "bullet_diameter_mm": 12.98, "typical_twist_in": 15,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
       "source": "C.I.P. TAB. I, 50 Browning, revision 2010-05-26: cartridge maximum",
       "overall_length": 138.43,

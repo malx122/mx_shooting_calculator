@@ -46,6 +46,9 @@ pub struct Caliber {
     /// Its outside from the standard drawing, for drawing it in 3D.
     #[serde(default)]
     pub cartridge: Option<Cartridge>,
+    /// How common it is, per region and use; see docs/caliber-popularity.md.
+    #[serde(default)]
+    pub popularity: Option<Popularity>,
 }
 
 impl Caliber {
@@ -60,6 +63,58 @@ impl Caliber {
                 words.iter().all(|word| name.contains(word.as_str()))
             })
     }
+}
+
+/// How common a caliber is, graded 1 (rare) to 5 (very common), for
+/// hunting in three regions and for civilian rifle competition by
+/// discipline. Rough grades from public stand-ins (factory loads, the
+/// calibers rifle makers offer, competition surveys); the method is in
+/// docs/caliber-popularity.md.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+pub struct Popularity {
+    pub hunting_nordic: u8,
+    pub hunting_europe: u8,
+    pub hunting_north_america: u8,
+    /// Precision rifle series (PRS, NRL).
+    pub precision: u8,
+    pub f_class: u8,
+    pub benchrest: u8,
+    /// Extreme long range.
+    pub long_range: u8,
+    /// Smallbore and rimfire matches.
+    pub rimfire: u8,
+    /// Nordic field and range shooting.
+    pub nordic_field: u8,
+}
+
+impl Popularity {
+    /// The grade for a use by its field name ("hunting_europe", "f_class"…).
+    pub fn grade(&self, of: &str) -> Option<u8> {
+        Some(match of {
+            "hunting_nordic" => self.hunting_nordic,
+            "hunting_europe" => self.hunting_europe,
+            "hunting_north_america" => self.hunting_north_america,
+            "precision" => self.precision,
+            "f_class" => self.f_class,
+            "benchrest" => self.benchrest,
+            "long_range" => self.long_range,
+            "rimfire" => self.rimfire,
+            "nordic_field" => self.nordic_field,
+            _ => return None,
+        })
+    }
+
+    pub const USES: [&str; 9] = [
+        "hunting_nordic",
+        "hunting_europe",
+        "hunting_north_america",
+        "precision",
+        "f_class",
+        "benchrest",
+        "long_range",
+        "rimfire",
+        "nordic_field",
+    ];
 }
 
 fn normalise(text: &str) -> String {
@@ -378,6 +433,19 @@ mod tests {
                     );
                     assert!(collected.validate().is_err(), "{name}: missing velocity");
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn every_caliber_is_graded_one_to_five() {
+        for caliber in &Catalog::builtin().calibers {
+            let popularity = caliber
+                .popularity
+                .unwrap_or_else(|| panic!("{}: no popularity", caliber.name));
+            for of in Popularity::USES {
+                let grade = popularity.grade(of).unwrap();
+                assert!((1..=5).contains(&grade), "{}: {of} {grade}", caliber.name);
             }
         }
     }
