@@ -83,9 +83,10 @@ or not allowed: 1.
   - Gevär 6,5 is 6.5×55 only; scoped classes allow bolt-actions up to 8 mm.
   - 6mm BR and 6.5×47 Lapua are common at 300 m.
 
-The PRS and ELR leaders that the catalog lacks are 25×47 Lapua,
-25 Creedmoor, 6mm BRA, 25 GT, .416 Hellfire and .416 Barrett. They are
-candidates for adding.
+25×47 Lapua, 25 Creedmoor, 6mm BRA, 25 GT and .416 Barrett were added
+for these sources. 25×47 Lapua, 25 GT and 6mm BRA are wildcats, built from
+their parent cases. The .416 Hellfire (long range) is left out: no
+drawing of it is published.
 
 ## Updating
 

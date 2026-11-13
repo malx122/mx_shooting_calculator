@@ -733,6 +733,28 @@
         "boat_tail": { "length": 5.5, "base_diameter": 4.9 }
       }
     } },
+  { "key": "6mm-bra", "name": "6mm BRA", "aliases": ["6 BRA", "6mm BR Ackley", "6mm BR Ackley Improved", "6 mm BRA", "6BRA"], "bullet_diameter_mm": 6.17, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6mm BR Norma, revision 2002-05-15: head, groove, body, neck and length; 40° shoulder at the BR's shoulder position from Handloader magazine and descriptions of 6 BRA reamers, no published print (6mm BRA is a wildcat)",
+      "overall_length": 62.00,
+      "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.40, "degrees": 45 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 28.49, "diameter": 11.68, "neck_start": 31.34, "neck_diameter": 6.90, "radius": 0.64, "neck_radius": 1.10 },
+        "mouth_diameter": 6.87, "length": 39.62
+      },
+      "bullet": {
+        "name": "105 gr Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (6 mm 105 gr Hybrid Target 24433, 1.256 in long, nose 0.701 in, boat tail 0.213 in); tip and base diameters estimated",
+        "diameter": 6.17, "length": 31.90, "nose_length": 17.8, "tip_diameter": 1.2,
+        "boat_tail": { "length": 5.4, "base_diameter": 4.8 }
+      }
+    } },
   { "key": "25-06-rem", "name": ".25-06 Rem", "aliases": [".25-06 Remington"], "bullet_diameter_mm": 6.53, "typical_twist_in": 10,
     "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 2, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
     "cartridge": {
@@ -776,6 +798,72 @@
         "source": "Length from the app's catalog (Speer Boat-Tail 120 gr, 28.6 mm); nose, tip and base estimated",
         "diameter": 6.53, "length": 28.60, "nose_length": 15.0, "tip_diameter": 1.8,
         "boat_tail": { "length": 2.8, "base_diameter": 5.4 }
+      }
+    } },
+  { "key": "25-creedmoor", "name": "25 Creedmoor", "aliases": ["25 CM", ".25 Creedmoor", "25 Creed"], "bullet_diameter_mm": 6.53, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 3, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "ANSI/SAAMI new cartridge & chamber drawing, 25 Creedmoor [25 CM], issued 01/19/2025 (public introduction, for the next Z299.4): cartridge maximum",
+      "overall_length": 71.76,
+      "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25, "R1": -0.25, "E1": -0.51, "P1": -0.20, "P2": -0.20, "L3": -0.51 },
+      "case": {
+        "rim_diameter": 11.99, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.95,
+        "shoulder": { "start": 37.85, "diameter": 11.73, "neck_start": 41.68, "neck_diameter": 7.32, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 7.32, "length": 48.77
+      },
+      "bullet": {
+        "name": "135 gr LR Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (25 cal 135 gr Long Range Hybrid Target 25485, 1.416 in long, nose 0.729 in, boat tail 0.216 in); tip and base diameters estimated",
+        "diameter": 6.53, "length": 35.97, "nose_length": 18.5, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.5, "base_diameter": 5.2 }
+      }
+    } },
+  { "key": "25x47-lapua", "name": "25×47 Lapua", "aliases": ["25x47 Lapua", "25 x 47 Lapua", ".25x47", "25x47"], "bullet_diameter_mm": 6.53, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 6,5 x 47 Lapua, revision 2014-05-20: cartridge maximum, necked down to .257 (neck 0.18 mm smaller, same 60° shoulder; 25×47 Lapua is a wildcat with no drawing of its own)",
+      "overall_length": 71.00,
+      "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
+      "case": {
+        "rim_diameter": 12.01, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 45 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.95,
+        "shoulder": { "start": 35.68, "diameter": 11.59, "neck_start": 39.46, "neck_diameter": 7.22, "radius": 1.00, "neck_radius": 1.50 },
+        "mouth_diameter": 7.22, "length": 47.00
+      },
+      "bullet": {
+        "name": "135 gr LR Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (25 cal 135 gr Long Range Hybrid Target 25485, 1.416 in long, nose 0.729 in, boat tail 0.216 in); tip and base diameters estimated",
+        "diameter": 6.53, "length": 35.97, "nose_length": 18.5, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.5, "base_diameter": 5.2 }
+      }
+    } },
+  { "key": "25-gt", "name": "25 GT", "aliases": [".25 GT", "25GT"], "bullet_diameter_mm": 6.53, "typical_twist_in": 7.5,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 1, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "ANSI/SAAMI Z299.4-2025, 6mm GT (p. 33): cartridge maximum, necked up to .257 (neck 0.36 mm bigger, same 35° shoulder; 25 GT is a wildcat with no drawing of its own)",
+      "overall_length": 67.06,
+      "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25, "R1": -0.25, "E1": -0.51, "P1": -0.20, "P2": -0.20, "L3": -0.51, "L6": -3.18 },
+      "case": {
+        "rim_diameter": 11.96, "rim_thickness": 1.37,
+        "head_bevel": { "length": 0.38, "degrees": 55 },
+        "groove": { "diameter": 10.39, "bevel_degrees": 36, "floor_min": 1.40 },
+        "body_start": 3.85, "body_diameter": 11.96,
+        "shoulder": { "start": 33.12, "diameter": 11.66, "neck_start": 36.24, "neck_diameter": 7.29, "radius": 0.76, "neck_radius": 3.18 },
+        "mouth_diameter": 7.29, "length": 43.82
+      },
+      "bullet": {
+        "name": "135 gr LR Hybrid Target",
+        "source": "Length, nose and boat tail from Berger's bullet reference chart (25 cal 135 gr Long Range Hybrid Target 25485, 1.416 in long, nose 0.729 in, boat tail 0.216 in); tip and base diameters estimated",
+        "diameter": 6.53, "length": 35.97, "nose_length": 18.5, "tip_diameter": 1.3,
+        "boat_tail": { "length": 5.5, "base_diameter": 5.2 }
       }
     } },
   { "key": "6-5x54-ms", "name": "6.5×54 MS", "aliases": ["6,5 x 54 Mannl. Sch.", "6.5×54 Mannlicher-Schönauer", "6.5x54 Mannlicher-Schoenauer", "6.5x54 MS", "6,5x54 MS", "6.5×54 M-Sch"], "bullet_diameter_mm": 6.7, "typical_twist_in": 7.87,
@@ -957,7 +1045,7 @@
   { "key": "6-5x47-lapua", "name": "6.5×47 Lapua", "aliases": ["6.5x47"], "bullet_diameter_mm": 6.71, "typical_twist_in": 8,
     "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 3, "f_class": 1, "benchrest": 1, "long_range": 3, "rimfire": 1, "nordic_field": 4 },
     "cartridge": {
-      "source": "C.I.P. TAB. I, 6,5 x 47 Lapua, date 2006-05-16 (no revision): cartridge maximum",
+      "source": "C.I.P. TAB. I, 6,5 x 47 Lapua, revision 2014-05-20: cartridge maximum",
       "overall_length": 71.00,
       "primer_diameter": 4.45,
       "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
@@ -2675,6 +2763,28 @@
         "source": "Length from Woodleigh (Weldcore 400 gr RN SN), woodleighbullets.com.au; nose, tip and base estimated",
         "diameter": 10.57, "length": 33.10, "nose_length": 12.0, "tip_diameter": 4.5,
         "boat_tail": null
+      }
+    } },
+  { "key": "416-barrett", "name": ".416 Barrett", "aliases": ["416 Barrett", "10,4 x 83", "10.4×83", "10.4x83"], "bullet_diameter_mm": 10.57, "typical_twist_in": 12,
+    "popularity": { "hunting_nordic": 1, "hunting_europe": 1, "hunting_north_america": 1, "precision": 1, "f_class": 1, "benchrest": 1, "long_range": 5, "rimfire": 1, "nordic_field": 1 },
+    "cartridge": {
+      "source": "C.I.P. TAB. I, 416 Barrett, revision 2025-05-13: cartridge maximum",
+      "overall_length": 125.73,
+      "primer_diameter": 8.00,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
+      "case": {
+        "rim_diameter": 20.42, "rim_thickness": 2.11,
+        "head_bevel": { "length": 0.69, "degrees": 45 },
+        "groove": { "diameter": 17.27, "bevel_degrees": 36, "floor_min": 1.96 },
+        "body_start": 6.22, "body_diameter": 20.40,
+        "shoulder": { "start": 63.74, "diameter": 18.54, "neck_start": 71.15, "neck_diameter": 11.63, "radius": 0.00, "neck_radius": 0.00 },
+        "mouth_diameter": 11.63, "length": 83.06
+      },
+      "bullet": {
+        "name": "444 gr MTH",
+        "source": "Length from Cutting Edge Bullets' 2025 tech data sheet (.416 444 gr MTH Single Feed, 2.000 in); nose, tip and base estimated",
+        "diameter": 10.57, "length": 50.80, "nose_length": 26.0, "tip_diameter": 1.8,
+        "boat_tail": { "length": 5.0, "base_diameter": 9.0 }
       }
     } },
   { "key": "404-jeffery", "name": ".404 Jeffery", "aliases": ["404 Riml. N.E.", ".404 Rimless Nitro Express", "404 Jeffery", "10.75×73", "10,75x73"], "bullet_diameter_mm": 10.72, "typical_twist_in": 16.5,

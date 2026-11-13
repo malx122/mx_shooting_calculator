@@ -23,10 +23,13 @@ any release may still change things noticeably.
   **Save for 3D printing (STL)** saves it in millimetres, standing on its
   head, to try magazines and feeding. The rifle editor shows it too. For
   every caliber in the catalog, each from its C.I.P. drawing.
-- **49 more calibers** in the catalog, among them 9.3×66 Sako, 7.62×53R,
+- **54 more calibers** in the catalog, among them 9.3×66 Sako, 7.62×53R,
   the Blaser and Nosler magnums, .300 Norma Mag, 6.5×54 M-S, the
   benchrest and F-class sixes (6mm BR, Dasher, PPC, 6XC, 6mm GT), 6mm ARC,
-  7.5×55 Swiss, the CheyTacs, .50 BMG and the Nitro Expresses.
+  the PRS quarter-bores (25 Creedmoor, 25×47 Lapua, 25 GT) and 6mm BRA,
+  7.5×55 Swiss, the CheyTacs, .416 Barrett, .50 BMG and the Nitro
+  Expresses. Each caliber has rough popularity grades for hunting and
+  competition.
 
 ### Fixed
 
