@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-13
+
 ### Security
 
 - **SQLite 3.54.1** in the desktop and web apps, for a flaw in older
@@ -646,7 +648,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.0...v0.9.1
