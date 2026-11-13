@@ -5,7 +5,8 @@
 //!
 //! All lengths are millimetres along the axis from the case head, and all
 //! diameters millimetres. The letters in the comments are the C.I.P.
-//! drawing's.
+//! drawing's: docs/cartridges.md has a drawing of them and how the values
+//! and tolerances are read.
 
 use std::collections::BTreeMap;
 

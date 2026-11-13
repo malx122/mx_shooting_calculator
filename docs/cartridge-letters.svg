@@ -1,0 +1,91 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1060 990' width='1060' height='990'>
+<rect width='1060' height='990' fill='white'/>
+<defs><marker id='a' viewBox='0 0 10 10' refX='10' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,1 L10,5 L0,9 z' fill='#2f6b8f'/></marker></defs>
+<text x='530.0' y='34.0' font-size='20' text-anchor='middle' fill='#1d2a22' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Cartridge drawing letters (C.I.P.), drawn on the .308 Win model</text>
+<text x='530.0' y='58.0' font-size='13' text-anchor='middle' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>Maximum cartridge: each value is the largest the standard allows; a tolerance says how far below it a cartridge may be.</text>
+<path d='M70.00,210.00 L70.00,179.35 L70.00,147.18 L74.37,140.94 L85.75,140.94 L85.75,150.26 L101.85,150.26 L114.28,141.23 L114.28,141.23 L524.12,143.69 L527.05,144.22 L563.96,157.65 L576.47,159.86 L658.57,159.86 L658.57,165.03 L658.57,254.97 L658.57,260.14 L576.47,260.14 L563.96,262.35 L527.05,275.78 L524.12,276.31 L114.28,278.77 L114.28,278.77 L101.85,269.74 L85.75,269.74 L85.75,279.06 L74.37,279.06 L70.00,272.82 L70.00,240.65 L70.00,210.00 Z' fill='#ead9ab' stroke='#1d2a22' stroke-width='1.3' stroke-linejoin='round'/>
+<path d='M658.57,165.03 L692.38,165.03 L704.60,165.16 L716.82,165.54 L729.04,166.18 L741.26,167.07 L753.47,168.22 L765.69,169.62 L777.91,171.29 L790.13,173.22 L802.35,175.41 L814.57,177.88 L826.79,180.61 L839.01,183.62 L851.22,186.91 L863.44,190.48 L875.66,194.34 L887.88,198.50 L887.88,210.00 L887.88,210.00 L887.88,221.50 L875.66,225.66 L863.44,229.52 L851.22,233.09 L839.01,236.38 L826.79,239.39 L814.57,242.12 L802.35,244.59 L790.13,246.78 L777.91,248.71 L765.69,250.38 L753.47,251.78 L741.26,252.93 L729.04,253.82 L716.82,254.46 L704.60,254.84 L692.38,254.97 L658.57,254.97 Z' fill='#e3b48e' stroke='#1d2a22' stroke-width='1.3' stroke-linejoin='round'/>
+<line x1='40.0' y1='210.0' x2='912.9' y2='210.0' stroke='#1d2a22' stroke-width='0.8' stroke-dasharray='10 4 2 4'/>
+<line x1='70.0' y1='285.1' x2='70.0' y2='489.1' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='525.6' y1='280.3' x2='525.6' y2='367.1' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='70.0' y1='361.1' x2='525.6' y2='361.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='297.8' y='355.1' font-size='14' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>L1</tspan>  shoulder starts</text>
+<line x1='570.0' y1='264.1' x2='570.0' y2='407.1' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='70.0' y1='401.1' x2='570.0' y2='401.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='320.0' y='395.1' font-size='14' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>L2</tspan>  neck starts</text>
+<line x1='658.6' y1='264.1' x2='658.6' y2='447.1' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='70.0' y1='441.1' x2='658.6' y2='441.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='364.3' y='435.1' font-size='14' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>L3</tspan>  case length</text>
+<line x1='887.9' y1='214.0' x2='887.9' y2='487.1' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='70.0' y1='481.1' x2='887.9' y2='481.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='478.9' y='475.1' font-size='14' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>L6</tspan>  overall length</text>
+<line x1='128.1' y1='141.2' x2='128.1' y2='278.8' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<line x1='128.1' y1='137.2' x2='128.1' y2='122.9' stroke='#2f6b8f' stroke-width='0.8'/>
+<text x='128.1' y='102.9' font-size='15' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>P1</tspan></text>
+<text x='128.1' y='117.9' font-size='11' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>body at E</text>
+<line x1='518.7' y1='143.7' x2='518.7' y2='276.3' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<line x1='518.7' y1='139.7' x2='518.7' y2='122.9' stroke='#2f6b8f' stroke-width='0.8'/>
+<text x='518.7' y='102.9' font-size='15' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>P2</tspan></text>
+<text x='518.7' y='117.9' font-size='11' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>body at L1</text>
+<line x1='579.2' y1='159.9' x2='579.2' y2='260.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<line x1='579.2' y1='155.9' x2='579.2' y2='122.9' stroke='#2f6b8f' stroke-width='0.8'/>
+<text x='579.2' y='102.9' font-size='15' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>H1</tspan></text>
+<text x='579.2' y='117.9' font-size='11' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>neck at L2</text>
+<line x1='652.8' y1='159.9' x2='652.8' y2='260.1' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<line x1='652.8' y1='155.9' x2='652.8' y2='122.9' stroke='#2f6b8f' stroke-width='0.8'/>
+<text x='652.8' y='102.9' font-size='15' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>H2</tspan></text>
+<text x='652.8' y='117.9' font-size='11' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>mouth</text>
+<line x1='695.4' y1='165.0' x2='695.4' y2='255.0' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<line x1='695.4' y1='161.0' x2='695.4' y2='122.9' stroke='#2f6b8f' stroke-width='0.8'/>
+<text x='695.4' y='102.9' font-size='15' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>G1</tspan></text>
+<text x='695.4' y='117.9' font-size='11' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>bullet</text>
+<line x1='525.6' y1='276.3' x2='491.6' y2='316.3' stroke='#1d2a22' stroke-width='0.8'/>
+<text x='485.6' y='328.3' font-size='14' text-anchor='end' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>r1</tspan></text>
+<line x1='570.0' y1='260.1' x2='600.0' y2='306.1' stroke='#1d2a22' stroke-width='0.8'/>
+<text x='606.0' y='318.1' font-size='14' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>r2</tspan></text>
+<text x='70.0' y='560.0' font-size='16' text-anchor='start' fill='#1d2a22' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Head and extractor groove, enlarged (upper half)</text>
+<path d='M110.00,860.00 L110.00,732.14 L133.56,698.49 L194.94,698.49 L194.94,748.71 L281.71,748.71 L348.70,700.04 L348.70,700.04 L432.40,700.54 L432.40,860.00 Z' fill='#ead9ab' stroke='#1d2a22' stroke-width='1.3' stroke-linejoin='round'/>
+<line x1='110.0' y1='868.0' x2='110.0' y2='628.5' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='133.6' y1='695.5' x2='133.6' y2='670.5' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='110.0' y1='676.5' x2='133.6' y2='676.5' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='141.6' y='681.5' font-size='13' text-anchor='start' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>f</tspan>  rear bevel length</text>
+<line x1='194.9' y1='695.5' x2='194.9' y2='640.5' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='110.0' y1='646.5' x2='194.9' y2='646.5' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='202.9' y='651.5' font-size='13' text-anchor='start' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>R</tspan>  rim thickness</text>
+<line x1='348.7' y1='697.0' x2='348.7' y2='610.5' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='110.0' y1='616.5' x2='348.7' y2='616.5' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='356.7' y='621.5' font-size='13' text-anchor='start' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>E</tspan>  where the body starts</text>
+<line x1='194.9' y1='751.7' x2='194.9' y2='784.7' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='281.7' y1='751.7' x2='281.7' y2='784.7' stroke='#2f6b8f' stroke-width='0.8'/>
+<line x1='194.9' y1='778.7' x2='281.7' y2='778.7' stroke='#2f6b8f' stroke-width='1' marker-start='url(#a)' marker-end='url(#a)'/>
+<text x='238.3' y='798.7' font-size='13' text-anchor='middle' fill='#2f6b8f' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>e</tspan> min  groove floor</text>
+<line x1='190.7' y1='698.5' x2='456.4' y2='664.5' stroke='#1d2a22' stroke-width='0.8'/>
+<text x='462.4' y='668.5' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>R1</tspan>  rim diameter</text>
+<line x1='238.3' y1='748.7' x2='402.3' y2='814.7' stroke='#1d2a22' stroke-width='0.8'/>
+<text x='408.3' y='818.7' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>E1</tspan>  groove diameter</text>
+<line x1='385.9' y1='700.0' x2='439.9' y2='740.0' stroke='#1d2a22' stroke-width='0.8'/>
+<text x='445.9' y='744.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'><tspan font-weight='bold'>P1</tspan>  body diameter</text>
+<line x1='110.0' y1='732.1' x2='110.0' y2='686.1' stroke='#1d2a22' stroke-width='0.7' stroke-dasharray='3 3'/>
+<line x1='110.0' y1='732.1' x2='144.4' y2='683.0' stroke='#1d2a22' stroke-width='0.7' stroke-dasharray='3 3'/>
+<path d='M110.0,698.1 A34,34 0 0,1 129.5,704.3' fill='none' stroke='#2f6b8f' stroke-width='1.2'/>
+<text x='96.0' y='706.1' font-size='16' text-anchor='middle' fill='#2f6b8f' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>β</text>
+<line x1='281.7' y1='748.7' x2='401.7' y2='748.7' stroke='#1d2a22' stroke-width='0.7' stroke-dasharray='3 3'/>
+<path d='M339.7,748.7 A58,58 0 0,0 328.6,714.6' fill='none' stroke='#2f6b8f' stroke-width='1.2'/>
+<text x='351.7' y='734.7' font-size='16' text-anchor='middle' fill='#2f6b8f' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>δ</text>
+<text x='700.0' y='598.0' font-size='15' text-anchor='start' fill='#1d2a22' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Angles</text>
+<text x='700.0' y='619.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>β  rear bevel, to the head face</text>
+<text x='700.0' y='640.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>δ  groove's front bevel, to the axis</text>
+<text x='700.0' y='669.0' font-size='15' text-anchor='start' fill='#1d2a22' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Other cases</text>
+<text x='700.0' y='690.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>Rimmed, rimfire: no groove;</text>
+<text x='700.0' y='711.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>the body starts at R.</text>
+<text x='700.0' y='732.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>Belted: R3 is the belt's diameter;</text>
+<text x='700.0' y='753.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>the groove's bevel rises to it,</text>
+<text x='700.0' y='774.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>the belt runs to E.</text>
+<text x='700.0' y='795.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>Straight: no shoulder.</text>
+<text x='700.0' y='824.0' font-size='15' text-anchor='start' fill='#1d2a22' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Tolerances</text>
+<text x='700.0' y='845.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>"L1": −0.20 → the shoulder may</text>
+<text x='700.0' y='866.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>start up to 0.20 mm nearer the head.</text>
+<text x='700.0' y='887.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>C.I.P. gives few (mostly L1, L2,</text>
+<text x='700.0' y='908.0' font-size='13' text-anchor='start' fill='#1d2a22' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>P2, R); SAAMI gives almost all.</text>
+<text x='1040.0' y='976.0' font-size='11' text-anchor='end' fill='#666' font-weight='normal' font-family='Helvetica, Arial, sans-serif'>Drawn from the app's own model, not copied from a C.I.P. or SAAMI sheet.</text>
+</svg>
