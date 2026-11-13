@@ -25,6 +25,7 @@ mod rifles;
 mod sensors;
 mod shot_log;
 mod sight_picture;
+mod startup;
 mod sync;
 mod targets;
 mod theme;
@@ -42,7 +43,9 @@ mod widgets;
 use std::path::PathBuf;
 
 use ballistics_store::Store;
+#[cfg(not(target_arch = "wasm32"))]
 use eframe::egui;
+use startup::StartupError;
 
 pub const APP_NAME: &str = "MX Shooting Calculator";
 /// The app's version (from Cargo.toml) and the git commit it was built from.
@@ -108,9 +111,10 @@ fn adopt_previous_database(path: &std::path::Path) -> Result<(), String> {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
-    let store = database_path().and_then(|path| {
-        Store::open(&path).map_err(|error| format!("could not open {}: {error}", path.display()))
-    });
+    let store = match database_path() {
+        Ok(path) => Store::open(&path).map_err(|error| StartupError::opening(path, &error)),
+        Err(message) => Err(StartupError::new(message)),
+    };
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
         viewport: theme::window_icon().into_iter().fold(
@@ -129,29 +133,18 @@ fn main() -> eframe::Result<()> {
 /// In the browser the data is kept in the browser's own storage.
 #[cfg(target_arch = "wasm32")]
 fn main() {
-    web::start(app_creator);
+    web::start(|store| app_creator(store.map_err(StartupError::new)));
 }
 
 /// Builds the app once eframe is ready, or a page explaining why the
 /// database could not be opened.
-fn app_creator(store: Result<Store, String>) -> eframe::AppCreator<'static> {
+fn app_creator(store: Result<Store, StartupError>) -> eframe::AppCreator<'static> {
     Box::new(|creation_context| {
         theme::apply(&creation_context.egui_ctx);
         cards::fonts::install(&creation_context.egui_ctx);
         match store {
             Ok(store) => Ok(Box::new(app::App::new(store)) as Box<dyn eframe::App>),
-            Err(message) => Ok(Box::new(StartupError(message))),
+            Err(error) => Ok(Box::new(error)),
         }
     })
-}
-
-struct StartupError(String);
-
-impl eframe::App for StartupError {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ui, |ui| {
-            ui.heading(i18n::tr("The database could not be opened"));
-            ui.colored_label(ui.visuals().error_fg_color, &self.0);
-        });
-    }
 }

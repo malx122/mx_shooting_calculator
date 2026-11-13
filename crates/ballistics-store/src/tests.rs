@@ -174,16 +174,6 @@ fn the_database_before_data_attribution_upgrades_without_changing_bullets() {
 }
 
 #[test]
-fn newer_schema_is_refused() {
-    let path = temporary_path();
-    let connection = rusqlite::Connection::open(&path).unwrap();
-    connection.pragma_update(None, "user_version", 99).unwrap();
-    drop(connection);
-    assert!(matches!(Store::open(&path), Err(StoreError::Invalid(_))));
-    std::fs::remove_file(path).unwrap();
-}
-
-#[test]
 fn read_only_opening_reads_and_never_upgrades() {
     let path = temporary_path();
     let mut saved = rifle("Tikka T3x", "308-win");
@@ -206,6 +196,77 @@ fn read_only_opening_reads_and_never_upgrades() {
         .unwrap();
     assert_eq!(version, 1);
     std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn a_database_set_aside_keeps_its_data_and_frees_its_place() {
+    let folder = std::env::temp_dir().join(format!("mxsc-aside-{}", std::process::id()));
+    std::fs::create_dir_all(&folder).unwrap();
+    let path = folder.join("mxsc.sqlite");
+    let mut saved = rifle("Tikka T3x", "308-win");
+    Store::open(&path).unwrap().save_rifle(&mut saved).unwrap();
+    std::fs::write(folder.join("mxsc.sqlite-journal"), b"").unwrap();
+    // 2026-11-13 17:59:12 UTC.
+    let aside = Store::set_aside(&path, 1_794_592_752_000).unwrap();
+    assert_eq!(aside, folder.join("mxsc-reset-2026-11-13-175912.sqlite"));
+    assert!(!path.exists());
+    assert!(
+        folder
+            .join("mxsc-reset-2026-11-13-175912.sqlite-journal")
+            .exists()
+    );
+    assert!(!folder.join("mxsc.sqlite-journal").exists());
+    std::fs::remove_file(folder.join("mxsc-reset-2026-11-13-175912.sqlite-journal")).unwrap();
+    assert_eq!(Store::open(&aside).unwrap().rifles().unwrap(), vec![saved]);
+    assert!(Store::open(&path).unwrap().rifles().unwrap().is_empty());
+    // Never over an earlier one.
+    assert!(Store::set_aside(&path, 1_794_592_752_000).is_err());
+    assert!(path.exists());
+    std::fs::remove_dir_all(&folder).unwrap();
+}
+
+#[test]
+fn only_a_damaged_file_counts_as_corrupt() {
+    let path = temporary_path();
+    std::fs::write(&path, vec![b'x'; 4096]).unwrap();
+    let error = Store::open(&path).err().unwrap();
+    assert!(error.is_corrupt(), "{error}");
+    assert!(!StoreError::Newer(99).is_corrupt());
+    assert!(!StoreError::Invalid("locked".into()).is_corrupt());
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn a_newer_database_is_refused_but_its_settings_can_be_read() {
+    let path = temporary_path();
+    let store = Store::open(&path).unwrap();
+    store.set_setting("check_for_updates", &true).unwrap();
+    drop(store);
+    let connection = rusqlite::Connection::open(&path).unwrap();
+    connection.pragma_update(None, "user_version", 999).unwrap();
+    drop(connection);
+    assert!(matches!(Store::open(&path), Err(StoreError::Newer(999))));
+    assert!(matches!(
+        Store::open_read_only(&path),
+        Err(StoreError::Newer(999))
+    ));
+    assert_eq!(
+        Store::peek_setting::<bool>(&path, "check_for_updates"),
+        Some(true)
+    );
+    assert_eq!(Store::peek_setting::<bool>(&path, "missing"), None);
+    // Peeking changes nothing.
+    let version: i64 = rusqlite::Connection::open(&path)
+        .unwrap()
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap();
+    assert_eq!(version, 999);
+    std::fs::remove_file(&path).unwrap();
+    assert_eq!(
+        Store::peek_setting::<bool>(&path, "check_for_updates"),
+        None
+    );
+    assert!(!path.exists());
 }
 
 #[test]

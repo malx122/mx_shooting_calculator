@@ -58,6 +58,9 @@ pub enum StoreError {
     Json(serde_json::Error),
     /// Data that breaks a rule, with a message for the user.
     Invalid(String),
+    /// The database was written by a newer version of the app (its schema
+    /// version): only an update can open it.
+    Newer(i64),
 }
 
 impl fmt::Display for StoreError {
@@ -66,11 +69,30 @@ impl fmt::Display for StoreError {
             StoreError::Database(error) => write!(formatter, "database error: {error}"),
             StoreError::Json(error) => write!(formatter, "could not read the file: {error}"),
             StoreError::Invalid(message) => formatter.write_str(message),
+            StoreError::Newer(schema) => write!(
+                formatter,
+                "the database was created by a newer version of the app (schema {schema}): \
+                 update this program"
+            ),
         }
     }
 }
 
 impl std::error::Error for StoreError {}
+
+impl StoreError {
+    /// The file is damaged or isn't a database at all: no retry will open it.
+    pub fn is_corrupt(&self) -> bool {
+        matches!(
+            self,
+            StoreError::Database(rusqlite::Error::SqliteFailure(error, _))
+                if matches!(
+                    error.code,
+                    rusqlite::ErrorCode::DatabaseCorrupt | rusqlite::ErrorCode::NotADatabase
+                )
+        )
+    }
+}
 
 impl From<rusqlite::Error> for StoreError {
     fn from(error: rusqlite::Error) -> Self {

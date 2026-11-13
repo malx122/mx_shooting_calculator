@@ -6,6 +6,24 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **AI assistants (MCP)** can look up a caliber's cartridge measurements,
+  tolerances and how common it is, list the most popular calibers for a kind
+  of hunting or competition, and save a cartridge as an STL for a
+  3D-printed dummy.
+- **Start over** when the database is damaged or from a newer version: the
+  desktop app can begin with an empty database, behind a dialog with a box
+  to tick. Nothing is deleted; the old file is kept under a new name.
+
+### Fixed
+
+- **Updating when the data won't open:** the desktop app's page for a
+  database it can't open now checks for updates (at once if you turned
+  updates on) and can install one, so data saved by a newer version can be
+  opened by updating. It also explains when that is the cause, and shows in
+  your language.
+
 ## [0.10.1] - 2026-11-13
 
 ### Security

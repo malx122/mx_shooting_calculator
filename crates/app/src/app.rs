@@ -29,7 +29,7 @@ const CARD_SETTINGS: &str = "cards";
 /// until the hunter chooses; then the device's language decides.
 const COUNTRY_SETTING: &str = "country";
 /// The language the app is shown in, or `null` for the device's.
-const LANGUAGE_SETTING: &str = "language";
+pub(crate) const LANGUAGE_SETTING: &str = "language";
 /// What the app is used for: hunting or target shooting. Absent until asked.
 const PURPOSE_SETTING: &str = "purpose";
 /// The version the hunter last used, to mention an update once.
@@ -247,6 +247,12 @@ pub struct App {
 }
 
 impl App {
+    /// A message that stays until the hunter closes it.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn keep_message(&mut self, text: String) {
+        self.status = Some(Status { text, error: true });
+    }
+
     pub fn new(store: Store) -> Self {
         let inputs: Inputs = store
             .setting(CALCULATOR_SETTINGS)

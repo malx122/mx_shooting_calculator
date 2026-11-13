@@ -166,12 +166,92 @@ impl Store {
             )));
         }
         if version > current {
-            return Err(StoreError::Invalid(format!(
-                "the database was created by a newer version of the app (schema {version}): \
-                 update this program"
-            )));
+            return Err(StoreError::Newer(version));
         }
         Ok(Store { connection })
+    }
+
+    /// One setting read straight from a database file, whatever version of
+    /// the app wrote it, changing nothing: for when the file can't be
+    /// opened as a store, such as one from a newer version. None when it
+    /// can't be read.
+    pub fn peek_setting<T: DeserializeOwned>(path: impl AsRef<Path>, key: &str) -> Option<T> {
+        use rusqlite::OpenFlags;
+        let connection = Connection::open_with_flags(
+            path,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )
+        .ok()?;
+        let text: String = connection
+            .query_row("SELECT value FROM settings WHERE key = ?1", [key], |row| {
+                row.get(0)
+            })
+            .ok()?;
+        serde_json::from_str(&text).ok()
+    }
+
+    /// Moves a database that can't be used out of the way, so a new one
+    /// can start at `path`: renamed, with its SQLite side files, to
+    /// "<name>-reset-<UTC date and time>.<extension>" in the same folder,
+    /// never deleted. Returns the new name.
+    pub fn set_aside(path: &Path, now_ms: i64) -> Result<std::path::PathBuf, StoreError> {
+        let date = crate::sun::Date::from_unix_ms(now_ms);
+        let seconds = now_ms.div_euclid(1000).rem_euclid(86_400);
+        let stamp = format!(
+            "{:04}-{:02}-{:02}-{:02}{:02}{:02}",
+            date.year,
+            date.month,
+            date.day,
+            seconds / 3600,
+            seconds / 60 % 60,
+            seconds % 60
+        );
+        let stem = path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or("database");
+        let name = match path.extension().and_then(|extension| extension.to_str()) {
+            Some(extension) => format!("{stem}-reset-{stamp}.{extension}"),
+            None => format!("{stem}-reset-{stamp}"),
+        };
+        let aside = path.with_file_name(name);
+        if aside.exists() {
+            return Err(StoreError::Invalid(format!(
+                "{} is already there",
+                aside.display()
+            )));
+        }
+        let rename = |from: &Path, to: &Path| {
+            std::fs::rename(from, to).map_err(|error| {
+                StoreError::Invalid(format!(
+                    "could not rename {} to {}: {error}",
+                    from.display(),
+                    to.display()
+                ))
+            })
+        };
+        // The journal and write-ahead log belong to the file: they go with
+        // it, or, if one can't, everything goes back as it was.
+        let with = |file: &Path, side: &str| {
+            let mut name = file.as_os_str().to_owned();
+            name.push(side);
+            std::path::PathBuf::from(name)
+        };
+        let sides: Vec<&str> = ["-journal", "-wal", "-shm"]
+            .into_iter()
+            .filter(|side| with(path, side).exists())
+            .collect();
+        rename(path, &aside)?;
+        for (done, side) in sides.iter().enumerate() {
+            if let Err(error) = rename(&with(path, side), &with(&aside, side)) {
+                for side in &sides[..done] {
+                    let _ = std::fs::rename(with(&aside, side), with(path, side));
+                }
+                let _ = std::fs::rename(&aside, path);
+                return Err(error);
+            }
+        }
+        Ok(aside)
     }
 
     pub fn open_in_memory() -> Result<Store, StoreError> {
@@ -190,9 +270,7 @@ impl Store {
             .connection
             .pragma_query_value(None, "user_version", |row| row.get(0))?;
         if version > MIGRATIONS.len() as i64 {
-            return Err(StoreError::Invalid(format!(
-                "the database was created by a newer version of the app (schema {version})"
-            )));
+            return Err(StoreError::Newer(version));
         }
         for (index, migration) in MIGRATIONS.iter().enumerate().skip(version as usize) {
             let transaction = self.connection.transaction()?;
