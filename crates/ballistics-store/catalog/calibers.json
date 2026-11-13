@@ -4,6 +4,7 @@
       "source": "C.I.P. TAB. II, 17 Hornet, date 2014-05-20 (no revision): cartridge maximum",
       "overall_length": 43.69,
       "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 8.89, "rim_thickness": 1.65,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -24,6 +25,7 @@
       "source": "C.I.P. TAB. V, 17 HMR, revision 2006-05-16: cartridge maximum",
       "overall_length": 34.67,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.47, "rim_thickness": 1.27,
         "head_bevel": null,
@@ -45,6 +47,7 @@
       "source": "C.I.P. TAB. V, 17 Mach 2, revision 2007-05-14: cartridge maximum",
       "overall_length": 25.40,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.06, "rim_thickness": 1.09,
         "head_bevel": null,
@@ -66,6 +69,7 @@
       "source": "C.I.P. TAB. I, 17 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 54.61,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 35 },
@@ -86,6 +90,7 @@
       "source": "C.I.P. TAB. V, 22 Long Rifle, revision 2008-09-23: cartridge maximum",
       "overall_length": 25.40,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.06, "rim_thickness": 1.09,
         "head_bevel": null,
@@ -107,6 +112,7 @@
       "source": "C.I.P. TAB. V, 22 Long, revision 2000-06-07: cartridge maximum",
       "overall_length": 22.56,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.06, "rim_thickness": 1.09,
         "head_bevel": null,
@@ -128,6 +134,7 @@
       "source": "C.I.P. TAB. V, 22 Short, revision 2008-09-23: cartridge maximum",
       "overall_length": 17.65,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.06, "rim_thickness": 1.09,
         "head_bevel": null,
@@ -149,6 +156,7 @@
       "source": "C.I.P. TAB. V, 22 Win. Mag. R.F., revision 2008-09-23: cartridge maximum",
       "overall_length": 34.29,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.47, "rim_thickness": 1.27,
         "head_bevel": null,
@@ -170,6 +178,7 @@
       "source": "C.I.P. TAB. V, 22 Win. R.F. et 22 Rem. Spl., revision 2000-06-07: cartridge maximum",
       "overall_length": 29.97,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 7.62, "rim_thickness": 1.27,
         "head_bevel": null,
@@ -191,6 +200,7 @@
       "source": "C.I.P. TAB. V, 22 Win. Auto, revision 2000-06-07: cartridge maximum",
       "overall_length": 23.24,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 8.00, "rim_thickness": 1.42,
         "head_bevel": null,
@@ -212,6 +222,7 @@
       "source": "C.I.P. TAB. II, 22 Hornet, revision 2002-05-15: cartridge maximum",
       "overall_length": 43.76,
       "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 8.89, "rim_thickness": 1.65,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -232,6 +243,7 @@
       "source": "C.I.P. TAB. I, 204 Ruger, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.48, "degrees": 35 },
@@ -252,6 +264,7 @@
       "source": "C.I.P. TAB. I, 5,6 x 50 Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 61.30,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -272,6 +285,7 @@
       "source": "C.I.P. TAB. II, 5,6 x 50 R Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 61.00,
       "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 10.90, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -292,6 +306,7 @@
       "source": "C.I.P. TAB. I, 220 Swift, revision 2008-09-23: cartridge maximum",
       "overall_length": 68.07,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -312,6 +327,7 @@
       "source": "C.I.P. TAB. I, 222 Rem. Mag., revision 2022-04-26: cartridge maximum",
       "overall_length": 57.91,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 35 },
@@ -332,6 +348,7 @@
       "source": "C.I.P. TAB. II, 218 Bee, revision 2002-05-15: cartridge maximum",
       "overall_length": 42.67,
       "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 10.36, "rim_thickness": 1.65,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -352,6 +369,7 @@
       "source": "C.I.P. TAB. I, 224 Valkyrie, revision 2023-05-09: cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 10.72, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -372,6 +390,7 @@
       "source": "C.I.P. TAB. II, 5,6 x 52 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 63.75,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 12.50, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -392,6 +411,7 @@
       "source": "C.I.P. TAB. I, 5,6 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 69.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -412,6 +432,7 @@
       "source": "C.I.P. TAB. V, 5 mm Rem. Mag., revision 2000-06-07: cartridge maximum",
       "overall_length": 32.89,
       "primer_diameter": null,
+      "tolerances": { "R": -0.18 },
       "case": {
         "rim_diameter": 8.26, "rim_thickness": 1.26,
         "head_bevel": null,
@@ -432,6 +453,7 @@
       "source": "C.I.P. TAB. I, 222 Rem., revision 2008-09-13: cartridge maximum",
       "overall_length": 54.10,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 35 },
@@ -452,6 +474,7 @@
       "source": "C.I.P. TAB. I, 223 Rem., revision 2017-05-17: cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 35 },
@@ -472,6 +495,7 @@
       "source": "C.I.P. TAB. I, 22-250 Rem, revision 2002-05-15: cartridge maximum",
       "overall_length": 59.69,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -492,6 +516,7 @@
       "source": "C.I.P. TAB. I, 243 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 68.83,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -512,6 +537,7 @@
       "source": "C.I.P. TAB. I, 6 mm Creedmoor, revision 2021-11-09: cartridge maximum",
       "overall_length": 71.12,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.99, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -532,6 +558,7 @@
       "source": "C.I.P. TAB. I, 6 mm Rem., revision 2023-05-09: cartridge maximum",
       "overall_length": 71.76,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -552,6 +579,7 @@
       "source": "C.I.P. TAB. I, 6mm BR Norma, revision 2002-05-15: cartridge maximum",
       "overall_length": 62.00,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -572,6 +600,7 @@
       "source": "C.I.P. TAB. I, 6 mm Dasher, date 2023-05-09 (no revision): cartridge maximum",
       "overall_length": 60.00,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -592,6 +621,7 @@
       "source": "C.I.P. TAB. I, 6 mm PPC-USA, revision 2002-05-15: cartridge maximum",
       "overall_length": 55.70,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.30, "rim_thickness": 1.50,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -612,6 +642,7 @@
       "source": "C.I.P. TAB. I, 6 XC, date 2008-04-15 (no revision): cartridge maximum",
       "overall_length": 70.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.35,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -632,6 +663,7 @@
       "source": "C.I.P. TAB. I, 6 mm Advanced Rifle Cartridge, revision 2024-05-14: cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.20, "rim_thickness": 1.50,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -652,6 +684,7 @@
       "source": "ANSI/SAAMI Z299.4-2025, 6mm GT (p. 33): cartridge maximum",
       "overall_length": 67.06,
       "primer_diameter": 4.45,
+      "tolerances": { "R": -0.25, "R1": -0.25, "E1": -0.51, "P1": -0.20, "P2": -0.20, "L3": -0.51, "L6": -3.18 },
       "case": {
         "rim_diameter": 11.96, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -672,6 +705,7 @@
       "source": "C.I.P. TAB. I, 25-06 Rem., revision 2008-09-23: cartridge maximum",
       "overall_length": 82.55,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -692,6 +726,7 @@
       "source": "C.I.P. TAB. III, 257 Weath. Mag., revision 2018-10-17: cartridge maximum",
       "overall_length": 81.51,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -713,6 +748,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 54 Mannl. Sch., revision 2002-05-15: cartridge maximum",
       "overall_length": 77.80,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.52, "rim_thickness": 1.05,
         "head_bevel": null,
@@ -733,6 +769,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 55 SE, revision 2013-05-22: cartridge maximum",
       "overall_length": 80.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.20, "rim_thickness": 1.50,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -753,6 +790,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -773,6 +811,7 @@
       "source": "C.I.P. TAB. II, 6,5 x 57 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.32, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -793,6 +832,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 65 RWS, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -813,6 +853,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 68, revision 2002-05-15: cartridge maximum",
       "overall_length": 86.50,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.00, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -833,6 +874,7 @@
       "source": "C.I.P. TAB. I, 6,5 Grendel, revision 2015-05-19: cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.20, "rim_thickness": 1.50,
         "head_bevel": { "length": 0.25, "degrees": 55 },
@@ -853,6 +895,7 @@
       "source": "C.I.P. TAB. I, 6,5 - 284 Norma, revision 2008-04-15: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.35, "degrees": 45 },
@@ -873,6 +916,7 @@
       "source": "C.I.P. TAB. I, 6,5 x 47 Lapua, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 71.00,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 45 },
@@ -893,6 +937,7 @@
       "source": "C.I.P. TAB. II, 6,5 x 52 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 64.50,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 12.60, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -913,6 +958,7 @@
       "source": "C.I.P. TAB. I, 6,5 Creedmoor, revision 2020-04-21: cartridge maximum",
       "overall_length": 71.76,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.99, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -933,6 +979,7 @@
       "source": "C.I.P. TAB. I, 6,5 PRC, date 2018-10-17 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 75.06,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -953,6 +1000,7 @@
       "source": "C.I.P. TAB. I, 260 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 71.12,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 30 },
@@ -973,6 +1021,7 @@
       "source": "C.I.P. TAB. I, 26 Nosler, date 2021-11-09 (no revision): cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.56, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -993,6 +1042,7 @@
       "source": "C.I.P. TAB. I, 270 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1013,6 +1063,7 @@
       "source": "C.I.P. TAB. I, 270 Win. Short Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 72.64,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.36, "degrees": 35 },
@@ -1033,6 +1084,7 @@
       "source": "C.I.P. TAB. I, 6,8 mm Rem. SPC, date 2006-05-16 (no revision): cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 10.72, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1053,6 +1105,7 @@
       "source": "C.I.P. TAB. I, 6,8 Western, date 2022-11-08 (no revision): cartridge maximum",
       "overall_length": 75.06,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.35, "degrees": 35 },
@@ -1073,6 +1126,7 @@
       "source": "C.I.P. TAB. I, 7 x 57, revision 2002-05-15: cartridge maximum",
       "overall_length": 78.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.10, "rim_thickness": 1.15,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1093,6 +1147,7 @@
       "source": "C.I.P. TAB. II, 7 x 57 R, revision 2006-09-19: cartridge maximum",
       "overall_length": 78.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1113,6 +1168,7 @@
       "source": "C.I.P. TAB. I, 7 mm - 08 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 71.12,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1133,6 +1189,7 @@
       "source": "C.I.P. TAB. I, 7 x 64, revision 2002-05-15: cartridge maximum",
       "overall_length": 84.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1153,6 +1210,7 @@
       "source": "C.I.P. TAB. II, 7 x 65 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 83.60,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.32, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1173,6 +1231,7 @@
       "source": "C.I.P. TAB. I, 280 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.58,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1193,6 +1252,7 @@
       "source": "C.I.P. TAB. III, 7 mm Rem. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 83.57,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1214,6 +1274,7 @@
       "source": "C.I.P. TAB. I, 7 mm Precision Rifle Cartridge, date 2023-05-09 (no revision): cartridge maximum; the rim bevel's length (f) from ANSI/SAAMI Z299.4-2025",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1234,6 +1295,7 @@
       "source": "C.I.P. TAB. I, 7 mm Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 80.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.30, "degrees": 35 },
@@ -1254,6 +1316,7 @@
       "source": "C.I.P. TAB. II, 7 x 75 R SE.v.H., revision 2002-05-15: cartridge maximum",
       "overall_length": 97.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.35, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1274,6 +1337,7 @@
       "source": "C.I.P. TAB. I, 28 Nosler, date 2023-05-09 (no revision): cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.56, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.38, "degrees": 45 },
@@ -1294,6 +1358,7 @@
       "source": "C.I.P. TAB. I, 7 mm Rem. Ultra Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 91.44,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.56, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1314,6 +1379,7 @@
       "source": "C.I.P. TAB. I, 7 mm Win. Short Mag., revision 2011-05-25: cartridge maximum",
       "overall_length": 72.64,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.36, "degrees": 35 },
@@ -1334,6 +1400,7 @@
       "source": "C.I.P. TAB. I, 284 Win., revision 2005-05-25: cartridge maximum",
       "overall_length": 71.12,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1354,6 +1421,7 @@
       "source": "ANSI/SAAMI Z299.4-2025, 280 Ackley Improved (p. 92): cartridge maximum",
       "overall_length": 84.58,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25, "R1": -0.25, "E1": -0.51, "P1": -0.20, "P2": -0.20, "L3": -0.30, "L6": -4.93 },
       "case": {
         "rim_diameter": 11.99, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -1374,6 +1442,7 @@
       "source": "C.I.P. TAB. I, 7 mm Rem. SA Ultra Mag., revision 2004-09-27: cartridge maximum",
       "overall_length": 71.76,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.56, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1394,6 +1463,7 @@
       "source": "C.I.P. TAB. III, 7 mm Weath. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 85.34,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1415,6 +1485,7 @@
       "source": "C.I.P. TAB. I, 7,5 x 55 Suisse, revision 2016-05-18: cartridge maximum",
       "overall_length": 77.70,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.65, "rim_thickness": 1.65,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -1435,6 +1506,7 @@
       "source": "C.I.P. TAB. II, 30-30 Win., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.77,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 12.85, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1455,6 +1527,7 @@
       "source": "C.I.P. TAB. I, 30 Carbine, revision 2002-05-15: cartridge maximum",
       "overall_length": 42.67,
       "primer_diameter": 4.45,
+      "tolerances": { "L3": -0.25 },
       "case": {
         "rim_diameter": 9.14, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1475,6 +1548,7 @@
       "source": "C.I.P. TAB. I, 308 Win., revision 2008-09-23: cartridge maximum",
       "overall_length": 71.12,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1495,6 +1569,7 @@
       "source": "C.I.P. TAB. I, 30-06 Spring., revision 2008-09-23: cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -1515,6 +1590,7 @@
       "source": "C.I.P. TAB. II, 30 R Blaser, revision 2007-07-06: cartridge maximum",
       "overall_length": 95.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.40,
         "head_bevel": null,
@@ -1535,6 +1611,7 @@
       "source": "C.I.P. TAB. I, 300 Win. Short Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 72.64,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.36, "degrees": 35 },
@@ -1555,6 +1632,7 @@
       "source": "C.I.P. TAB. I, 300 AAC Blackout, revision 2018-10-17: cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 35 },
@@ -1575,6 +1653,7 @@
       "source": "C.I.P. TAB. III, 300 Win. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1596,6 +1675,7 @@
       "source": "C.I.P. TAB. III, 300 Weath. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 90.42,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1617,6 +1697,7 @@
       "source": "C.I.P. TAB. I, 300 Precision Rifle Cartridge, revision 2020-11-10: cartridge maximum",
       "overall_length": 93.98,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -1637,6 +1718,7 @@
       "source": "C.I.P. TAB. III, 308 Norma Mag., revision 2016-10-18: cartridge maximum",
       "overall_length": 85.00,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.25,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -1658,6 +1740,7 @@
       "source": "C.I.P. TAB. II, 7,62 x 53 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 77.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 14.40, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.60, "degrees": 20 },
@@ -1678,6 +1761,7 @@
       "source": "C.I.P. TAB. I, 300 Blaser Mag., date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.30, "degrees": 35 },
@@ -1698,6 +1782,7 @@
       "source": "C.I.P. TAB. I, 300 Norma Mag, date 2012-05-30 (no revision): cartridge maximum",
       "overall_length": 93.50,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 14.93, "rim_thickness": 1.52,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -1718,6 +1803,7 @@
       "source": "C.I.P. TAB. I, 300 Rem. Ultra Mag., revision 2008-09-23: cartridge maximum",
       "overall_length": 91.44,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.56, "rim_thickness": 1.27,
         "head_bevel": null,
@@ -1738,6 +1824,7 @@
       "source": "C.I.P. TAB. I, 30 BR, date 2011-05-25 (no revision): cartridge maximum",
       "overall_length": 58.00,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -1758,6 +1845,7 @@
       "source": "C.I.P. TAB. III, 300 H&H Mag., revision 2011-05-25: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 91.44,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 45 },
@@ -1779,6 +1867,7 @@
       "source": "C.I.P. TAB. I, 7,62 x 39, revision 2002-05-15: cartridge maximum",
       "overall_length": 56.00,
       "primer_diameter": 4.45,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.35, "rim_thickness": 1.50,
         "head_bevel": { "length": 0.25, "degrees": 45 },
@@ -1819,6 +1908,7 @@
       "source": "C.I.P. TAB. II, 303 British, revision 2008-09-23: cartridge maximum",
       "overall_length": 78.11,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.72, "rim_thickness": 1.63,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -1839,6 +1929,7 @@
       "source": "C.I.P. TAB. I, 8 x 57 IS, revision 2016-05-18: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1859,6 +1950,7 @@
       "source": "C.I.P. TAB. II, 8 x 57 IR, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.32, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1879,6 +1971,7 @@
       "source": "C.I.P. TAB. II, 8 x 57 IRS, revision 2002-05-15: cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.32, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1899,6 +1992,7 @@
       "source": "C.I.P. TAB. I, 8 x 64 S, revision 2002-05-15: cartridge maximum",
       "overall_length": 87.50,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.00, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1919,6 +2013,7 @@
       "source": "C.I.P. TAB. I, 8 x 68 S, revision 2006-09-19: cartridge maximum",
       "overall_length": 87.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.00, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1939,6 +2034,7 @@
       "source": "C.I.P. TAB. I, 8 x 60 S, revision 2006-09-19: cartridge maximum",
       "overall_length": 83.60,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1959,6 +2055,7 @@
       "source": "C.I.P. TAB. II, 8 x 75 RS, revision 2002-05-15: cartridge maximum",
       "overall_length": 96.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.35, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -1997,9 +2094,10 @@
     } },
   { "key": "338-lapua-mag", "name": ".338 Lapua Mag", "aliases": [".338 Lapua Magnum", "8.6×70"], "bullet_diameter_mm": 8.59, "typical_twist_in": 10,
     "cartridge": {
-      "source": "C.I.P. TAB. I, 338 Lapua Mag., revision 2006-09-14: cartridge maximum; r1 from ANSI/SAAMI Z299.4-2025",
+      "source": "C.I.P. TAB. I, 338 Lapua Mag., revision 2006-09-14: cartridge maximum (its P2 tolerance printed +0.20, which would not fit its own minimum chamber, taken as −0.20); r1 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 93.50,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 14.93, "rim_thickness": 1.52,
         "head_bevel": { "length": 0.50, "degrees": 45 },
@@ -2020,6 +2118,7 @@
       "source": "C.I.P. TAB. I, 8,5 x 55 Blaser, date 2019-05-22 (no revision): cartridge maximum",
       "overall_length": 75.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.59, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.30, "degrees": 35 },
@@ -2040,6 +2139,7 @@
       "source": "C.I.P. TAB. I, 338 Federal, revision 2011-05-25: cartridge maximum",
       "overall_length": 71.63,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -2060,6 +2160,7 @@
       "source": "C.I.P. TAB. I, 35 Whelen, revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.83, "degrees": 35 },
@@ -2080,6 +2181,7 @@
       "source": "C.I.P. TAB. I, 350 Legend, date 2020-04-21 (no revision): cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "L3": -0.25 },
       "case": {
         "rim_diameter": 9.60, "rim_thickness": 1.14,
         "head_bevel": { "length": 0.45, "degrees": 55 },
@@ -2100,6 +2202,7 @@
       "source": "C.I.P. TAB. III, 358 Norma Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.50, "rim_thickness": 1.25,
         "head_bevel": { "length": 0.40, "degrees": 45 },
@@ -2121,6 +2224,7 @@
       "source": "C.I.P. TAB. I, 35 Rem., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.14,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.68, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -2141,6 +2245,7 @@
       "source": "C.I.P. TAB. II, 360 Buckhammer, date 2023-11-08 (no revision): cartridge maximum",
       "overall_length": 63.50,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 12.85, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -2161,6 +2266,7 @@
       "source": "C.I.P. TAB. I, 9,3 x 57, date 2007-05-14 (no revision): cartridge maximum",
       "overall_length": 82.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2181,6 +2287,7 @@
       "source": "C.I.P. TAB. I, 9,3 x 62, revision 2002-05-15: cartridge maximum",
       "overall_length": 83.60,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2201,6 +2308,7 @@
       "source": "C.I.P. TAB. II, 9,3 x 72 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 86.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 12.35, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2221,6 +2329,7 @@
       "source": "C.I.P. TAB. II, 9,3 x 74 R, revision 2002-05-15: cartridge maximum",
       "overall_length": 94.50,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.35, "rim_thickness": 1.40,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2241,6 +2350,7 @@
       "source": "C.I.P. TAB. I, 9,3 x 66 Sako, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.00,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 11.95, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2261,6 +2371,7 @@
       "source": "C.I.P. TAB. I, 9,3 x 64 Brenneke, revision 2002-05-15: cartridge maximum",
       "overall_length": 85.60,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 12.60, "rim_thickness": 1.30,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2281,6 +2392,7 @@
       "source": "C.I.P. TAB. II, 9,3 x 53 R Finnish, revision 2002-05-15: cartridge maximum",
       "overall_length": 76.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 14.40, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.60, "degrees": 70 },
@@ -2301,6 +2413,7 @@
       "source": "C.I.P. TAB. I, 375 Chey Tac, date 2017-05-17 (no revision): cartridge maximum",
       "overall_length": 113.40,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 16.25, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.50, "degrees": 35.3331 },
@@ -2321,6 +2434,7 @@
       "source": "C.I.P. TAB. III, 375 H&H Mag., revision 2002-05-15: cartridge maximum; r1 and r2 from ANSI/SAAMI Z299.4-2025",
       "overall_length": 91.44,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 45 },
@@ -2342,6 +2456,7 @@
       "source": "C.I.P. TAB. I, 375 Ruger, date 2009-05-05 (no revision): cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -2362,6 +2477,7 @@
       "source": "C.I.P. TAB. I, 400 Legend, date 2023-11-08 (no revision): cartridge maximum; the rim's bevel angle from ANSI/SAAMI Z299.4-2025 (the C.I.P. sheet prints 0°)",
       "overall_length": 57.40,
       "primer_diameter": 4.45,
+      "tolerances": { "L3": -0.25 },
       "case": {
         "rim_diameter": 10.72, "rim_thickness": 1.24,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -2382,6 +2498,7 @@
       "source": "C.I.P. TAB. I, 408 Chey Tac, revision 2016-10-18: cartridge maximum",
       "overall_length": 115.50,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 16.25, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.50, "degrees": 35.3331 },
@@ -2402,6 +2519,7 @@
       "source": "C.I.P. TAB. II, 10,3 x 60 R, revision 2025-05-13: cartridge maximum",
       "overall_length": 85.00,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 15.70, "rim_thickness": 1.10,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2422,6 +2540,7 @@
       "source": "C.I.P. TAB. I, 416 Rigby, revision 2002-05-15: cartridge maximum; r1, r2 and the rim's bevel from ANSI/SAAMI Z299.4-2025",
       "overall_length": 95.25,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 14.99, "rim_thickness": 1.65,
         "head_bevel": { "length": 0.38, "degrees": 55 },
@@ -2442,6 +2561,7 @@
       "source": "C.I.P. TAB. I, 404 Riml. N.E., revision 2020-04-21: cartridge maximum",
       "overall_length": 89.66,
       "primer_diameter": 5.33,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 13.79, "rim_thickness": 1.27,
         "head_bevel": null,
@@ -2462,6 +2582,7 @@
       "source": "C.I.P. TAB. II, 444 Marlin, revision 2002-05-15: cartridge maximum",
       "overall_length": 65.28,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 13.06, "rim_thickness": 1.60,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -2482,6 +2603,7 @@
       "source": "C.I.P. TAB. I, 450 Bushmaster, date 2010-05-26 (no revision): cartridge maximum",
       "overall_length": 57.40,
       "primer_diameter": 5.33,
+      "tolerances": { "L3": -0.25 },
       "case": {
         "rim_diameter": 12.01, "rim_thickness": 1.37,
         "head_bevel": { "length": 0.86, "degrees": 45 },
@@ -2502,6 +2624,7 @@
       "source": "C.I.P. TAB. II, 45-70 Govt., revision 2002-05-15: cartridge maximum",
       "overall_length": 64.77,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 15.44, "rim_thickness": 1.78,
         "head_bevel": { "length": 0.38, "degrees": 35 },
@@ -2522,6 +2645,7 @@
       "source": "C.I.P. TAB. III, 458 Win. Mag., revision 2002-05-15: cartridge maximum",
       "overall_length": 84.84,
       "primer_diameter": 5.33,
+      "tolerances": { "E": -0.20 },
       "case": {
         "rim_diameter": 13.51, "rim_thickness": 1.27,
         "head_bevel": { "length": 0.41, "degrees": 35 },
@@ -2543,6 +2667,7 @@
       "source": "C.I.P. TAB. II, 470 N.E., revision 2013-05-22: cartridge maximum",
       "overall_length": 101.09,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 16.64, "rim_thickness": 1.02,
         "head_bevel": { "length": 0.30, "degrees": 45 },
@@ -2563,6 +2688,7 @@
       "source": "C.I.P. TAB. II, 500 N. E. 3'', revision 2005-07-20: cartridge maximum",
       "overall_length": 95.25,
       "primer_diameter": 5.33,
+      "tolerances": { "R": -0.25 },
       "case": {
         "rim_diameter": 16.64, "rim_thickness": 1.02,
         "head_bevel": null,
@@ -2583,6 +2709,7 @@
       "source": "C.I.P. TAB. I, 50 Browning, revision 2010-05-26: cartridge maximum",
       "overall_length": 138.43,
       "primer_diameter": 8.00,
+      "tolerances": { "P2": -0.20, "L1": -0.20, "L2": -0.20 },
       "case": {
         "rim_diameter": 20.42, "rim_thickness": 2.26,
         "head_bevel": { "length": 0.84, "degrees": 45 },

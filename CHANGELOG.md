@@ -17,7 +17,8 @@ any release may still change things noticeably.
   head- or tailwind.
 - **Cartridges in 3D:** the bullet catalog shows the caliber's cartridge in
   3D, true to its C.I.P. drawing, with a typical bullet and a millimetre
-  ruler; drag to turn it.
+  ruler; drag to turn it. The catalog keeps each drawing's printed
+  tolerances too.
   **Save for 3D printing (STL)** saves it in millimetres, standing on its
   head, to try magazines and feeding. The rifle editor shows it too. For
   every caliber in the catalog, each from its C.I.P. drawing.

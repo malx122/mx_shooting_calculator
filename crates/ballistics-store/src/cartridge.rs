@@ -7,6 +7,8 @@
 //! diameters millimetres. The letters in the comments are the C.I.P.
 //! drawing's.
 
+use std::collections::BTreeMap;
+
 use serde::Deserialize;
 
 /// Points per quarter circle in a rounded corner of the outline.
@@ -24,7 +26,21 @@ pub struct Cartridge {
     pub overall_length: f64,
     /// The primer seen in the case head; none on a rimfire case.
     pub primer_diameter: Option<f64>,
+    /// The drawing's printed tolerances on its maximum values, by the
+    /// C.I.P. drawing's letters: "L1": −0.20 means the shoulder may start up
+    /// to 0.20 mm nearer the head and still be within the standard. Only the
+    /// values the drawing gives a tolerance for (a SAAMI drawing gives more,
+    /// and the overall length as a range: its "L6" is the minimum less the
+    /// maximum).
+    #[serde(default)]
+    pub tolerances: BTreeMap<String, f64>,
 }
+
+/// The drawing letters a tolerance may be given for, and the value each
+/// stands for in the model.
+pub const TOLERANCE_LETTERS: [&str; 13] = [
+    "R", "R1", "R3", "E", "E1", "P1", "P2", "L1", "L2", "L3", "H1", "H2", "L6",
+];
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct CaseShape {
@@ -782,6 +798,33 @@ mod tests {
             (radius / neck_radius - 3.4 / 4.7).abs() < 1e-12,
             "both shrink alike"
         );
+    }
+
+    #[test]
+    fn tolerances_are_small_and_on_values_the_model_has() {
+        for caliber in &Catalog::builtin().calibers {
+            let Some(cartridge) = &caliber.cartridge else {
+                continue;
+            };
+            for (letter, tolerance) in &cartridge.tolerances {
+                assert!(
+                    TOLERANCE_LETTERS.contains(&letter.as_str()),
+                    "{}: {letter}",
+                    caliber.name
+                );
+                // A maximum value can only be undershot: by under a
+                // millimetre, or a few for the overall length.
+                let most = if letter == "L6" { 6.0 } else { 1.0 };
+                assert!(
+                    (-most..0.0).contains(tolerance),
+                    "{}: {letter} {tolerance}",
+                    caliber.name
+                );
+            }
+            if cartridge.tolerances.contains_key("L1") {
+                assert!(cartridge.case.shoulder.is_some(), "{}", caliber.name);
+            }
+        }
     }
 
     #[test]
