@@ -1,11 +1,15 @@
 //! The tools an AI assistant can call. Each takes JSON arguments and gives
 //! back text for the assistant to read (and the same facts as JSON).
-//! Everything is read-only for now.
+//! They never write the hunter's database. Only `save_cartridge_stl` writes
+//! anything: the STL file it is asked for.
 
 use ballistics_core::{Coriolis, analysis, solver};
 use ballistics_shot::{Conditions, Hold, Pressure, unit_label};
+use std::path::{Path, PathBuf};
+
 use ballistics_store::{
-    Bullet, Catalog, Country, DataAttribution, Rifle, RifleLoad, Store, Target, TargetGroup,
+    Bullet, Caliber, Catalog, CatalogKind, Country, DataAttribution, Popularity, Print, Rifle,
+    RifleLoad, Store, Target, TargetGroup,
 };
 use serde_json::{Value, json};
 
@@ -17,6 +21,20 @@ const CALCULATOR_SETTINGS: &str = "calculator";
 const COUNTRY_SETTING: &str = "country";
 /// The general minimum velocity for expansion, when the app has none saved.
 const GENERAL_MIN_VELOCITY_MPS: f64 = 550.0;
+/// The letters cut into a printed cartridge: the same font the app uses.
+const ENGRAVING_FONT: &[u8] = include_bytes!("../../app/assets/fonts/BarlowCondensed-Bold.ttf");
+/// What each popularity grade is for, in words.
+const USE_NAMES: [(&str, &str); 9] = [
+    ("hunting_nordic", "hunting in the Nordic countries"),
+    ("hunting_europe", "hunting in the rest of Europe"),
+    ("hunting_north_america", "hunting in North America"),
+    ("precision", "precision rifle competition (PRS, NRL)"),
+    ("f_class", "F-class"),
+    ("benchrest", "benchrest"),
+    ("long_range", "extreme long range"),
+    ("rimfire", "rimfire and smallbore matches"),
+    ("nordic_field", "Nordic field and range shooting"),
+];
 
 /// A tool's answer: text, and the same as data when there is any.
 pub struct Answer {
@@ -111,6 +129,37 @@ pub fn list() -> Value {
                 "lead_free": {"type": "boolean", "description": "Only lead-free bullets."}
             }},
             "annotations": {"readOnlyHint": true}
+        },
+        {
+            "name": "caliber",
+            "title": "A caliber and its cartridge",
+            "description": "One caliber from the app's catalog: bullet diameter, typical twist, the cartridge's largest outside measurements by the C.I.P./SAAMI drawing letters (case length L3, overall length L6, rim, body, shoulder, neck) with the drawing's tolerances, the typical bullet the 3D model uses, how popular it is for hunting and competition (grades 1-5), and how many factory loads and component bullets the catalog has for it.",
+            "inputSchema": {"type": "object", "properties": {
+                "caliber": {"type": "string", "description": "The caliber, e.g. \".308 Win\", \"6.5x55\", \"300 wsm\"."}
+            }, "required": ["caliber"]},
+            "annotations": {"readOnlyHint": true}
+        },
+        {
+            "name": "popular_calibers",
+            "title": "The most popular calibers",
+            "description": "The catalog's calibers ranked by how common they are for one kind of hunting or competition, most popular first, e.g. the 20 most popular hunting calibers in Europe. Rough grades (1 rare to 5 very common) from public stand-ins: rifle makers' caliber lists, factory loads and competition surveys, graded November 2026. Good for a top 20 or for common against rare, not for telling #7 from #8.",
+            "inputSchema": {"type": "object", "properties": {
+                "use": {"type": "string", "enum": Popularity::USES, "description": "hunting_nordic, hunting_europe (Europe outside the Nordic countries), hunting_north_america, precision (PRS/NRL), f_class, benchrest, long_range (extreme long range), rimfire, nordic_field (Nordic field and range shooting)."},
+                "count": {"type": "integer", "minimum": 1, "description": "How many to list. Default 20."}
+            }, "required": ["use"]},
+            "annotations": {"readOnlyHint": true}
+        },
+        {
+            "name": "save_cartridge_stl",
+            "title": "Save a cartridge for 3D printing",
+            "description": "Writes a caliber's cartridge as an STL file for a 3D-printed dummy (to try magazines and feeding): the largest the standard allows, with a typical bullet, in millimetres, standing on its head, by default with the caliber's name cut 0.4 mm deep into its side. The same file the app saves. Writes only the STL file, and never replaces one unless told to.",
+            "inputSchema": {"type": "object", "properties": {
+                "caliber": {"type": "string", "description": "The caliber, e.g. \".308 Win\"."},
+                "path": {"type": "string", "description": "Where to save it: a full path to a folder or to a file ending in .stl (\"~/\" is the home folder). Default: the Downloads folder, as <caliber>-cartridge.stl."},
+                "cut_name": {"type": "boolean", "description": "Cut the caliber's name into the side. Default true."},
+                "overwrite": {"type": "boolean", "description": "Replace the file if it is already there. Default false."}
+            }, "required": ["caliber"]},
+            "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": false}
         }
     ])
 }
@@ -125,6 +174,9 @@ pub fn call(store: &Store, name: &str, arguments: &Value) -> Result<Answer, Stri
         "holdover" => holdover(store, arguments),
         "dope_table" => dope_table(store, arguments),
         "search_catalog" => search_catalog(arguments),
+        "caliber" => caliber(arguments),
+        "popular_calibers" => popular_calibers(arguments),
+        "save_cartridge_stl" => save_cartridge_stl(arguments),
         other => Err(format!("there is no tool called {other}")),
     }
 }
@@ -933,6 +985,352 @@ fn search_catalog(arguments: &Value) -> Result<Answer, String> {
     )))
 }
 
+// Calibers and cartridges -----------------------------------------------
+
+/// The catalog's caliber by a loose name: the exact key, name or alias, or
+/// the only one holding every word.
+fn find_caliber<'a>(catalog: &'a Catalog, arguments: &Value) -> Result<&'a Caliber, String> {
+    let query = arguments["caliber"]
+        .as_str()
+        .filter(|q| !q.trim().is_empty())
+        .ok_or("say which caliber")?;
+    if let Some(exact) = catalog.calibers.iter().find(|c| c.is_named(query)) {
+        return Ok(exact);
+    }
+    match catalog.search_calibers(query).as_slice() {
+        [one] => Ok(one),
+        [] => Err(format!("no caliber in the catalog matches \"{query}\"")),
+        several => Err(format!(
+            "\"{query}\" matches several calibers: {}; say which",
+            several
+                .iter()
+                .map(|c| c.name.as_str())
+                .collect::<Vec<_>>()
+                .join("; ")
+        )),
+    }
+}
+
+fn mm(value: f64) -> String {
+    format!("{value:.2} mm")
+}
+
+fn caliber(arguments: &Value) -> Result<Answer, String> {
+    let catalog = Catalog::builtin();
+    let caliber = find_caliber(catalog, arguments)?;
+    let mut lines = vec![format!(
+        "{}{}: bullet diameter {}, typical twist 1:{}\".",
+        caliber.name,
+        if caliber.aliases.is_empty() {
+            String::new()
+        } else {
+            format!(" (also {})", caliber.aliases.join(", "))
+        },
+        mm(caliber.bullet_diameter_mm),
+        caliber.typical_twist_in
+    )];
+    let mut data = json!({
+        "key": caliber.key,
+        "name": caliber.name,
+        "aliases": caliber.aliases,
+        "bullet_diameter_mm": caliber.bullet_diameter_mm,
+        "typical_twist_in": caliber.typical_twist_in,
+    });
+
+    if let Some(cartridge) = &caliber.cartridge {
+        let case = &cartridge.case;
+        let kind = if cartridge.primer_diameter.is_none() {
+            "rimfire"
+        } else if case.belt_diameter.is_some() {
+            "belted"
+        } else if case.groove.is_none() || case.rim_diameter > case.body_diameter + 1.0 {
+            // .444 Marlin is rimmed, though drawn with a groove.
+            "rimmed"
+        } else if case.rim_diameter > case.body_diameter + 0.3 {
+            // .220 Swift.
+            "semi-rimmed"
+        } else if case.rim_diameter + 0.1 < case.body_diameter {
+            "rebated rim"
+        } else {
+            "rimless"
+        };
+        let shape = if case.shoulder.is_some() {
+            "bottleneck"
+        } else {
+            "straight"
+        };
+        let mut maximum = serde_json::Map::new();
+        let mut put = |letter: &str, value: f64| {
+            maximum.insert(letter.to_owned(), json!(value));
+        };
+        put("L6", cartridge.overall_length);
+        put("L3", case.length);
+        put("R1", case.rim_diameter);
+        put("R", case.rim_thickness);
+        put("E", case.body_start);
+        put("P1", case.body_diameter);
+        put("H2", case.mouth_diameter);
+        lines.push(format!(
+            "The cartridge, {kind} and {shape}, at the largest its standard allows ({}):",
+            cartridge.source
+        ));
+        lines.push(format!(
+            "- overall length (L6) {}, case length (L3) {}",
+            mm(cartridge.overall_length),
+            mm(case.length)
+        ));
+        let mut rim = format!(
+            "- rim (R1) {}, {} thick (R)",
+            mm(case.rim_diameter),
+            mm(case.rim_thickness)
+        );
+        if let Some(groove) = &case.groove {
+            rim += &format!(
+                "; extractor groove (E1) {}, its front bevel (δ) {}°",
+                mm(groove.diameter),
+                groove.bevel_degrees
+            );
+            put("E1", groove.diameter);
+        }
+        if let Some(belt) = case.belt_diameter {
+            rim += &format!("; belt (R3) {}", mm(belt));
+            put("R3", belt);
+        }
+        lines.push(rim);
+        lines.push(format!(
+            "- body (P1) {} at {} from the head (E)",
+            mm(case.body_diameter),
+            mm(case.body_start)
+        ));
+        if let Some(shoulder) = &case.shoulder {
+            lines.push(format!(
+                "- shoulder from {} across (P2) at {} (L1) to the neck, {} across (H1) at {} (L2); mouth (H2) {}",
+                mm(shoulder.diameter),
+                mm(shoulder.start),
+                mm(shoulder.neck_diameter),
+                mm(shoulder.neck_start),
+                mm(case.mouth_diameter)
+            ));
+            put("P2", shoulder.diameter);
+            put("L1", shoulder.start);
+            put("H1", shoulder.neck_diameter);
+            put("L2", shoulder.neck_start);
+        } else {
+            lines.push(format!("- mouth (H2) {}", mm(case.mouth_diameter)));
+        }
+        if cartridge.tolerances.is_empty() {
+            lines.push("No tolerances printed on the drawing.".into());
+        } else {
+            lines.push(format!(
+                "Tolerances (how far below the maximum is still in the standard): {}",
+                cartridge
+                    .tolerances
+                    .iter()
+                    .map(|(letter, value)| format!("{letter} {value:+.2} mm"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        let bullet = &cartridge.bullet;
+        lines.push(format!(
+            "The model's typical bullet: {}, {} long, seated to the maximum overall length ({}).",
+            bullet.name,
+            mm(bullet.length),
+            bullet.source
+        ));
+        data["cartridge"] = json!({
+            "kind": kind,
+            "shape": shape,
+            "source": cartridge.source,
+            "maximum_mm": maximum,
+            "tolerances_mm": cartridge.tolerances,
+            "primer_diameter_mm": cartridge.primer_diameter,
+            "typical_bullet": {
+                "name": bullet.name,
+                "diameter_mm": bullet.diameter,
+                "length_mm": bullet.length,
+                "source": bullet.source,
+            },
+        });
+    }
+
+    if let Some(popularity) = caliber.popularity {
+        let grades: Vec<String> = USE_NAMES
+            .iter()
+            .filter_map(|(of, words)| Some(format!("{words} {}", popularity.grade(of)?)))
+            .collect();
+        lines.push(format!(
+            "How common (1 rare to 5 very common; rough): {}.",
+            grades.join(", ")
+        ));
+        data["popularity"] = USE_NAMES
+            .iter()
+            .filter_map(|(of, _)| Some(((*of).to_owned(), json!(popularity.grade(of)?))))
+            .collect::<serde_json::Map<_, _>>()
+            .into();
+    }
+
+    let loads = catalog
+        .bullets
+        .iter()
+        .filter(|b| b.kind == CatalogKind::Ammunition && b.caliber.as_deref() == Some(&caliber.key))
+        .count();
+    let components = catalog
+        .bullets_for(caliber)
+        .filter(|b| b.kind == CatalogKind::Component)
+        .count();
+    lines.push(format!(
+        "The catalog has {loads} factory load(s) and {components} component bullet(s) for it."
+    ));
+    data["factory_loads"] = json!(loads);
+    data["component_bullets"] = json!(components);
+    Ok(Answer {
+        text: lines.join("\n"),
+        data: Some(data),
+    })
+}
+
+fn popular_calibers(arguments: &Value) -> Result<Answer, String> {
+    let of = arguments["use"].as_str().unwrap_or("");
+    let count = match &arguments["count"] {
+        Value::Null => 20,
+        count => count
+            .as_u64()
+            .filter(|&count| count > 0)
+            .ok_or("\"count\" must be a whole number from 1")? as usize,
+    };
+    let ranked = Catalog::builtin()
+        .popular(of)
+        .ok_or_else(|| format!("\"use\" must be one of: {}", Popularity::USES.join(", ")))?;
+    let words = USE_NAMES
+        .iter()
+        .find(|(name, _)| *name == of)
+        .map_or(of, |(_, words)| words);
+    let shown = &ranked[..count.min(ranked.len())];
+    let mut lines = vec![format!(
+        "{} for {words}, most popular first (rough grades, 1 rare to 5 very common; same grade: more factory loads first):",
+        match shown.len() {
+            1 => "The most popular caliber".to_owned(),
+            n => format!("The {n} most popular calibers"),
+        }
+    )];
+    lines.extend(shown.iter().enumerate().map(|(rank, entry)| {
+        format!(
+            "{}. {}: grade {}, {} factory load(s)",
+            rank + 1,
+            entry.caliber.name,
+            entry.grade,
+            entry.factory_loads
+        )
+    }));
+    let data: Vec<Value> = shown
+        .iter()
+        .map(|entry| {
+            json!({
+                "key": entry.caliber.key,
+                "name": entry.caliber.name,
+                "grade": entry.grade,
+                "factory_loads": entry.factory_loads,
+            })
+        })
+        .collect();
+    Ok(Answer {
+        text: lines.join("\n"),
+        data: Some(json!({ "use": of, "calibers": data })),
+    })
+}
+
+/// Where to save: a folder gets the suggested file name; a file must end in
+/// .stl, so the tool can't be used to write anything else.
+fn stl_path(arguments: &Value, file_name: &str) -> Result<PathBuf, String> {
+    let home = directories::UserDirs::new().map(|dirs| dirs.home_dir().to_owned());
+    let Some(asked) = arguments["path"].as_str().filter(|p| !p.trim().is_empty()) else {
+        let folder = directories::UserDirs::new()
+            .and_then(|dirs| dirs.download_dir().map(Path::to_owned))
+            .or(home)
+            .ok_or("could not find the Downloads folder; give a path")?;
+        return Ok(folder.join(file_name));
+    };
+    let path = match asked.strip_prefix("~/") {
+        Some(rest) => home.ok_or("could not find the home folder")?.join(rest),
+        None => PathBuf::from(asked),
+    };
+    if !path.is_absolute() {
+        return Err(format!("give a full path, not \"{asked}\""));
+    }
+    if path.is_dir() {
+        return Ok(path.join(file_name));
+    }
+    if !path
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("stl"))
+    {
+        return Err(format!("the file must end in .stl: {}", path.display()));
+    }
+    if !path.parent().is_some_and(Path::is_dir) {
+        return Err(format!("there is no folder for {}", path.display()));
+    }
+    Ok(path)
+}
+
+/// Writes the file, replacing only a plain file and only when `overwrite`.
+/// Never follows a link: a link named .stl could point anywhere.
+fn write_new_stl(path: &Path, bytes: &[u8], overwrite: bool) -> Result<(), String> {
+    use std::io::Write;
+    let shown = path.display();
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true);
+    match std::fs::symlink_metadata(path) {
+        Ok(existing) if !existing.is_file() => {
+            return Err(format!("{shown} is there and is not a plain file"));
+        }
+        Ok(_) if overwrite => options.truncate(true),
+        // A file appearing meanwhile, or a link, makes this fail.
+        _ => options.create_new(true),
+    };
+    let mut file = options.open(path).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::AlreadyExists {
+            format!("{shown} is already there; pass overwrite: true to replace it, or another path")
+        } else {
+            format!("could not save {shown}: {error}")
+        }
+    })?;
+    file.write_all(bytes)
+        .map_err(|error| format!("could not save {shown}: {error}"))
+}
+
+fn save_cartridge_stl(arguments: &Value) -> Result<Answer, String> {
+    let catalog = Catalog::builtin();
+    let caliber = find_caliber(catalog, arguments)?;
+    let cut_name = arguments["cut_name"].as_bool() != Some(false);
+    let print = ballistics_store::print::print(caliber, cut_name.then_some(ENGRAVING_FONT))
+        .ok_or_else(|| format!("{} has no cartridge model", caliber.name))?;
+    let path = stl_path(arguments, &Print::file_name(caliber))?;
+    write_new_stl(
+        &path,
+        &print.stl,
+        arguments["overwrite"].as_bool() == Some(true),
+    )?;
+    let name = match (&print.name, cut_name) {
+        (Some(name), _) => format!(" The name \"{name}\" is cut 0.4 mm deep into its side."),
+        (None, true) => " The name is too long to cut into this case, so it has none.".into(),
+        (None, false) => String::new(),
+    };
+    Ok(Answer {
+        text: format!(
+            "Saved the {} cartridge to {} ({} KB): millimetres, standing on its head, the largest the standard allows.{name}",
+            caliber.name,
+            path.display(),
+            print.stl.len().div_ceil(1024)
+        ),
+        data: Some(json!({
+            "path": path.display().to_string(),
+            "bytes": print.stl.len(),
+            "name_cut": print.name,
+        })),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -950,15 +1348,25 @@ mod tests {
     #[test]
     fn every_listed_tool_runs() {
         let store = demo();
+        let stl =
+            std::env::temp_dir().join(format!("mxsc-mcp-every-tool-{}.stl", std::process::id()));
         for tool in list().as_array().unwrap() {
             let name = tool["name"].as_str().unwrap();
             let arguments = match name {
                 "holdover" => json!({"rifle": "x-bolt", "range_m": 200}),
                 "dope_table" => json!({"rifle": "x-bolt"}),
+                "caliber" => json!({"caliber": ".308 win"}),
+                "popular_calibers" => json!({"use": "hunting_europe"}),
+                "save_cartridge_stl" => json!({
+                    "caliber": "223 rem",
+                    "path": stl,
+                    "overwrite": true,
+                }),
                 _ => json!({}),
             };
             call(&store, name, &arguments).unwrap_or_else(|error| panic!("{name}: {error}"));
         }
+        std::fs::remove_file(&stl).unwrap();
     }
 
     #[test]
@@ -1104,5 +1512,121 @@ mod tests {
         })
         .unwrap();
         assert_eq!(fox.name, "Red fox");
+    }
+
+    #[test]
+    fn a_caliber_with_its_cartridge_and_grades() {
+        let store = demo();
+        let answer = call(&store, "caliber", &json!({"caliber": "6,5x55"})).unwrap();
+        assert!(answer.text.starts_with("6.5×55 SE"), "{}", answer.text);
+        let data = answer.data.unwrap();
+        assert_eq!(data["cartridge"]["kind"], "rimless");
+        assert!(data["cartridge"]["maximum_mm"]["L6"].as_f64().unwrap() > 70.0);
+        assert_eq!(data["popularity"]["hunting_nordic"], 5);
+        assert!(data["factory_loads"].as_u64().unwrap() > 10);
+        // A loose name that fits several says so.
+        let error = call(&store, "caliber", &json!({"caliber": "308"}))
+            .err()
+            .unwrap();
+        assert!(error.contains("several"), "{error}");
+        let belted = call(&store, "caliber", &json!({"caliber": "300 win mag"})).unwrap();
+        assert!(belted.text.contains("belt (R3)"), "{}", belted.text);
+        for (name, kind) in [
+            (".220 Swift", "semi-rimmed"),
+            (".444 Marlin", "rimmed"),
+            (".30-30 Win", "rimmed"),
+            (".22 LR", "rimfire"),
+            (".416 Hellfire", "rimless"),
+        ] {
+            let data = call(&store, "caliber", &json!({ "caliber": name }))
+                .unwrap()
+                .data
+                .unwrap();
+            assert_eq!(data["cartridge"]["kind"], kind, "{name}");
+        }
+    }
+
+    #[test]
+    fn the_most_popular_calibers() {
+        let store = demo();
+        let answer = call(
+            &store,
+            "popular_calibers",
+            &json!({"use": "hunting_europe", "count": 5}),
+        )
+        .unwrap();
+        let calibers = answer.data.unwrap()["calibers"].as_array().unwrap().clone();
+        assert_eq!(calibers.len(), 5);
+        assert_eq!(calibers[0]["name"], ".308 Win");
+        assert!(
+            answer.text.contains("1. .308 Win: grade 5"),
+            "{}",
+            answer.text
+        );
+        assert!(call(&store, "popular_calibers", &json!({"use": "darts"})).is_err());
+        for count in [json!(0), json!(-3), json!("5"), json!(2.5)] {
+            let arguments = json!({"use": "f_class", "count": count});
+            assert!(
+                call(&store, "popular_calibers", &arguments).is_err(),
+                "{count}"
+            );
+        }
+        let one = text(
+            &store,
+            "popular_calibers",
+            json!({"use": "f_class", "count": 1}),
+        );
+        assert!(
+            one.starts_with("The most popular caliber for F-class"),
+            "{one}"
+        );
+    }
+
+    #[test]
+    fn a_cartridge_is_saved_only_where_it_may_be() {
+        let store = demo();
+        let folder = std::env::temp_dir().join(format!("mxsc-mcp-stl-{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        let save = |arguments: Value| call(&store, "save_cartridge_stl", &arguments);
+
+        // A folder gets the caliber's file name; the name is cut in.
+        let answer = save(json!({"caliber": ".308 win", "path": folder})).unwrap();
+        let file = folder.join("308-win-cartridge.stl");
+        assert_eq!(answer.data.unwrap()["name_cut"], ".308 Win");
+        let bytes = std::fs::read(&file).unwrap();
+        let triangles = u32::from_le_bytes(bytes[80..84].try_into().unwrap()) as usize;
+        assert_eq!(bytes.len(), 84 + 50 * triangles);
+
+        // Never replaced unless asked, and only .stl files, at full paths.
+        assert!(save(json!({"caliber": ".308 win", "path": folder})).is_err());
+        let plain = save(
+            json!({"caliber": ".308 win", "path": file, "overwrite": true, "cut_name": false}),
+        )
+        .unwrap();
+        assert_eq!(plain.data.unwrap()["name_cut"], Value::Null);
+        assert!(std::fs::read(&file).unwrap().len() < bytes.len());
+        for path in [
+            folder.join("notes.txt").display().to_string(),
+            "dummy.stl".into(),
+            folder.join("missing/dummy.stl").display().to_string(),
+        ] {
+            assert!(
+                save(json!({"caliber": ".308 win", "path": path})).is_err(),
+                "{path}"
+            );
+        }
+        // Never through a link, which could point at any file.
+        #[cfg(unix)]
+        {
+            let link = folder.join("link.stl");
+            std::os::unix::fs::symlink(folder.join("elsewhere"), &link).unwrap();
+            for overwrite in [false, true] {
+                let arguments =
+                    json!({"caliber": ".308 win", "path": link, "overwrite": overwrite});
+                assert!(save(arguments).is_err());
+            }
+            assert!(!folder.join("elsewhere").exists());
+        }
+        std::fs::remove_dir_all(&folder).unwrap();
     }
 }

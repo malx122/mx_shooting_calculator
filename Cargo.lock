@@ -209,6 +209,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "ttf-parser",
  "uuid",
  "web-time",
 ]

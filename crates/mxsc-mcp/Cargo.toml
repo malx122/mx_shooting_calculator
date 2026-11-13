@@ -1,6 +1,6 @@
 [package]
 name = "mxsc-mcp"
-description = "MCP server for MX Shooting Calculator: lets an AI assistant read the hunter's rifles and bullets and compute holdovers with the app's own engine."
+description = "MCP server for MX Shooting Calculator: lets an AI assistant read the hunter's rifles and bullets, compute holdovers with the app's own engine, and look up calibers and their cartridges."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

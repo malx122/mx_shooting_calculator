@@ -5,7 +5,8 @@ Every caliber in `crates/ballistics-store/catalog/calibers.json` has a
 bullet catalog and the rifle editor, and saves it as an STL for 3D-printed
 dummies, to try magazines and feeding. The code is
 `crates/ballistics-store/src/cartridge.rs`; its doc comments define each
-field.
+field. The printed file is made in `print.rs` beside it, which the app and
+the MCP server (`save_cartridge_stl`) share.
 
 ![The drawing letters, dimensioned on the .308 Win model](cartridge-letters.svg)
 

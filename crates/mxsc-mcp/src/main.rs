@@ -1,6 +1,7 @@
 //! MCP server for MX Shooting Calculator: lets an AI assistant (LM Studio,
 //! Claude Desktop, Claude Code, Jan…) read the hunter's rifles and bullets
-//! and work out holdovers with the app's own ballistic engine.
+//! and work out holdovers with the app's own ballistic engine, look up
+//! calibers and their cartridges, and save a cartridge for 3D printing.
 //!
 //! The assistant starts this program and talks JSON-RPC to it over stdin
 //! and stdout, one message per line (MCP's stdio transport). It opens the
@@ -23,7 +24,9 @@ const INSTRUCTIONS: &str = "Tools for MX Shooting Calculator, the hunter's balli
     drift, energy or ethical range: they run the app's engine on the hunter's own rifles, \
     bullets and measured velocities, so never estimate those numbers yourself. Use the list \
     tools to find names. Ranges are metres, wind m/s, wind direction a clock face (3 = from \
-    the right).";
+    the right). Use `caliber` for a caliber's cartridge measurements and how common it is, \
+    `popular_calibers` for the most popular calibers for a kind of hunting or competition, \
+    and `save_cartridge_stl` to save a cartridge for a 3D-printed dummy.";
 
 fn main() {
     let store = match database_path().and_then(|path| {

@@ -13,6 +13,7 @@ pub mod deletions;
 pub mod drawings;
 pub mod model;
 pub mod optics;
+pub mod print;
 pub mod rules;
 pub mod schema;
 pub mod shots;
@@ -28,7 +29,7 @@ mod tests;
 use std::fmt;
 
 pub use cartridge::{Cartridge, Engraving, Material, Outline, Solid};
-pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind, Popularity};
+pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind, Popularity, Ranked};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Drawing, DrawingPart, HitZone, Ring, TrainingRings};
@@ -40,6 +41,7 @@ pub use model::{
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
+pub use print::Print;
 pub use rules::{Country, Load as RulesLoad, Rules};
 pub use shots::{
     AnimalSpot, GeoPoint, Outcome, ShooterPosition, Shot, ShotHold, ShotSolution, ShotWeather,

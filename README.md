@@ -602,11 +602,13 @@ can read (see [docs/watch.md](docs/watch.md)).
 `mxsc-mcp` lets an AI assistant answer questions with the app's own engine
 and your own rifles: "what's the holdover for my Tikka at 280 m, 4 m/s from
 the right?", "make me a dope card for the X-Bolt", "is my .243 load legal for
-roe deer?". It is an [MCP](https://modelcontextprotocol.io) server, so it
+roe deer?", "which are the 20 most popular hunting calibers in Europe?",
+"save a 6.5×55 dummy for my 3D printer". It is an [MCP](https://modelcontextprotocol.io) server, so it
 works with any assistant that supports MCP: LM Studio or Jan with a local
 model, Claude Desktop, Claude Code and others.
 
-The assistant gets these tools (read-only for now):
+The assistant gets these tools. None of them writes your data; only
+`save_cartridge_stl` writes anything, the STL file it is asked for:
 
 | Tool | What it does |
 |---|---|
@@ -614,6 +616,9 @@ The assistant gets these tools (read-only for now):
 | `holdover` | Elevation and windage to dial or hold at a range, in the scope's units and clicks, with drop, drift, velocity and energy; with a target, whether the shot is inside the ethical range and meets Swedish ammunition rules |
 | `dope_table` | The same over a span of ranges |
 | `search_catalog` | The bullet catalog |
+| `caliber` | A caliber: bullet diameter, twist, the cartridge's maximum measurements by the drawing letters with their tolerances ([docs/cartridges.md](docs/cartridges.md)), and how common it is for hunting and competition |
+| `popular_calibers` | The most popular calibers for a kind of hunting or competition, from the rough grades in [docs/caliber-popularity.md](docs/caliber-popularity.md) |
+| `save_cartridge_stl` | The cartridge as an STL for a 3D-printed dummy, the same file the app saves, with the name cut into the side unless asked not to. It goes to your Downloads folder (your home folder if there is none) unless the assistant gives a full path, and never replaces a file unless asked to |
 
 Names can be loose ("tikka", ".308", "rådjur"); when a name fits several
 records the tool says so instead of guessing. Without a bullet it takes the
@@ -1054,7 +1059,9 @@ at your option. This is the usual dual licence for Rust projects.
 - **The card fonts** in `crates/app/assets/fonts` (Barlow Condensed, Bebas
   Neue, Share Tech Mono, Black Ops One, from Google Fonts) are under the SIL
   Open Font License 1.1; each font's licence and copyright is next to it.
-  They are embedded in the PDFs the app makes, which the licence allows.
+  They are embedded in the PDFs the app makes, and Barlow Condensed Bold
+  in the app and `mxsc-mcp` for the name cut into a printed cartridge,
+  which the licence allows.
 - **The built-in catalog** (see [NOTICE](NOTICE)): bullet and scope figures
   are facts compiled from manufacturers' publications, each with its
   source. The reticle and animal drawings are the project's own: the

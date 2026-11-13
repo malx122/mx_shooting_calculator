@@ -63,6 +63,16 @@ impl Caliber {
                 words.iter().all(|word| name.contains(word.as_str()))
             })
     }
+
+    /// Whether the query is this caliber's key, name or an alias, ignoring
+    /// case and notation ("6.5x55 se" is 6.5×55 SE).
+    pub fn is_named(&self, query: &str) -> bool {
+        let query = normalise(query);
+        std::iter::once(&self.key)
+            .chain(std::iter::once(&self.name))
+            .chain(&self.aliases)
+            .any(|name| normalise(name) == query)
+    }
 }
 
 /// How common a caliber is, graded 1 (rare) to 5 (very common), for
@@ -115,6 +125,15 @@ impl Popularity {
         "rimfire",
         "nordic_field",
     ];
+}
+
+/// A caliber in a popularity list: its grade for the use, and how many
+/// factory loads the catalog has for it.
+#[derive(Clone, Copy, Debug)]
+pub struct Ranked<'a> {
+    pub caliber: &'a Caliber,
+    pub grade: u8,
+    pub factory_loads: usize,
 }
 
 fn normalise(text: &str) -> String {
@@ -336,6 +355,40 @@ impl Catalog {
 
     pub fn caliber(&self, key: &str) -> Option<&Caliber> {
         self.calibers.iter().find(|caliber| caliber.key == key)
+    }
+
+    /// The calibers graded for a use (one of [`Popularity::USES`]), most
+    /// popular first. Calibers with the same grade come in order of how many
+    /// factory loads the catalog has for them. None for an unknown use.
+    pub fn popular(&self, of: &str) -> Option<Vec<Ranked<'_>>> {
+        if !Popularity::USES.contains(&of) {
+            return None;
+        }
+        let mut loads: std::collections::HashMap<&str, usize> = Default::default();
+        for bullet in &self.bullets {
+            if bullet.kind == CatalogKind::Ammunition
+                && let Some(caliber) = &bullet.caliber
+            {
+                *loads.entry(caliber.as_str()).or_default() += 1;
+            }
+        }
+        let mut ranked: Vec<Ranked> = self
+            .calibers
+            .iter()
+            .filter_map(|caliber| {
+                Some(Ranked {
+                    grade: caliber.popularity?.grade(of)?,
+                    factory_loads: loads.get(caliber.key.as_str()).copied().unwrap_or(0),
+                    caliber,
+                })
+            })
+            .collect();
+        ranked.sort_by(|a, b| {
+            b.grade
+                .cmp(&a.grade)
+                .then(b.factory_loads.cmp(&a.factory_loads))
+        });
+        Some(ranked)
     }
 
     pub fn search_calibers(&self, query: &str) -> Vec<&Caliber> {

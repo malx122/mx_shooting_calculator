@@ -21,8 +21,9 @@ To list the most popular calibers for one use:
 cargo run -q -p ballistics-store --example popular -- hunting_europe 20
 ```
 
-Calibers with the same grade are listed by how many factory loads the
-catalog has for them.
+An AI assistant gets the same list from the MCP server's
+`popular_calibers` tool. Calibers with the same grade are listed by how many
+factory loads the catalog has for them.
 
 ## These are rough grades
 
