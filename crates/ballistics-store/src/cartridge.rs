@@ -301,13 +301,41 @@ impl Cartridge {
     /// millimetres, the axis along z, the head on z = 0. Each triangle's
     /// corners run anticlockwise seen from outside.
     pub fn solid(&self, slices: usize) -> Solid {
+        self.engraved_solid(slices, None)
+    }
+
+    /// The solid, with letters (or any mask) cut into the side of its body.
+    /// The engraving should lie on the body, where the outline is a
+    /// straight taper; it presses the surface in, so the solid stays closed.
+    pub fn engraved_solid(&self, slices: usize, engraving: Option<&Engraving>) -> Solid {
         assert!(slices >= 3, "a solid needs at least three sides");
+        if let Some(engraving) = engraving {
+            assert!(
+                engraving.cell.is_finite() && engraving.cell > 0.0,
+                "an engraving's cells have a size"
+            );
+            assert_eq!(engraving.cut.len(), engraving.rows * engraving.columns);
+        }
         let outline = self.outline();
         let mut points: Vec<[f64; 2]> = vec![outline.start];
         for (_, stretch) in &outline.stretches {
             for &point in stretch {
                 let last = *points.last().expect("starts with a point");
                 if (point[0] - last[0]).abs() > 1e-9 || (point[1] - last[1]).abs() > 1e-9 {
+                    // Under an engraving, a ring through the middle of every
+                    // column of cells, and an uncut one either side, so each
+                    // cut slopes in over one cell at most.
+                    if let Some(engraving) = engraving
+                        && point[0] > last[0]
+                    {
+                        for column in -1..=engraving.columns as i64 {
+                            let along = engraving.start + (column as f64 + 0.5) * engraving.cell;
+                            if along > last[0] + 1e-9 && along < point[0] - 1e-9 {
+                                let t = (along - last[0]) / (point[0] - last[0]);
+                                points.push([along, last[1] + t * (point[1] - last[1])]);
+                            }
+                        }
+                    }
                     points.push(point);
                 }
             }
@@ -324,7 +352,17 @@ impl Cartridge {
             } else {
                 for slice in 0..slices {
                     let angle = std::f64::consts::TAU * slice as f64 / slices as f64;
-                    vertices.push([radius * angle.cos(), radius * angle.sin(), along]);
+                    // Round the body from the engraving's middle line, in mm.
+                    let signed = if angle > std::f64::consts::PI {
+                        angle - std::f64::consts::TAU
+                    } else {
+                        angle
+                    };
+                    let cut = engraving
+                        .filter(|engraving| engraving.cuts(along, signed * radius))
+                        .map_or(0.0, |engraving| engraving.depth);
+                    let r = radius - cut;
+                    vertices.push([r * angle.cos(), r * angle.sin(), along]);
                 }
                 rings.push((first, slices as u32));
             }
@@ -351,6 +389,42 @@ impl Cartridge {
             vertices,
             triangles,
         }
+    }
+}
+
+/// Letters cut into the side of the case, for a printed copy: a mask of
+/// square cells laid on the body's surface, and how deep it cuts.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Engraving {
+    /// From the head to the mask's first column, mm.
+    pub start: f64,
+    /// A cell's side, mm, along the axis and round the body.
+    pub cell: f64,
+    /// Columns run along the axis from `start`; rows run round the body,
+    /// centred on one side (angle 0).
+    pub columns: usize,
+    pub rows: usize,
+    /// Row by row, the cells to cut.
+    pub cut: Vec<bool>,
+    pub depth: f64,
+}
+
+impl Engraving {
+    /// Where the mask ends along the axis.
+    pub fn end(&self) -> f64 {
+        self.start + self.columns as f64 * self.cell
+    }
+
+    /// Whether the point `along` the axis and `round` the body (mm of
+    /// surface from the middle line) is cut.
+    pub fn cuts(&self, along: f64, round: f64) -> bool {
+        let column = ((along - self.start) / self.cell).floor();
+        let row = ((round + self.rows as f64 * self.cell / 2.0) / self.cell).floor();
+        if column < 0.0 || row < 0.0 {
+            return false;
+        }
+        let (column, row) = (column as usize, row as usize);
+        column < self.columns && row < self.rows && self.cut[row * self.columns + column]
     }
 }
 
@@ -773,6 +847,89 @@ mod tests {
                 solid.triangles.len()
             );
         }
+    }
+
+    #[test]
+    fn an_engraving_cuts_into_the_body_and_keeps_the_solid_closed() {
+        let cartridge = Catalog::builtin()
+            .caliber("308-win")
+            .unwrap()
+            .cartridge
+            .clone()
+            .unwrap();
+        // A 20 × 4 mm block in stripes 7 columns (1.05 mm) wide, every
+        // other one cut; awkward numbers, so a column misread by rounding
+        // would show.
+        let cell = 0.15;
+        let (columns, rows) = (133, 27);
+        let stripe = |column: usize| (column / 7).is_multiple_of(2);
+        let cut = (0..rows * columns).map(|i| stripe(i % columns)).collect();
+        let engraving = Engraving {
+            start: 10.037,
+            cell,
+            columns,
+            rows,
+            cut,
+            depth: 0.4,
+        };
+        let plain = cartridge.solid(360);
+        let engraved = cartridge.engraved_solid(360, Some(&engraving));
+        // Each ring under the mask is cut exactly when its column is, on the
+        // middle line (angle 0); and the rings just outside it are not.
+        let body = |z: f64| (11.96 + (11.53 - 11.96) * (z - 3.85) / (39.62 - 3.85)) / 2.0;
+        let mut rings = 0;
+        for v in engraved
+            .vertices
+            .iter()
+            .filter(|v| v[1].abs() < 1e-9 && v[0] > 0.0)
+        {
+            let along = (v[2] - engraving.start) / cell - 0.5;
+            if (along - along.round()).abs() > 1e-6 || along < -1.5 || along > columns as f64 + 0.5
+            {
+                continue;
+            }
+            rings += 1;
+            let column = along.round() as i64;
+            let cut = (0..columns as i64).contains(&column) && stripe(column as usize);
+            let depth = body(v[2]) - v[0];
+            assert!(
+                (depth - if cut { 0.4 } else { 0.0 }).abs() < 1e-6,
+                "column {column}: {depth}"
+            );
+        }
+        assert_eq!(rings, columns + 2);
+        let mut edges = std::collections::HashMap::new();
+        for t in &engraved.triangles {
+            for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
+                *edges.entry((a, b)).or_insert(0) += 1;
+            }
+        }
+        assert!(
+            edges
+                .iter()
+                .all(|(&(a, b), &n)| n == 1 && edges.get(&(b, a)) == Some(&1)),
+            "closed"
+        );
+        // About half the 20 × 4 mm patch, 0.4 mm deep, is gone (the cuts'
+        // sloping sides add a little).
+        let removed = plain.volume() - engraved.volume();
+        let half = 0.5 * 20.0 * 4.0 * 0.4;
+        assert!(removed > half * 0.9 && removed < half * 1.3, "{removed}");
+        // Nothing sticks out, and away from the patch nothing changed.
+        let widest = |s: &Solid| {
+            s.vertices
+                .iter()
+                .map(|v| v[0].hypot(v[1]))
+                .fold(0.0, f64::max)
+        };
+        assert!(widest(&engraved) <= widest(&plain) + 1e-9);
+        let far = engraved
+            .vertices
+            .iter()
+            .filter(|v| v[2] > 31.0 && v[2] < 39.0)
+            .map(|v| v[0].hypot(v[1]))
+            .fold(f64::MAX, f64::min);
+        assert!(far > 5.7, "{far}");
     }
 
     #[test]

@@ -27,7 +27,7 @@ mod tests;
 
 use std::fmt;
 
-pub use cartridge::{Cartridge, Material, Outline, Solid};
+pub use cartridge::{Cartridge, Engraving, Material, Outline, Solid};
 pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};

@@ -46,6 +46,8 @@ pub struct BulletsPage {
     /// How saving a caliber's cartridge for printing went: the caliber,
     /// the message and whether it failed.
     printed: Option<(String, String, bool)>,
+    /// Cut the caliber's name into the printed case.
+    engrave: bool,
 }
 
 impl Default for BulletsPage {
@@ -63,6 +65,7 @@ impl Default for BulletsPage {
             lead_free_only: false,
             levels: HashMap::new(),
             printed: None,
+            engrave: true,
         }
     }
 }
@@ -373,9 +376,11 @@ impl BulletsPage {
                         .on_hover_text(tr("The case as large as its drawing allows, in millimetres, standing on its head: to try magazines and feeding"))
                         .clicked()
                     {
-                        let (message, failed) = crate::cartridge3d::save_stl(caliber);
+                        let (message, failed) = crate::cartridge3d::save_stl(caliber, self.engrave);
                         self.printed = Some((caliber.key.clone(), message, failed));
                     }
+                    ui.checkbox(&mut self.engrave, tr("Cut the caliber's name into the side"))
+                        .on_hover_text(tr("0.4 mm deep along the case's body, so printed dummies of similar calibers can be told apart"));
                     if let Some((key, message, failed)) = &self.printed
                         && *key == caliber.key
                     {

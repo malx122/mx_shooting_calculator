@@ -2,7 +2,7 @@
 //! turned round its axis and shaded as brass, copper and the primer, with a
 //! millimetre ruler beside it. Drag to turn it; double-click to put it back.
 
-use ballistics_store::{Caliber, Cartridge, Material};
+use ballistics_store::{Caliber, Cartridge, Engraving, Material};
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, vec2};
 
 use crate::i18n::{tr, trf};
@@ -75,17 +75,50 @@ pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, size: egui::Vec2) {
 /// most 1 µm inside its circle.
 const PRINT_SLICES: usize = 256;
 
+/// The name cut into the printed case: how deep, the mask's cell, the
+/// letters' height against the body's diameter, and the limits on it.
+const ENGRAVING_DEPTH: f64 = 0.4;
+const ENGRAVING_CELL: f64 = 0.15;
+const LETTERS_PER_DIAMETER: f64 = 0.32;
+const LETTERS_MOST: f64 = 4.5;
+const LETTERS_LEAST: f64 = 1.5;
+
 /// Saves the caliber's cartridge as an STL file for printing: a save dialog
-/// on the desktop, a download in the browser. Returns the message to show
-/// and whether it failed.
-pub fn save_stl(caliber: &Caliber) -> (String, bool) {
+/// on the desktop, a download in the browser, with the caliber's name cut
+/// into the side when `engrave`. Returns the message to show and whether it
+/// failed.
+pub fn save_stl(caliber: &Caliber, engrave: bool) -> (String, bool) {
     let Some(cartridge) = &caliber.cartridge else {
         return (String::new(), true);
     };
-    let bytes = cartridge.solid(PRINT_SLICES).stl(&format!(
-        "{} cartridge, mm, MX Shooting Calculator",
-        caliber.name
-    ));
+    let engraving = engrave.then(|| caliber_engraving(caliber)).flatten();
+    let slices = match &engraving {
+        // Fine enough round the body for the letters.
+        Some(_) => {
+            let widest = cartridge
+                .case
+                .rim_diameter
+                .max(cartridge.case.body_diameter)
+                / 2.0;
+            PRINT_SLICES.max((std::f64::consts::TAU * widest / ENGRAVING_CELL).ceil() as usize)
+        }
+        None => PRINT_SLICES,
+    };
+    let bytes = cartridge
+        .engraved_solid(slices, engraving.as_ref())
+        .stl(&format!(
+            "{} cartridge, mm, MX Shooting Calculator",
+            caliber.name
+        ));
+    let (message, failed) = write_stl(caliber, &bytes);
+    if engrave && engraving.is_none() && !failed && message != tr("Not saved") {
+        let note = tr("The name is too long to cut into this case.");
+        return (format!("{message}. {note}"), failed);
+    }
+    (message, failed)
+}
+
+fn write_stl(caliber: &Caliber, bytes: &[u8]) -> (String, bool) {
     let file = format!("{}-cartridge.stl", caliber.key);
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -103,7 +136,7 @@ pub fn save_stl(caliber: &Caliber) -> (String, bool) {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        match crate::web::download_bytes(&file, &bytes, "model/stl") {
+        match crate::web::download_bytes(&file, bytes, "model/stl") {
             Ok(()) => (trf!("Saved {} in your downloads", file), false),
             Err(error) => (error, true),
         }
@@ -127,6 +160,212 @@ struct Scene {
     labels: Vec<(Pos2, String)>,
     /// Paint the ruler before the cartridge: it is behind it.
     ruler_behind: bool,
+}
+
+/// The caliber's name cut into its case, or failing that its longest
+/// other name that fits ("5mm RRM" for 5mm Remington Rimfire Magnum).
+fn caliber_engraving(caliber: &Caliber) -> Option<Engraving> {
+    let cartridge = caliber.cartridge.as_ref()?;
+    let mut aliases: Vec<&String> = caliber.aliases.iter().collect();
+    aliases.sort_by_key(|alias| std::cmp::Reverse(alias.chars().count()));
+    std::iter::once(&caliber.name)
+        .chain(aliases)
+        .find_map(|name| name_engraving(cartridge, name))
+}
+
+/// A name to cut into the side of the case, for the printed copy: along
+/// the body from the head (reading towards the tip), as tall as fits. None
+/// when the case is too small for it.
+fn name_engraving(cartridge: &Cartridge, name: &str) -> Option<Engraving> {
+    let case = &cartridge.case;
+    let start = case.body_start + 1.5;
+    let (end, narrowest) = match &case.shoulder {
+        // Short of where the shoulder's rounding begins.
+        Some(shoulder) => {
+            let reach = ballistics_store::cartridge::rounding_reach(
+                [case.body_start, case.body_diameter / 2.0],
+                [shoulder.start, shoulder.diameter / 2.0],
+                [shoulder.neck_start, shoulder.neck_diameter / 2.0],
+                shoulder.radius,
+            );
+            (shoulder.start - reach - 1.0, shoulder.diameter)
+        }
+        None => (case.length - 1.0, case.mouth_diameter),
+    };
+    let room = end - start;
+    let face =
+        ttf_parser::Face::parse(crate::cards::fonts::Font::BarlowCondensedBold.file()?, 0).ok()?;
+    let units_per_cap = f64::from(face.capital_height().unwrap_or(face.ascender()));
+    let glyphs: Vec<_> = name
+        .chars()
+        .filter_map(|c| {
+            face.glyph_index(c)
+                .or_else(|| face.glyph_index(if c == '×' { 'x' } else { '?' }))
+        })
+        .collect();
+    let advance: f64 = glyphs
+        .iter()
+        .map(|&glyph| f64::from(face.glyph_hor_advance(glyph).unwrap_or(0)))
+        .sum();
+    let mut height = (LETTERS_PER_DIAMETER * narrowest).min(LETTERS_MOST);
+    if advance / units_per_cap * height > room {
+        height = room * units_per_cap / advance;
+    }
+    if height < LETTERS_LEAST || room <= 0.0 {
+        return None;
+    }
+    let scale = height / units_per_cap;
+    let width = advance * scale;
+
+    // The letters' outlines, in mm: x along the text, y up from its baseline.
+    let mut pen = Pen {
+        contours: Vec::new(),
+        scale,
+        x: 0.0,
+    };
+    for &glyph in &glyphs {
+        face.outline_glyph(glyph, &mut pen);
+        pen.x += f64::from(face.glyph_hor_advance(glyph).unwrap_or(0)) * scale;
+    }
+
+    // Round the body the letters' "up" is the turning direction's opposite,
+    // so they read the right way round from outside, tip up; centred on
+    // their capitals.
+    let low = f64::from(face.descender()) * scale;
+    let high = f64::from(face.ascender()) * scale;
+    let half = (high - height / 2.0).max(height / 2.0 - low);
+    let cell = ENGRAVING_CELL;
+    let rows = (2.0 * half / cell).ceil() as usize;
+    let columns = (width / cell).ceil() as usize;
+    let text_start = start + (room - width) / 2.0;
+    let contours: Vec<([f64; 4], Vec<[f64; 2]>)> = pen
+        .contours
+        .into_iter()
+        .filter(|contour| contour.len() > 2)
+        .map(|contour| {
+            let bounds = contour
+                .iter()
+                .fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |b, p| {
+                    [
+                        b[0].min(p[0]),
+                        b[1].min(p[1]),
+                        b[2].max(p[0]),
+                        b[3].max(p[1]),
+                    ]
+                });
+            (bounds, contour)
+        })
+        .collect();
+    let mut cut = Vec::with_capacity(rows * columns);
+    for row in 0..rows {
+        let round = -(rows as f64) * cell / 2.0 + (row as f64 + 0.5) * cell;
+        for column in 0..columns {
+            let x = (column as f64 + 0.5) * cell;
+            let y = height / 2.0 - round;
+            cut.push(winding(&contours, x, y) != 0);
+        }
+    }
+    Some(Engraving {
+        start: text_start,
+        cell,
+        columns,
+        rows,
+        cut,
+        depth: ENGRAVING_DEPTH,
+    })
+}
+
+/// Collects a glyph's outline as closed polygons, its curves cut into short
+/// straight pieces.
+struct Pen {
+    contours: Vec<Vec<[f64; 2]>>,
+    scale: f64,
+    x: f64,
+}
+
+impl Pen {
+    fn at(&self, x: f32, y: f32) -> [f64; 2] {
+        [
+            self.x + f64::from(x) * self.scale,
+            f64::from(y) * self.scale,
+        ]
+    }
+
+    fn last(&self) -> [f64; 2] {
+        *self
+            .contours
+            .last()
+            .and_then(|c| c.last())
+            .unwrap_or(&[0.0, 0.0])
+    }
+
+    fn push(&mut self, point: [f64; 2]) {
+        if let Some(contour) = self.contours.last_mut() {
+            contour.push(point);
+        }
+    }
+}
+
+impl ttf_parser::OutlineBuilder for Pen {
+    fn move_to(&mut self, x: f32, y: f32) {
+        let point = self.at(x, y);
+        self.contours.push(vec![point]);
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        let point = self.at(x, y);
+        self.push(point);
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        let (p0, p1, p2) = (self.last(), self.at(x1, y1), self.at(x, y));
+        for i in 1..=8 {
+            let t = f64::from(i) / 8.0;
+            let u = 1.0 - t;
+            self.push([
+                u * u * p0[0] + 2.0 * u * t * p1[0] + t * t * p2[0],
+                u * u * p0[1] + 2.0 * u * t * p1[1] + t * t * p2[1],
+            ]);
+        }
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        let (p0, p1, p2, p3) = (self.last(), self.at(x1, y1), self.at(x2, y2), self.at(x, y));
+        for i in 1..=10 {
+            let t = f64::from(i) / 10.0;
+            let u = 1.0 - t;
+            let (a, b, c, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
+            self.push([
+                a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0],
+                a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1],
+            ]);
+        }
+    }
+
+    fn close(&mut self) {}
+}
+
+/// How many times the outlines wind round the point: inside a letter when
+/// not zero.
+fn winding(contours: &[([f64; 4], Vec<[f64; 2]>)], x: f64, y: f64) -> i32 {
+    let mut winding = 0;
+    for (bounds, contour) in contours {
+        // Only an outline round the point can wind round it.
+        if x < bounds[0] || x > bounds[2] || y < bounds[1] || y > bounds[3] {
+            continue;
+        }
+        for (i, a) in contour.iter().enumerate() {
+            let b = contour[(i + 1) % contour.len()];
+            if a[1] <= y {
+                if b[1] > y && (b[0] - a[0]) * (y - a[1]) - (x - a[0]) * (b[1] - a[1]) > 0.0 {
+                    winding += 1;
+                }
+            } else if b[1] <= y && (b[0] - a[0]) * (y - a[1]) - (x - a[0]) * (b[1] - a[1]) < 0.0 {
+                winding -= 1;
+            }
+        }
+    }
+    winding
 }
 
 /// A point turned into the view: x right, y up, z towards the viewer.
@@ -334,6 +573,43 @@ mod tests {
     use super::*;
     use ballistics_store::Catalog;
     use eframe::egui::pos2;
+
+    #[test]
+    fn every_caliber_gets_its_name_cut_into_its_body() {
+        for caliber in &Catalog::builtin().calibers {
+            let Some(cartridge) = &caliber.cartridge else {
+                continue;
+            };
+            let engraving = caliber_engraving(caliber)
+                .unwrap_or_else(|| panic!("{}: no name fits", caliber.name));
+            assert!(engraving.cut.iter().any(|&cut| cut), "{}", caliber.name);
+            // On the body: past where it starts, short of the shoulder.
+            assert!(
+                engraving.start > cartridge.case.body_start,
+                "{}",
+                caliber.name
+            );
+            let end = cartridge
+                .case
+                .shoulder
+                .as_ref()
+                .map_or(cartridge.case.length, |shoulder| shoulder.start);
+            assert!(engraving.end() < end, "{}", caliber.name);
+        }
+        // The letters read the right way: the period of ".308 Win" sits on
+        // the baseline, which is on the far side of the turning direction.
+        let caliber = Catalog::builtin().caliber("308-win").unwrap();
+        let e = caliber_engraving(caliber).unwrap();
+        let cut = |row: usize, column: usize| e.cut[row * e.columns + column];
+        let first = (0..e.columns)
+            .find(|&c| (0..e.rows).any(|r| cut(r, c)))
+            .unwrap();
+        let rows: Vec<usize> = (0..e.rows).filter(|&r| cut(r, first)).collect();
+        assert!(
+            rows.iter().all(|&r| r > e.rows / 2),
+            "the period is on the baseline: {rows:?}"
+        );
+    }
 
     #[test]
     fn the_cartridge_fills_its_rect_and_shows_only_faces_towards_the_viewer() {

@@ -80,6 +80,23 @@ roundings r1 and r2 cut the corners.
 - **Body start:** E and P1 are where the groove's bevel meets the tapered
   body.
 
+## The printed copy
+
+**Save for 3D printing (STL)** writes the cartridge in millimetres, standing
+on its head, as one closed solid. With **Cut the caliber's name into the
+side**, the name is cut 0.4 mm deep into the body:
+
+- **Where:** along the body, from 1.5 mm past E to 1 mm short of the
+  shoulder's rounding (or of the mouth on a straight case).
+- **How it reads:** towards the tip, the right way round from outside.
+- **Size:** about a third of the body's diameter tall, at most 4.5 mm, and
+  smaller when the name is long.
+- **Long names:** when the name won't fit at 1.5 mm, the caliber's longest
+  alias that fits is used instead.
+
+The letters press the body's surface in, so they can't change how a dummy
+fits a magazine.
+
 ## Tolerances
 
 `tolerances` keeps the tolerances the drawing prints, by its letters:
