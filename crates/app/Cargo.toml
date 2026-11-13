@@ -57,6 +57,7 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = [
     "Blob",
+    "console",
     "BlobPropertyBag",
     "BroadcastChannel",
     "DeviceOrientationEvent",
@@ -75,9 +76,14 @@ web-sys = { version = "0.3", features = [
     "Url",
     "Window",
 ] }
-# SQLite's storage in the browser: IndexedDB.
-sqlite-wasm-rs = "0.5"
-sqlite-wasm-vfs = "0.2"
+# SQLite's storage in the browser: IndexedDB, through the relaxed-idb VFS
+# (src/relaxed_idb.rs, from sqlite-wasm-vfs 0.2) and what it needs.
+# sqlite-wasm-rs is the one rusqlite uses; "wasm-bindgen" gives SQLite the
+# browser's clock and randomness.
+sqlite-wasm-rs = { version = "0.6.3", features = ["wasm-bindgen"] }
+indexed_db_futures = "0.6.4"
+thiserror = "2"
+tokio = { version = "1", default-features = false, features = ["sync"] }
 # WebGL as well as WebGPU, for browsers without WebGPU.
 wgpu = { version = "30", default-features = false, features = ["webgl", "webgpu", "wgsl"] }
 
@@ -85,6 +91,10 @@ wgpu = { version = "30", default-features = false, features = ["webgl", "webgpu"
 serde_json = "1"
 # The icons example writes the desktop packages' icons.
 png = "0.18"
+
+# The relaxed-idb VFS's tests, run in a browser (wasm-bindgen-test).
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
 
 # The desktop's system font fallback, to check the symbols the app shows.
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

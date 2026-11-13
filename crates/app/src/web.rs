@@ -142,7 +142,7 @@ pub fn listen_for_google(session: &str, pick_up: &crate::google::PickUp) -> Opti
 /// a copy in memory that is written back to IndexedDB in the background
 /// after each change.
 async fn open_store() -> Result<Store, String> {
-    use sqlite_wasm_vfs::relaxed_idb::{RelaxedIdbCfg, install};
+    use crate::relaxed_idb::{RelaxedIdbCfg, install};
     if !hold_database_lock().await {
         return Err(tr(
             "The app is already open in another tab or window. Use that one, or close it and \

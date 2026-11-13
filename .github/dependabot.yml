@@ -17,12 +17,10 @@ updates:
       rust:
         update-types: [minor, patch]
     ignore:
-      # 0.6/0.3 drop the IndexedDB storage the web app keeps its data in
-      # (only OPFS in a worker is left): moving to it means carrying every
-      # browser's data across, a change of its own, not an update.
+      # The web app's IndexedDB storage (crates/app/src/relaxed_idb.rs) is
+      # written against this version's VFS API, and it must be the one
+      # rusqlite uses: it moves with rusqlite, by hand, not on its own.
       - dependency-name: sqlite-wasm-rs
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-      - dependency-name: sqlite-wasm-vfs
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: cargo

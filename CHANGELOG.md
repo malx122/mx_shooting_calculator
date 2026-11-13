@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Security
+
+- **SQLite 3.54.1** in the desktop and web apps, for a flaw in older
+  versions (CVE-2026-119375) that a crafted database file could use to read
+  stale memory. The app only ever opens its own database, so it wasn't
+  exposed, but it now runs the fixed version. The web app keeps its data in
+  the browser exactly as before; nothing moves.
+
 ## [0.10.0] - 2026-11-13
 
 ### Added

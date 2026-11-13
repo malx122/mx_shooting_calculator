@@ -1039,8 +1039,8 @@ at your option. This is the usual dual licence for Rust projects.
 
 - **Third-party libraries** are listed with their licences in
   [THIRD-PARTY-LICENSES.txt](THIRD-PARTY-LICENSES.txt). Ship that file with
-  any binary. All of them are permissive except `resvg`/`usvg` and
-  `option-ext` (MPL-2.0: changes to those files must be shared) and the
+  any binary. All of them are permissive except `option-ext` (MPL-2.0:
+  changes to its files must be shared) and the
   fonts egui bundles (SIL Open Font License and Ubuntu Font Licence). The
   desktop app's list of trusted certificate authorities (`webpki-roots`) is
   under CDLA-Permissive-2.0, which only asks that its licence text comes

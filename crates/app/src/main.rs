@@ -19,6 +19,8 @@ mod import;
 mod loads;
 mod mobile;
 mod number_field;
+#[cfg(target_arch = "wasm32")]
+mod relaxed_idb;
 mod rifles;
 mod sensors;
 mod shot_log;

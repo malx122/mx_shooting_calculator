@@ -19,13 +19,6 @@ ignore = [
     # ttf-parser: unmaintained, no known flaw. The cards use it to measure
     # the fonts built into the app, never a file from outside.
     { id = "RUSTSEC-2026-0192", reason = "reads only the cards' own embedded fonts" },
-    # libsqlite3-sys (bundled SQLite before 3.54.0): only a process that
-    # opens a database file, with its -wal, written by a less trusted party
-    # is exposed. The app opens only its own database (or one the user names
-    # with --db); backups, sync copies and imports are JSON or XML. The fix
-    # needs rusqlite 0.42, whose web build drops the IndexedDB storage the
-    # web app keeps its data in, so it waits for that move.
-    { id = "RUSTSEC-2026-0459", reason = "opens only the app's own database file" },
 ]
 
 [licenses]

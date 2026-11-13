@@ -14,6 +14,11 @@ The app is built with open-source libraries under their own licences,
 listed with their full texts in THIRD-PARTY-LICENSES.txt. Include that file
 with any binary you distribute.
 
+The web build's IndexedDB storage, crates/app/src/relaxed_idb.rs, is adapted
+from sqlite-wasm-vfs 0.2.0 (Copyright (c) 2024 Spxg, MIT License); its
+notice is at the top of that file, and the same notice comes with
+sqlite-wasm-rs in THIRD-PARTY-LICENSES.txt.
+
 Built-in catalog data
 ---------------------
 The files in crates/ballistics-store/catalog/ hold calibers, bullets,
