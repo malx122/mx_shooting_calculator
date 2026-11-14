@@ -32,7 +32,7 @@ pub use cartridge::{Cartridge, Engraving, Material, Outline, Solid};
 pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind, Popularity, Ranked};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
-pub use drawings::{Drawing, DrawingPart, HitZone, Ring, TrainingRings};
+pub use drawings::{Body, Drawing, DrawingPart, HitZone, Placement, Ring, TrainingRings};
 pub use model::{
     BcBand, BcModel, Bullet, BulletKind, ClickUnit, Construction, DataAttribution, DragPoint,
     LoadZero, Rifle, RifleLoad, ShotStats, TableColumns, TableSettings, Truing, TruingMethod,

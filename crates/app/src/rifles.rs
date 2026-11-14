@@ -176,6 +176,7 @@ impl RiflesPage {
             });
         egui::CentralPanel::default().show(ui, |ui| {
             let cancel = egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
                 .show(ui, |ui| self.editor(ui, data, &mut actions))
                 .inner;
             if cancel {

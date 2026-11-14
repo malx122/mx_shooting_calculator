@@ -22,7 +22,7 @@ sqlite-wasm-rs in THIRD-PARTY-LICENSES.txt.
 Built-in catalog data
 ---------------------
 The files in crates/ballistics-store/catalog/ hold calibers, bullets,
-scopes, reticles, targets and animal drawings.
+scopes, reticles, targets, animal drawings and 3D bodies.
 
 The separately licensed ChamberSim collection described below is an exception
 to the descriptions of this project's independently compiled data.
@@ -42,6 +42,10 @@ to the descriptions of this project's independently compiled data.
     rights to it lie with the project under Recraft's paid-plan terms. The
     moose's hit area and rings follow Svenska Jägareförbundet's moose figure
     and the ring sizes in its rulebook (2025–28).
+  * The animals' 3D bodies (bodies.json) were generated with Meshy
+    (meshy.ai) on a Pro plan and fitted and coloured by the project's
+    scripts (tools/bodies/); the rights to them lie with the project under
+    Meshy's paid-plan terms.
   * ISSF target dimensions follow the ISSF rules. The game guideline values
     (vital zones, minimum energies, sizes) are the project's own estimates;
     the Swedish ammunition classes summarise Naturvårdsverket's rules

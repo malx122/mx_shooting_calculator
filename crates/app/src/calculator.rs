@@ -708,6 +708,7 @@ impl CalculatorPage {
                 };
                 let results = self.with_results(context, &shot, |view, solution, optimal| {
                     egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
                         .show(ui, |ui| view.show(ui, solution, optimal))
                         .inner
                 });

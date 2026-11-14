@@ -1,10 +1,13 @@
 //! The view through the scope: the reticle at the chosen magnification, the
 //! point where the bullet lands with the crosshair on the target, and the
-//! target with its vital zone at true size. Everything is drawn as vectors.
+//! target with its vital zone at true size. Everything is drawn as vectors;
+//! an animal with a 3D body is drawn as that body from the side, its hit area
+//! showing through it.
 
 use ballistics_store::{FocalPlane, Reticle, ReticleElement, Scope};
 use eframe::egui::{self, Color32, Pos2, Shape, Stroke, pos2, vec2};
 
+use crate::body3d;
 use crate::figure::Figure;
 use crate::i18n::{tr, trf};
 use crate::theme;
@@ -59,7 +62,13 @@ impl SightPicture<'_> {
             ])
         };
         if let Some(figure) = self.figure {
-            let feet = at([0.0, -figure.aim_height]).y;
+            // A body stands on its own hooves, which can be above the
+            // drawing's.
+            let aim_height = figure
+                .body
+                .as_ref()
+                .map_or(figure.aim_height, |body| -body.ground());
+            let feet = at([0.0, -aim_height]).y;
             if feet < eyepiece.rect.bottom() {
                 eyepiece.painter.rect_filled(
                     egui::Rect::from_min_max(
@@ -69,9 +78,26 @@ impl SightPicture<'_> {
                     0.0,
                     FIELD,
                 );
-                self.draw_ground_grid(&eyepiece, figure.aim_height);
+                self.draw_ground_grid(&eyepiece, aim_height);
             }
-            for part in &figure.parts {
+            let mut parts = &figure.parts[..];
+            if let Some(body) = &figure.body {
+                // Broadside, as the drawing; at shooting ranges the view
+                // through it is as good as parallel.
+                let corners: Vec<[f32; 3]> = body
+                    .body
+                    .vertices
+                    .iter()
+                    .map(|&corner| body.place(corner).map(|axis| axis as f32))
+                    .collect();
+                eyepiece
+                    .painter
+                    .add(body3d::mesh(body, &corners, |[x, y, _]| {
+                        at([f64::from(x), f64::from(y)])
+                    }));
+                parts = &figure.parts[figure.animal_parts..];
+            }
+            for part in parts {
                 let points = part.points.iter().map(|&point| at(point)).collect();
                 eyepiece.painter.add(part.shape(points));
             }

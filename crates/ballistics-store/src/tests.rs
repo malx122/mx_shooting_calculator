@@ -905,6 +905,101 @@ fn catalog_drawings_are_sound() {
 }
 
 #[test]
+fn catalog_bodies_are_closed_and_fit_their_drawings() {
+    let catalog = Catalog::builtin();
+    for body in &catalog.bodies {
+        let drawing = catalog.drawing(&body.id);
+        assert_eq!(drawing.id, body.id, "a body without a drawing");
+        assert_eq!(body.triangles.len(), body.face_colour.len(), "{}", body.id);
+        assert!(
+            body.face_colour
+                .iter()
+                .all(|&c| (c as usize) < body.colours.len()),
+            "{}",
+            body.id
+        );
+        let n = body.vertices.len() as u32;
+        assert!(
+            body.triangles.iter().flatten().all(|&k| k < n),
+            "{}",
+            body.id
+        );
+        assert!(
+            body.antler_faces
+                .iter()
+                .all(|&f| (f as usize) < body.triangles.len()),
+            "{}",
+            body.id
+        );
+        assert_eq!(
+            drawing.has_antlers(),
+            !body.antler_faces.is_empty(),
+            "{}",
+            body.id
+        );
+        // Closed: every edge is shared by two triangles running opposite
+        // ways, so leaving out the faces turned away never shows a hole.
+        let mut edges = std::collections::HashMap::new();
+        for &[a, b, c] in &body.triangles {
+            for edge in [(a, b), (b, c), (c, a)] {
+                *edges.entry(edge).or_insert(0) += 1;
+            }
+        }
+        let open = edges
+            .iter()
+            .filter(|&(&(a, b), &count)| count != 1 || edges.get(&(b, a)) != Some(&1))
+            .count();
+        assert_eq!(open, 0, "{}: {open} open or doubled edges", body.id);
+        // Outward: positive volume.
+        let volume: f64 = body
+            .triangles
+            .iter()
+            .map(|t| {
+                let [a, b, c] = t.map(|k| body.vertices[k as usize].map(f64::from));
+                (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
+                    + a[2] * (b[0] * c[1] - b[1] * c[0]))
+                    / 6.0
+            })
+            .sum();
+        assert!(volume > 0.0, "{}: inside out", body.id);
+        // Placed, it is about its drawing's size (the 3D view stands it on
+        // its own hooves) and holds the whole hit area.
+        let placement = body.placement;
+        assert!(
+            (0.6..1.5).contains(&placement.scale),
+            "{}: scale {}",
+            body.id,
+            placement.scale
+        );
+        for zone in &drawing.zones {
+            let on = zone
+                .points
+                .iter()
+                .filter(|&&point| {
+                    body.near_side(placement.undo(drawing.vital, point))
+                        .is_some_and(|z| z > 0.0)
+                })
+                .count();
+            assert_eq!(
+                on,
+                zone.points.len(),
+                "{}: {} off the body",
+                body.id,
+                zone.name
+            );
+        }
+        // Without zones the app draws a vital circle round the aim point:
+        // on the animal as the hunter sees it.
+        assert!(
+            body.near_side(placement.undo(drawing.vital, drawing.vital))
+                .is_some(),
+            "{}: the aim point is off the body",
+            body.id
+        );
+    }
+}
+
+#[test]
 fn catalog_targets_are_valid() {
     let catalog = Catalog::builtin();
     let ids: std::collections::HashSet<_> = catalog.targets.iter().map(|t| &t.id).collect();

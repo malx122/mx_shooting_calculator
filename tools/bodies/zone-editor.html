@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hit area on a 3D body</title>
+<!-- A template: tools/bodies/zone_editor.py fills in the data. -->
+<style>
+  :root { --bg: #1d2a22; --panel: #15211a; --line: #2e3f34; --text: #f1eadb; --muted: #b8b2a2; --accent: #e8702a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  body { display: flex; }
+  #panel { width: 270px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 12px 14px; box-sizing: border-box; overflow: auto; }
+  #panel h1 { font-size: 15px; margin: 0 0 8px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 16px 0 6px; }
+  button { background: #2a3a30; color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 5px 9px; margin: 3px 3px 3px 0; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.active { background: var(--accent); color: #1a1208; }
+  textarea { width: 100%; height: 70px; box-sizing: border-box; background: #0f1813; color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: 12px/1.35 ui-monospace, Menlo, monospace; padding: 6px; }
+  .hint { color: var(--muted); font-size: 12px; }
+  .readout { font-variant-numeric: tabular-nums; margin: 4px 0; }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: move; }
+  #reference { width: 440px; flex: none; background: var(--panel); border-left: 1px solid var(--line); padding: 12px 14px; box-sizing: border-box; overflow: auto; }
+  #reference img { width: 100%; display: block; border-radius: 6px; margin-bottom: 6px; }
+  #drop { border: 1px dashed var(--line); border-radius: 6px; padding: 14px; text-align: center; color: var(--muted); margin-top: 6px; }
+  #drop.over { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1 id="title">Hit area</h1>
+  <div class="hint">Drag to move the hit area, scroll to scale it. Arrows nudge it 0.5 cm (⇧ 5 cm); + and − scale it 0.5 %.</div>
+
+  <h2>View</h2>
+  <button data-zoom="1" class="active">Whole</button><button data-zoom="2.5">Chest</button><button data-zoom="5">Close</button>
+
+  <h2>Against the fit</h2>
+  <div class="readout" id="moved"></div>
+  <div class="readout" id="sized"></div>
+  <div class="readout" id="moose"></div>
+  <div class="hint">The hit area keeps its size in the app; this moves and scales the body under them.</div>
+
+  <h2>Placement</h2>
+  <textarea id="out" spellcheck="false" readonly></textarea>
+  <button id="copy">Copy</button>
+  <button id="saved">Back to saved</button>
+  <button id="fit">Back to the fit</button>
+  <div class="hint">Paste it as the body's <code>placement</code> in bodies.json, or give it to Claude.</div>
+</div>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="reference">
+  <h2 style="margin-top:0">The drawing, with its hit area</h2>
+  <img id="drawing" alt="">
+  <h2>Training figure</h2>
+  <img id="figure" alt="" hidden>
+  <div id="drop">Drop a picture of the figure here, or <input type="file" id="file" accept="image/*"><br>It stays on this computer.</div>
+</div>
+<script>
+(() => {
+  const DATA = /*DATA*/null;
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+  const side = new Image();
+  side.src = DATA.side;
+  $('drawing').src = DATA.reference;
+  $('title').textContent = 'Hit area on the 3D ' + DATA.name;
+  const vital = DATA.vital;
+  const key = 'zone-editor:' + DATA.id;
+
+  // The hit area's centre on the unplaced body (metres) and its size against
+  // the body; the placement follows from them.
+  const fromPlacement = p => ({
+    k: 1 / p.scale,
+    z: [vital[0] - p.offset[0] / p.scale, vital[1] - p.offset[1] / p.scale],
+  });
+  const placement = () => {
+    const scale = 1 / state.k;
+    return { offset: [scale * (vital[0] - state.z[0]), scale * (vital[1] - state.z[1])], scale };
+  };
+  const saved = fromPlacement(DATA.placement);
+  // Work in progress is kept in the browser, but only for the placement the
+  // page was written with: after a new fit it starts again.
+  const written = JSON.stringify(DATA.placement);
+  let state = (() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(key));
+      if (s && s.z && s.k && s.written === written) return s;
+    } catch (e) {}
+    return { ...saved, z: [...saved.z] };
+  })();
+  const fit = fromPlacement({ offset: [0, 0], scale: 1 });
+  let zoom = 1;
+
+  // Metres on the body <-> canvas points.
+  let view = { s: 1, ox: 0, oy: 0 };
+  const toImage = ([x, y]) => [(x - DATA.x0) * DATA.ppm, (DATA.y1 - y) * DATA.ppm];
+  const toScreen = p => { const [ix, iy] = toImage(p); return [view.ox + ix * view.s, view.oy + iy * view.s]; };
+  const onBody = p => [state.z[0] + state.k * (p[0] - vital[0]), state.z[1] + state.k * (p[1] - vital[1])];
+
+  function layout() {
+    const r = canvas.getBoundingClientRect();
+    const fitS = Math.min(r.width / side.width, r.height / side.height) * 0.95;
+    view.s = fitS * zoom;
+    const [cx, cy] = zoom === 1 ? [side.width / 2, side.height / 2] : toImage(state.z);
+    view.ox = r.width / 2 - cx * view.s;
+    view.oy = r.height / 2 - cy * view.s;
+  }
+
+  function draw() {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.round(r.width * devicePixelRatio);
+    canvas.height = Math.round(r.height * devicePixelRatio);
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    ctx.fillStyle = '#2b3b31';
+    ctx.fillRect(0, 0, r.width, r.height);
+    if (!side.complete) return;
+    layout();
+    ctx.drawImage(side, view.ox, view.oy, side.width * view.s, side.height * view.s);
+    for (const [i, zone] of DATA.zones.entries()) {
+      ctx.beginPath();
+      zone.forEach((p, j) => { const [x, y] = toScreen(onBody(p)); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.closePath();
+      ctx.fillStyle = i === 0 ? 'rgba(110,170,110,0.42)' : 'rgba(110,170,110,0.3)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(240,236,220,0.95)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    if (DATA.circle) {
+      const [cx, cy] = toScreen(onBody(vital));
+      ctx.beginPath();
+      ctx.arc(cx, cy, DATA.circle / 2 * state.k * DATA.ppm * view.s, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(110,170,110,0.42)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(240,236,220,0.95)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    if (DATA.rings) {
+      const [cx, cy] = toScreen(onBody(DATA.rings.center));
+      ctx.strokeStyle = 'rgba(240,236,220,0.9)';
+      ctx.lineWidth = 1;
+      for (const ring of DATA.rings.rings) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, ring.diameter_m / 2 * state.k * DATA.ppm * view.s, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    const [vx, vy] = toScreen(state.z);
+    ctx.strokeStyle = '#e8702a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(vx - 6, vy); ctx.lineTo(vx + 6, vy); ctx.moveTo(vx, vy - 6); ctx.lineTo(vx, vy + 6); ctx.stroke();
+    report();
+  }
+
+  function report() {
+    const p = placement();
+    const dx = (state.z[0] - fit.z[0]) * 100, dy = (state.z[1] - fit.z[1]) * 100;
+    $('moved').textContent = `Moved ${Math.abs(dx).toFixed(1)} cm ${dx >= 0 ? 'forward' : 'back'}, ${Math.abs(dy).toFixed(1)} cm ${dy >= 0 ? 'up' : 'down'}`;
+    $('sized').textContent = `Hit area at ${(state.k * 100).toFixed(1)} % against the body`;
+    $('moose').textContent = `So the body is drawn at ${(p.scale * 100).toFixed(1)} %: ${((DATA.top - DATA.bottom) * p.scale).toFixed(2)} m tall${DATA.antlers ? ', antlers left out' : ''}`;
+    const r4 = v => Math.round(v * 10000) / 10000;
+    $('out').value = JSON.stringify({ placement: { offset: p.offset.map(r4), scale: r4(p.scale) } });
+    try { localStorage.setItem(key, JSON.stringify({ ...state, written })); } catch (e) {}
+  }
+
+  let dragging = null;
+  canvas.addEventListener('pointerdown', e => { dragging = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const metres = 1 / (DATA.ppm * view.s);
+    state.z[0] += (e.clientX - dragging[0]) * metres;
+    state.z[1] -= (e.clientY - dragging[1]) * metres;
+    dragging = [e.clientX, e.clientY];
+    draw();
+  });
+  canvas.addEventListener('pointerup', () => { dragging = null; });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    state.k = Math.min(2, Math.max(0.5, state.k * Math.exp(-e.deltaY * 0.0008)));
+    draw();
+  }, { passive: false });
+  addEventListener('keydown', e => {
+    const step = (e.shiftKey ? 5 : 0.5) / 100;
+    const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    if (moves[e.key]) { state.z[0] += moves[e.key][0]; state.z[1] += moves[e.key][1]; }
+    else if (e.key === '+' || e.key === '=') state.k *= 1.005;
+    else if (e.key === '-') state.k /= 1.005;
+    else return;
+    e.preventDefault();
+    draw();
+  });
+  document.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => {
+    zoom = Number(b.dataset.zoom);
+    document.querySelectorAll('[data-zoom]').forEach(o => o.classList.toggle('active', o === b));
+    draw();
+  }));
+  $('copy').addEventListener('click', () => navigator.clipboard.writeText($('out').value));
+  $('saved').addEventListener('click', () => { state = { ...saved, z: [...saved.z] }; draw(); });
+  $('fit').addEventListener('click', () => { state = { ...fit, z: [...fit.z] }; draw(); });
+
+  // The training figure, from this computer only.
+  const show = file => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => { $('figure').src = reader.result; $('figure').hidden = false; };
+    reader.readAsDataURL(file);
+  };
+  $('file').addEventListener('change', e => show(e.target.files[0]));
+  const drop = $('drop');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); show(e.dataTransfer.files[0]); });
+
+  side.onload = draw;
+  addEventListener('resize', draw);
+})();
+</script>
+</body>
+</html>

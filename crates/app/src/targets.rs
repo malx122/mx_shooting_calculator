@@ -5,6 +5,7 @@ use ballistics_store::{Catalog, Country, Drawing, Target, TargetGroup, TargetKin
 use eframe::egui::{self, Color32, Pos2, RichText, pos2, vec2};
 
 use crate::app::{Action, Data};
+use crate::body3d;
 use crate::figure::Figure;
 use crate::i18n::{self, target_name, tr, tr_data, trf};
 use crate::mobile;
@@ -99,7 +100,9 @@ impl TargetsPage {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data));
             });
         egui::CentralPanel::default().show(ui, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, &mut actions));
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| self.detail(ui, data, &mut actions));
         });
         actions
     }
@@ -716,11 +719,42 @@ fn default_shape(name: &str) -> TargetShape {
 /// The target drawn to scale on a patch of ground, with its height.
 fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
     let figure = Figure::new(target, target.vital_diameter_cm);
+    let [low, high] = figure.bounds;
+    let (width, height) = ((high[0] - low[0]).max(1e-3), (high[1] - low[1]).max(1e-3));
+    if let Some(body) = &figure.body {
+        // An animal with a 3D body: that, turnable.
+        let id = egui::Id::unique("target-body").with(&target.id);
+        let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
+        let mut turn = ui
+            .data(|data| data.get_temp::<body3d::Turn>(id))
+            .unwrap_or_default();
+        if response.dragged() {
+            turn = turn.dragged(response.drag_delta());
+        }
+        if response.double_clicked() {
+            turn = body3d::Turn::default();
+        }
+        ui.data_mut(|data| data.insert_temp(id, turn));
+        let painter = ui.painter_at(rect);
+        body3d::paint(&painter, rect, &figure, body, turn, [SKY, FIELD]);
+        caption(ui, &painter, rect, &figure, height);
+        // Back to straight from the side, where the hit area is easiest
+        // to see.
+        let button =
+            egui::Rect::from_min_size(rect.right_top() + vec2(-112.0, 6.0), vec2(106.0, 22.0));
+        let side = ui.put(
+            button,
+            egui::Button::new(RichText::new(tr("From the side")).small()).selected(turn.is_side()),
+        );
+        if side.clicked() {
+            ui.data_mut(|data| data.insert_temp(id, body3d::Turn::default()));
+        }
+        response.on_hover_text(tr("Drag to turn · double-click to reset"));
+        return;
+    }
     let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 6.0, SKY);
-    let [low, high] = figure.bounds;
-    let (width, height) = ((high[0] - low[0]).max(1e-3), (high[1] - low[1]).max(1e-3));
     let margin = 24.0;
     let scale = ((rect.width() - 2.0 * margin) as f64 / width)
         .min((rect.height() - 2.0 * margin) as f64 / height);
@@ -745,6 +779,17 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
     for part in &figure.parts {
         painter.add(part.shape(part.points.iter().map(|&point| at(point)).collect()));
     }
+    caption(ui, &painter, rect, &figure, height);
+}
+
+/// The preview's height and the key to its colours.
+fn caption(
+    ui: &mut egui::Ui,
+    painter: &egui::Painter,
+    rect: egui::Rect,
+    figure: &Figure,
+    height: f64,
+) {
     let u = units::prefs(ui.ctx());
     painter.text(
         rect.left_top() + vec2(8.0, 6.0),

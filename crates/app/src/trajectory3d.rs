@@ -10,7 +10,7 @@ use std::ops::{Add, Mul, Neg, Sub};
 use ballistics_core::solver::Sample;
 use eframe::egui::{self, Color32, Pos2, Rect, Shape, Stroke, pos2, vec2};
 
-use crate::figure::Figure;
+use crate::figure::{Body3, Figure};
 use crate::i18n::{tr, trf};
 use crate::theme;
 
@@ -403,7 +403,13 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
         right: v3(0.0, 0.0, 1.0),
         range: scene.target_range.max(10.0),
         // Without a target the line of sight ends at the usual vital height.
-        aim_height: scene.figure.map_or(1.25, |figure| figure.aim_height),
+        // An animal in 3D stands on its own hooves.
+        aim_height: scene.figure.map_or(1.25, |figure| {
+            figure
+                .body
+                .as_ref()
+                .map_or(figure.aim_height, |body| -body.ground())
+        }),
         target_size: {
             scene.figure.map_or(1.0, |figure| {
                 let [low, high] = figure.bounds;
@@ -501,7 +507,8 @@ pub fn show(ui: &mut egui::Ui, scene: &Scene<'_>, height: f32) {
     faces.sort_by(|a, b| b.depth.total_cmp(&a.depth));
     painter.extend(faces.into_iter().map(|face| face.shape));
 
-    // Where the bullet strikes the target's plane.
+    // Where the bullet strikes the target's plane (through an animal's
+    // middle, with its hit area).
     if let Some(hit) = ballistics_core::solver::interpolate(scene.samples, frame.range) {
         let point = frame.at(frame.range, hit.drop, hit.windage) - frame.down * 0.02;
         if let Some(screen) = projector.project(point) {
@@ -712,11 +719,88 @@ fn add_hunter(faces: &mut Vec<Face>, projector: &Projector, frame: &Frame) {
     );
 }
 
+/// The animal in 3D, as one mesh sorted far to near with its back faces
+/// left out; returns its middle.
+fn add_body(faces: &mut Vec<Face>, projector: &Projector, frame: &Frame, body: &Body3) -> V3 {
+    let world: Vec<V3> = body
+        .body
+        .vertices
+        .iter()
+        .map(|&vertex| {
+            let [x, y, z] = body.place(vertex);
+            frame.at(frame.range - z, y, x)
+        })
+        .collect();
+    let colours = body.body.face_rgb();
+    let antler = body.body.antler_mask();
+    let mut triangles: Vec<(f64, [Pos2; 3], Color32)> = Vec::with_capacity(world.len() * 2);
+    for (face, &[a, b, c]) in body.body.triangles.iter().enumerate() {
+        if antler[face] && !body.antlers {
+            continue;
+        }
+        let corners = [world[a as usize], world[b as usize], world[c as usize]];
+        // The figure's axes turn into the world's without a mirror, so the
+        // outside stays anticlockwise.
+        let normal = (corners[1] - corners[0])
+            .cross(corners[2] - corners[0])
+            .normalized();
+        let center = (corners[0] + corners[1] + corners[2]) * (1.0 / 3.0);
+        if normal.dot(projector.eye - center) <= 0.0 {
+            continue;
+        }
+        let (Some(pa), Some(pb), Some(pc)) = (
+            projector.project(corners[0]),
+            projector.project(corners[1]),
+            projector.project(corners[2]),
+        ) else {
+            continue;
+        };
+        let [r, g, b] = colours[face];
+        triangles.push((
+            projector.depth(center),
+            [pa, pb, pc],
+            shade(Color32::from_rgb(r, g, b), normal),
+        ));
+    }
+    triangles.sort_by(|a, b| b.0.total_cmp(&a.0));
+    let mut mesh = egui::Mesh::default();
+    for (_, points, colour) in &triangles {
+        let index = mesh.vertices.len() as u32;
+        for &point in points {
+            mesh.colored_vertex(point, *colour);
+        }
+        mesh.add_triangle(index, index + 1, index + 2);
+    }
+    let middle =
+        world.iter().fold(v3(0.0, 0.0, 0.0), |sum, &p| sum + p) * (1.0 / world.len().max(1) as f64);
+    faces.push(Face {
+        depth: projector.depth(middle),
+        shape: Shape::mesh(mesh),
+    });
+    middle
+}
+
 /// The target, flat and facing the hunter (an animal broadside), with its
 /// vital zone on the aiming point. Its parts stay in drawing order.
 fn add_figure(faces: &mut Vec<Face>, projector: &Projector, frame: &Frame, figure: &Figure) {
-    let depth = projector.depth(frame.at(frame.range, 0.0, 0.0));
-    for (index, part) in figure.parts.iter().enumerate() {
+    let mut depth = projector.depth(frame.at(frame.range, 0.0, 0.0));
+    let mut parts = 0..figure.parts.len();
+    let mut strength = 1.0;
+    if let Some(body) = &figure.body {
+        let middle = add_body(faces, projector, frame, body);
+        // The zones and rings stay flat through the middle of the body and
+        // are painted just after it, so they show through it; they fade as
+        // they turn edge-on.
+        let facing = ((projector.eye - middle).normalized().dot(frame.down)).abs() as f32;
+        if facing <= crate::body3d::EDGE_ON {
+            return;
+        }
+        strength = ((facing - crate::body3d::EDGE_ON) / (1.0 - crate::body3d::EDGE_ON)).min(1.0);
+        depth = projector.depth(middle) - 1e-3;
+        parts = figure.animal_parts..figure.parts.len();
+    }
+    for (index, part) in figure.parts[parts].iter().enumerate() {
+        let part = &part.faded(strength);
         let corners: Vec<V3> = part
             .points
             .iter()

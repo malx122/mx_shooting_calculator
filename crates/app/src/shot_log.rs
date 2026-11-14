@@ -213,7 +213,9 @@ impl ShotLogPage {
                 egui::ScrollArea::vertical().show(ui, |ui| self.list(ui, data, false));
             });
         egui::CentralPanel::default().show(ui, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| self.detail(ui, data, place, &mut actions));
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| self.detail(ui, data, place, &mut actions));
         });
         actions
     }

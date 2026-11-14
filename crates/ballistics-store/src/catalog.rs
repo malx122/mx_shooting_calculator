@@ -10,7 +10,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
 use crate::cartridge::Cartridge;
-use crate::drawings::{Drawing, RENAMED};
+use crate::drawings::{Body, Drawing, RENAMED};
 use crate::model::{BcModel, Bullet, BulletKind, Construction, DataAttribution, new_id};
 use crate::optics::{Reticle, Scope};
 use crate::targets::Target;
@@ -258,6 +258,8 @@ pub struct Catalog {
     pub reticles: Vec<Reticle>,
     pub targets: Vec<Target>,
     pub drawings: Vec<Drawing>,
+    /// Drawings' animals in 3D, for those that have one.
+    pub bodies: Vec<Body>,
 }
 
 impl Catalog {
@@ -279,6 +281,7 @@ impl Catalog {
             reticles: serde_json::from_str(include_str!("../catalog/reticles.json"))?,
             targets: Vec::new(),
             drawings: Vec::new(),
+            bodies: serde_json::from_str(include_str!("../catalog/bodies.json"))?,
         }
         .with_targets(
             include_str!("../catalog/targets.json"),
@@ -294,6 +297,7 @@ impl Catalog {
             reticles: Vec::new(),
             targets: Vec::new(),
             drawings: Vec::new(),
+            bodies: Vec::new(),
         })
     }
 
@@ -326,6 +330,11 @@ impl Catalog {
             })
             .or(self.drawings.first())
             .expect("the built-in catalog has drawings")
+    }
+
+    /// The animal of the drawing with this id in 3D, if it has one.
+    pub fn body(&self, drawing: &str) -> Option<&Body> {
+        self.bodies.iter().find(|body| body.id == drawing)
     }
 
     pub fn target(&self, id: &str) -> Option<&Target> {

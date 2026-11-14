@@ -3,7 +3,7 @@
 //! vital (or hit) zone, where the hunter aims; x runs towards an animal's
 //! head (or to the right), y up.
 
-use ballistics_store::{Catalog, Drawing, Target, TargetShape};
+use ballistics_store::{Body, Catalog, Drawing, Target, TargetShape};
 use eframe::egui::{self, Color32, Pos2, Shape, Stroke};
 
 use crate::theme;
@@ -35,6 +35,16 @@ impl Part {
             points,
             fill,
             stroke,
+        }
+    }
+
+    /// The part with its colours made `strength` (0 to 1) as strong.
+    pub fn faded(&self, strength: f32) -> Part {
+        Part {
+            points: self.points.clone(),
+            fill: self.fill.gamma_multiply(strength),
+            stroke: self.stroke.map(|colour| colour.gamma_multiply(strength)),
+            triangles: self.triangles.clone(),
         }
     }
 
@@ -78,6 +88,39 @@ pub struct Figure {
     /// empty when the vital zone is a plain circle.
     pub zones: Vec<(String, Vec<[f64; 2]>)>,
     pub rings: Option<Rings>,
+    /// The animal in 3D, for the 3D view, when its drawing has one; then
+    /// the first `animal_parts` parts are the flat drawing it stands for.
+    pub body: Option<Body3>,
+    pub animal_parts: usize,
+}
+
+/// A catalog body placed as the figure's drawing is: x towards the head,
+/// y up, z across the body towards the hunter, around the aim point.
+pub struct Body3 {
+    pub body: &'static Body,
+    scale: [f64; 3],
+    vital: [f64; 2],
+    pub antlers: bool,
+    /// The height of its lowest point (its hooves), figure metres.
+    ground: f64,
+}
+
+impl Body3 {
+    /// A corner of the body in the figure's metres.
+    pub fn place(&self, corner: [f32; 3]) -> [f64; 3] {
+        let [x, y, z] = self.body.placement.apply(self.vital, corner.map(f64::from));
+        [
+            (x - self.vital[0]) * self.scale[0],
+            (y - self.vital[1]) * self.scale[1],
+            z * self.scale[2],
+        ]
+    }
+
+    /// The height of its lowest point (its hooves) in the figure's metres:
+    /// where the ground is under it in 3D.
+    pub fn ground(&self) -> f64 {
+        self.ground
+    }
 }
 
 /// Where a shot landing at a point falls on the target.
@@ -96,6 +139,8 @@ impl Figure {
         let vital_radius = vital_diameter_cm / 200.0;
         let mut zones = Vec::new();
         let mut training = None;
+        let mut body = None;
+        let mut animal_parts = 0;
         let (mut parts, aim_height) = match target.shape {
             TargetShape::Animal {
                 ref silhouette,
@@ -124,7 +169,30 @@ impl Figure {
                         .collect();
                     (place(rings.center), sizes)
                 });
-                animal(drawing, height, length, antlers)
+                body = Catalog::builtin().body(&drawing.id).map(|body| {
+                    let (sx, sy) = (
+                        length / drawing.length_m,
+                        height / drawing.shoulder_height_m,
+                    );
+                    let mut placed = Body3 {
+                        body,
+                        // Across the body it scales as along and up do, on
+                        // average.
+                        scale: [sx, sy, (sx + sy) / 2.0],
+                        vital: drawing.vital,
+                        antlers,
+                        ground: 0.0,
+                    };
+                    placed.ground = body
+                        .vertices
+                        .iter()
+                        .map(|&corner| placed.place(corner)[1])
+                        .fold(f64::INFINITY, f64::min);
+                    placed
+                });
+                let (parts, aim_height) = animal(drawing, height, length, antlers);
+                animal_parts = parts.len();
+                (parts, aim_height)
             }
             TargetShape::Rings { black_mm, .. } => {
                 rings(&target.shape.ring_diameters_mm(), black_mm / 1000.0)
@@ -158,7 +226,11 @@ impl Figure {
                     ));
                 }
             }
-            return Figure::framed(parts, aim_height, zones, training);
+            return Figure {
+                body,
+                animal_parts,
+                ..Figure::framed(parts, aim_height, zones, training)
+            };
         }
         // The zone that counts: shaded on game, outlined on sport targets.
         parts.push(if target.is_game() {
@@ -174,7 +246,11 @@ impl Figure {
                 Some(theme::MEADOW),
             )
         });
-        Figure::framed(parts, aim_height, zones, training)
+        Figure {
+            body,
+            animal_parts,
+            ..Figure::framed(parts, aim_height, zones, training)
+        }
     }
 
     fn framed(
@@ -198,6 +274,8 @@ impl Figure {
             bounds: [low, high],
             zones,
             rings,
+            body: None,
+            animal_parts: 0,
         }
     }
 

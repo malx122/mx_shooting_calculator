@@ -257,88 +257,90 @@ impl BulletsPage {
         };
         let stored = data.bullets.iter().find(|stored| stored.id == bullet.id);
         let mut cancel = false;
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.heading(match (stored, &bullet.catalog_id) {
-                (Some(_), _) => tr("Edit bullet"),
-                (None, Some(_)) => tr("New from catalog: check the data and save"),
-                (None, None) => tr("New bullet"),
-            });
-            ui.add_space(4.0);
-            editor(
-                ui,
-                bullet,
-                &mut self.editor_caliber_search,
-                &mut self.curve_paste,
-                data.hunting,
-            );
-            ui.add_space(8.0);
-
-            let problem = bullet.validate().err();
-            let changed = stored != Some(&*bullet);
-            ui.horizontal_wrapped(|ui| {
-                let save = ui.add_enabled(
-                    problem.is_none() && changed,
-                    egui::Button::new(RichText::new(tr("Save")).strong()),
-                );
-                if save.clicked() {
-                    actions.push(Action::SaveBullet(bullet.clone()));
-                }
-                if let Some(stored) = stored {
-                    if changed && ui.button(tr("Undo changes")).clicked() {
-                        *bullet = stored.clone();
-                    }
-                    if confirm_button(ui, "delete-bullet", tr("Delete")) {
-                        actions.push(Action::DeleteBullet(stored.id.clone()));
-                    }
-                } else if ui.button(tr("Cancel")).clicked() {
-                    cancel = true;
-                }
-            });
-            if let Some(problem) = problem {
-                ui.colored_label(ui.visuals().warn_fg_color, problem);
-            } else if changed {
-                ui.weak(tr("Unsaved changes"));
-            }
-            if let Some(source) = bullet
-                .catalog_id
-                .as_deref()
-                .and_then(|id| Catalog::builtin().bullet(id))
-            {
-                ui.separator();
-                ui.horizontal_wrapped(|ui| {
-                    if source.data_attribution.is_some() {
-                        ui.weak(tr("Copied from a separately licensed data collection."));
-                    } else {
-                        ui.weak(trf!(
-                            "Copied from the catalog (data checked {}).",
-                            source.verified_on
-                        ));
-                    }
-                    ui.hyperlink_to(tr("Source"), &source.source_url)
-                        .on_hover_text(&source.source_url);
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                ui.heading(match (stored, &bullet.catalog_id) {
+                    (Some(_), _) => tr("Edit bullet"),
+                    (None, Some(_)) => tr("New from catalog: check the data and save"),
+                    (None, None) => tr("New bullet"),
                 });
-                if let Some(provenance) = source.bc_source {
-                    ui.label(trf!("Catalog BC source: {}", bc_source_label(provenance)));
+                ui.add_space(4.0);
+                editor(
+                    ui,
+                    bullet,
+                    &mut self.editor_caliber_search,
+                    &mut self.curve_paste,
+                    data.hunting,
+                );
+                ui.add_space(8.0);
+
+                let problem = bullet.validate().err();
+                let changed = stored != Some(&*bullet);
+                ui.horizontal_wrapped(|ui| {
+                    let save = ui.add_enabled(
+                        problem.is_none() && changed,
+                        egui::Button::new(RichText::new(tr("Save")).strong()),
+                    );
+                    if save.clicked() {
+                        actions.push(Action::SaveBullet(bullet.clone()));
+                    }
+                    if let Some(stored) = stored {
+                        if changed && ui.button(tr("Undo changes")).clicked() {
+                            *bullet = stored.clone();
+                        }
+                        if confirm_button(ui, "delete-bullet", tr("Delete")) {
+                            actions.push(Action::DeleteBullet(stored.id.clone()));
+                        }
+                    } else if ui.button(tr("Cancel")).clicked() {
+                        cancel = true;
+                    }
+                });
+                if let Some(problem) = problem {
+                    ui.colored_label(ui.visuals().warn_fg_color, problem);
+                } else if changed {
+                    ui.weak(tr("Unsaved changes"));
                 }
-                if !source.notes.is_empty() {
-                    egui::CollapsingHeader::new(tr("Catalog source notes")).show(ui, |ui| {
-                        ui.label(&source.notes);
+                if let Some(source) = bullet
+                    .catalog_id
+                    .as_deref()
+                    .and_then(|id| Catalog::builtin().bullet(id))
+                {
+                    ui.separator();
+                    ui.horizontal_wrapped(|ui| {
+                        if source.data_attribution.is_some() {
+                            ui.weak(tr("Copied from a separately licensed data collection."));
+                        } else {
+                            ui.weak(trf!(
+                                "Copied from the catalog (data checked {}).",
+                                source.verified_on
+                            ));
+                        }
+                        ui.hyperlink_to(tr("Source"), &source.source_url)
+                            .on_hover_text(&source.source_url);
+                    });
+                    if let Some(provenance) = source.bc_source {
+                        ui.label(trf!("Catalog BC source: {}", bc_source_label(provenance)));
+                    }
+                    if !source.notes.is_empty() {
+                        egui::CollapsingHeader::new(tr("Catalog source notes")).show(ui, |ui| {
+                            ui.label(&source.notes);
+                        });
+                    }
+                }
+                if let Some(attribution) = &bullet.data_attribution {
+                    ui.separator();
+                    ui.label(&attribution.credit);
+                    ui.horizontal_wrapped(|ui| {
+                        ui.hyperlink_to(&attribution.license, &attribution.license_url);
+                        ui.hyperlink_to(tr("Source"), &attribution.source_url);
+                    });
+                    egui::CollapsingHeader::new(tr("Data attribution")).show(ui, |ui| {
+                        ui.label(&attribution.changes);
+                        ui.weak(&attribution.source_revision);
                     });
                 }
-            }
-            if let Some(attribution) = &bullet.data_attribution {
-                ui.separator();
-                ui.label(&attribution.credit);
-                ui.horizontal_wrapped(|ui| {
-                    ui.hyperlink_to(&attribution.license, &attribution.license_url);
-                    ui.hyperlink_to(tr("Source"), &attribution.source_url);
-                });
-                egui::CollapsingHeader::new(tr("Data attribution")).show(ui, |ui| {
-                    ui.label(&attribution.changes);
-                    ui.weak(&attribution.source_revision);
-                });
-            }
-        });
+            });
         if cancel {
             self.editing = None;
         }

@@ -15,6 +15,16 @@ any release may still change things noticeably.
 - **Start over** when the database is damaged or from a newer version: the
   desktop app can begin with an empty database, behind a dialog with a box
   to tick. Nothing is deleted; the old file is kept under a new name.
+- **3D animals:** the moose, roe deer, fox and black grouse have a 3D body,
+  to scale. The target's page shows it straight from the side (drag to
+  turn it, **From the side** to go back), and it stands in the 3D view and
+  through the scope. Its hit area and rings show through the body, sized
+  as on the moose test figure.
+
+### Changed
+
+- **Main pages fill the window:** the empty space beside a page's content
+  now scrolls with it.
 
 ### Fixed
 
