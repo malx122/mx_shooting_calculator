@@ -15,7 +15,9 @@ any release may still change things noticeably.
 - **Start over** when the database is damaged or from a newer version: the
   desktop app can begin with an empty database, behind a dialog with a box
   to tick. Nothing is deleted; the old file is kept under a new name.
-- **3D animals:** the moose, roe deer, fox and black grouse have a 3D body,
+- **3D animals:** the moose, red deer, fallow deer, roe deer, sika deer,
+  white-tailed deer, wapiti, wild forest reindeer, wild boar, mouflon, brown bear,
+  wolf, lynx, wolverine, fox, black grouse and rock ptarmigan have a 3D body,
   to scale. The target's page shows it straight from the side (drag to
   turn it, **From the side** to go back), and it stands in the 3D view and
   through the scope. Its hit area and rings show through the body, sized
@@ -25,6 +27,13 @@ any release may still change things noticeably.
 
 - **Main pages fill the window:** the empty space beside a page's content
   now scrolls with it.
+- **Wapiti:** its own drawing instead of the red deer's, a bull's size
+  (1.5 m at the shoulder, 2.4 m long, was 1.37 and 2.3 m) and a 40 cm vital
+  zone (was 30 cm), so its ethical range is longer.
+- **Red deer vital zone:** 28 cm across (was 25 cm), measured on the 3D stag
+  at full size; its ethical range is a little longer.
+- **Fox vital zone:** now 10.5 cm across (was 8 cm), measured on the 3D fox
+  at full size. The ethical range for the fox is longer to match.
 
 ### Fixed
 

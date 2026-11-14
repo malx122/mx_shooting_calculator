@@ -41,7 +41,9 @@ to the descriptions of this project's independently compiled data.
     generated with Recraft (recraft.ai) and adjusted by the project; the
     rights to it lie with the project under Recraft's paid-plan terms. The
     moose's hit area and rings follow Svenska Jägareförbundet's moose figure
-    and the ring sizes in its rulebook (2025–28).
+    and the ring sizes in its rulebook (2025–28). The wapiti's drawing is
+    drawn by the project's script (tools/drawings/mesh2drawing.py) from its
+    own 3D body, below.
   * The animals' 3D bodies (bodies.json) were generated with Meshy
     (meshy.ai) on a Pro plan and fitted and coloured by the project's
     scripts (tools/bodies/); the rights to them lie with the project under

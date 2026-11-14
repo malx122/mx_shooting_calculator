@@ -31,5 +31,14 @@ done this way (October 2026).
    JSON file. Then `cargo test -p ballistics-store` and
    `cargo test -p mxsc` check the drawing, and the Targets page shows it.
 
+**From a 3D model.** For an animal that has a Meshy model but no drawing,
+`mesh2drawing.py` draws one from the model's side view: a few flat colours,
+the antlers marked, the vital point placed by the same rule. The wapiti was
+made so (`--antler-seed 2.2` reaches its lower antler; `tools/bodies/add.py`
+uses the same for its body):
+
+    python3 tools/drawings/mesh2drawing.py wapiti.glb --id wapiti --name "Wapiti (bull)" \
+        --shoulder 1.5 --antler-seed 2.2 --png /tmp/wapiti.png --write
+
 `raster.py` holds the pure-Python raster tools these use (bitset rows,
 morphology, contour tracing, simplification).

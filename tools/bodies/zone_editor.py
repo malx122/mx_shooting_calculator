@@ -1,21 +1,28 @@
-"""Write an editor for where a 3D body stands against its drawing's hit area.
+"""The editor for where each 3D body stands against its drawing's hit area.
 
-    python3 tools/bodies/zone_editor.py moose /tmp/zone-editor.html
+    python3 tools/bodies/zone_editor.py [port]
 
-Open the page in a browser. It shows the body straight from the side with the
-hit area and rings on it, and the drawing with its hit area beside it (drop
-a picture of the training figure there too: it stays on the computer). Drag
-the hit area onto the body and scale it; copy the placement it gives into the
-body's "placement" in crates/ballistics-store/catalog/bodies.json.
+Serves the editor at http://127.0.0.1:8091/ (this computer only). Pick an
+animal in the list; it shows the body straight from the side with the hit
+area and rings on it, and the drawing with its hit area beside it (drop a
+picture of the training figure there too: it stays on the computer). Drag
+the hit area onto the body and scale it, then press Accept: the placement
+goes into the body's "placement" in
+crates/ballistics-store/catalog/bodies.json, the catalog body test runs in
+the background, and the next animal still to place opens. An animal with a
+placement counts as accepted; a new fit (add.py) removes it.
 
-The hit area and rings keep their size and place against the aim point in
-the app: moving or scaling them here moves and scales the body under them.
+The hit area keeps its size and place against the aim point in the app:
+moving or scaling it here moves and scales the body under it.
 Needs numpy and pillow.
 """
-import base64, io, json, pathlib, sys
+import base64, http.server, io, json, math, pathlib, subprocess, sys, threading, urllib.parse
 
 import numpy as np
 from PIL import Image, ImageDraw
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import add  # noqa: E402  (writes bodies.json one body a line)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "crates/ballistics-store/catalog"
@@ -84,18 +91,19 @@ def drawing_view(drawing, ppm, circle=None):
     return img.resize(size, Image.LANCZOS)
 
 
-def main():
-    id_, out = sys.argv[1], sys.argv[2]
-    body = next(b for b in json.load(open(CATALOG / "bodies.json")) if b["id"] == id_)
-    drawing = next(d for d in json.load(open(CATALOG / "drawings.json")) if d["id"] == id_)
+def data(id_, bodies, drawings, targets):
+    """Everything the page needs for one animal."""
+    body = next(b for b in bodies if b["id"] == id_)
+    drawing = next(d for d in drawings if d["id"] == id_)
     ppm = 1400 / max(np.ptp(np.array(body["vertices"])[:, 0]), 0.1)
     side, x0, y1, top, bottom = side_view(body, ppm)
     # Without a hit area of its own, the app draws a vital circle at the aim
     # point, as big as the target says.
     circle = None if drawing.get("zones") else next(
-        (t["vital_diameter_cm"] / 100 for t in json.load(open(CATALOG / "targets.json")) if t.get("silhouette") == id_), None)
-    reference = drawing_view(drawing, 420 / max(np.ptp(np.array([p for part in drawing["parts"] for p in part["points"]])[:, 0]), 0.1), circle)
-    data = {
+        (t["vital_diameter_cm"] / 100 for t in targets if t.get("silhouette") == id_), None)
+    outline = np.array([p for part in drawing["parts"] for p in part["points"]])
+    reference = drawing_view(drawing, 420 / max(np.ptp(outline[:, 0]), 0.1), circle)
+    return {
         "id": id_,
         "name": drawing["name"],
         "side": png(side),
@@ -110,9 +118,141 @@ def main():
         "circle": circle,
         "placement": body.get("placement", {"offset": [0, 0], "scale": 1}),
     }
-    html = (pathlib.Path(__file__).with_name("zone-editor.html")).read_text()
-    pathlib.Path(out).write_text(html.replace("/*DATA*/null", json.dumps(data)))
-    print(f"wrote {out}")
+
+
+def load(name):
+    return json.loads((CATALOG / name).read_text())
+
+
+class Check:
+    """The catalog body test, run in the background after each Accept (one
+    at a time; Accepts during a run start one more run after it)."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.state, self.output, self.again, self.running = "none", "", False, False
+
+    def start(self):
+        with self.lock:
+            if self.running:
+                self.again = True
+                return
+            self.running, self.state = True, "running"
+        threading.Thread(target=self.run, daemon=True).start()
+
+    def run(self):
+        state, output = "failed", ""
+        try:
+            while True:
+                done = subprocess.run(["cargo", "test", "-q", "-p", "ballistics-store", "catalog_bodies"],
+                                      cwd=ROOT, capture_output=True, text=True)
+                with self.lock:
+                    if not self.again:
+                        break
+                    self.again = False
+            state = "passed" if done.returncode == 0 else "failed"
+            output = (done.stdout + done.stderr)[-3000:]
+        except Exception as e:  # cargo missing, and the like: say so, don't hang
+            output = repr(e)
+        finally:
+            with self.lock:
+                self.running, self.state, self.output = False, state, output
+
+    def report(self):
+        with self.lock:
+            return {"state": self.state, "output": self.output}
+
+
+CHECK = Check()
+SAVING = threading.Lock()
+
+
+def accept(id_, placement):
+    offset, scale = placement["offset"], float(placement["scale"])
+    offset = [float(v) for v in offset]
+    if len(offset) != 2 or not all(map(math.isfinite, offset + [scale])) or not 0.6 <= scale < 1.5:
+        raise ValueError("a placement needs two finite offsets and a scale from 0.6 to 1.5")
+    with SAVING:
+        bodies = load("bodies.json")
+        body = next((b for b in bodies if b["id"] == id_), None)
+        if body is None:
+            raise ValueError(f"no body {id_!r}")
+        body["placement"] = {"offset": offset, "scale": scale}
+        add.save(bodies)
+    CHECK.start()
+
+
+class Editor(http.server.BaseHTTPRequestHandler):
+    def send(self, status, body, kind="application/json"):
+        raw = body.encode() if isinstance(body, str) else body
+        self.send_response(status)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(raw)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def local(self):
+        # Only for pages this server gave out: a site that points its own
+        # name at 127.0.0.1 still sends that name as the Host.
+        host = self.headers.get("Host", "")
+        if host in (f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"):
+            return True
+        self.send(403, "{}")
+        return False
+
+    def do_GET(self):
+        if not self.local():
+            return
+        try:
+            self.get(urllib.parse.unquote(urllib.parse.urlsplit(self.path).path))
+        except Exception as e:  # say what went wrong rather than drop the connection
+            self.send(500, json.dumps({"error": repr(e)}))
+
+    def get(self, path):
+        if path == "/":
+            self.send(200, pathlib.Path(__file__).with_name("zone-editor.html").read_text(), "text/html; charset=utf-8")
+        elif path == "/animals":
+            names = {d["id"]: d["name"] for d in load("drawings.json")}
+            self.send(200, json.dumps([{"id": b["id"], "name": names.get(b["id"], b["id"]), "accepted": "placement" in b}
+                                       for b in load("bodies.json")]))
+        elif path.startswith("/animal/"):
+            id_ = path[len("/animal/"):]
+            try:
+                self.send(200, json.dumps(data(id_, load("bodies.json"), load("drawings.json"), load("targets.json"))))
+            except StopIteration:
+                self.send(404, json.dumps({"error": f"no body {id_!r}"}))
+        elif path == "/check":
+            self.send(200, json.dumps(CHECK.report()))
+        else:
+            self.send(404, "{}")
+
+    def do_POST(self):
+        # Only from the editor's own page: a form on another site can't send
+        # JSON with this header without the browser asking first.
+        if not self.local():
+            return
+        path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
+        if not path.startswith("/accept/") or self.headers.get("Content-Type") != "application/json":
+            return self.send(400, "{}")
+        try:
+            placement = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            accept(path[len("/accept/"):], placement)
+        except (StopIteration, KeyError, TypeError, ValueError) as e:
+            return self.send(400, json.dumps({"error": repr(e)}))
+        except Exception as e:
+            return self.send(500, json.dumps({"error": repr(e)}))
+        self.send(200, "{}")
+
+    def log_message(self, *args):
+        pass
+
+
+def main():
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8091
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), Editor)
+    print(f"the hit-area editor: http://127.0.0.1:{port}/  (Ctrl-C to stop)")
+    server.serve_forever()
 
 
 if __name__ == "__main__":

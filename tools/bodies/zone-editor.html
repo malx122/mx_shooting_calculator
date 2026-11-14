@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hit area on a 3D body</title>
-<!-- A template: tools/bodies/zone_editor.py fills in the data. -->
+<!-- Served by tools/bodies/zone_editor.py, which gives it the animals. -->
 <style>
   :root { --bg: #1d2a22; --panel: #15211a; --line: #2e3f34; --text: #f1eadb; --muted: #b8b2a2; --accent: #e8702a; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 -apple-system, "Segoe UI", sans-serif; }
@@ -24,11 +24,26 @@
   #reference img { width: 100%; display: block; border-radius: 6px; margin-bottom: 6px; }
   #drop { border: 1px dashed var(--line); border-radius: 6px; padding: 14px; text-align: center; color: var(--muted); margin-top: 6px; }
   #drop.over { border-color: var(--accent); }
+  #animals { max-height: 34vh; overflow: auto; border: 1px solid var(--line); border-radius: 5px; }
+  #animals button { display: flex; width: 100%; margin: 0; border: 0; border-radius: 0; background: none; text-align: left; gap: 6px; }
+  #animals button:hover { background: #24342a; }
+  #animals button.current { background: #2f4637; }
+  #animals .tick { width: 1em; color: #8fd18f; }
+  #accept { width: 100%; padding: 8px; font-weight: 600; background: var(--accent); color: #1a1208; border-color: var(--accent); margin-top: 8px; }
+  #accept:disabled { opacity: .45; cursor: default; }
+  #check.failed { color: #ff8f7a; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
 </style>
 </head>
 <body>
 <div id="panel">
   <h1 id="title">Hit area</h1>
+  <h2 style="margin-top:4px">Animals <span id="left" class="hint"></span></h2>
+  <div id="animals"></div>
+  <div class="hint">✓ accepted. Page Up / Page Down for the one before or after.</div>
+  <button id="accept">Accept and go to the next</button>
+  <div class="hint" id="check"></div>
+
+  <h2>Moving</h2>
   <div class="hint">Drag to move the hit area, scroll to scale it. Arrows nudge it 0.5 cm (⇧ 5 cm); + and − scale it 0.5 %.</div>
 
   <h2>View</h2>
@@ -42,10 +57,8 @@
 
   <h2>Placement</h2>
   <textarea id="out" spellcheck="false" readonly></textarea>
-  <button id="copy">Copy</button>
   <button id="saved">Back to saved</button>
   <button id="fit">Back to the fit</button>
-  <div class="hint">Paste it as the body's <code>placement</code> in bodies.json, or give it to Claude.</div>
 </div>
 <div id="stage"><canvas id="c"></canvas></div>
 <div id="reference">
@@ -57,15 +70,11 @@
 </div>
 <script>
 (() => {
-  const DATA = /*DATA*/null;
+  let DATA = null, vital, key, saved, written, state, fit;
+  let animals = [];
   const $ = id => document.getElementById(id);
   const canvas = $('c'), ctx = canvas.getContext('2d');
   const side = new Image();
-  side.src = DATA.side;
-  $('drawing').src = DATA.reference;
-  $('title').textContent = 'Hit area on the 3D ' + DATA.name;
-  const vital = DATA.vital;
-  const key = 'zone-editor:' + DATA.id;
 
   // The hit area's centre on the unplaced body (metres) and its size against
   // the body; the placement follows from them.
@@ -77,19 +86,106 @@
     const scale = 1 / state.k;
     return { offset: [scale * (vital[0] - state.z[0]), scale * (vital[1] - state.z[1])], scale };
   };
-  const saved = fromPlacement(DATA.placement);
-  // Work in progress is kept in the browser, but only for the placement the
-  // page was written with: after a new fit it starts again.
-  const written = JSON.stringify(DATA.placement);
-  let state = (() => {
-    try {
-      const s = JSON.parse(localStorage.getItem(key));
-      if (s && s.z && s.k && s.written === written) return s;
-    } catch (e) {}
-    return { ...saved, z: [...saved.z] };
-  })();
-  const fit = fromPlacement({ offset: [0, 0], scale: 1 });
   let zoom = 1;
+  // The body's scale (1 / k) stays where the catalog test allows it, 0.6 to 1.5.
+  const clampK = k => Math.min(1 / 0.6, Math.max(1 / 1.49, k));
+
+  // One animal at a time. Work in progress is kept in the browser, but only
+  // for the placement it started from: after a new fit or an Accept it
+  // starts again.
+  let opening = 0, busy = false;
+  async function open(id) {
+    const ticket = ++opening;
+    $('accept').disabled = true;
+    const response = await fetch('/animal/' + encodeURIComponent(id));
+    if (ticket !== opening) return;  // another animal was picked meanwhile
+    if (!response.ok) { $('check').textContent = 'Could not open it: ' + await response.text(); return; }
+    const data = await response.json();
+    if (ticket !== opening) return;
+    DATA = data;
+    vital = DATA.vital;
+    key = 'zone-editor:' + DATA.id;
+    saved = fromPlacement(DATA.placement);
+    written = JSON.stringify(DATA.placement);
+    fit = fromPlacement({ offset: [0, 0], scale: 1 });
+    state = (() => {
+      try {
+        const s = JSON.parse(localStorage.getItem(key));
+        if (s && s.z && s.k && s.written === written) return s;
+      } catch (e) {}
+      return { ...saved, z: [...saved.z] };
+    })();
+    $('title').textContent = 'Hit area on the 3D ' + DATA.name;
+    $('drawing').src = DATA.reference;
+    $('figure').hidden = true;
+    history.replaceState(null, '', '#' + DATA.id);
+    list();
+    side.onload = () => { if (ticket === opening) { $('accept').disabled = busy; draw(); } };
+    side.src = DATA.side;
+  }
+
+  function list() {
+    const box = $('animals');
+    box.replaceChildren(...animals.map(a => {
+      const b = document.createElement('button');
+      b.className = DATA && a.id === DATA.id ? 'current' : '';
+      const tick = document.createElement('span');
+      tick.className = 'tick';
+      tick.textContent = a.accepted ? '✓' : '';
+      b.append(tick, a.name);
+      b.addEventListener('click', () => open(a.id));
+      return b;
+    }));
+    const left = animals.filter(a => !a.accepted).length;
+    $('left').textContent = left ? `${left} to place` : 'all placed';
+    box.querySelector('.current')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function step(by) {
+    const i = animals.findIndex(a => a.id === DATA.id);
+    open(animals[(i + by + animals.length) % animals.length].id);
+  }
+
+  async function accept() {
+    if (!DATA || busy || $('accept').disabled) return;
+    busy = true;
+    $('accept').disabled = true;
+    const id = DATA.id;
+    const raw = placement(), r4 = v => Math.round(v * 10000) / 10000;
+    const p = { offset: raw.offset.map(r4), scale: r4(raw.scale) };
+    let response;
+    try {
+      response = await fetch('/accept/' + encodeURIComponent(id), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p),
+      });
+    } finally {
+      busy = false;
+    }
+    if (!response.ok) {
+      $('check').textContent = 'Not saved: ' + await response.text();
+      $('accept').disabled = false;
+      return;
+    }
+    localStorage.removeItem('zone-editor:' + id);
+    const i = animals.findIndex(a => a.id === id);
+    animals[i].accepted = true;
+    const next = [...animals.slice(i + 1), ...animals.slice(0, i)].find(a => !a.accepted);
+    open(next ? next.id : id);
+    watch();
+  }
+
+  // The catalog body test runs on the computer after each Accept.
+  let watching = null;
+  function watch() {
+    clearTimeout(watching);
+    fetch('/check').then(r => r.json()).then(c => {
+      const line = $('check');
+      line.className = c.state === 'failed' ? 'failed' : 'hint';
+      line.textContent = { running: 'Saved. Checking the bodies…', passed: 'Saved; the body check passed.',
+        failed: 'The body check failed:\n' + c.output, none: '' }[c.state];
+      if (c.state === 'running') watching = setTimeout(watch, 1000);
+    });
+  }
 
   // Metres on the body <-> canvas points.
   let view = { s: 1, ox: 0, oy: 0 };
@@ -113,7 +209,7 @@
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     ctx.fillStyle = '#2b3b31';
     ctx.fillRect(0, 0, r.width, r.height);
-    if (!side.complete) return;
+    if (!DATA || !side.complete) return;
     layout();
     ctx.drawImage(side, view.ox, view.oy, side.width * view.s, side.height * view.s);
     for (const [i, zone] of DATA.zones.entries()) {
@@ -167,7 +263,7 @@
   let dragging = null;
   canvas.addEventListener('pointerdown', e => { dragging = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', e => {
-    if (!dragging) return;
+    if (!dragging || !DATA) return;
     const metres = 1 / (DATA.ppm * view.s);
     state.z[0] += (e.clientX - dragging[0]) * metres;
     state.z[1] -= (e.clientY - dragging[1]) * metres;
@@ -177,15 +273,18 @@
   canvas.addEventListener('pointerup', () => { dragging = null; });
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    state.k = Math.min(2, Math.max(0.5, state.k * Math.exp(-e.deltaY * 0.0008)));
+    if (!DATA) return;
+    state.k = clampK(state.k * Math.exp(-e.deltaY * 0.0008));
     draw();
   }, { passive: false });
   addEventListener('keydown', e => {
-    const step = (e.shiftKey ? 5 : 0.5) / 100;
-    const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    if (e.target.tagName === 'TEXTAREA' || !DATA) return;
+    if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); step(e.key === 'PageUp' ? -1 : 1); return; }
+    const nudge = (e.shiftKey ? 5 : 0.5) / 100;
+    const moves = { ArrowLeft: [-nudge, 0], ArrowRight: [nudge, 0], ArrowUp: [0, nudge], ArrowDown: [0, -nudge] };
     if (moves[e.key]) { state.z[0] += moves[e.key][0]; state.z[1] += moves[e.key][1]; }
-    else if (e.key === '+' || e.key === '=') state.k *= 1.005;
-    else if (e.key === '-') state.k /= 1.005;
+    else if (e.key === '+' || e.key === '=') state.k = clampK(state.k * 1.005);
+    else if (e.key === '-') state.k = clampK(state.k / 1.005);
     else return;
     e.preventDefault();
     draw();
@@ -195,7 +294,7 @@
     document.querySelectorAll('[data-zoom]').forEach(o => o.classList.toggle('active', o === b));
     draw();
   }));
-  $('copy').addEventListener('click', () => navigator.clipboard.writeText($('out').value));
+  $('accept').addEventListener('click', accept);
   $('saved').addEventListener('click', () => { state = { ...saved, z: [...saved.z] }; draw(); });
   $('fit').addEventListener('click', () => { state = { ...fit, z: [...fit.z] }; draw(); });
 
@@ -212,8 +311,13 @@
   drop.addEventListener('dragleave', () => drop.classList.remove('over'));
   drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); show(e.dataTransfer.files[0]); });
 
-  side.onload = draw;
   addEventListener('resize', draw);
+  fetch('/animals').then(r => r.json()).then(all => {
+    animals = all;
+    const wanted = location.hash.slice(1);
+    const first = all.find(a => a.id === wanted) || all.find(a => !a.accepted) || all[0];
+    if (first) open(first.id);
+  });
 })();
 </script>
 </body>
