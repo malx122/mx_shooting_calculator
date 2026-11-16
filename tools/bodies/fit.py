@@ -1,11 +1,13 @@
-"""fit.py <mesh.glb> <drawing-id> <out.json> [colours] [--no-legs]
+"""fit.py <mesh.glb> <drawing-id> <out.json> [colours] [--no-legs] [--size=F]
 
 A textured model into a catalog body: closed, turned (x to the head, y up,
 z towards whoever looks at the drawing), standing at y = 0, scaled and moved
 so its side view covers the drawing best (so the drawing's hit area lands on
 the same part of the body), one colour per triangle from the texture,
 reduced to a palette. For a four-legged animal it then lines up the front
-legs; --no-legs leaves that out (birds).
+legs; --no-legs leaves that out (birds). --size=F then scales it by F
+about the aim point's foot, for a model whose pose fools the overlap into
+a size the animal isn't (the red squirrel's raised tail).
 """
 import sys, json, math, itertools, pathlib
 import numpy as np, trimesh
@@ -14,6 +16,7 @@ from scipy.cluster.vq import kmeans2
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 legs = "--no-legs" not in sys.argv
+size = next((float(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--size=")), 1.0)
 src, did, out = args[:3]
 ncol = int(args[3]) if len(args) > 3 else 32
 CAT = pathlib.Path(__file__).resolve().parents[2] / "crates/ballistics-store/catalog/drawings.json"
@@ -75,7 +78,7 @@ def remesh(body, rgb, faces=5000):
     V, F, _, _ = measure.marching_cubes(field, 0.4)
     surface = trimesh.Trimesh(trimesh.transform_points(V - 3, grid.transform), F)
     surface = max(surface.split(only_watertight=False), key=lambda part: len(part.faces))
-    for aim in (faces, faces * 1.1, faces * 1.2, faces * 0.9):
+    for aim in (faces, faces * 1.1, faces * 1.2, faces * 0.9, faces * 0.8, faces * 1.3, faces * 1.5, faces * 0.7):
         V2, F2 = fast_simplification.simplify(np.asarray(surface.vertices, np.float32), np.asarray(surface.faces), target_reduction=1 - aim / len(surface.faces))
         out = trimesh.Trimesh(V2, F2)
         E = np.concatenate([out.faces[:, [0, 1]], out.faces[:, [1, 2]], out.faces[:, [2, 0]]])
@@ -106,29 +109,37 @@ assert body.is_watertight, "still open"
 if body.volume < 0:
     body.invert()
 
-# Turn: longest axis along x, then the end with the highest point (antlers,
-# head) to +x, y up; keep it a rotation.
+# Turn: the body's length along x, then the end with the highest point
+# (antlers, head; the fit below checks it) to +x, y up (glTF is y-up); keep it a rotation. A model
+# standing at a slant seen from above (the wolverine) is turned by its main
+# axis there; one within 10 degrees of an axis keeps to the axis, so a
+# turned head doesn't tilt it.
 V = np.asarray(body.vertices, float)
-ext = np.ptp(V, 0)
-up = 1  # glTF is y-up
-along = max((0, 2), key=lambda k: ext[k])
-across = 2 if along == 0 else 0
-R = np.zeros((3, 3)); R[0, along] = 1; R[1, up] = 1; R[2, across] = 1
-if np.linalg.det(R) < 0: R[2] *= -1
-V = V @ R.T
+def lengthwise(V):
+    xz = V[:, [0, 2]] - V[:, [0, 2]].mean(0)
+    w, vec = np.linalg.eigh(xz.T @ xz)
+    angle = math.atan2(vec[1, 1], vec[0, 1])  # of the main axis, from x
+    snap = round(angle / (math.pi / 2)) * (math.pi / 2)
+    if abs(angle - snap) < math.radians(10):
+        angle = snap
+    c, s_ = math.cos(angle), math.sin(angle)
+    # Turn about y by -angle: the main axis onto x.
+    return V @ np.array([[c, 0, s_], [0, 1, 0], [-s_, 0, c]]).T
+V = lengthwise(V)
 top = V[np.argsort(V[:, 1])[-50:]]
 if top[:, 0].mean() < V[:, 0].mean():  # head at -x: turn half round about y
     V = V * np.array([-1, 1, -1])
 # The head turned towards the viewer (+z): mirror across the body's middle if
-# it looks away. A mirror keeps the side view, so the fit and placement stay
-# valid. Done after the fit, where the drawing shows where the head is and
-# what is above it (antlers).
+# it clearly looks away (the tip of the snout, antlers apart, against the
+# body's median). A mirror keeps the side view, so the fit and placement stay
+# valid. Done after the fit, where the drawing's height leaves the antlers out.
 def mirror_to_viewer(V, F):
-    x0, x1 = lo[0], hi[0]
-    head = (V[:, 0] > x1 - 0.25 * (x1 - x0)) & (V[:, 1] > 0.6 * d["shoulder_height_m"]) & (V[:, 1] < height)
-    middle = (V[:, 2].min() + V[:, 2].max()) / 2
-    if np.median(V[head, 2]) >= middle:
+    body_ = V[V[:, 1] < height]
+    length_ = np.ptp(body_[:, 0])
+    snout = body_[body_[:, 0] > body_[:, 0].max() - 0.08 * length_]
+    if snout[:, 2].mean() - np.median(body_[:, 2]) > -0.03 * length_:
         return V, F
+    middle = (V[:, 2].min() + V[:, 2].max()) / 2
     V = V.copy(); V[:, 2] = 2 * middle - V[:, 2]
     print("mirrored, so the head turns towards the viewer")
     return V, F[:, ::-1]
@@ -151,16 +162,27 @@ V[:, 1] -= V[:, 1].min()
 def side(V):
     return raster([V[f][:, :2] for f in F])
 # Exclude the antlers from the fit too: what is above the drawing's highest
-# non-antler point, scaled, is cut off before comparing.
-best = None
+# non-antler point, scaled, is cut off before comparing. Both ends are tried
+# as the head (half a turn about y), as the highest point can be a tail (the
+# squirrel's).
 height = max(p[1] for part in d["parts"] if not part.get("antler") for p in part["points"])
-for s in np.linspace(0.8, 1.3, 26):
-    for dx in np.linspace(-0.25, 0.25, 21):
-        k = height / np.percentile(V[:, 1], 97) * s
-        W = V * k; W[:, 0] += (lo[0] + hi[0]) / 2 - (W[:, 0].min() + W[:, 0].max()) / 2 + dx
-        got = side(W) & (np.arange(N)[:, None] >= N - 1 - height / cell * 1.02)
-        iou = (got & want).sum() / (got | want).sum()
-        if best is None or iou > best[0]: best = (iou, k, W)
+def fitted(U):
+    best = None
+    for s in np.linspace(0.8, 1.3, 26):
+        for dx in np.linspace(-0.25, 0.25, 21):
+            k = height / np.percentile(U[:, 1], 97) * s
+            W = U * k; W[:, 0] += (lo[0] + hi[0]) / 2 - (W[:, 0].min() + W[:, 0].max()) / 2 + dx
+            got = side(W) & (np.arange(N)[:, None] >= N - 1 - height / cell * 1.02)
+            iou = (got & want).sum() / (got | want).sum()
+            if best is None or iou > best[0]: best = (iou, k, W)
+    return best
+best = fitted(V)
+turned_round = fitted(V * np.array([-1, 1, -1]))
+# Only when clearly better, so a nearly symmetric body (a seal) isn't turned
+# tail first by noise.
+if turned_round[0] > best[0] + 0.02:
+    best = turned_round
+    print("turned round: the highest point is the tail")
 iou, k, V = best
 print(f"side-view overlap with the drawing (no antlers) {iou:.3f}, scale {k:.3f}")
 
@@ -177,6 +199,12 @@ if legs:
     shift = front_legs(want) - front_legs(side(V))
     V[:, 0] += shift
     print(f"moved {shift:+.3f} m along to line up the front legs")
+
+if size != 1:
+    V[:, 0] = d["vital"][0] + (V[:, 0] - d["vital"][0]) * size
+    V[:, 1] *= size
+    V[:, 2] = V[:, 2].mean() + (V[:, 2] - V[:, 2].mean()) * size
+    print(f"scaled by {size} (--size)")
 
 V, F = mirror_to_viewer(V, F)
 

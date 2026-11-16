@@ -7,6 +7,7 @@ mod bullets;
 mod calculator;
 mod cards;
 mod cartridge3d;
+mod cartridge_drawing;
 mod changelog;
 mod figure;
 mod files;

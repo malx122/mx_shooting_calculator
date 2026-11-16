@@ -25,6 +25,10 @@ OUT = ROOT / "target/bodies"
 # search band reaches (the wapiti's far antler); the drawing was made with the
 # same setting (tools/drawings/mesh2drawing.py --antler-seed).
 DEEPER = {"wapiti": 2.2}
+# Models the overlap fit makes the wrong size, scaled after it (fit.py
+# --size): the squirrel's raised tail made it 31 cm nose to rump, against
+# 19-23 cm, and the editor scales from 0.6 only.
+SIZE = {"red-squirrel": 0.68}
 
 
 def run(*args):
@@ -55,7 +59,8 @@ def add(model, id_):
         sys.exit(f"no drawing {id_!r} in drawings.json")
     OUT.mkdir(parents=True, exist_ok=True)
     fitted = OUT / f"{id_}.json"
-    run(HERE / "fit.py", model, id_, fitted, *(["--no-legs"] if drawing.get("bird") else []))
+    run(HERE / "fit.py", model, id_, fitted, *(["--no-legs"] if drawing.get("bird") else []),
+        *([f"--size={SIZE[id_]}"] if id_ in SIZE else []))
     print(f"check {OUT / (id_ + '-overlay.png')}")
     if any(part.get("antler") for part in drawing["parts"]):
         # Antlers grow above the withers, are thin for the animal's size and

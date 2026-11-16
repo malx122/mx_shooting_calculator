@@ -15,9 +15,18 @@ any release may still change things noticeably.
 - **Start over** when the database is damaged or from a newer version: the
   desktop app can begin with an empty database, behind a dialog with a box
   to tick. Nothing is deleted; the old file is kept under a new name.
+- **Cartridge measurements:** beside the 3D cartridge in the bullet catalog
+  and the rifle editor, a drawing of the cartridge with its measurements:
+  the C.I.P. drawing's letters, each value the largest the standard allows,
+  and the range down to the smallest where the drawing gives a tolerance.
+  Hover over it for what each letter means. Where there isn't room beside
+  it, it folds under **Measurements**.
 - **3D animals:** the moose, red deer, fallow deer, roe deer, sika deer,
   white-tailed deer, wapiti, wild forest reindeer, wild boar, mouflon, brown bear,
-  wolf, lynx, wolverine, fox, black grouse and rock ptarmigan have a 3D body,
+  wolf, lynx, wolverine, raccoon dog, mink, beaver, muskrat, red squirrel,
+  brown hare, mountain hare, rabbit, grey seal, ringed seal (also shown for
+  the harbour seal), fox, black grouse, hazel grouse, willow ptarmigan and
+  rock ptarmigan have a 3D body,
   to scale. The target's page shows it straight from the side (drag to
   turn it, **From the side** to go back), and it stands in the 3D view and
   through the scope. Its hit area and rings show through the body, sized
@@ -34,6 +43,15 @@ any release may still change things noticeably.
   at full size; its ethical range is a little longer.
 - **Fox vital zone:** now 10.5 cm across (was 8 cm), measured on the 3D fox
   at full size. The ethical range for the fox is longer to match.
+- **More vital zones measured on the 3D bodies at full size**, so these
+  ethical ranges are longer:
+  - raccoon dog 11 cm (was 9);
+  - beaver 11 cm (was 10);
+  - muskrat 5 cm (was 4);
+  - red squirrel 4 cm (was 3);
+  - rabbit and willow ptarmigan 6 cm (was 5);
+  - grey seal 28 cm (was 20), on a 2.3 m bull;
+  - ringed seal 21 cm and harbour seal 24 cm (both were 12).
 
 ### Fixed
 

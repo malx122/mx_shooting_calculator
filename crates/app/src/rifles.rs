@@ -501,15 +501,29 @@ fn rifle_fields(
         });
         if wide && let Some(cartridge) = cartridge(rifle) {
             ui.add_space(32.0);
-            let width = ui.available_width().min(560.0);
-            crate::cartridge3d::show(ui, cartridge, egui::vec2(width, 150.0));
+            let width = ui.available_width().min(1100.0);
+            ui.vertical(|ui| {
+                crate::cartridge_drawing::with_3d(
+                    ui,
+                    cartridge,
+                    width,
+                    170.0,
+                    150.0,
+                    "rifle",
+                    |_| {},
+                );
+            });
         }
     });
     if !wide && let Some(cartridge) = cartridge(rifle) {
-        crate::cartridge3d::show(
+        crate::cartridge_drawing::with_3d(
             ui,
             cartridge,
-            egui::vec2(ui.available_width().min(360.0), 64.0),
+            ui.available_width().min(360.0),
+            64.0,
+            64.0,
+            "rifle",
+            |_| {},
         );
     }
     ui.add_space(4.0);

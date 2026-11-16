@@ -370,28 +370,32 @@ impl BulletsPage {
             };
 
             if let Some(cartridge) = &caliber.cartridge {
-                crate::cartridge3d::show(ui, cartridge, egui::vec2(ui.available_width(), 110.0));
-                ui.vertical_centered(|ui| {
-                    ui.weak(format!("{} · {} · {}", caliber.name, cartridge.bullet.name, cartridge.source));
-                    if ui
-                        .button(tr("Save for 3D printing (STL)"))
-                        .on_hover_text(tr("The case as large as its drawing allows, in millimetres, standing on its head: to try magazines and feeding"))
-                        .clicked()
-                    {
-                        let (message, failed) = crate::cartridge3d::save_stl(caliber, self.engrave);
-                        self.printed = Some((caliber.key.clone(), message, failed));
-                    }
-                    ui.checkbox(&mut self.engrave, tr("Cut the caliber's name into the side"))
-                        .on_hover_text(tr("0.4 mm deep along the case's body, so printed dummies of similar calibers can be told apart"));
-                    if let Some((key, message, failed)) = &self.printed
-                        && *key == caliber.key
-                    {
-                        if *failed {
-                            ui.colored_label(ui.visuals().error_fg_color, message);
-                        } else {
-                            ui.weak(message);
+                // The 3D view with its printing under it, the measurements beside.
+                let (engrave, printed) = (&mut self.engrave, &mut self.printed);
+                let width = ui.available_width();
+                crate::cartridge_drawing::with_3d(ui, cartridge, width, 200.0, 110.0, "catalog", |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.weak(format!("{} · {} · {}", caliber.name, cartridge.bullet.name, cartridge.source));
+                        if ui
+                            .button(tr("Save for 3D printing (STL)"))
+                            .on_hover_text(tr("The case as large as its drawing allows, in millimetres, standing on its head: to try magazines and feeding"))
+                            .clicked()
+                        {
+                            let (message, failed) = crate::cartridge3d::save_stl(caliber, *engrave);
+                            *printed = Some((caliber.key.clone(), message, failed));
                         }
-                    }
+                        ui.checkbox(engrave, tr("Cut the caliber's name into the side"))
+                            .on_hover_text(tr("0.4 mm deep along the case's body, so printed dummies of similar calibers can be told apart"));
+                        if let Some((key, message, failed)) = &*printed
+                            && *key == caliber.key
+                        {
+                            if *failed {
+                                ui.colored_label(ui.visuals().error_fg_color, message);
+                            } else {
+                                ui.weak(message);
+                            }
+                        }
+                    });
                 });
                 ui.separator();
             }

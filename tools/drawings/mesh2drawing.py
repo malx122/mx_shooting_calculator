@@ -15,7 +15,7 @@ Check the --png it writes. Then fit the same model to it with
 tools/bodies/add.py. Needs the venv of tools/bodies (numpy, scipy, trimesh,
 pillow).
 """
-import argparse, json, os, subprocess, sys, tempfile
+import argparse, json, math, os, subprocess, sys, tempfile
 
 import numpy as np
 import trimesh
@@ -39,16 +39,18 @@ def face_colours(m):
 
 
 def turned(V):
-    """Longest axis along x, the end with the highest point (antlers, head)
-    to +x, y up (glTF is y-up), feet at y = 0."""
-    along = max((0, 2), key=lambda k: np.ptp(V[:, k]))
-    R = np.zeros((3, 3))
-    R[0, along] = 1
-    R[1, 1] = 1
-    R[2, 2 if along == 0 else 0] = 1
-    if np.linalg.det(R) < 0:
-        R[2] *= -1
-    V = V @ R.T
+    """The body's length along x (its main axis seen from above, kept to an
+    axis within 10 degrees of one, as tools/bodies/fit.py turns it), the end
+    with the highest point (antlers, head) to +x, y up (glTF is y-up), feet
+    at y = 0."""
+    xz = V[:, [0, 2]] - V[:, [0, 2]].mean(0)
+    vec = np.linalg.eigh(xz.T @ xz)[1]
+    angle = math.atan2(vec[1, 1], vec[0, 1])
+    snap = round(angle / (math.pi / 2)) * (math.pi / 2)
+    if abs(angle - snap) < math.radians(10):
+        angle = snap
+    c, s = math.cos(angle), math.sin(angle)
+    V = V @ np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]]).T
     top = V[np.argsort(V[:, 1])[-50:]]
     if top[:, 0].mean() < V[:, 0].mean():
         V = V * np.array([-1, 1, -1])

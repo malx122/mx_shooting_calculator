@@ -2,7 +2,10 @@
 
 Every caliber in `crates/ballistics-store/catalog/calibers.json` has a
 `cartridge`: the outside of a loaded round. The app draws it in 3D in the
-bullet catalog and the rifle editor, and saves it as an STL for 3D-printed
+bullet catalog and the rifle editor, with a drawing of its measurements
+beside it (`crates/app/src/cartridge_drawing.rs`: the letters below, each
+value the maximum, or the range down to the minimum where `tolerances` has
+the letter), and saves it as an STL for 3D-printed
 dummies, to try magazines and feeding. The code is
 `crates/ballistics-store/src/cartridge.rs`; its doc comments define each
 field. The printed file is made in `print.rs` beside it, which the app and
