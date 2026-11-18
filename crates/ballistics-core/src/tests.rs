@@ -755,3 +755,225 @@ fn gravity_follows_the_latitude() {
     let change = row(&north, 600.0).drop - level;
     assert!(change < -0.003 && change > -0.01, "{change}");
 }
+
+/// No. 7.5 (2.4 mm) lead, about 0.08 g: lighter than any rifle bullet.
+const SEVEN_AND_A_HALF: pellets::Pellet = pellets::Pellet {
+    diameter_m: 0.0024,
+    density_kg_m3: pellets::LEAD_DENSITY_KG_M3,
+};
+
+fn pellet_at(samples: &[solver::Sample], range: f64) -> solver::Sample {
+    solver::interpolate(samples, range).unwrap()
+}
+
+#[test]
+fn small_shot_slows_down_like_shot_does() {
+    assert!(SEVEN_AND_A_HALF.mass_kg() < 0.000_1);
+    let path = pellets::fly(&SEVEN_AND_A_HALF, 400.0, &scenario().shot, 50.0).unwrap();
+    let at_40_yards = pellet_at(&path, pellets::PATTERN_DISTANCE_M);
+    // About 184 m/s, 0.145 s and 8 cm low; ±10 %.
+    let (velocity, time, drop) = (at_40_yards.velocity, at_40_yards.time, at_40_yards.drop);
+    assert!((166.0..203.0).contains(&velocity), "velocity {velocity}");
+    assert!((0.130..0.159).contains(&time), "time {time}");
+    assert!((-0.090..-0.074).contains(&drop), "drop {drop}");
+}
+
+#[test]
+fn a_pellet_flies_like_a_bullet_with_the_same_drag() {
+    // Buckshot is heavy enough for the rifle solver's checks.
+    let buckshot = pellets::Pellet {
+        diameter_m: 0.0084,
+        density_kg_m3: pellets::LEAD_DENSITY_KG_M3,
+    };
+    let mut scenario = scenario();
+    scenario.shot.wind = Wind {
+        speed: 5.0,
+        from_degrees: 60.0,
+    };
+    scenario.shot.inclination_degrees = 8.0;
+    scenario.shot.coriolis = Some(Coriolis {
+        latitude_degrees: 60.0,
+        azimuth_degrees: 90.0,
+    });
+    scenario.bullet = Bullet {
+        mass_kg: buckshot.mass_kg(),
+        diameter_m: buckshot.diameter_m,
+        length_m: None,
+        ballistic_coefficient: 0.0,
+        drag_model: DragModel::G1,
+        bc_bands: BcBands::NONE,
+        drag_curve: Some(pellets::sphere_drag()),
+    };
+    scenario.rifle.sight_height_m = 0.0;
+    scenario.load.muzzle_velocity = 400.0;
+    scenario.spin_drift = false;
+    scenario.aerodynamic_jump = false;
+    let as_bullet = solver::solve_with_zero(&scenario, 60.0, (0.0, 0.0)).unwrap();
+    let as_pellet = pellets::fly(&buckshot, 400.0, &scenario.shot, 60.0).unwrap();
+    assert_eq!(as_pellet, as_bullet.samples);
+}
+
+#[test]
+fn pellets_refuse_what_cannot_be_shot() {
+    let calm = scenario().shot;
+    let fly = |pellet: &pellets::Pellet, velocity: f64, shot: Conditions, range: f64| {
+        pellets::fly(pellet, velocity, &shot, range)
+    };
+    let no_size = pellets::Pellet {
+        diameter_m: 0.0,
+        ..SEVEN_AND_A_HALF
+    };
+    assert!(fly(&no_size, 400.0, calm, 40.0).is_err());
+    assert!(fly(&SEVEN_AND_A_HALF, f64::NAN, calm, 40.0).is_err());
+    assert!(fly(&SEVEN_AND_A_HALF, 0.0, calm, 40.0).is_err());
+    assert!(fly(&SEVEN_AND_A_HALF, 400.0, calm, -1.0).is_err());
+    assert!(fly(&SEVEN_AND_A_HALF, 400.0, calm, f64::NAN).is_err());
+    let unshootable = [
+        Conditions {
+            wind: Wind {
+                speed: f64::INFINITY,
+                from_degrees: 90.0,
+            },
+            ..calm
+        },
+        Conditions {
+            wind: Wind {
+                speed: -10.0,
+                from_degrees: 90.0,
+            },
+            ..calm
+        },
+        Conditions {
+            inclination_degrees: 180.0,
+            ..calm
+        },
+        Conditions {
+            atmosphere: Atmosphere {
+                pressure_hpa: 0.0,
+                ..calm.atmosphere
+            },
+            ..calm
+        },
+        Conditions {
+            atmosphere: Atmosphere {
+                pressure_hpa: -500.0,
+                ..calm.atmosphere
+            },
+            ..calm
+        },
+        Conditions {
+            atmosphere: Atmosphere {
+                temperature_c: -300.0,
+                ..calm.atmosphere
+            },
+            ..calm
+        },
+    ];
+    for shot in unshootable {
+        assert!(
+            fly(&SEVEN_AND_A_HALF, 400.0, shot, 40.0).is_err(),
+            "{shot:?}"
+        );
+    }
+}
+
+#[test]
+fn a_pellet_that_falls_short_ends_its_path_where_it_falls_steeply() {
+    let calm = scenario().shot;
+    let reached = pellets::fly(&SEVEN_AND_A_HALF, 400.0, &calm, 40.0).unwrap();
+    assert!(reached.last().unwrap().range >= 40.0);
+
+    let path = pellets::fly(&SEVEN_AND_A_HALF, 400.0, &calm, 400.0).unwrap();
+    let [.., before, last] = path.as_slice() else {
+        panic!("a path of {} samples", path.len());
+    };
+    assert!(last.range < 400.0, "range {}", last.range);
+    assert!(last.time < 10.0, "time {}", last.time);
+    let along = (last.range - before.range) / (last.time - before.time);
+    assert!(along < 0.5 * last.velocity);
+}
+
+#[test]
+fn a_24_g_load_of_seven_and_a_half_holds_about_300_pellets() {
+    let count = SEVEN_AND_A_HALF.count_in(0.024).unwrap();
+    assert!((280..310).contains(&count), "{count}");
+}
+
+#[test]
+fn a_load_of_exactly_n_pellets_counts_n() {
+    for diameter_mm in [1.5, 2.0, 2.4, 3.0, 8.4] {
+        let pellet = pellets::Pellet {
+            diameter_m: diameter_mm / 1000.0,
+            ..SEVEN_AND_A_HALF
+        };
+        for n in 0..2000 {
+            assert_eq!(
+                pellet.count_in(n as f64 * pellet.mass_kg()),
+                Some(n),
+                "{diameter_mm} mm, {n}"
+            );
+        }
+    }
+}
+
+#[test]
+fn counting_refuses_what_is_not_a_load() {
+    let no_size = pellets::Pellet {
+        diameter_m: 0.0,
+        ..SEVEN_AND_A_HALF
+    };
+    assert_eq!(no_size.count_in(0.024), None);
+    assert_eq!(SEVEN_AND_A_HALF.count_in(f64::INFINITY), None);
+    assert_eq!(SEVEN_AND_A_HALF.count_in(-0.024), None);
+    assert_eq!(SEVEN_AND_A_HALF.count_in(10.0), None);
+}
+
+#[test]
+fn a_pattern_puts_the_choke_percentage_in_the_circle() {
+    let circle = (pellets::PATTERN_RADIUS_M / pellets::PATTERN_DISTANCE_M).atan();
+    for percent in [40.0, 55.0, 70.0] {
+        let pattern = pellets::pattern(percent, 40_000, 7).unwrap();
+        let inside = pattern
+            .iter()
+            .filter(|[right, up]| right.hypot(*up) <= circle)
+            .count() as f64
+            / pattern.len() as f64;
+        assert!(
+            (inside * 100.0 - percent).abs() < 1.0,
+            "{percent}%: {inside}"
+        );
+    }
+}
+
+#[test]
+fn the_same_seed_gives_the_same_pattern() {
+    let pattern = pellets::pattern(65.0, 300, 42).unwrap();
+    assert_eq!(pellets::pattern(65.0, 300, 42).unwrap(), pattern);
+    assert_ne!(pellets::pattern(65.0, 300, 43).unwrap(), pattern);
+    assert!(pattern.iter().flatten().all(|angle| angle.is_finite()));
+}
+
+#[test]
+fn a_seed_gives_the_same_angles_in_every_version() {
+    // Replays depend on these: change the generator only with a new seed scheme.
+    let expected = [
+        [-3.6582030065896573e-3, 6.591468039852384e-4],
+        [-4.522913533066308e-3, 3.998892213865889e-3],
+        [-6.778752100548741e-4, -4.538758996630664e-3],
+    ];
+    let pattern = pellets::pattern(70.0, 3, 2026).unwrap();
+    for (got, want) in pattern.iter().flatten().zip(expected.iter().flatten()) {
+        assert!((got - want).abs() < 1e-12, "{got} vs {want}");
+    }
+}
+
+#[test]
+fn patterns_refuse_impossible_chokes_and_counts() {
+    for percent in [0.0, 100.0, -5.0, f64::NAN] {
+        assert!(pellets::pattern_sigma(percent).is_err(), "{percent}");
+    }
+    let tiny = pellets::pattern_sigma(1e-17).unwrap();
+    assert!(tiny.is_finite() && tiny > 0.0);
+    assert!(pellets::pattern(70.0, pellets::MAX_PELLETS + 1, 1).is_err());
+    assert!(pellets::pattern(70.0, 0, 1).unwrap().is_empty());
+}

@@ -1,6 +1,6 @@
 [package]
 name = "ballistics-core"
-description = "Exterior ballistics engine for hunting rifles. No dependencies, no I/O."
+description = "Exterior ballistics engine for hunting rifles and shotguns. No dependencies, no I/O."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

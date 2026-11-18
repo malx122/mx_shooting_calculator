@@ -497,7 +497,20 @@ pub fn interpolate(samples: &[Sample], range: f64) -> Option<Sample> {
     })
 }
 
-fn validate_max_range(max_range: f64) -> Result<(), SolveError> {
+/// Flies a projectile that doesn't spin, from the origin of the line of sight
+/// along it, until `keep_going` rejects a sample. The caller validates the
+/// projectile; the rifle checks in `solve` don't apply.
+pub(crate) fn fly_along_sight(
+    bullet: Bullet,
+    conditions: &Conditions,
+    speed: f64,
+    keep_going: impl FnMut(&Sample) -> bool,
+) -> Vec<Sample> {
+    let launch = launch_velocity(speed, conditions.inclination_degrees.to_radians(), 0.0);
+    Flight::with(bullet, conditions, 0.0, None).fly(launch, keep_going)
+}
+
+pub(crate) fn validate_max_range(max_range: f64) -> Result<(), SolveError> {
     if !max_range.is_finite() || max_range < 0.0 {
         return Err(SolveError::InvalidInput(
             "maximum range must be finite and nonnegative",
@@ -530,28 +543,16 @@ fn validate(scenario: &Scenario) -> Result<(), SolveError> {
         rifle.twist_m,
         muzzle,
         zero_muzzle,
-        shot.inclination_degrees,
-        shot.cant_degrees,
-        shot.wind.speed,
-        shot.wind.from_degrees,
-        shot.powder_temperature_c,
         scenario.zero_powder_temperature_c,
         zero_atmosphere.temperature_c,
         zero_atmosphere.pressure_hpa,
         zero_atmosphere.humidity,
-        shot.atmosphere.temperature_c,
-        shot.atmosphere.pressure_hpa,
-        shot.atmosphere.humidity,
     ];
-    if numbers.iter().any(|value| !value.is_finite())
-        || shot.coriolis.is_some_and(|coriolis| {
-            !coriolis.latitude_degrees.is_finite() || !coriolis.azimuth_degrees.is_finite()
-        })
-    {
-        return Err(SolveError::InvalidInput(
-            "a number is not a number (infinite or undefined)",
-        ));
+    if numbers.iter().any(|value| !value.is_finite()) {
+        return Err(NOT_A_NUMBER);
     }
+    validate_conditions(shot)?;
+    validate_atmosphere(zero_atmosphere)?;
     let checks = [
         (
             (0.000_1..=0.2).contains(&bullet.mass_kg),
@@ -606,17 +607,56 @@ fn validate(scenario: &Scenario) -> Result<(), SolveError> {
                 .all(|angle| angle.abs() < 0.05),
             "impact offset is implausibly large",
         ),
+    ];
+    first_failed(&checks)
+}
+
+const NOT_A_NUMBER: SolveError =
+    SolveError::InvalidInput("a number is not a number (infinite or undefined)");
+
+/// Checks a shot's conditions: every number finite, the air physical, the
+/// shot angle short of vertical and the wind not negative.
+pub(crate) fn validate_conditions(conditions: &Conditions) -> Result<(), SolveError> {
+    let atmosphere = &conditions.atmosphere;
+    let numbers = [
+        conditions.inclination_degrees,
+        conditions.cant_degrees,
+        conditions.wind.speed,
+        conditions.wind.from_degrees,
+        conditions.powder_temperature_c,
+        atmosphere.temperature_c,
+        atmosphere.pressure_hpa,
+        atmosphere.humidity,
+    ];
+    if numbers.iter().any(|value| !value.is_finite())
+        || conditions.coriolis.is_some_and(|coriolis| {
+            !coriolis.latitude_degrees.is_finite() || !coriolis.azimuth_degrees.is_finite()
+        })
+    {
+        return Err(NOT_A_NUMBER);
+    }
+    validate_atmosphere(atmosphere)?;
+    first_failed(&[
         (
-            shot.inclination_degrees.abs() < 90.0,
+            conditions.inclination_degrees.abs() < 90.0,
             "shot angle must be between -90° and 90°",
         ),
-        (shot.wind.speed >= 0.0, "wind speed cannot be negative"),
-    ];
-    for atmosphere in [zero_atmosphere, &shot.atmosphere] {
-        if atmosphere.pressure_hpa <= 0.0 || atmosphere.temperature_c <= -273.15 {
-            return Err(SolveError::InvalidInput("atmosphere is not physical"));
-        }
+        (
+            conditions.wind.speed >= 0.0,
+            "wind speed cannot be negative",
+        ),
+    ])
+}
+
+fn validate_atmosphere(atmosphere: &Atmosphere) -> Result<(), SolveError> {
+    if atmosphere.pressure_hpa <= 0.0 || atmosphere.temperature_c <= -273.15 {
+        return Err(SolveError::InvalidInput("atmosphere is not physical"));
     }
+    Ok(())
+}
+
+/// The message of the first check that failed.
+pub(crate) fn first_failed(checks: &[(bool, &'static str)]) -> Result<(), SolveError> {
     match checks.iter().find(|(ok, _)| !ok) {
         Some((_, message)) => Err(SolveError::InvalidInput(message)),
         None => Ok(()),
@@ -730,6 +770,23 @@ struct Flight {
 
 impl Flight {
     fn new(scenario: &Scenario, conditions: &Conditions, stability: Option<f64>) -> Self {
+        let spin = stability
+            .filter(|_| scenario.spin_drift)
+            .map(|sg| (sg, scenario.rifle.right_hand_twist));
+        Self::with(
+            scenario.bullet.clone(),
+            conditions,
+            scenario.rifle.sight_height_m,
+            spin,
+        )
+    }
+
+    fn with(
+        bullet: Bullet,
+        conditions: &Conditions,
+        sight_height_m: f64,
+        spin: Option<(f64, bool)>,
+    ) -> Self {
         let inclination = conditions.inclination_degrees.to_radians();
         let sight_direction = Vec3::new(inclination.cos(), inclination.sin(), 0.0);
         let sight_up = Vec3::new(-inclination.sin(), inclination.cos(), 0.0);
@@ -744,18 +801,16 @@ impl Flight {
         });
         Self {
             atmosphere: conditions.atmosphere,
-            bullet: scenario.bullet.clone(),
+            bullet,
             wind: conditions.wind.velocity(),
             gravity: conditions.coriolis.map_or(GRAVITY, |coriolis| {
                 normal_gravity(coriolis.latitude_degrees)
             }),
             earth_rotation,
-            sight_position: sight_up * scenario.rifle.sight_height_m,
+            sight_position: sight_up * sight_height_m,
             sight_direction,
             sight_up,
-            spin: stability
-                .filter(|_| scenario.spin_drift)
-                .map(|sg| (sg, scenario.rifle.right_hand_twist)),
+            spin,
         }
     }
 
