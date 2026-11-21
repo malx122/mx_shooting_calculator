@@ -380,7 +380,10 @@ velocity SD from five shots says little.
 
 Readings outside **10 to 2,500 m/s** are refused, the same bounds as the
 chronograph import: no chronograph reads them, so they are misreads or
-typing slips ("2850" for 285.0). They are refused, never guessed at.
+typing slips ("2850" for 285.0). They are refused, never guessed at. A
+group keeps readings of 100 to 1,500 m/s, so the group page's entry refuses
+the rest too. There a comma is read as a decimal comma only where it can't
+be anything else ("823,4"); "2,850" could be either, and is refused.
 
 Readings inside those bounds are accepted, but some are worth a second
 look, and each one is listed with a warning:
@@ -410,9 +413,12 @@ its velocity v, over the shots that have both:
 - It needs **5 shots** with both a place and a velocity, and the
   velocities must not all be the same.
 
-The app will show b beside the slope the ballistic solver expects at that
-distance and muzzle velocity: a b well below the expected one suggests the
-barrel's timing compensates (positive compensation). With 5 to 10 shots
+The app shows b beside the slope the ballistic solver expects at that
+distance for the group's rifle, bullet and weather: the solver flies the
+load at its velocity and 2 m/s either side with the sights left as zeroed,
+and the change in height per m/s is the expected slope. A b well below the
+expected one suggests the barrel's timing compensates (positive
+compensation). With 5 to 10 shots
 the slope's range is wide; a large R² from 5 shots can be chance, so read
 the range before the R².
 

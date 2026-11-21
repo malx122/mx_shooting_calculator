@@ -369,6 +369,8 @@ pub struct CalculatorPage {
     hits: Option<(HitsKey, Option<Hits>)>,
     /// The hit chance at each of the range table's ranges.
     row_chances: Option<(RowChancesKey, Vec<Option<f64>>)>,
+    /// The rifle and bullet's groups pooled, for "Use my groups".
+    precision: crate::groups::analyse::Memo<Option<crate::groups::analyse::pool::Precision>>,
 }
 
 impl CalculatorPage {
@@ -401,6 +403,7 @@ impl CalculatorPage {
             generation: 0,
             hits: None,
             row_chances: None,
+            precision: crate::groups::analyse::Memo::default(),
         }
     }
 
@@ -1124,6 +1127,7 @@ impl CalculatorPage {
         let u = units::prefs(ui.ctx());
         let inputs = &mut self.inputs;
         let weather = &mut self.weather;
+        let precision_memo = &mut self.precision;
         ui.horizontal(|ui| {
             ui.label(if data.hunting {
                 tr("Animal crossing at")
@@ -1352,6 +1356,46 @@ impl CalculatorPage {
                         "5 shots at 100 m from the position you shoot from, edge to edge",
                     ));
                     ui.end_row();
+                    if let (Some(rifle_id), Some(bullet_id)) =
+                        (inputs.rifle_id.clone(), inputs.bullet_id.clone())
+                    {
+                        let key = crate::groups::analyse::key_of(
+                            crate::groups::analyse::stamp(data),
+                            (&rifle_id, &bullet_id),
+                        );
+                        let precision = *precision_memo.get(key, || {
+                            crate::groups::analyse::pool::precision(data, &rifle_id, &bullet_id)
+                        });
+                        if let Some(precision) = precision {
+                            ui.label("");
+                            ui.horizontal(|ui| {
+                                ui.weak(trf!(
+                                    "Your groups: {}",
+                                    u.format(Quantity::ShortLength, precision.group_cm)
+                                ));
+                                if precision.enough()
+                                    && ui
+                                        .small_button(tr("Use my groups"))
+                                        .on_hover_text(tr(
+                                            "The spread of this rifle and bullet's groups, each \
+                                             about its own centre, as the 5-shot group at 100 m \
+                                             it would give on average",
+                                        ))
+                                        .clicked()
+                                {
+                                    use_my_groups(inputs, &precision);
+                                }
+                            });
+                            ui.end_row();
+                            ui.label("");
+                            ui.weak(trf!(
+                                "from {} groups, {} shots",
+                                precision.groups,
+                                precision.shots
+                            ));
+                            ui.end_row();
+                        }
+                    }
                     ui.label(tr("Velocity spread"));
                     ui.horizontal(|ui| match inputs.velocity_sd_mps.as_mut() {
                         Some(sd) => {
@@ -3211,6 +3255,12 @@ fn clamp_view(view: PlotBounds, world: PlotBounds) -> PlotBounds {
     PlotBounds::from_min_max([x.0, y.0], [x.1, y.1])
 }
 
+/// "Use my groups": the measured groups' expected 5-shot group at 100 m,
+/// edge to edge, as "Your group".
+fn use_my_groups(inputs: &mut Inputs, precision: &crate::groups::analyse::pool::Precision) {
+    inputs.group_cm = precision.group_cm.clamp(0.5, 40.0);
+}
+
 fn capitalised(text: &str) -> String {
     let mut characters = text.chars();
     characters
@@ -3604,5 +3654,24 @@ mod tests {
             "only the click rounding remains: {dialled:?}"
         );
         assert_eq!(dialled[0], held[0]);
+    }
+
+    #[test]
+    fn use_my_groups_sets_the_five_shot_group_at_100_m_edge_to_edge() {
+        use crate::groups::analyse::pool::{Precision, five_shot_group_cm};
+        // σ 0.1 mrad with a .308: 3.07 cm centre to centre, plus 0.782 cm.
+        let precision = Precision {
+            sigma_mrad: 0.1,
+            groups: 2,
+            shots: 10,
+            group_cm: five_shot_group_cm(0.1, Some(7.82)),
+        };
+        let mut inputs = Inputs::default();
+        use_my_groups(&mut inputs, &precision);
+        assert!(
+            (inputs.group_cm - 3.852).abs() < 1e-9,
+            "{}",
+            inputs.group_cm
+        );
     }
 }

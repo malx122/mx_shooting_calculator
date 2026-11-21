@@ -22,6 +22,7 @@ use crate::i18n::{self, Language, tr, trf};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
 use crate::rifles::RiflesPage;
+use crate::sessions::SessionsPage;
 use crate::shot_log::ShotLogPage;
 use crate::sync::{self, Sync};
 use crate::targets::TargetsPage;
@@ -42,6 +43,8 @@ const PURPOSE_SETTING: &str = "purpose";
 const SEEN_VERSION: &str = "seen_version";
 /// Dark, Sun or the device's theme.
 const THEME_SETTING: &str = "theme";
+/// After how many rounds each rifle is due a clean, by rifle id.
+const CLEAN_AFTER_SETTING: &str = "clean_after";
 const UNIT_SETTINGS: &str = "units";
 
 /// What the app is used for. Target shooting leaves out everything about
@@ -80,6 +83,8 @@ pub enum Page {
     Cards,
     /// Reached from the menu and from Calculate, not from a tab.
     ShotLog,
+    /// Range sessions, reached from the menu.
+    Sessions,
 }
 
 pub enum Action {
@@ -116,6 +121,27 @@ pub enum Action {
     SaveGroup(Box<GroupSave>),
     /// Delete a group with its round log entry, offering Undo.
     DeleteGroup(String),
+    /// A change to a rifle's history, a session or a load's velocities.
+    Record(Box<crate::records::Change>),
+    /// Clean a rifle after this many rounds (rifle id), kept on this device.
+    SetCleanAfter(String, u32),
+    /// Open a group's page in Groups.
+    OpenGroup(String),
+    /// Save a file the app made on the device.
+    SaveFile(Box<crate::files::FileOut>),
+    /// Say that something couldn't be done.
+    Problem(String),
+    /// Delete several groups at once; Undo puts them all back.
+    DeleteGroups(Vec<String>),
+    /// Save a comparison or composite of groups, to open again.
+    SaveAnalysis(ballistics_store::Analysis),
+    DeleteAnalysis(String),
+    SaveLadder(ballistics_store::Ladder),
+    /// Make a ladder's run a load: the handload first, then its data in the
+    /// rifle and the ladder naming it, only once the handload is saved.
+    PromoteLadder(Box<crate::groups::analyse::pool::Promotion>),
+    /// Mark that a rifle's zero was set again: zero checks start from it.
+    SaveZeroReset(ballistics_store::ZeroReset),
 }
 
 /// The hunter's records, reloaded from the store after every change.
@@ -140,6 +166,9 @@ pub struct Data {
     pub groups: GroupsData,
     /// How each group was last framed while marking, on this device.
     pub group_views: HashMap<String, GroupView>,
+    /// After how many rounds a rifle is due a clean, by rifle id, where the
+    /// hunter changed it; kept on this device.
+    pub clean_after: HashMap<String, u32>,
 }
 
 impl Data {
@@ -185,6 +214,8 @@ enum MenuSheet {
     WhatsNew,
     /// How to put the app on the home screen by hand.
     Install,
+    /// Groups or their shots as CSV.
+    GroupsCsv,
     #[cfg(not(target_arch = "wasm32"))]
     Updates,
 }
@@ -192,6 +223,9 @@ enum MenuSheet {
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
 enum MenuChoice {
     Cards,
+    Sessions,
+    ExportWithPhotos,
+    GroupsCsv,
     Units,
     Language,
     Theme,
@@ -240,6 +274,8 @@ struct DeletedGroup {
     view: Option<GroupView>,
     /// Its photo's record, when no other group was marked on it.
     photo: Option<Photo>,
+    /// Deleted with it, from a selection.
+    with: Vec<DeletedGroup>,
 }
 
 /// How long a message that isn't an error stays, seconds.
@@ -259,12 +295,17 @@ pub struct App {
     targets: TargetsPage,
     shot_log: ShotLogPage,
     groups: GroupsPage,
+    sessions: SessionsPage,
     saved_group_settings: GroupSettings,
     /// Where photos are kept; made on the first frame (the browser's needs
     /// the context).
     photos: Option<Rc<dyn PhotoStore>>,
     /// Photo writes the store hasn't answered yet.
     photo_writes: Vec<PhotoWrite>,
+    /// A backup with photos waiting for the photos to be read.
+    photo_export: Option<crate::backup::PhotoExport>,
+    /// Photos from an imported backup, put back one a frame.
+    photo_restore: crate::backup::PhotoRestore,
     cards: CardsPage,
     saved_cards: CardSettings,
     saved_inputs: Inputs,
@@ -393,9 +434,12 @@ impl App {
             targets: TargetsPage::default(),
             shot_log: ShotLogPage::default(),
             groups: GroupsPage::new(group_settings.clone()),
+            sessions: SessionsPage::default(),
             saved_group_settings: group_settings,
             photos: None,
             photo_writes: Vec::new(),
+            photo_export: None,
+            photo_restore: Default::default(),
             cards: CardsPage::new(cards.clone()),
             saved_cards: cards,
             saved_inputs: inputs,
@@ -467,6 +511,7 @@ impl App {
             Ok::<_, StoreError>(Data {
                 groups,
                 group_views,
+                clean_after: self.store.setting(CLEAN_AFTER_SETTING)?.unwrap_or_default(),
                 rifles: self.store.rifles()?,
                 bullets: self.store.bullets()?,
                 loads: self.store.rifle_loads()?,
@@ -522,44 +567,75 @@ impl App {
     /// no other group is marked on it, offering Undo for a while. Once the
     /// group is gone Undo is offered even if what goes with it couldn't be.
     fn delete_group(&mut self, id: &str) {
-        let Some(group) = self.data.groups.groups.iter().find(|g| g.id == id).cloned() else {
-            return;
-        };
-        let rounds = crate::groups::rounds::entry_for(&self.data.groups.round_log, id).cloned();
-        let view = self.data.group_views.get(id).copied();
-        let photo = crate::groups::photo_of(&group, &self.data).cloned();
-        if let Err(error) = self.store.delete_group(id) {
-            self.report(Err(error));
-            return;
-        }
-        let rest = (|| {
-            if let Some(entry) = &rounds {
-                self.store.delete_round_log_entry(&entry.id)?;
+        self.delete_groups(&[id.to_owned()]);
+    }
+
+    /// Deletes groups with their round log entries, and their photos'
+    /// records where no other group is marked on them, offering Undo.
+    fn delete_groups(&mut self, ids: &[String]) {
+        let mut deleted: Vec<DeletedGroup> = Vec::new();
+        let mut problem = None;
+        for id in ids {
+            let Some(group) = self
+                .data
+                .groups
+                .groups
+                .iter()
+                .find(|g| &g.id == id)
+                .cloned()
+            else {
+                continue;
+            };
+            let rounds = crate::groups::rounds::entry_for(&self.data.groups.round_log, id).cloned();
+            let view = self.data.group_views.get(id).copied();
+            let photo = crate::groups::photo_of(&group, &self.data).cloned();
+            if let Err(error) = self.store.delete_group(id) {
+                problem = Some(error);
+                break;
             }
-            Ok::<_, StoreError>(match &photo {
-                Some(photo) if self.store.delete_photo(&photo.id)? => Some(photo.clone()),
-                _ => None,
-            })
-        })();
-        let (photo, text, error) = match rest {
-            Ok(photo) => (photo, tr("Group deleted").to_owned(), false),
-            Err(error) => (
-                photo,
-                trf!("Group deleted, but not all that went with it: {}", error),
-                true,
-            ),
-        };
-        self.groups.deleted(id);
-        self.data_changed = true;
-        self.status = Some(Status {
-            text,
-            error,
-            undo: Some(Box::new(DeletedGroup {
+            let rest = (|| {
+                if let Some(entry) = &rounds {
+                    self.store.delete_round_log_entry(&entry.id)?;
+                }
+                Ok::<_, StoreError>(match &photo {
+                    Some(photo) if self.store.delete_photo(&photo.id)? => Some(photo.clone()),
+                    _ => None,
+                })
+            })();
+            let photo = match rest {
+                Ok(photo) => photo,
+                Err(error) => {
+                    problem = Some(error);
+                    photo
+                }
+            };
+            self.groups.deleted(id);
+            deleted.push(DeletedGroup {
                 group,
                 rounds,
                 view,
                 photo,
-            })),
+                with: Vec::new(),
+            });
+        }
+        if deleted.is_empty() {
+            if let Some(error) = problem {
+                self.report(Err(error));
+            }
+            return;
+        }
+        let text = match (&problem, deleted.len()) {
+            (None, 1) => tr("Group deleted").to_owned(),
+            (None, count) => trf!("{} groups deleted", count),
+            (Some(error), _) => trf!("Group deleted, but not all that went with it: {}", error),
+        };
+        let mut first = deleted.remove(0);
+        first.with = deleted;
+        self.data_changed = true;
+        self.status = Some(Status {
+            text,
+            error: problem.is_some(),
+            undo: Some(Box::new(first)),
         });
         self.reload();
     }
@@ -571,8 +647,10 @@ impl App {
             rounds,
             view,
             photo,
+            with,
         } = deleted;
-        let result = (|| {
+        let several = !with.is_empty();
+        let mut result = (|| {
             if let Some(mut photo) = photo {
                 self.store.save_photo(&mut photo)?;
             }
@@ -585,13 +663,48 @@ impl App {
             }
             Ok::<_, StoreError>(())
         })();
+        for other in with {
+            if result.is_ok() {
+                result = self.put_back(other);
+            }
+        }
         self.data_changed |= result.is_ok();
-        self.report(result.map(|()| tr("The group is back").to_owned()));
+        self.report(result.map(|()| {
+            if several {
+                tr("The groups are back").to_owned()
+            } else {
+                tr("The group is back").to_owned()
+            }
+        }));
         self.reload();
-        if let Some(group) = self.data.groups.groups.iter().find(|g| g.id == group.id) {
+        if several {
+            self.page = Page::Groups;
+        } else if let Some(group) = self.data.groups.groups.iter().find(|g| g.id == group.id) {
             self.groups.open(group);
             self.page = Page::Groups;
         }
+    }
+
+    /// Saves a deleted group and what went with it again.
+    fn put_back(&mut self, deleted: DeletedGroup) -> Result<(), StoreError> {
+        let DeletedGroup {
+            mut group,
+            rounds,
+            view,
+            photo,
+            ..
+        } = deleted;
+        if let Some(mut photo) = photo {
+            self.store.save_photo(&mut photo)?;
+        }
+        self.store.save_group(&mut group)?;
+        if let Some(mut entry) = rounds {
+            self.store.save_round_log_entry(&mut entry)?;
+        }
+        if let Some(view) = view {
+            self.store.set_group_view(&group.id, &view)?;
+        }
+        Ok(())
     }
 
     /// Keeps a photo just brought in, in the photo store; the browser's
@@ -821,6 +934,7 @@ impl App {
             }),
             Action::LoadDemo => self.store.load_demo().and_then(|report| {
                 crate::groups::demo::load(&self.store)?;
+                crate::rifle_history::load_demo(&self.store)?;
                 self.page = Page::Calculate;
                 Ok(trf!("Demo data: {}", import::summary(&report)))
             }),
@@ -836,14 +950,205 @@ impl App {
                 self.delete_group(&id);
                 return;
             }
+            Action::DeleteGroups(ids) => {
+                self.delete_groups(&ids);
+                return;
+            }
+            Action::SaveAnalysis(mut analysis) => self
+                .store
+                .save_analysis(&mut analysis)
+                .map(|()| trf!("Saved {}", crate::groups::analyse::analysis_name(&analysis))),
+            Action::DeleteAnalysis(id) => self
+                .store
+                .delete_analysis(&id)
+                .map(|()| tr("Analysis deleted; its groups are kept").to_owned()),
+            Action::SaveLadder(mut ladder) => self
+                .store
+                .save_ladder(&mut ladder)
+                .map(|()| tr("Saved the ladder").to_owned()),
+            Action::PromoteLadder(promotion) => {
+                let crate::groups::analyse::pool::Promotion {
+                    mut bullet,
+                    mut ladder,
+                    load,
+                } = *promotion;
+                self.store.save_bullet(&mut bullet).and_then(|()| {
+                    self.bullets.saved(&bullet);
+                    if let Some(mut load) = load {
+                        self.store.save_rifle_load(&mut load)?;
+                    }
+                    ladder.promoted_bullet_id = Some(bullet.id.clone());
+                    self.store.save_ladder(&mut ladder)?;
+                    Ok(trf!("{} is your load now", bullet.display_name()))
+                })
+            }
+            Action::SaveZeroReset(mut reset) => self
+                .store
+                .save_zero_reset(&mut reset)
+                .map(|()| tr("Zero reset marked: zero checks start from now").to_owned()),
             Action::KeepPhoto(imported) => {
                 self.keep_photo(*imported);
+                return;
+            }
+            Action::Record(change) => self.apply_record(*change),
+            Action::SetCleanAfter(rifle_id, rounds) => {
+                self.data.clean_after.insert(rifle_id, rounds);
+                if let Err(error) = self
+                    .store
+                    .set_setting(CLEAN_AFTER_SETTING, &self.data.clean_after)
+                {
+                    self.report(Err(error));
+                }
+                return;
+            }
+            Action::OpenGroup(id) => {
+                if let Some(group) = self.data.groups.groups.iter().find(|g| g.id == id) {
+                    self.groups.open(group);
+                    self.page = Page::Groups;
+                }
+                return;
+            }
+            Action::SaveFile(file) => {
+                match crate::files::save(&file) {
+                    Ok(Some(said)) => self.report(Ok(said)),
+                    Ok(None) => {}
+                    Err(error) => self.report(Err(StoreError::Invalid(error))),
+                }
+                return;
+            }
+            Action::Problem(text) => {
+                self.report(Err(StoreError::Invalid(text)));
                 return;
             }
         };
         self.data_changed |= result.is_ok();
         self.report(result);
         self.reload();
+    }
+
+    /// Applies a change from the Rifles or Sessions page or a group's
+    /// velocities, and keeps the open editors in step with it.
+    fn apply_record(&mut self, change: crate::records::Change) -> Result<String, StoreError> {
+        let applied = crate::records::apply(&self.store, &self.data, change)?;
+        if let Some(rifle) = &applied.rifle {
+            self.rifles.history_changed(rifle);
+        }
+        if applied.load {
+            self.rifles.forget_load_draft();
+        }
+        if let Some(session) = &applied.session {
+            self.sessions.saved(session);
+        }
+        if let Some(id) = &applied.session_deleted {
+            self.sessions.deleted(id);
+        }
+        Ok(applied.message)
+    }
+
+    /// Starts the backup with photos: the photos are read first.
+    fn export_with_photos(&mut self, context: &egui::Context) {
+        let json = match self.store.export_json() {
+            Ok(json) => json,
+            Err(error) => return self.report(Err(error)),
+        };
+        let ids = self
+            .data
+            .groups
+            .photos
+            .iter()
+            .map(|photo| photo.id.clone())
+            .collect();
+        match crate::backup::PhotoExport::start(&json, ids) {
+            Ok(export) => {
+                self.photo_export = Some(export);
+                self.report(Ok(tr("Gathering the photos…").to_owned()));
+            }
+            Err(error) => self.report(Err(StoreError::Invalid(error))),
+        }
+        self.collect_photo_export(context);
+    }
+
+    /// Adds the photos to the backup with photos as they are read, and
+    /// saves it once they are in.
+    fn collect_photo_export(&mut self, context: &egui::Context) {
+        if self.photo_export.is_none() {
+            return;
+        }
+        let photos = self.photo_store(context);
+        let Some(done) = self
+            .photo_export
+            .as_mut()
+            .and_then(|export| export.poll(photos.as_ref()))
+        else {
+            return;
+        };
+        self.photo_export = None;
+        match done {
+            Ok((file, said)) => match crate::files::save(&file) {
+                Ok(Some(saved)) => self.report(Ok(format!("{saved}. {said}"))),
+                Ok(None) => self.status = None,
+                Err(error) => self.report(Err(StoreError::Invalid(error))),
+            },
+            Err(error) => self.report(Err(StoreError::Invalid(error))),
+        }
+    }
+
+    /// Puts back the next photo a backup with photos brought, with a new
+    /// thumbnail: one a frame, so a phone isn't held up.
+    fn restore_photos(&mut self, context: &egui::Context) {
+        let photos = self.photo_store(context);
+        if let Some((photo, thumbnail)) = self.photo_restore.next(photos.as_ref()) {
+            self.photo_writes.push(PhotoWrite::Photo(photo));
+            if let Some(thumbnail) = thumbnail {
+                self.photo_writes.push(PhotoWrite::Thumbnail(thumbnail));
+            }
+            self.collect_photo_writes();
+            context.request_repaint();
+        }
+    }
+
+    /// The sheet that saves the groups as CSV: per group or per shot.
+    fn groups_csv_sheet(&mut self, context: &egui::Context) {
+        use crate::groups::details::export;
+        let groups: Vec<&Group> = self.data.groups.groups.iter().collect();
+        let shown = mobile::sheet(context, "groups-csv", tr("Groups as CSV"), |ui| {
+            ui.weak(trf!(
+                "{} groups, in metric units, for a spreadsheet.",
+                groups.len()
+            ));
+            let mut file = None;
+            if mobile::list_row(
+                ui,
+                tr("One row per group"),
+                tr("With its load and weather"),
+                false,
+            )
+            .clicked()
+            {
+                file = Some(("mxsc-groups.csv", export::groups_csv(&groups, &self.data)));
+            }
+            if mobile::list_row(
+                ui,
+                tr("One row per shot"),
+                tr("mm and mrad, from the aim and from the centre"),
+                false,
+            )
+            .clicked()
+            {
+                file = Some(("mxsc-shots.csv", export::shots_csv(&groups, &self.data)));
+            }
+            file
+        });
+        if let Some((name, csv)) = shown.inner {
+            self.menu = None;
+            self.apply(Action::SaveFile(Box::new(crate::files::FileOut {
+                name: name.to_owned(),
+                bytes: csv.into_bytes(),
+                mime: "text/csv",
+            })));
+        } else if shown.closed {
+            self.menu = None;
+        }
     }
 
     fn export(&mut self) {
@@ -880,8 +1185,9 @@ impl App {
     #[cfg(not(target_arch = "wasm32"))]
     fn import(&mut self, _context: &egui::Context) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter(tr("Backups"), &["json", "srl"])
+            .add_filter(tr("Backups"), &["json", "zip", "srl"])
             .add_filter("MX Shooting Calculator (JSON)", &["json"])
+            .add_filter(tr("Backup with photos (ZIP)"), &["zip"])
             .add_filter("Strelok Pro (.srl)", &["srl"])
             .pick_file()
         else {
@@ -905,10 +1211,10 @@ impl App {
         let Some(file) = self.picked.borrow_mut().take() else {
             return;
         };
-        match ImportPreview::from_text(
+        match ImportPreview::from_bytes(
             &mut self.store,
             file.name,
-            file.text,
+            file.bytes,
             Some(file.modified_ms),
         ) {
             Ok(preview) => self.import = Some(preview),
@@ -924,7 +1230,13 @@ impl App {
             Ok(Decision::Undecided) => {}
             Ok(Decision::Cancel) => self.import = None,
             Ok(Decision::Imported(report, selected)) => {
-                self.import = None;
+                let photos = self
+                    .import
+                    .take()
+                    .map(|mut preview| preview.take_photos())
+                    .unwrap_or_default();
+                let restored = crate::backup::restored_text(photos.len());
+                self.photo_restore.add(photos);
                 self.reload();
                 self.data_changed = true;
                 if let Some((rifle_id, bullet_id)) = selected {
@@ -932,7 +1244,11 @@ impl App {
                     self.calculator.inputs.bullet_id = bullet_id;
                     self.page = Page::Calculate;
                 }
-                self.report(Ok(trf!("Imported: {}", import::summary(&report))));
+                let mut said = trf!("Imported: {}", import::summary(&report));
+                if !restored.is_empty() {
+                    said = format!("{said}. {restored}");
+                }
+                self.report(Ok(said));
             }
             Err(error) => {
                 self.import = None;
@@ -1002,7 +1318,8 @@ impl eframe::App for App {
         self.collect_photo_writes();
         let actions = match self.page {
             Page::Calculate => self.calculator.show(ui, &self.data),
-            Page::Groups => self.groups.show(ui, &self.data, photos.as_ref()),
+            Page::Groups => self.groups.show_with_tools(ui, &self.data, photos.as_ref()),
+            Page::Sessions => self.sessions.show(ui, &self.data),
             Page::Rifles => self.rifles.show(ui, &self.data),
             Page::Bullets => self.bullets.show(ui, &self.data),
             Page::Targets => self.targets.show(ui, &self.data),
@@ -1025,6 +1342,8 @@ impl eframe::App for App {
             self.groups.leave();
         }
         crate::groups::drop_hint(context);
+        self.collect_photo_export(context);
+        self.restore_photos(context);
         // The phone menu's sheets; on wider screens the desktop menu opens
         // the ones it has no room for.
         self.menu_sheet(context);
@@ -1062,6 +1381,8 @@ impl App {
                 Page::Cards => 1,
                 // Over Calculate, where its ‹ link goes.
                 Page::ShotLog => 1 + self.shot_log.depth(),
+                // Over Calculate, from the menu.
+                Page::Sessions => 1 + self.sessions.depth(),
             }
     }
 
@@ -1087,6 +1408,7 @@ impl App {
             Page::Bullets => self.bullets.unsaved(&self.data),
             Page::Targets => self.targets.unsaved(&self.data),
             Page::ShotLog => self.shot_log.unsaved(&self.data),
+            Page::Sessions => self.sessions.unsaved(&self.data),
             Page::Calculate | Page::Cards => false,
         };
         if unsaved {
@@ -1106,6 +1428,8 @@ impl App {
             Page::Cards => self.page = Page::Calculate,
             Page::ShotLog if self.shot_log.depth() > 0 => self.shot_log.back(),
             Page::ShotLog => self.page = Page::Calculate,
+            Page::Sessions if self.sessions.depth() > 0 => self.sessions.back(),
+            Page::Sessions => self.page = Page::Calculate,
         }
     }
 
@@ -1117,6 +1441,7 @@ impl App {
             || self.bullets.unsaved(&self.data)
             || self.targets.unsaved(&self.data)
             || self.shot_log.unsaved(&self.data)
+            || self.sessions.unsaved(&self.data)
     }
 
     /// "Discard your changes?", when Back would drop them.
@@ -1330,6 +1655,7 @@ impl App {
         let mut sync = false;
         let mut import = false;
         let mut export = false;
+        let mut export_photos = false;
         let mut demo = false;
         ui.menu_button(RichText::new("•••").size(14.0), |ui| {
             ui.set_min_width(230.0);
@@ -1339,6 +1665,14 @@ impl App {
                 .clicked()
             {
                 self.page = Page::ShotLog;
+                ui.close();
+            }
+            if ui
+                .button(tr("Sessions"))
+                .on_hover_text(tr("Days at the range, with their weather and groups"))
+                .clicked()
+            {
+                self.page = Page::Sessions;
                 ui.close();
             }
             ui.separator();
@@ -1406,6 +1740,24 @@ impl App {
                 ui.close();
             }
             if ui
+                .button(tr("Export backup with photos"))
+                .on_hover_text(tr(
+                    "The backup and the photos your groups are marked on, as one ZIP file",
+                ))
+                .clicked()
+            {
+                export_photos = true;
+                ui.close();
+            }
+            if ui
+                .button(tr("Groups as CSV…"))
+                .on_hover_text(tr("For a spreadsheet: one row per group, or per shot"))
+                .clicked()
+            {
+                self.menu = Some(MenuSheet::GroupsCsv);
+                ui.close();
+            }
+            if ui
                 .button(tr("Load demo data"))
                 .on_hover_text(tr(
                     "Three rifles with bullets, a scope, a target and groups",
@@ -1435,6 +1787,9 @@ impl App {
         }
         if export {
             self.export();
+        }
+        if export_photos {
+            self.export_with_photos(context);
         }
         if demo {
             self.apply(Action::LoadDemo);
@@ -1770,6 +2125,14 @@ impl App {
                     if mobile::list_row(ui, tr("Shot log"), &logged, false).clicked() {
                         choice = Some(MenuChoice::ShotLog);
                     }
+                    let sessions = match self.data.groups.sessions.len() {
+                        0 => tr("Days at the range, with their weather").to_owned(),
+                        1 => tr("1 session").to_owned(),
+                        count => trf!("{} sessions", count),
+                    };
+                    if mobile::list_row(ui, tr("Sessions"), &sessions, false).clicked() {
+                        choice = Some(MenuChoice::Sessions);
+                    }
                     if mobile::list_row(ui, tr("Cards"), tr("Range cards to print"), false)
                         .clicked()
                     {
@@ -1857,6 +2220,26 @@ impl App {
                     }
                     if mobile::list_row(
                         ui,
+                        tr("Export backup with photos"),
+                        tr("The backup and your groups' photos, as one ZIP"),
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::ExportWithPhotos);
+                    }
+                    if mobile::list_row(
+                        ui,
+                        tr("Groups as CSV"),
+                        tr("For a spreadsheet: per group or per shot"),
+                        false,
+                    )
+                    .clicked()
+                    {
+                        choice = Some(MenuChoice::GroupsCsv);
+                    }
+                    if mobile::list_row(
+                        ui,
                         tr("Load demo data"),
                         tr("Three rifles with bullets, a scope, a target and groups"),
                         false,
@@ -1919,6 +2302,15 @@ impl App {
                         self.menu = None;
                         self.page = Page::Cards;
                     }
+                    Some(MenuChoice::Sessions) => {
+                        self.menu = None;
+                        self.page = Page::Sessions;
+                    }
+                    Some(MenuChoice::ExportWithPhotos) => {
+                        self.menu = None;
+                        self.export_with_photos(context);
+                    }
+                    Some(MenuChoice::GroupsCsv) => self.menu = Some(MenuSheet::GroupsCsv),
                     Some(MenuChoice::Import) => {
                         self.menu = None;
                         self.import(context);
@@ -1943,6 +2335,7 @@ impl App {
                     None => {}
                 }
             }
+            MenuSheet::GroupsCsv => self.groups_csv_sheet(context),
             MenuSheet::Install => {
                 let shown = mobile::sheet(context, "install", tr("Install on home screen"), |ui| {
                     ui.label(RichText::new(tr("iPhone and iPad (Safari)")).strong());
@@ -2241,7 +2634,7 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
             painter.add(line(&[(10.0, 7.5), (10.0, 17.0)]));
         }
         // Not a tab.
-        Page::ShotLog => {}
+        Page::ShotLog | Page::Sessions => {}
     }
 }
 
@@ -2381,6 +2774,103 @@ mod tests {
         }
     }
 
+    /// Every text the frame painted.
+    fn painted(output: &egui::FullOutput) -> Vec<String> {
+        output
+            .shapes
+            .iter()
+            .filter_map(|shape| match &shape.shape {
+                egui::epaint::Shape::Text(text) => Some(text.galley.job.text.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn rifle_history_sessions_and_velocities_draw_in_both_themes() {
+        for choice in [ThemeChoice::Dark, ThemeChoice::Sun] {
+            for width in [1200.0, 390.0] {
+                let context = egui::Context::default();
+                theme::apply(&context);
+                let store = Store::open_in_memory().unwrap();
+                store.set_setting(THEME_SETTING, &choice).unwrap();
+                store
+                    .set_setting(PURPOSE_SETTING, &Purpose::Shooting)
+                    .unwrap();
+                let mut app = App::new(store);
+                app.apply(Action::LoadDemo);
+                let mut frame = eframe::Frame::_new_kittest();
+                let mut run = |app: &mut App| {
+                    let mut texts = Vec::new();
+                    for _ in 0..3 {
+                        let mut output = context.run_ui(
+                            egui::RawInput {
+                                screen_rect: Some(egui::Rect::from_min_size(
+                                    egui::Pos2::ZERO,
+                                    egui::vec2(width, 2400.0),
+                                )),
+                                ..Default::default()
+                            },
+                            |ui| eframe::App::ui(app, ui, &mut frame),
+                        );
+                        texts = painted(&output);
+                        output.textures_delta.clear();
+                    }
+                    texts
+                };
+                let rifle = app
+                    .data
+                    .rifles
+                    .iter()
+                    .find(|rifle| rifle.fitted_barrel_id.is_some())
+                    .cloned()
+                    .expect("the demo has a rifle with barrels");
+                app.rifles.edit_load(&rifle, "");
+                app.page = Page::Rifles;
+                let texts = run(&mut app);
+                if width < 640.0 {
+                    let right: f32 = context
+                        .data(|memory| {
+                            memory.get_temp(egui::Id::unique(crate::rifles::EDITOR_RIGHT))
+                        })
+                        .expect("the editor was drawn");
+                    assert!(right <= width + 0.5, "the rifle editor ends at {right}");
+                }
+                for expected in ["Round counts", "Since clean", "Barrels", "Recent rounds"] {
+                    assert!(texts.iter().any(|t| t == expected), "{expected} at {width}");
+                }
+
+                let session = app.data.groups.sessions[0].clone();
+                app.page = Page::Sessions;
+                app.sessions.open(&session, &app.data);
+                let texts = run(&mut app);
+                assert!(texts.iter().any(|t| t == "Edit session"), "at {width}");
+
+                let group = app
+                    .data
+                    .groups
+                    .groups
+                    .iter()
+                    .find(|group| {
+                        crate::groups::details::velocity::shot_velocities(&group.marks)
+                            .iter()
+                            .flatten()
+                            .count()
+                            >= 5
+                    })
+                    .cloned()
+                    .expect("a demo group has velocities");
+                app.apply(Action::OpenGroup(group.id.clone()));
+                assert!(app.page == Page::Groups);
+                let texts = run(&mut app);
+                assert!(
+                    texts.iter().any(|t| t == "Velocity × vertical"),
+                    "the chart at {width}"
+                );
+            }
+        }
+    }
+
     #[test]
     fn every_page_draws_in_both_themes_on_a_desktop_and_a_phone() {
         for choice in [ThemeChoice::Dark, ThemeChoice::Sun] {
@@ -2404,6 +2894,8 @@ mod tests {
                     (Page::Targets, None),
                     (Page::Cards, None),
                     (Page::ShotLog, None),
+                    (Page::Sessions, None),
+                    (Page::Calculate, Some(MenuSheet::GroupsCsv)),
                     (Page::Calculate, Some(MenuSheet::Main)),
                     (Page::Calculate, Some(MenuSheet::Theme)),
                 ];
@@ -2458,7 +2950,11 @@ mod tests {
         use crate::groups::rounds::{self, RoundSync};
         let mut app = App::new(Store::open_in_memory().unwrap());
         app.apply(Action::LoadDemo);
-        assert_eq!(app.data.groups.groups.len(), 5, "the demo groups");
+        assert_eq!(
+            app.data.groups.groups.len(),
+            crate::groups::demo::GROUP_COUNT,
+            "the demo groups"
+        );
         let mut group = app.data.groups.groups[0].clone();
         group.count_rounds = true;
         let entry = rounds::sync(&group, None, true);
@@ -2499,6 +2995,7 @@ mod tests {
         use crate::groups::rounds;
         let mut app = App::new(Store::open_in_memory().unwrap());
         app.apply(Action::LoadDemo);
+        let logged = app.data.groups.round_log.clone();
         let mut group = app.data.groups.groups[0].clone();
         group.id = String::new();
         group.count_rounds = true;
@@ -2511,8 +3008,8 @@ mod tests {
             view: None,
         })));
         assert!(app.status.as_ref().is_some_and(|status| status.error));
-        assert!(
-            app.data.groups.round_log.is_empty(),
+        assert_eq!(
+            app.data.groups.round_log, logged,
             "no orphan round log entry"
         );
         assert_eq!(app.data.groups.sessions.len(), 1, "only the demo's session");

@@ -18,6 +18,10 @@ use crate::widgets::{
     reticle_name, scope_picker, scope_summary, text,
 };
 
+/// Where the phone's rifle editor ends on the right, for the layout test.
+#[cfg(test)]
+pub const EDITOR_RIGHT: &str = "rifle-editor-right";
+
 enum Editing {
     Nothing,
     Rifle(Rifle),
@@ -35,6 +39,8 @@ pub struct RiflesPage {
     /// taken for unsaved changes.
     blank_rifle: Option<Rifle>,
     blank_scope: Option<UserScope>,
+    /// The open rifle's round counts, barrels and round log.
+    history: crate::rifle_history::HistoryState,
 }
 
 impl Default for RiflesPage {
@@ -47,6 +53,7 @@ impl Default for RiflesPage {
             loads: LoadEditor::default(),
             blank_rifle: None,
             blank_scope: None,
+            history: Default::default(),
         }
     }
 }
@@ -114,6 +121,20 @@ impl RiflesPage {
         }
     }
 
+    /// Takes what a barrel change saved on the rifle (its fitted barrel and
+    /// ballistics) into an open draft, keeping the draft's other edits.
+    pub fn history_changed(&mut self, rifle: &Rifle) {
+        if let Editing::Rifle(editing) = &mut self.editing
+            && editing.id == rifle.id
+        {
+            editing.fitted_barrel_id = rifle.fitted_barrel_id.clone();
+            editing.barrel_length_mm = rifle.barrel_length_mm;
+            editing.twist_in = rifle.twist_in;
+            editing.right_hand_twist = rifle.right_hand_twist;
+            editing.updated_at = rifle.updated_at;
+        }
+    }
+
     /// Keeps the editor on the record that was just saved.
     pub fn saved(&mut self, rifle: &Rifle) {
         if matches!(&self.editing, Editing::Rifle(editing) if editing.id == rifle.id) {
@@ -159,7 +180,17 @@ impl RiflesPage {
                         actions.push(Action::Back);
                     }
                     let cancel = egui::ScrollArea::vertical()
-                        .show(ui, |ui| self.editor(ui, data, &mut actions))
+                        .show(ui, |ui| {
+                            let cancel = self.editor(ui, data, &mut actions);
+                            #[cfg(test)]
+                            ui.ctx().data_mut(|memory| {
+                                memory.insert_temp(
+                                    egui::Id::unique(EDITOR_RIGHT),
+                                    ui.min_rect().right(),
+                                );
+                            });
+                            cancel
+                        })
                         .inner;
                     if cancel {
                         self.editing = Editing::Nothing;
@@ -201,6 +232,7 @@ impl RiflesPage {
                 &mut self.scope_search,
                 &mut self.load_bullet,
                 &mut self.loads,
+                &mut self.history,
                 actions,
             ),
             Editing::Scope(scope) => scope_editor(ui, scope, data, actions),
@@ -316,6 +348,7 @@ fn rifle_editor(
     scope_search: &mut String,
     load_bullet: &mut Option<String>,
     loads: &mut LoadEditor,
+    history: &mut crate::rifle_history::HistoryState,
     actions: &mut Vec<Action>,
 ) -> bool {
     let stored = data.rifles.iter().find(|stored| stored.id == rifle.id);
@@ -359,6 +392,8 @@ fn rifle_editor(
     }
 
     if let Some(stored) = stored {
+        ui.separator();
+        crate::rifle_history::section(ui, stored, data, history, actions);
         ui.separator();
         loads_section(ui, stored, data, load_bullet, loads, actions);
     }
@@ -476,7 +511,7 @@ fn rifle_fields(
                 0.1,
             );
             ui.label(tr("Zero"));
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 units::drag(
                     ui,
                     &mut rifle.zero_range_m,
@@ -578,6 +613,16 @@ fn rifle_fields(
                 ui.selectable_value(&mut rifle.right_hand_twist, false, tr("Left"));
             });
             ui.end_row();
+            ui.label(tr("Rounds before logging"));
+            ui.add(
+                NumberField::new(&mut rifle.rounds_before_logging)
+                    .range(0..=1_000_000)
+                    .speed(10),
+            )
+            .on_hover_text(tr(
+                "Rounds the action fired before you began the round log; logged rounds add to it",
+            ));
+            ui.end_row();
         });
         ui.weak(tr(
             "The barrel length is for your records: the calculation doesn't change the \
@@ -664,7 +709,7 @@ fn click_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data) {
     ui.label(tr("Clicks"));
     match from_scope {
         Some(clicks) if !own && clicks == (rifle.click_unit, rifle.click_value) => {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(trf!(
                     "{} {} a click, from the scope",
                     rifle.click_value,
@@ -741,7 +786,7 @@ fn scope_rows(ui: &mut egui::Ui, rifle: &mut Rifle, data: &Data, search: &mut St
         return;
     };
     ui.label("");
-    ui.weak(scope_summary(&scope));
+    ui.add(egui::Label::new(RichText::new(scope_summary(&scope)).weak()).wrap());
     ui.end_row();
     ui.label(tr("Reticle"));
     egui::ComboBox::from_id_salt("rifle-reticle")

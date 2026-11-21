@@ -190,8 +190,12 @@ A group may name the session it was shot in (`session_id`); the session's
 weather applies unless the group's own `conditions` give a value. A ladder's rungs
 are groups naming the `ladder_id`, each at its `rung_value`: grams of
 powder for a `charge` ladder, the cartridge's base-to-ogive length (CBTO)
-in millimetres for a `seating` one. `analyses` are saved comparisons and
-composites; the app works them out again from their groups.
+in millimetres for a `seating` one. Other groups of a handload keep the
+recipe's `charge_g` and `cbto_mm` as they were when the group was saved,
+so a later change to the recipe doesn't move them on a trend; where a
+group has none, readers may fall back to its bullet's recipe.
+`analyses` are saved comparisons and composites; the app works them out
+again from their groups.
 
 **Photos** are not in the file: `photos` describes them (size, type, when
 taken, calibration). The app keeps the photos themselves, and a thumbnail
@@ -222,6 +226,65 @@ The round log entry the app makes when a group is saved names the group
 (`group_id`) and has an id made from it (a version 5 UUID of the group's
 id, in the namespace `6d787363-726f-756e-6473-8f2a41c6d903`), so a group
 saved on two devices is counted once.
+
+## A backup with photos
+
+**Export backup with photos** writes one `.zip` file,
+`mxsc-backup-with-photos.zip`, that also holds the photos the backup's
+groups are marked on:
+
+```
+mxsc-backup-with-photos.zip
+├── mxsc-backup.json          the backup file described here
+└── photos/
+    ├── 9f86d081…0a08.jpg     one JPEG per photo this device has,
+    └── …                     named by its id (the SHA-256 of its bytes)
+```
+
+- `mxsc-backup.json` is exactly what **Export backup** writes, deflated.
+- Each photo is stored as it is kept on the device (JPEG, without camera
+  metadata), uncompressed. A photo kept only on another device is left
+  out; its record is still in the backup.
+- Other files in the zip are ignored.
+
+**Import backup…** reads such a zip as it reads the plain file: the records
+are merged as from `mxsc-backup.json`, and each photo one of its `photos`
+records names is put back in the device's photo store, with a new
+thumbnail; other photos are left in the zip. Before anything is unpacked,
+a zip is refused if it holds two files of one name, more than 20 000
+files, more than 2 GiB unpacked (512 MiB in the browser), a backup file
+over 256 MiB, a photo over 64 MiB, or a file over 1 MiB that unpacked is
+more than 100 times its packed size. A photo that isn't a JPEG or whose
+bytes don't match its name is refused, and with it the whole file.
+
+## Groups as CSV
+
+**Groups as CSV** writes a spreadsheet file in metric units, comma
+separated, with a header row; times are UTC (ISO 8601), decimals use a
+point. A text that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+return (a name, a tag or a note) gets a `'` in front, so a spreadsheet
+shows it rather than running it as a formula.
+
+- `mxsc-groups.csv`, one row per group: `group_id`, `taken_at_utc`, the
+  `rifle`, `barrel` and `bullet` by name, the recipe's `powder`,
+  `charge_g` and `cbto_mm`, `distance_m`, the `session`'s place, `shots`
+  and `counted_shots` (without cold-bore shots and called fliers), the
+  sizes in mm and mrad (`extreme_spread_*`, `mean_radius_*`, `sigma_*`,
+  `cep_*`, `width_mm`, `height_mm`), the impact from the aim
+  (`impact_right_*`, `impact_up_*`), the conditions (`temperature_c`,
+  `powder_temperature_c`, `pressure_hpa`, `humidity_percent`,
+  `wind_speed_mps`, `wind_clock`; the group's own, else its session's), the
+  velocities (`velocity_count`, `velocity_avg_mps`, `velocity_sd_mps`,
+  `velocity_es_mps`), `tags`, `notes` and `archived`.
+- `mxsc-shots.csv`, one row per shot: `group_id`, `taken_at_utc`, `rifle`,
+  `bullet`, `distance_m`, `shot` (its number in marking order),
+  `cold_bore`, `called_flier`, `counted`, where it is from the aim
+  (`right_of_aim_mm`, `up_from_aim_mm`, `right_of_aim_mrad`,
+  `up_from_aim_mrad`) and from the centre of the shots that count
+  (`right_of_centre_*`, `up_from_centre_*`), and its `velocity_mps`.
+
+A group's page saves its own shots the same way (**Shots (CSV)**), and the
+group as a picture (**Picture (PNG)**).
 
 ## Writing a file for the app
 
@@ -836,6 +899,8 @@ A group of shots: where they went, and what, where and how they were shot.
 | `bullet_id` | string or null | The bullet or load shot (one of the file's `bullets`), if given. |
 | `ladder_id` | string or null | The ladder (one of the file's `ladders`) this group is a rung of. |
 | `rung_value` | number or null | The rung's value, in the unit the ladder's `variable` names: the charge in grams, or the seating's CBTO in mm. |
+| `charge_g` | number or null | The handload's powder charge when the group was saved, in grams, as its bullet's `recipe` gave it; `null` when it gave none (a factory load, or a group saved before this was kept). |
+| `cbto_mm` | number or null | The handload's cartridge base to ogive (CBTO) when the group was saved, mm, as its bullet's `recipe` gave it; `null` when it gave none. |
 | `distance_m` | number or null | The distance to the target; `null` when not given, which leaves out sizes as angles. |
 | `session_id` | string or null | The session (one of the file's `sessions`) it was shot in. |
 | `conditions` | [Conditions](#conditions) | Conditions that differ from the session's; what is `null` here is the session's. |

@@ -3,7 +3,7 @@
 //! Shown in a sheet on a phone and in the right pane on a desktop.
 
 use ballistics_store::model::now_ms;
-use ballistics_store::{Bullet, Group, Rifle, Session};
+use ballistics_store::{Bullet, Group, Ladder, LadderVariable, Rifle, Session};
 use eframe::egui;
 
 use super::library::{day_name, session_line};
@@ -12,6 +12,7 @@ use crate::i18n::{tr, trf};
 use crate::units::{self, Quantity};
 
 const DAY_MS: i64 = 86_400_000;
+const GRAINS_PER_GRAM: f64 = 15.432_358;
 /// The most sessions the form offers to pick from.
 const SESSIONS_OFFERED: usize = 12;
 /// The distance a first group is at.
@@ -40,6 +41,13 @@ pub struct Form {
     pub tags: String,
     pub notes: String,
     pub count_rounds: bool,
+    /// The ladder the group is a rung of.
+    pub ladder_id: Option<String>,
+    /// The rung's value: the charge in g, or the CBTO in mm.
+    pub rung_value: f64,
+    /// What was dialled away from the zero for it, mrad, [right, up].
+    pub dialled_mrad: [f64; 2],
+    pub include_in_zero: bool,
 }
 
 impl Form {
@@ -75,17 +83,35 @@ impl Form {
             .map_or(SessionChoice::None, |session| {
                 SessionChoice::Existing(session.id.clone())
             });
-        Form {
+        let distance_m = last
+            .and_then(|group| group.distance_m)
+            .unwrap_or(DEFAULT_DISTANCE_M);
+        let mut form = Form {
             rifle_id,
             bullet_id,
-            distance_m: last
-                .and_then(|group| group.distance_m)
-                .unwrap_or(DEFAULT_DISTANCE_M),
+            distance_m,
             session,
             tags: String::new(),
             notes: String::new(),
             count_rounds,
-        }
+            ladder_id: None,
+            rung_value: 0.0,
+            dialled_mrad: [0.0, 0.0],
+            include_in_zero: true,
+        };
+        form.include_in_zero = form.at_zero_range(data);
+        form
+    }
+
+    /// Whether the group's distance is its rifle's zero range, as zero
+    /// checks take it; true without a rifle.
+    pub fn at_zero_range(&self, data: &Data) -> bool {
+        self.rifle_id
+            .as_ref()
+            .and_then(|id| data.rifles.iter().find(|rifle| &rifle.id == id))
+            .is_none_or(|rifle| {
+                super::analyse::pool::at_zero_range(self.distance_m, rifle.zero_range_m)
+            })
     }
 
     /// A saved group's details.
@@ -101,7 +127,23 @@ impl Form {
             tags: group.tags.join(", "),
             notes: group.notes.clone(),
             count_rounds: group.count_rounds,
+            ladder_id: group.ladder_id.clone(),
+            rung_value: group.rung_value.unwrap_or(0.0),
+            dialled_mrad: group.dialled_offset_mrad,
+            include_in_zero: group.include_in_zero,
         }
+    }
+
+    /// The form as it would be saved: a ladder's rung counts in no zero
+    /// check, and without a ladder there is no rung.
+    fn saved(&self) -> Form {
+        let mut form = self.clone();
+        if form.ladder_id.is_some() {
+            form.include_in_zero = false;
+        } else {
+            form.rung_value = 0.0;
+        }
+        form
     }
 
     /// Another group shot like `group`, as on the same photo.
@@ -114,7 +156,7 @@ impl Form {
 
     /// Whether the details differ from the group's.
     pub fn changed(&self, group: &Group) -> bool {
-        *self != Form::of(group)
+        self.saved() != Form::of(group).saved()
     }
 
     /// The bullet's diameter, for bullet-sized holes and edge-to-edge sizes.
@@ -135,12 +177,32 @@ impl Form {
         if rifle.is_none() {
             group.barrel_id = None;
         }
+        let bullet_changed = group.bullet_id != self.bullet_id;
         group.rifle_id = self.rifle_id.clone();
         group.bullet_id = self.bullet_id.clone();
         group.distance_m = Some(self.distance_m.clamp(1.0, 5000.0));
         group.tags = parse_tags(&self.tags);
         group.notes = self.notes.trim_end().to_owned();
         group.count_rounds = self.count_rounds;
+        let ladder = self
+            .ladder_id
+            .as_ref()
+            .filter(|id| data.groups.ladders.iter().any(|ladder| &ladder.id == *id));
+        group.ladder_id = ladder.cloned();
+        group.rung_value = ladder.map(|_| self.rung_value);
+        if ladder.is_some() {
+            (group.charge_g, group.cbto_mm) = (None, None);
+        } else if bullet_changed || (group.charge_g.is_none() && group.cbto_mm.is_none()) {
+            (group.charge_g, group.cbto_mm) = recipe_now(self.bullet_id.as_deref(), data);
+        }
+        group.include_in_zero = self.include_in_zero && ladder.is_none();
+        group.dialled_offset_mrad = self.dialled_mrad.map(|mrad| {
+            if mrad.is_finite() {
+                mrad.clamp(-100.0, 100.0)
+            } else {
+                0.0
+            }
+        });
         match &self.session {
             SessionChoice::None => {
                 group.session_id = None;
@@ -158,6 +220,25 @@ impl Form {
             }
         }
     }
+}
+
+/// The handload's charge (g) and CBTO (mm) as its recipe gives them now,
+/// kept with a group so a later change to the recipe doesn't move it.
+pub fn recipe_now(bullet_id: Option<&str>, data: &Data) -> (Option<f64>, Option<f64>) {
+    let recipe = data
+        .bullets
+        .iter()
+        .find(|bullet| Some(bullet.id.as_str()) == bullet_id)
+        .and_then(|bullet| bullet.recipe.as_ref());
+    let within = |value: Option<f64>, range: std::ops::RangeInclusive<f64>| {
+        value.filter(|value| range.contains(value))
+    };
+    recipe.map_or((None, None), |recipe| {
+        (
+            within(recipe.charge_g, 0.01..=30.0),
+            within(recipe.cbto_mm, 5.0..=200.0),
+        )
+    })
 }
 
 /// The bullet's diameter, mm.
@@ -208,6 +289,7 @@ pub fn parse_tags(text: &str) -> Vec<String> {
 /// The form's fields. `shots` is how many rounds the group holds.
 pub fn show(ui: &mut egui::Ui, form: &mut Form, data: &Data, shots: usize) {
     let u = units::prefs(ui.ctx());
+    let placed = (form.rifle_id.clone(), form.distance_m);
     crate::widgets::grid(ui, "group-form", |ui| {
         ui.label(tr("Rifle"));
         let rifle_name = match &form.rifle_id {
@@ -293,6 +375,31 @@ pub fn show(ui: &mut egui::Ui, form: &mut Form, data: &Data, shots: usize) {
             1.0,
         );
 
+        ladder_rows(ui, form, data);
+        ui.label(tr("Dialled for this group")).on_hover_text(tr(
+            "What you dialled away from your zero for it, up and right. Zero checks take \
+                 it off the group's impact.",
+        ));
+        ui.horizontal(|ui| {
+            ui.weak("↑");
+            units::drag(
+                ui,
+                &mut form.dialled_mrad[1],
+                Quantity::GroupAngle,
+                -100.0..=100.0,
+                0.01,
+            );
+            ui.weak("→");
+            units::drag(
+                ui,
+                &mut form.dialled_mrad[0],
+                Quantity::GroupAngle,
+                -100.0..=100.0,
+                0.01,
+            );
+        });
+        ui.end_row();
+
         ui.label(tr("Session"));
         session_picker(ui, form, data, &u);
         ui.end_row();
@@ -341,6 +448,18 @@ pub fn show(ui: &mut egui::Ui, form: &mut Form, data: &Data, shots: usize) {
             .desired_rows(2)
             .desired_width(f32::INFINITY),
     );
+    // "Include in zero check" follows the zero range when the rifle or the
+    // distance changes; the hunter can still change it.
+    if (form.rifle_id.clone(), form.distance_m) != placed {
+        form.include_in_zero = form.at_zero_range(data);
+    }
+    if form.ladder_id.is_none() {
+        ui.checkbox(&mut form.include_in_zero, tr("Include in zero check"))
+            .on_hover_text(tr(
+                "Zero checks pool the groups shot since the last zero reset. Leave out a group \
+                 shot on purpose somewhere else.",
+            ));
+    }
     let rifle_known = form
         .rifle_id
         .as_ref()
@@ -352,6 +471,94 @@ pub fn show(ui: &mut egui::Ui, form: &mut Form, data: &Data, shots: usize) {
             trf!("Count these {} rounds on the barrel", shots)
         };
         ui.checkbox(&mut form.count_rounds, label);
+    }
+}
+
+/// The rung value a ladder's next group starts at: its newest group's, or
+/// its bullet's recipe.
+pub fn rung_start(ladder: &Ladder, data: &Data) -> f64 {
+    let newest = data
+        .groups
+        .groups
+        .iter()
+        .filter(|group| group.ladder_id.as_deref() == Some(ladder.id.as_str()))
+        .max_by_key(|group| group.taken_at)
+        .and_then(|group| group.rung_value);
+    let recipe = data
+        .bullets
+        .iter()
+        .find(|bullet| bullet.id == ladder.bullet_id)
+        .and_then(|bullet| bullet.recipe.as_ref());
+    match ladder.variable {
+        LadderVariable::Charge => newest.or_else(|| recipe?.charge_g).unwrap_or(2.5),
+        LadderVariable::Seating => newest.or_else(|| recipe?.cbto_mm).unwrap_or(50.0),
+    }
+}
+
+/// "Part of a ladder", and the rung's charge or seating.
+fn ladder_rows(ui: &mut egui::Ui, form: &mut Form, data: &Data) {
+    let ladders: Vec<&Ladder> = data
+        .groups
+        .ladders
+        .iter()
+        .filter(|ladder| {
+            form.rifle_id
+                .as_ref()
+                .is_none_or(|id| &ladder.rifle_id == id)
+        })
+        .collect();
+    if ladders.is_empty() && form.ladder_id.is_none() {
+        return;
+    }
+    ui.label(tr("Part of a ladder"));
+    let chosen = form
+        .ladder_id
+        .as_ref()
+        .and_then(|id| data.groups.ladders.iter().find(|ladder| &ladder.id == id));
+    let name = |ladder: &Ladder| super::analyse::ladder_name(ladder, data);
+    let before = form.ladder_id.clone();
+    egui::ComboBox::from_id_salt("group-ladder")
+        .selected_text(chosen.map_or_else(|| tr("No").to_owned(), name))
+        .width(ui.available_width().clamp(120.0, 260.0))
+        .truncate()
+        .show_ui(ui, |ui| {
+            ui.selectable_value(&mut form.ladder_id, None, tr("No"));
+            for ladder in &ladders {
+                ui.selectable_value(&mut form.ladder_id, Some(ladder.id.clone()), name(ladder));
+            }
+        });
+    ui.end_row();
+    let chosen = form
+        .ladder_id
+        .as_ref()
+        .and_then(|id| data.groups.ladders.iter().find(|ladder| &ladder.id == id));
+    if form.ladder_id != before
+        && let Some(ladder) = chosen
+    {
+        form.rung_value = rung_start(ladder, data);
+        form.rifle_id = Some(ladder.rifle_id.clone());
+        form.bullet_id = Some(ladder.bullet_id.clone());
+    }
+    if let Some(ladder) = chosen {
+        match ladder.variable {
+            LadderVariable::Charge => units::quantity(
+                ui,
+                tr("Charge"),
+                &mut form.rung_value,
+                Quantity::PowderCharge,
+                0.01..=30.0,
+                // 0.1 gr a step.
+                0.1 / GRAINS_PER_GRAM,
+            ),
+            LadderVariable::Seating => units::quantity(
+                ui,
+                tr("Seating (CBTO)"),
+                &mut form.rung_value,
+                Quantity::BulletLength,
+                5.0..=200.0,
+                0.01,
+            ),
+        }
     }
 }
 
@@ -440,5 +647,39 @@ mod tests {
         assert_eq!(session.place, "Boden");
         assert_eq!(group.session_id.as_deref(), Some(session.id.as_str()));
         assert!(session.validate().is_ok());
+    }
+
+    #[test]
+    fn a_ladder_rung_counts_in_no_zero_check_and_dialling_is_kept() {
+        let mut data = Data::default();
+        let ladder = Ladder::new("rifle", "load", LadderVariable::Charge);
+        data.groups.ladders.push(ladder.clone());
+        let mut group = Group::on_grid(200.0, 200.0, 1);
+        let mut form = Form::of(&group);
+        assert!(form.include_in_zero);
+        form.dialled_mrad = [0.3, 2.5];
+        form.apply(&mut group, &data);
+        assert_eq!(group.dialled_offset_mrad, [0.3, 2.5]);
+        assert!(group.include_in_zero && group.ladder_id.is_none() && group.rung_value.is_none());
+
+        form.ladder_id = Some(ladder.id.clone());
+        form.rung_value = 2.916;
+        assert!(form.changed(&group));
+        form.apply(&mut group, &data);
+        assert_eq!(group.ladder_id.as_deref(), Some(ladder.id.as_str()));
+        assert_eq!(group.rung_value, Some(2.916), "grams, as stored");
+        assert!(
+            !group.include_in_zero,
+            "a ladder's rung stays out of zero checks"
+        );
+        assert!(!form.changed(&group));
+
+        form.ladder_id = None;
+        form.apply(&mut group, &data);
+        assert!(group.rung_value.is_none());
+        assert!(
+            !form.changed(&group),
+            "the rung's value goes with the ladder"
+        );
     }
 }

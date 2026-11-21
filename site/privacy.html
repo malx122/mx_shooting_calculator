@@ -117,7 +117,11 @@
         first, for the group's date.</p>
       <p>Photos stay on the device they were brought in on: on a computer in a folder beside the
         database (<code>mxsc-photos</code> beside <code>mxsc.sqlite</code>), in the browser in
-        the browser's storage for this site. They are not in exported backups or sync copies.
+        the browser's storage for this site. They are not in exported backups or sync copies,
+        unless you choose <strong>Export backup with photos</strong>: that saves one ZIP file,
+        wherever you choose, with the backup and the photos your groups are marked on (as kept
+        on the device, without their metadata). Importing that file puts the photos back on the
+        device you import it on. The app sends it nowhere.
         What you mark on them is: the groups with their shots, scale and aim point, the range
         sessions (place, date and weather), the record of each photo a group is
         marked on (named by a code worked out from the photo, with its size, the time it was
@@ -127,14 +131,20 @@
         brought in but saved no group on, or whose groups you deleted) is deleted from the
         device the next time the app starts. How a group was framed while
         marking is kept on each device only.</p>
+      <p>Velocities you type, paste or read from a chronograph file are kept with the group.
+        <strong>Picture (PNG)</strong> and the CSV exports save files on your device only:
+        the group's drawing, or its photo, with its numbers, or your groups and shots as a
+        spreadsheet.</p>
 
       <h2>Weather and your position</h2>
       <p>When you ask for the weather, the app sends the place name you typed, or your
         position, to <a href="https://open-meteo.com/">Open-Meteo</a>, which answers with the
         forecast. For the weather, your position is read from the device only when you press
-        <strong>Weather here</strong> or <strong>Use my position</strong>, and only after you
-        allow it. It is used for the weather and for today's shooting light, and is kept on
-        your device. Open-Meteo's own terms and privacy policy cover what it does with
+        <strong>Weather here</strong>, <strong>Use my position</strong> or, for a range session,
+        <strong>Fill in the weather</strong>, and only after you allow it. It is used for the
+        weather and for today's shooting light, and is kept on your device; a session keeps
+        the weather that came, not the position. <strong>Weather at</strong> a session's place
+        sends only the place's name. Open-Meteo's own terms and privacy policy cover what it does with
         requests.</p>
 
       <h2>The shot log and where you shot</h2>

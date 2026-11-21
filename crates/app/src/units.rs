@@ -47,6 +47,9 @@ pub enum Quantity {
     GroupAngle,
     /// A group's size on the target; base millimetres.
     GroupSize,
+    /// A powder charge; base grams, shown in grains unless the hunter
+    /// chooses grams, as reloaders weigh in grains.
+    PowderCharge,
 }
 
 /// A display unit: `shown = base × scale + offset`.
@@ -72,7 +75,7 @@ const FEET_PER_METRE: f64 = 3.280_84;
 const MM_PER_INCH: f64 = 25.4;
 
 impl Quantity {
-    pub const ALL: [Quantity; 17] = [
+    pub const ALL: [Quantity; 18] = [
         Quantity::Distance,
         Quantity::ShortLength,
         Quantity::SightHeight,
@@ -90,6 +93,7 @@ impl Quantity {
         Quantity::Twist,
         Quantity::GroupAngle,
         Quantity::GroupSize,
+        Quantity::PowderCharge,
     ];
 
     pub fn name(self) -> &'static str {
@@ -111,10 +115,12 @@ impl Quantity {
             Quantity::Twist => tr("Twist"),
             Quantity::GroupAngle => tr("Group size, as an angle"),
             Quantity::GroupSize => tr("Group size, on the target"),
+            Quantity::PowderCharge => tr("Powder charge"),
         }
     }
 
-    /// The units on offer; the first is metric, the last imperial.
+    /// The units on offer; the first is metric, the last imperial (but a
+    /// powder charge is in grains first for everyone).
     pub fn units(self) -> &'static [Unit] {
         match self {
             Quantity::Distance => &DISTANCE,
@@ -133,6 +139,7 @@ impl Quantity {
             Quantity::Twist => &TWIST,
             Quantity::GroupAngle => &GROUP_ANGLE,
             Quantity::GroupSize => &GROUP_SIZE,
+            Quantity::PowderCharge => &POWDER_CHARGE,
         }
     }
 }
@@ -174,6 +181,8 @@ const GROUP_ANGLE: [Unit; 3] = [
     unit("MOA", groups_core::angles::MOA_PER_MRAD, 2),
     unit("cm/100 m", groups_core::angles::CM_PER_100M_PER_MRAD, 1),
 ];
+/// From grams: grains first, as reloaders weigh in them.
+const POWDER_CHARGE: [Unit; 2] = [unit("gr", 15.432_358, 1), unit("g", 1.0, 3)];
 /// From mm.
 const GROUP_SIZE: [Unit; 3] = [
     unit("mm", 1.0, 1),
@@ -265,6 +274,7 @@ impl UnitPrefs {
                         // Hunters using imperial units still mostly give twist in inches.
                         Quantity::Twist => units[0],
                         Quantity::GroupAngle => units[1],
+                        Quantity::PowderCharge => units[0],
                         _ => units[units.len() - 1],
                     };
                     (quantity, choice.label.to_owned())
@@ -519,5 +529,16 @@ mod tests {
         let saved = serde_json::to_string(&prefs).unwrap();
         let back: UnitPrefs = serde_json::from_str(&saved).unwrap();
         assert_eq!(back.unit(Quantity::Pressure).label, "mmHg");
+    }
+
+    #[test]
+    fn powder_charges_are_in_grains_for_everyone_until_grams_are_chosen() {
+        for prefs in [UnitPrefs::metric(), UnitPrefs::imperial()] {
+            assert_eq!(prefs.label(Quantity::PowderCharge), "gr");
+            assert_eq!(prefs.format(Quantity::PowderCharge, 2.916), "45.0 gr");
+        }
+        let mut prefs = UnitPrefs::metric();
+        prefs.set(Quantity::PowderCharge, Quantity::PowderCharge.units()[1]);
+        assert_eq!(prefs.format(Quantity::PowderCharge, 2.916), "2.916 g");
     }
 }

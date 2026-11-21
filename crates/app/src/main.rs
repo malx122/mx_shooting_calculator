@@ -2,6 +2,7 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 mod app;
+mod backup;
 mod body3d;
 mod bullets;
 mod calculator;
@@ -23,10 +24,13 @@ mod loads;
 mod mobile;
 mod number_field;
 mod photos;
+mod records;
 #[cfg(target_arch = "wasm32")]
 mod relaxed_idb;
+mod rifle_history;
 mod rifles;
 mod sensors;
+mod sessions;
 mod shot_log;
 mod sight_picture;
 mod startup;

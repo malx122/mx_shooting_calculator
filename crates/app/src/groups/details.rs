@@ -4,9 +4,15 @@
 
 use ballistics_store::Rifle;
 use eframe::egui::{self, RichText};
-use groups_core::{GroupStats, Options, Point, RadiusMethod, VelocityStats, flier_check};
+use groups_core::{GroupStats, Options, Point, RadiusMethod, flier_check};
 
 use super::measure::Measured;
+
+// Declared here, not in groups/mod.rs, so the two can move there later.
+#[path = "export.rs"]
+pub mod export;
+#[path = "velocity.rs"]
+pub mod velocity;
 use crate::calculator::clicks_text;
 use crate::i18n::{tr, trf};
 use crate::theme;
@@ -16,7 +22,7 @@ use crate::units::{self, Quantity, UnitPrefs};
 const ROUGH_BELOW: usize = 5;
 
 /// Choices on the numbers that stay while the page is open.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Default)]
 pub struct NumbersState {
     /// Show the statistics with the called fliers counted.
     pub with_called_fliers: bool,
@@ -28,6 +34,8 @@ pub struct NumbersState {
     pub circle_mm: Option<f64>,
     /// The circle is typed in rather than a preset.
     pub custom_circle: bool,
+    /// The velocities and sharing below the numbers.
+    pub tools: velocity::GroupTools,
 }
 
 /// What a tap on the numbers asked for.
@@ -482,7 +490,7 @@ pub fn more(
     }
     let event = flier_card(ui, subject, stats, state, &u);
     cold_bore(ui, subject, stats, &u);
-    velocity(ui, &subject.velocities, &u);
+    velocity::section(ui, subject.measured, &subject.velocities, &mut state.tools);
     event
 }
 
@@ -674,25 +682,6 @@ fn cold_bore(ui: &mut egui::Ui, subject: &Subject, stats: &GroupStats, u: &UnitP
         ui.add_space(4.0);
         ui.add(egui::Label::new(text).wrap());
     }
-}
-
-fn velocity(ui: &mut egui::Ui, readings: &[f64], u: &UnitPrefs) {
-    let Ok(stats) = VelocityStats::new(readings) else {
-        return;
-    };
-    let mut parts = vec![trf!("avg {}", u.format(Quantity::Speed, stats.average))];
-    if let Some(sd) = stats.sd {
-        parts.push(trf!("SD {}", u.number(Quantity::Speed, sd.value, false)));
-    }
-    parts.push(trf!(
-        "ES {}",
-        u.number(Quantity::Speed, stats.extreme_spread, false)
-    ));
-    ui.add_space(4.0);
-    ui.horizontal_wrapped(|ui| {
-        ui.label(RichText::new(trf!("Velocity, {} readings", stats.shots)).strong());
-        ui.label(parts.join(" · "));
-    });
 }
 
 #[cfg(test)]

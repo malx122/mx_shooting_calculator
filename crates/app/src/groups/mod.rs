@@ -4,6 +4,7 @@
 //! save sheet says what they were of. Like every page it never writes to
 //! the store: it returns `Action`s.
 
+pub mod analyse;
 pub mod demo;
 pub mod details;
 pub mod drawing;
@@ -35,7 +36,7 @@ use crate::units::{self, Quantity};
 use details::{NumbersEvent, NumbersState, Subject};
 use form::Form;
 use import::PhotoImport;
-use library::Filters;
+use library::{Filters, Selection};
 use marking::{Marking, MarkingContext, MarkingOutcome};
 use measure::{MeasureError, Measured};
 use textures::Textures;
@@ -104,7 +105,7 @@ pub fn measure_group(group: &Group, data: &Data) -> Result<Measured, MeasureErro
     )
 }
 
-fn problem_text(error: &MeasureError) -> String {
+pub(crate) fn problem_text(error: &MeasureError) -> String {
     match error {
         MeasureError::NoScale => tr("no scale yet").to_owned(),
         MeasureError::Scale(error) => trf!("the scale can't be used: {}", error),
@@ -130,15 +131,28 @@ pub struct Summary {
     pub problem: Option<String>,
 }
 
-/// "ELD-M 140 gr · rung 41.2", or "Group".
+/// "ELD-M 140 gr · rung 41.2 g", or "Group", with a rung in metric units.
 pub fn title_of(group: &Group, data: &Data) -> String {
+    title_in(group, data, &units::UnitPrefs::default())
+}
+
+/// "ELD-M 140 gr · rung 45.0 gr", or "Group", a rung in the hunter's units.
+pub fn title_in(group: &Group, data: &Data, u: &units::UnitPrefs) -> String {
     let bullet = group
         .bullet_id
         .as_ref()
         .and_then(|id| data.bullets.iter().find(|bullet| &bullet.id == id));
     let mut title = bullet.map_or_else(|| tr("Group").to_owned(), |b| b.display_name());
     if let Some(rung) = group.rung_value {
-        title = trf!("{} · rung {}", title, rung);
+        let ladder = group
+            .ladder_id
+            .as_ref()
+            .and_then(|id| data.groups.ladders.iter().find(|ladder| &ladder.id == id));
+        let value = match ladder {
+            Some(ladder) => u.format(analyse::ladder_quantity(ladder.variable), rung),
+            None => format!("{rung:.2}"),
+        };
+        title = trf!("{} · rung {}", title, value);
     }
     title
 }
@@ -199,7 +213,7 @@ impl Summaries {
             *entry = (stamp, measure());
         }
         Summary {
-            title: title_of(group, data),
+            title: title_in(group, data, u),
             subtitle: subtitle_of(group, data, u),
             measured: entry.1.as_ref().ok().cloned(),
             problem: entry.1.as_ref().err().cloned(),
@@ -322,6 +336,8 @@ enum View {
     Library,
     Group(Box<Open>),
     Marking(Box<Flow>),
+    /// Zero, trend, compare, ladder or a composite.
+    Analyse,
 }
 
 /// The library's sheets.
@@ -345,6 +361,9 @@ pub struct GroupsPage {
     view: View,
     pub settings: GroupSettings,
     filters: Filters,
+    /// The groups picked in the library.
+    selection: Selection,
+    analyse: analyse::Analyse,
     sheet: Option<Sheet>,
     import: PhotoImport,
     textures: Textures,
@@ -365,6 +384,8 @@ impl GroupsPage {
             view: View::Library,
             settings,
             filters: Filters::default(),
+            selection: Selection::default(),
+            analyse: analyse::Analyse::default(),
             sheet: None,
             import: PhotoImport::default(),
             textures: Textures::default(),
@@ -393,6 +414,7 @@ impl GroupsPage {
                         + flow.marking.depth()
                         + usize::from(flow.saving)
                 }
+                View::Analyse => 1 + self.analyse.depth(),
             }
     }
 
@@ -425,6 +447,11 @@ impl GroupsPage {
                     self.close_marking(data);
                 }
             }
+            View::Analyse => {
+                if !self.analyse.back() {
+                    self.view = View::Library;
+                }
+            }
         }
     }
 
@@ -444,6 +471,7 @@ impl GroupsPage {
             View::Marking(flow) => {
                 !flow.saving && flow.marking.depth() <= 1 && flow.marking.unsaved()
             }
+            View::Analyse => false,
         }
     }
 
@@ -454,6 +482,7 @@ impl GroupsPage {
             View::Library => false,
             View::Group(open) => find(data, &open.id).is_some_and(|group| open.form.changed(group)),
             View::Marking(flow) => flow.saving || flow.marking.unsaved(),
+            View::Analyse => false,
         }
     }
 
@@ -641,7 +670,14 @@ impl GroupsPage {
         actions
     }
 
-    fn library(&mut self, ui: &mut egui::Ui, data: &Data, photos: &dyn PhotoStore, phone: bool) {
+    fn library(
+        &mut self,
+        ui: &mut egui::Ui,
+        data: &Data,
+        photos: &dyn PhotoStore,
+        phone: bool,
+        actions: &mut Vec<Action>,
+    ) {
         let palette = theme::palette(ui.ctx());
         if let Some(notice) = &self.notice {
             let mut dismiss = false;
@@ -665,7 +701,7 @@ impl GroupsPage {
         let selected = match &self.view {
             View::Group(open) => Some(open.id.clone()),
             View::Marking(flow) => flow.from().map(str::to_owned),
-            View::Library => None,
+            View::Library | View::Analyse => None,
         };
         let marking = matches!(self.view, View::Marking(_));
         let event = library::show(
@@ -675,10 +711,39 @@ impl GroupsPage {
             &mut self.settings,
             &mut self.summaries,
             (&mut self.textures, photos),
+            &mut self.selection,
             selected.as_deref(),
             !marking,
             phone,
         );
+        self.library_event(event, ui.ctx(), data, phone, actions);
+    }
+
+    /// The picked groups' bar, above the library's list.
+    fn picked_bar(
+        &mut self,
+        ui: &mut egui::Ui,
+        data: &Data,
+        phone: bool,
+        actions: &mut Vec<Action>,
+    ) {
+        if matches!(self.view, View::Marking(_)) {
+            return;
+        }
+        let event = library::selection_bar(ui, &mut self.selection, data, phone);
+        if event.is_some() {
+            self.library_event(event, ui.ctx(), data, phone, actions);
+        }
+    }
+
+    fn library_event(
+        &mut self,
+        event: Option<library::Event>,
+        context: &egui::Context,
+        data: &Data,
+        phone: bool,
+        actions: &mut Vec<Action>,
+    ) {
         match event {
             Some(library::Event::Open(id)) => {
                 if let Some(group) = find(data, &id) {
@@ -689,10 +754,37 @@ impl GroupsPage {
                 if phone {
                     self.sheet = Some(Sheet::NewGroup);
                 } else {
-                    self.import.choose(ui.ctx(), false);
+                    self.import.choose(context, false);
                 }
             }
             Some(library::Event::Grid) => self.sheet = Some(Sheet::Grid),
+            Some(library::Event::Analyse) => self.view = View::Analyse,
+            Some(library::Event::OpenAnalysis(id)) => {
+                if let Some(analysis) = data.groups.analyses.iter().find(|a| a.id == id) {
+                    self.analyse.open_saved(analysis, data);
+                    self.view = View::Analyse;
+                }
+            }
+            Some(library::Event::Compare(ids)) => {
+                self.analyse.compare(ids);
+                self.view = View::Analyse;
+            }
+            Some(library::Event::Composite(ids)) => {
+                self.analyse.composite(ids);
+                self.view = View::Analyse;
+            }
+            Some(library::Event::Archive(ids, archive)) => {
+                for id in ids {
+                    if let Some(group) = find(data, &id)
+                        && group.archived != archive
+                    {
+                        let mut group = group.clone();
+                        group.archived = archive;
+                        actions.push(Action::SaveGroup(Box::new(GroupSave::of(group, data))));
+                    }
+                }
+            }
+            Some(library::Event::Delete(ids)) => actions.push(Action::DeleteGroups(ids)),
             None => {}
         }
     }
@@ -706,9 +798,10 @@ impl GroupsPage {
     ) {
         egui::CentralPanel::default().show(ui, |ui| match &mut self.view {
             View::Library => {
+                self.picked_bar(ui, data, true, actions);
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
-                    .show(ui, |ui| self.library(ui, data, photos, true));
+                    .show(ui, |ui| self.library(ui, data, photos, true, actions));
             }
             View::Group(_) => self.group_page(ui, data, photos, actions, true),
             View::Marking(flow) if flow.saving => {
@@ -720,6 +813,22 @@ impl GroupsPage {
                     .show(ui, |ui| self.marked(ui, data, true));
             }
             View::Marking(_) => self.mark(ui, data, photos, actions),
+            View::Analyse => {
+                if self.analyse.depth() == 0 {
+                    ui.horizontal(|ui| {
+                        if mobile::back_button(ui, tr("Groups")) {
+                            actions.push(Action::Back);
+                        }
+                        ui.heading(tr("Analyse"));
+                    });
+                }
+                self.analyse.tabs(ui, true);
+                let rank_by = self.settings.rank_by;
+                egui::ScrollArea::vertical()
+                    .id_salt(self.analyse.view_key())
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| self.analyse.show(ui, data, rank_by, true, actions));
+            }
         });
         self.save_sheet(ui.ctx(), data, actions);
     }
@@ -735,11 +844,38 @@ impl GroupsPage {
             .resizable(true)
             .default_size(320.0)
             .show(ui, |ui| {
+                let marking = matches!(self.view, View::Marking(_));
+                let mut analysing = matches!(self.view, View::Analyse);
+                ui.add_space(4.0);
+                ui.add_enabled_ui(!marking, |ui| {
+                    if analyse::segmented(
+                        ui,
+                        &mut analysing,
+                        &[(false, tr("Library")), (true, tr("Analyse"))],
+                        false,
+                    ) {
+                        self.view = if analysing {
+                            View::Analyse
+                        } else {
+                            View::Library
+                        };
+                    }
+                });
+                ui.add_space(4.0);
+                if !analysing {
+                    self.picked_bar(ui, data, false, actions);
+                }
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
-                    .show(ui, |ui| self.library(ui, data, photos, false));
+                    .show(ui, |ui| {
+                        if analysing {
+                            self.analyse.menu(ui, data);
+                        } else {
+                            self.library(ui, data, photos, false, actions);
+                        }
+                    });
             });
-        if !matches!(self.view, View::Library) {
+        if !matches!(self.view, View::Library | View::Analyse) {
             egui::Panel::right("groups-numbers")
                 .resizable(true)
                 .default_size(380.0)
@@ -750,8 +886,25 @@ impl GroupsPage {
                         .show(ui, |ui| self.right_pane(ui, data, actions));
                 });
         }
+        if matches!(self.view, View::Analyse) {
+            let rank_by = self.settings.rank_by;
+            egui::CentralPanel::default().show(ui, |ui| {
+                ui.scope(|ui| {
+                    ui.set_max_width(ui.available_width().min(980.0));
+                    self.analyse.tabs(ui, false);
+                });
+                egui::ScrollArea::vertical()
+                    .id_salt(self.analyse.view_key())
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        ui.set_max_width(ui.available_width().min(980.0));
+                        self.analyse.show(ui, data, rank_by, false, actions);
+                    });
+            });
+            return;
+        }
         egui::CentralPanel::default().show(ui, |ui| match &self.view {
-            View::Library => {
+            View::Library | View::Analyse => {
                 ui.add_space(24.0);
                 ui.vertical_centered(|ui| {
                     ui.heading(tr("Choose a group, or start a new one"));
@@ -909,7 +1062,7 @@ impl GroupsPage {
         let wanted = match &self.view {
             View::Group(open) => open.editing,
             View::Marking(flow) => flow.saving && flow.pending.is_none(),
-            View::Library => false,
+            View::Library | View::Analyse => false,
         };
         let waited = std::mem::replace(&mut self.sheet_up, wanted);
         if wanted && !waited {
@@ -962,7 +1115,7 @@ impl GroupsPage {
     /// The desktop's right pane: the numbers, and the details form.
     fn right_pane(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
         match &mut self.view {
-            View::Library => {}
+            View::Library | View::Analyse => {}
             View::Group(open) => {
                 let Some(stored) = find(data, &open.id) else {
                     return;
@@ -1164,7 +1317,11 @@ impl GroupsPage {
                 }
                 ui.vertical(|ui| {
                     ui.add(
-                        egui::Label::new(RichText::new(title_of(stored, data)).heading()).wrap(),
+                        egui::Label::new(
+                            RichText::new(title_in(stored, data, &units::prefs(ui.ctx())))
+                                .heading(),
+                        )
+                        .wrap(),
                     );
                     ui.weak(subtitle_of(stored, data, &units::prefs(ui.ctx())));
                 });
@@ -1446,7 +1603,7 @@ fn shot_count(marks: &Marks) -> usize {
 }
 
 /// Every chronograph reading: the marked shots', then the others.
-fn velocities(marks: &Marks, extra: &[f64]) -> Vec<f64> {
+pub(crate) fn velocities(marks: &Marks, extra: &[f64]) -> Vec<f64> {
     let marked: Vec<f64> = match marks {
         Marks::Photo(marks) => marks.shots.iter().filter_map(|s| s.velocity_mps).collect(),
         Marks::Grid(marks) => marks.shots.iter().filter_map(|s| s.velocity_mps).collect(),

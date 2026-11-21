@@ -2397,6 +2397,24 @@
           "format": "double",
           "default": null
         },
+        "charge_g": {
+          "description": "The handload's powder charge when the group was saved, in grams, as\nits bullet's `recipe` gave it; `null` when it gave none (a factory\nload, or a group saved before this was kept).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "cbto_mm": {
+          "description": "The handload's cartridge base to ogive (CBTO) when the group was\nsaved, mm, as its bullet's `recipe` gave it; `null` when it gave none.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
         "distance_m": {
           "description": "The distance to the target; `null` when not given, which leaves out\nsizes as angles.",
           "type": [
@@ -2486,6 +2504,8 @@
         "bullet_id",
         "ladder_id",
         "rung_value",
+        "charge_g",
+        "cbto_mm",
         "distance_m",
         "session_id",
         "conditions",

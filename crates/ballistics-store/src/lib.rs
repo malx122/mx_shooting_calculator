@@ -6,6 +6,7 @@
 //! Nothing here depends on the UI, so a mobile front end can reuse it.
 
 pub mod barrels;
+pub mod bundle;
 pub mod cartridge;
 pub mod catalog;
 pub mod chrono;

@@ -9,8 +9,9 @@ use crate::theme::ThemeChoice;
 pub(crate) fn demo_data() -> Data {
     let mut store = Store::open_in_memory().unwrap();
     store.load_demo().unwrap();
-    assert_eq!(demo::load(&store).unwrap(), 5);
+    assert_eq!(demo::load(&store).unwrap(), demo::GROUP_COUNT);
     assert_eq!(demo::load(&store).unwrap(), 0, "loaded once");
+    crate::rifle_history::load_demo(&store).unwrap();
     Data {
         rifles: store.rifles().unwrap(),
         bullets: store.bullets().unwrap(),

@@ -287,6 +287,18 @@ pub fn thumbnail(bytes: &[u8], long_edge_px: u32) -> Result<Thumbnail, ImportErr
     })
 }
 
+/// The thumbnail JPEG `import_photo` makes, from a photo already kept (a
+/// restored backup's), without writing the photo again.
+pub fn thumbnail_jpeg(bytes: &[u8]) -> Result<Vec<u8>, ImportError> {
+    let small = thumbnail(bytes, THUMBNAIL_LONG_EDGE_PX)?;
+    let rgba = image::RgbaImage::from_raw(small.width_px, small.height_px, small.rgba)
+        .ok_or_else(|| ImportError::Damaged("the thumbnail's size".into()))?;
+    encode_jpeg(
+        &DynamicImage::ImageRgba8(rgba).into_rgb8(),
+        THUMBNAIL_JPEG_QUALITY,
+    )
+}
+
 /// A decoder for a JPEG, PNG or WebP file no larger than can be opened.
 fn open(bytes: &[u8]) -> Result<(ImageFormat, impl ImageDecoder + '_), ImportError> {
     if is_heif(bytes) {

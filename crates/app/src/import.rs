@@ -29,6 +29,8 @@ pub struct ImportPreview {
     file_name: String,
     source: Source,
     report: ImportReport,
+    /// A backup with photos' photos, `(id, JPEG)`, to keep once imported.
+    photos: Vec<(String, Vec<u8>)>,
 }
 
 /// What the hunter decided in the window.
@@ -43,7 +45,7 @@ impl ImportPreview {
     /// Reads a backup file and works out what importing it would do.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn open(store: &mut Store, path: &std::path::Path) -> Result<ImportPreview, StoreError> {
-        let text = std::fs::read_to_string(path).map_err(|error| {
+        let bytes = std::fs::read(path).map_err(|error| {
             StoreError::Invalid(trf!("could not read {}: {}", path.display(), error))
         })?;
         let file_name = path.file_name().map_or_else(
@@ -55,7 +57,30 @@ impl ImportPreview {
             .ok()
             .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|elapsed| elapsed.as_millis() as i64);
-        ImportPreview::from_text(store, file_name, text, modified_ms)
+        ImportPreview::from_bytes(store, file_name, bytes, modified_ms)
+    }
+
+    /// Works out what importing a file would do: a backup, a backup with
+    /// photos (`.zip`) or a Strelok Pro backup.
+    pub fn from_bytes(
+        store: &mut Store,
+        file_name: String,
+        bytes: Vec<u8>,
+        modified_ms: Option<i64>,
+    ) -> Result<ImportPreview, StoreError> {
+        if !ballistics_store::bundle::is_zip(&bytes) {
+            let text = String::from_utf8_lossy(&bytes).into_owned();
+            return ImportPreview::from_text(store, file_name, text, modified_ms);
+        }
+        let bundle = ballistics_store::bundle::Bundle::read(&bytes)?;
+        let mut preview = ImportPreview::from_text(store, file_name, bundle.json, modified_ms)?;
+        preview.photos = bundle.photos;
+        Ok(preview)
+    }
+
+    /// The photos that came with the backup, to keep now it is imported.
+    pub fn take_photos(&mut self) -> Vec<(String, Vec<u8>)> {
+        std::mem::take(&mut self.photos)
     }
 
     /// Works out what importing a backup's contents would do. `modified_ms`
@@ -89,6 +114,7 @@ impl ImportPreview {
             file_name,
             source,
             report: ImportReport::default(),
+            photos: Vec::new(),
         };
         preview.refresh(store)?;
         Ok(preview)

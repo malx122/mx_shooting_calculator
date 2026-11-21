@@ -2,7 +2,7 @@
 //! shot in or the day, with filters by rifle, bullet, tags and notes.
 
 use ballistics_store::sun::Date;
-use ballistics_store::{Group, Session};
+use ballistics_store::{Analysis, Group, Session};
 use eframe::egui::{self, CornerRadius, RichText, Sense, pos2, vec2};
 
 use super::{GroupSettings, RankBy, Summary};
@@ -54,6 +54,88 @@ impl Filters {
     }
 }
 
+/// The groups picked in the library, to compare, pool, archive or delete
+/// together.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Selection {
+    pub ids: Vec<String>,
+    /// On a phone: taps pick groups instead of opening them.
+    pub selecting: bool,
+    /// The last group picked, where a Shift-click range starts.
+    anchor: Option<String>,
+}
+
+/// How a group in the library was clicked.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Click {
+    Plain,
+    /// Ctrl/⌘-click, a long press, or a tap while selecting.
+    Toggle,
+    /// Shift-click.
+    Range,
+}
+
+impl Selection {
+    pub fn contains(&self, id: &str) -> bool {
+        self.ids.iter().any(|picked| picked == id)
+    }
+
+    pub fn clear(&mut self) {
+        self.ids.clear();
+        self.selecting = false;
+        self.anchor = None;
+    }
+
+    /// Picks or opens after a click on `id`; `order` is the groups as the
+    /// library lists them. True when the group should open.
+    pub fn click(&mut self, id: &str, how: Click, order: &[&str]) -> bool {
+        let how = match how {
+            Click::Plain if self.selecting => Click::Toggle,
+            other => other,
+        };
+        match how {
+            Click::Plain => {
+                self.ids.clear();
+                self.anchor = None;
+                true
+            }
+            Click::Toggle => {
+                if let Some(at) = self.ids.iter().position(|picked| picked == id) {
+                    self.ids.remove(at);
+                } else {
+                    self.ids.push(id.to_owned());
+                }
+                self.anchor = Some(id.to_owned());
+                false
+            }
+            Click::Range => {
+                let place = |id: &str| order.iter().position(|listed| *listed == id);
+                match (self.anchor.as_deref().and_then(place), place(id)) {
+                    (Some(from), Some(to)) => {
+                        let (low, high) = (from.min(to), from.max(to));
+                        self.ids = order[low..=high]
+                            .iter()
+                            .map(|id| (*id).to_owned())
+                            .collect();
+                    }
+                    _ => {
+                        if !self.contains(id) {
+                            self.ids.push(id.to_owned());
+                        }
+                        self.anchor = Some(id.to_owned());
+                    }
+                }
+                false
+            }
+        }
+    }
+
+    /// Forgets groups that are gone or no longer listed.
+    pub fn keep_only(&mut self, listed: &[&str]) {
+        self.ids.retain(|id| listed.contains(&id.as_str()));
+    }
+}
+
 /// What a run of the library's groups are listed under.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Heading {
@@ -70,6 +152,9 @@ pub struct Section {
     pub heading: Heading,
     /// Indices into the groups given.
     pub groups: Vec<usize>,
+    /// Indices of the saved analyses listed here, under their newest
+    /// group's heading.
+    pub analyses: Vec<usize>,
 }
 
 /// The groups `filters` lets through, newest first, under their session or
@@ -107,10 +192,27 @@ pub fn sections(
             None => sections.push(Section {
                 heading,
                 groups: vec![index],
+                analyses: Vec::new(),
             }),
         }
     }
     sections
+}
+
+/// Puts each saved analysis under the heading of its newest group the
+/// library lists; one with no group listed is left out.
+pub fn place_analyses(sections: &mut [Section], groups: &[Group], analyses: &[Analysis]) {
+    for (index, analysis) in analyses.iter().enumerate() {
+        let newest = sections
+            .iter()
+            .enumerate()
+            .flat_map(|(at, section)| section.groups.iter().map(move |&g| (at, g)))
+            .filter(|(_, g)| analysis.group_ids.contains(&groups[*g].id))
+            .max_by_key(|(_, g)| groups[*g].taken_at);
+        if let Some((at, _)) = newest {
+            sections[at].analyses.push(index);
+        }
+    }
 }
 
 /// "Today", "Yesterday", "12 Nov", or "12 Nov 2025" in another year.
@@ -162,6 +264,14 @@ pub enum Event {
     Open(String),
     NewGroup,
     Grid,
+    /// The phone's Analyse button.
+    Analyse,
+    OpenAnalysis(String),
+    Compare(Vec<String>),
+    Composite(Vec<String>),
+    /// Archive (true) or bring back (false) these groups.
+    Archive(Vec<String>, bool),
+    Delete(Vec<String>),
 }
 
 /// The library: the new-group buttons, filters, the groups and settings.
@@ -176,6 +286,7 @@ pub fn show(
         &mut super::textures::Textures,
         &dyn ballistics_store::PhotoStore,
     ),
+    selection: &mut Selection,
     selected: Option<&str>,
     enabled: bool,
     phone: bool,
@@ -184,7 +295,41 @@ pub fn show(
     let palette = theme::palette(ui.ctx());
     let mut event = None;
     ui.add_enabled_ui(enabled, |ui| {
-        ui.heading(tr("Groups"));
+        if phone {
+            ui.horizontal(|ui| {
+                ui.heading(tr("Groups"));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui
+                        .add(
+                            egui::Button::new(tr("📈 Analyse"))
+                                .min_size(vec2(mobile::TOUCH, mobile::TOUCH - 8.0)),
+                        )
+                        .on_hover_text(tr("Zero, trend, compare and load ladders"))
+                        .clicked()
+                    {
+                        event = Some(Event::Analyse);
+                    }
+                    let label = if selection.selecting {
+                        tr("Done")
+                    } else {
+                        tr("Select")
+                    };
+                    if ui
+                        .add(
+                            egui::Button::new(label)
+                                .min_size(vec2(mobile::TOUCH, mobile::TOUCH - 8.0)),
+                        )
+                        .clicked()
+                    {
+                        if selection.selecting {
+                            selection.clear();
+                        } else {
+                            selection.selecting = true;
+                        }
+                    }
+                });
+            });
+        }
         ui.horizontal(|ui| {
             let height = if phone { mobile::TOUCH + 8.0 } else { 34.0 };
             let width = (ui.available_width() * 0.62).max(120.0);
@@ -223,6 +368,7 @@ pub fn show(
         });
         if !phone {
             ui.weak(tr("Or drop a photo of the target onto the window."));
+            ui.weak(tr("Ctrl/⌘-click or Shift-click groups to pick several."));
         }
         ui.add_space(4.0);
         filter_bar(ui, data, filters);
@@ -233,7 +379,13 @@ pub fn show(
         let local = |ms: i64| super::local_ms(ms, country);
         let today = local(ballistics_store::model::now_ms()).div_euclid(DAY_MS);
         let groups = &data.groups.groups;
-        let shown = sections(groups, &data.groups.sessions, filters, local);
+        let mut shown = sections(groups, &data.groups.sessions, filters, local);
+        place_analyses(&mut shown, groups, &data.groups.analyses);
+        let order: Vec<&str> = shown
+            .iter()
+            .flat_map(|section| section.groups.iter().map(|&i| groups[i].id.as_str()))
+            .collect();
+        selection.keep_only(&order);
         if groups.is_empty() {
             ui.add_space(8.0);
             ui.weak(tr(
@@ -244,6 +396,7 @@ pub fn show(
         } else if shown.is_empty() {
             ui.weak(tr("No group matches the filters."));
         }
+        let modifiers = ui.input(|input| input.modifiers);
         for section in &shown {
             let title = match &section.heading {
                 Heading::Session(id) => data
@@ -257,6 +410,12 @@ pub fn show(
             };
             ui.add_space(6.0);
             ui.label(RichText::new(title).strong().color(palette.text_muted));
+            for &index in &section.analyses {
+                let analysis = &data.groups.analyses[index];
+                if analysis_row(ui, analysis, data, phone).clicked() {
+                    event = Some(Event::OpenAnalysis(analysis.id.clone()));
+                }
+            }
             for &index in &section.groups {
                 let group = &groups[index];
                 let summary = summaries.of(group, data, &u);
@@ -269,16 +428,35 @@ pub fn show(
                     },
                     _ => None,
                 };
+                let picked = selection.contains(&group.id);
+                let check = (selection.selecting || !selection.ids.is_empty()).then_some(picked);
                 let row = group_row(
                     ui,
                     group,
                     &summary,
                     photo,
                     settings.rank_by,
-                    selected == Some(group.id.as_str()),
+                    picked || selected == Some(group.id.as_str()),
+                    check,
                     phone,
                 );
-                if row.clicked() {
+                let how = if row.long_touched() {
+                    selection.selecting = true;
+                    Some(Click::Toggle)
+                } else if row.clicked() {
+                    Some(if modifiers.shift {
+                        Click::Range
+                    } else if modifiers.command {
+                        Click::Toggle
+                    } else {
+                        Click::Plain
+                    })
+                } else {
+                    None
+                };
+                if let Some(how) = how
+                    && selection.click(&group.id, how, &order)
+                {
                     event = Some(Event::Open(group.id.clone()));
                 }
             }
@@ -306,6 +484,178 @@ pub fn show(
         });
     });
     event
+}
+
+/// What to do with the picked groups: compare or pool them, archive or
+/// delete them.
+/// What to do with the picked groups, kept above the list so it stays in
+/// view while picking.
+pub fn selection_bar(
+    ui: &mut egui::Ui,
+    selection: &mut Selection,
+    data: &Data,
+    phone: bool,
+) -> Option<Event> {
+    if selection.ids.is_empty() && !selection.selecting {
+        return None;
+    }
+    let palette = theme::palette(ui.ctx());
+    let mut event = None;
+    egui::Frame::new()
+        .fill(palette.raised)
+        .stroke(egui::Stroke::new(1.0_f32, palette.accent))
+        .corner_radius(10)
+        .inner_margin(egui::Margin::same(8))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            let count = selection.ids.len();
+            ui.label(RichText::new(match count {
+                0 => tr("Tap groups to pick them").to_owned(),
+                1 => tr("1 group picked").to_owned(),
+                n => trf!("{} groups picked", n),
+            }));
+            ui.horizontal_wrapped(|ui| {
+                let size = vec2(0.0, if phone { mobile::TOUCH - 8.0 } else { 0.0 });
+                let ids = selection.ids.clone();
+                if ui
+                    .add_enabled(count >= 2, egui::Button::new(tr("Compare")).min_size(size))
+                    .clicked()
+                {
+                    event = Some(Event::Compare(ids.clone()));
+                }
+                if ui
+                    .add_enabled(
+                        count >= 2,
+                        egui::Button::new(tr("Composite")).min_size(size),
+                    )
+                    .clicked()
+                {
+                    event = Some(Event::Composite(ids.clone()));
+                }
+                let archived = !ids.is_empty()
+                    && ids.iter().all(|id| {
+                        data.groups
+                            .groups
+                            .iter()
+                            .any(|group| &group.id == id && group.archived)
+                    });
+                let archive = if archived {
+                    tr("Bring back")
+                } else {
+                    tr("Archive")
+                };
+                if ui
+                    .add_enabled(count >= 1, egui::Button::new(archive).min_size(size))
+                    .clicked()
+                {
+                    event = Some(Event::Archive(ids.clone(), !archived));
+                }
+                if ui
+                    .add(egui::Button::new(tr("Cancel")).min_size(size))
+                    .clicked()
+                {
+                    selection.clear();
+                }
+            });
+            if count >= 1 {
+                ui.add_space(4.0);
+                let question = if count == 1 {
+                    tr("Delete this group? Undo brings it back for a moment.").to_owned()
+                } else {
+                    trf!(
+                        "Delete these {} groups? Undo brings them back for a moment.",
+                        count
+                    )
+                };
+                if super::analyse::confirm(
+                    ui,
+                    "groups-delete-picked",
+                    tr("Delete"),
+                    &question,
+                    true,
+                ) {
+                    event = Some(Event::Delete(selection.ids.clone()));
+                }
+            }
+        });
+    if event.is_some() {
+        selection.clear();
+    }
+    event
+}
+
+/// A saved analysis's line in the library, marked as what it is.
+fn analysis_row(
+    ui: &mut egui::Ui,
+    analysis: &Analysis,
+    data: &Data,
+    phone: bool,
+) -> egui::Response {
+    let palette = theme::palette(ui.ctx());
+    let height = if phone { 56.0 } else { 46.0 };
+    let width = ui.available_width();
+    let (rect, response) = ui.allocate_exact_size(vec2(width, height), Sense::click());
+    let painter = ui.painter_at(rect);
+    let fill = if response.is_pointer_button_down_on() || response.hovered() {
+        palette.hover
+    } else {
+        palette.raised
+    };
+    painter.rect(
+        rect.shrink2(vec2(0.0, 2.0)),
+        CornerRadius::same(10),
+        fill,
+        egui::Stroke::new(1.0_f32, palette.accent.gamma_multiply(0.6)),
+        egui::StrokeKind::Inside,
+    );
+    let icon = egui::Rect::from_min_size(
+        rect.left_top() + vec2(8.0, 8.0),
+        vec2(height - 16.0, height - 16.0),
+    );
+    painter.rect_filled(icon, 6.0, palette.accent.gamma_multiply(0.2));
+    painter.text(
+        icon.center(),
+        egui::Align2::CENTER_CENTER,
+        match analysis.kind {
+            ballistics_store::AnalysisKind::Composite => "⧉",
+            ballistics_store::AnalysisKind::Compare => "⇆",
+            ballistics_store::AnalysisKind::Ladder => "≡",
+        },
+        egui::FontId::proportional(icon.height() * 0.6),
+        palette.accent,
+    );
+    let body = egui::TextStyle::Body.resolve(ui.style());
+    let small = egui::FontId::proportional(body.size * 0.85);
+    let kind = match analysis.kind {
+        ballistics_store::AnalysisKind::Composite => tr("COMPOSITE"),
+        ballistics_store::AnalysisKind::Compare => tr("COMPARISON"),
+        ballistics_store::AnalysisKind::Ladder => tr("LADDER"),
+    };
+    let badge = painter.layout_no_wrap(kind.to_owned(), small.clone(), palette.accent);
+    let right = rect.right() - 12.0;
+    let badge_width = badge.size().x;
+    painter.galley(
+        pos2(right - badge_width, rect.center().y - badge.size().y / 2.0),
+        badge,
+        palette.accent,
+    );
+    let text_x = icon.right() + 10.0;
+    let text_width = (right - badge_width - 10.0 - text_x).max(20.0);
+    let line = |text: String, font: egui::FontId, colour| {
+        let mut job = egui::text::LayoutJob::simple_singleline(text, font, colour);
+        job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
+        painter.layout_job(job)
+    };
+    let title = line(super::analyse::analysis_name(analysis), body, palette.text);
+    painter.galley(pos2(text_x, rect.top() + 7.0), title, palette.text);
+    let detail = line(
+        super::analyse::analysis_detail(analysis, data),
+        small,
+        palette.text_muted,
+    );
+    let at = pos2(text_x, rect.bottom() - 7.0 - detail.size().y);
+    painter.galley(at, detail, palette.text_muted);
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 fn filter_bar(ui: &mut egui::Ui, data: &Data, filters: &mut Filters) {
@@ -378,6 +728,7 @@ fn filter_bar(ui: &mut egui::Ui, data: &Data, filters: &mut Filters) {
 
 /// A group's line in the library: its picture, what was shot, and its size
 /// by the measure the library ranks by.
+#[allow(clippy::too_many_arguments)]
 fn group_row(
     ui: &mut egui::Ui,
     group: &Group,
@@ -385,6 +736,7 @@ fn group_row(
     photo: Option<(egui::TextureId, egui::Vec2)>,
     rank_by: RankBy,
     selected: bool,
+    check: Option<bool>,
     phone: bool,
 ) -> egui::Response {
     let palette = theme::palette(ui.ctx());
@@ -411,8 +763,25 @@ fn group_row(
         edge,
         egui::StrokeKind::Inside,
     );
+    let mut left = rect.left() + 8.0;
+    if let Some(checked) = check {
+        let centre = pos2(left + 10.0, rect.center().y);
+        if checked {
+            painter.circle_filled(centre, 9.0, palette.accent);
+            painter.text(
+                centre,
+                egui::Align2::CENTER_CENTER,
+                "✓",
+                egui::FontId::proportional(13.0),
+                palette.on_accent,
+            );
+        } else {
+            painter.circle_stroke(centre, 9.0, egui::Stroke::new(1.5_f32, palette.text_muted));
+        }
+        left += 26.0;
+    }
     let picture = egui::Rect::from_min_size(
-        rect.left_top() + vec2(8.0, 8.0),
+        pos2(left, rect.top() + 8.0),
         vec2(height - 16.0, height - 16.0),
     );
     match photo {
@@ -611,5 +980,74 @@ mod tests {
         assert_eq!(day_name(today - 1, today), "Yesterday");
         assert_eq!(day_name(today - 9, today), "12 Nov");
         assert_eq!(day_name(today - 365, today), "21 Nov 2025");
+    }
+
+    #[test]
+    fn groups_are_picked_by_toggle_range_or_a_tap_while_selecting() {
+        let order = ["a", "b", "c", "d", "e"];
+        let mut selection = Selection::default();
+        assert!(
+            selection.click("b", Click::Plain, &order),
+            "a plain click opens"
+        );
+        assert!(selection.ids.is_empty());
+
+        assert!(!selection.click("b", Click::Toggle, &order));
+        assert!(!selection.click("d", Click::Toggle, &order));
+        assert_eq!(selection.ids, ["b", "d"]);
+        selection.click("b", Click::Toggle, &order);
+        assert_eq!(selection.ids, ["d"], "a second toggle unpicks");
+
+        // Shift-click picks from the last one clicked, either way.
+        selection.click("a", Click::Range, &order);
+        assert_eq!(selection.ids, ["a", "b"]);
+        selection.click("e", Click::Toggle, &order);
+        selection.click("c", Click::Range, &order);
+        assert_eq!(selection.ids, ["c", "d", "e"]);
+
+        // A plain click clears the picks and opens.
+        assert!(selection.click("a", Click::Plain, &order));
+        assert!(selection.ids.is_empty());
+
+        // On a phone, Select makes taps pick.
+        selection.selecting = true;
+        assert!(!selection.click("a", Click::Plain, &order));
+        assert!(!selection.click("c", Click::Plain, &order));
+        assert_eq!(selection.ids, ["a", "c"]);
+        selection.keep_only(&["c", "d"]);
+        assert_eq!(selection.ids, ["c"], "groups no longer listed drop out");
+        selection.clear();
+        assert!(!selection.selecting && selection.ids.is_empty());
+    }
+
+    #[test]
+    fn saved_analyses_sit_under_their_newest_listed_group() {
+        let groups = vec![
+            group("a", 2 * DAY_MS, None),
+            group("b", 5 * DAY_MS, None),
+            group("c", 9 * DAY_MS, None),
+        ];
+        let mut sections = sections(&groups, &[], &Filters::default(), |ms| ms);
+        let analyses = vec![
+            Analysis::new(
+                ballistics_store::AnalysisKind::Composite,
+                "",
+                vec!["a".into(), "b".into()],
+            ),
+            Analysis::new(
+                ballistics_store::AnalysisKind::Compare,
+                "",
+                vec!["gone".into()],
+            ),
+        ];
+        place_analyses(&mut sections, &groups, &analyses);
+        let day = |day: i64| {
+            sections
+                .iter()
+                .find(|s| s.heading == Heading::Day(day))
+                .unwrap()
+        };
+        assert_eq!(day(5).analyses, [0], "under b, its newest group");
+        assert!(day(2).analyses.is_empty() && day(9).analyses.is_empty());
     }
 }

@@ -32,7 +32,59 @@ any release may still change things noticeably.
     sessions and photo records go into backups and sync; the photos don't.
   - **Units:** group sizes as mil, MOA or cm per 100 m, and on the target in
     mm, cm or inches, in the Units settings.
-  - **Demo data** now includes a few groups.
+  - **Demo data** now includes groups, a zero series and a load ladder.
+  - **Analyse** (from the Groups header on phones, Library | Analyse on
+    computers):
+    - **Zero check:** whether the zero is holding, drifting or can't tell
+      yet from the groups shot since the last zero reset, net of what was
+      dialled, with the correction in your clicks. Mark a zero reset, or
+      write the load's point of impact for the calculator. It counts only
+      groups shot at the rifle's zero range, measured from where the
+      bullet flies at that exact distance, and offers the correction only
+      with a verdict, showing its 95% range.
+    - **Trend:** group size, σ, velocity or the cold-bore shot against date,
+      charge, seating, temperature, pressure or barrel rounds, one line per
+      load, with 95% bars and box plots. From velocity against temperature
+      it fits the powder's temperature sensitivity and can write it to the
+      bullet.
+    - **Compare** groups side by side, best and worst, with an honest test
+      of two groups ("can't tell yet: about 14 shots each would settle
+      it"), and save the comparison.
+    - **Composites** pool groups into one, about their aims, about their own
+      centres or as a cold-bore series, in angle and in mm at any distance.
+    - **Load ladders:** rungs by charge or seating, the flattest runs with
+      their noise, and "Make 45.5 gr my load".
+  - **Powder charges** show in grains by default, also with metric units;
+    grams can be chosen in Units. Groups keep the handload's charge and CBTO
+    as they were when saved, so a later recipe change doesn't move them on a
+    trend.
+  - **Library:** pick several groups to compare, pool, archive or delete
+    them; saved analyses are listed with the groups.
+  - **Group details:** part of a ladder, what was dialled for the group, and
+    whether it counts in the zero check.
+  - **Velocities on a group's page:** paste, type or read a chronograph file
+    (Garmin Xero, LabRadar, MagnetoSpeed), pair the readings with the
+    shots, see the average, SD with its range, ES and warnings, how the
+    vertical follows velocity against what the solver expects, and save the
+    string as the load's velocity.
+  - **Share a group** as a picture (PNG), and save groups or shots as CSV.
+- **Calculator:** "Use my groups" sets "Your precision" from your measured
+  groups.
+- **Rifles** show their round counts (action, barrel, since clean), turning
+  amber when a clean is due at your own "clean after" count; log rounds and
+  cleans, see and delete recent rounds, and set the rounds fired before
+  logging.
+  - **Barrels:** add one (it is fitted at once), fit an earlier one, retire
+    or remove one; when the fitted barrel's length or twist differ from the
+    rifle's ballistics, copy them across.
+  - Each barrel and load shows the precision measured from its groups.
+- **Handloads** keep their recipe: powder, charge (grains or grams), primer,
+  brass, COAL, CBTO and notes.
+- **Sessions,** in the menu: days at the range with place, time and weather
+  (filled in from Open-Meteo when you ask), and the groups shot there.
+  Deleting a session leaves its weather on its groups.
+- **Backup with photos:** one ZIP with the backup and your groups' photos;
+  importing it brings the photos back.
 - **Phone tabs:** Calculate · Groups · Rifles · Bullets · Targets. Cards
   moved into the ••• menu beside the shot log.
 - **Sun theme:** a light, high-contrast look for reading the app in bright

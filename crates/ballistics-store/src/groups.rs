@@ -296,6 +296,15 @@ pub struct Group {
     /// charge in grams, or the seating's CBTO in mm.
     #[serde(default)]
     pub rung_value: Option<f64>,
+    /// The handload's powder charge when the group was saved, in grams, as
+    /// its bullet's `recipe` gave it; `null` when it gave none (a factory
+    /// load, or a group saved before this was kept).
+    #[serde(default)]
+    pub charge_g: Option<f64>,
+    /// The handload's cartridge base to ogive (CBTO) when the group was
+    /// saved, mm, as its bullet's `recipe` gave it; `null` when it gave none.
+    #[serde(default)]
+    pub cbto_mm: Option<f64>,
     /// The distance to the target; `null` when not given, which leaves out
     /// sizes as angles.
     #[serde(default)]
@@ -377,6 +386,8 @@ impl Group {
             bullet_id: None,
             ladder_id: None,
             rung_value: None,
+            charge_g: None,
+            cbto_mm: None,
             distance_m: None,
             session_id: None,
             conditions: Conditions::default(),
@@ -425,6 +436,14 @@ impl Group {
             (
                 self.rung_value.is_none_or(f64::is_finite),
                 "the rung's value isn't a number",
+            ),
+            (
+                self.charge_g.is_none_or(|g| (0.01..=30.0).contains(&g)),
+                "the powder charge must be 0.01 to 30 g",
+            ),
+            (
+                self.cbto_mm.is_none_or(|mm| (5.0..=200.0).contains(&mm)),
+                "the CBTO must be 5 to 200 mm",
             ),
             (
                 self.conditions.problem().is_none(),

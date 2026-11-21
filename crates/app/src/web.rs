@@ -16,7 +16,7 @@ const DATABASE: &str = "mxsc.sqlite";
 /// A file the hunter picked, read in the background.
 pub struct PickedFile {
     pub name: String,
-    pub text: String,
+    pub bytes: Vec<u8>,
     /// The file's modification time (ms since the epoch).
     pub modified_ms: i64,
 }
@@ -58,7 +58,7 @@ pub fn download_bytes(file_name: &str, bytes: &[u8], mime: &str) -> Result<(), S
 pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
     wasm_bindgen_futures::spawn_local(async move {
         let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter(tr("Backups"), &["json", "srl"])
+            .add_filter(tr("Backups"), &["json", "zip", "srl"])
             .pick_file()
             .await
         else {
@@ -67,7 +67,7 @@ pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
         let bytes = handle.read().await;
         *slot.borrow_mut() = Some(PickedFile {
             name: handle.file_name(),
-            text: String::from_utf8_lossy(&bytes).into_owned(),
+            bytes,
             modified_ms: handle.inner().last_modified() as i64,
         });
         context.request_repaint();

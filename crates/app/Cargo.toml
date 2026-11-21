@@ -26,6 +26,8 @@ groups-vision.workspace = true
 sys-locale = { version = "0.3", features = ["js"] }
 # Font metrics for the cards' embedded fonts (egui already uses it).
 ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
+# A group as a PNG (groups/export.rs); egui_extras's SVG support already has it.
+tiny-skia = { version = "0.11", default-features = false, features = ["std", "simd", "png-format"] }
 # Sending the rifles to a Garmin watch (docs/watch.md): what Connect IQ offers.
 p256 = { version = "0.14", default-features = false, features = ["ecdh"] }
 aes = "0.9"
