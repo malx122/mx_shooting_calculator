@@ -19,6 +19,7 @@ use crate::model::{
 use crate::optics::UserScope;
 use crate::photos::Photo;
 use crate::sessions::Session;
+use crate::shotguns::{Shell, Shotgun, ShotgunLoad};
 use crate::shots::Shot;
 use crate::targets::Target;
 use crate::transfer::Record;
@@ -141,6 +142,28 @@ pub(crate) const MIGRATIONS: &[&str] = &[
     ALTER TABLE bullets ADD COLUMN data_attribution TEXT;
 "#,
     r#"
+    CREATE TABLE shotguns (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+"#,
+    r#"
+    CREATE TABLE shells (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE shotgun_loads (
+        id TEXT PRIMARY KEY,
+        shotgun_id TEXT NOT NULL,
+        shell_id TEXT NOT NULL,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE (shotgun_id, shell_id)
+    );
+"#,
+    r#"
     ALTER TABLE rifles ADD COLUMN fitted_barrel_id TEXT;
     ALTER TABLE rifles ADD COLUMN rounds_before_logging INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE bullets ADD COLUMN recipe TEXT;
@@ -226,7 +249,7 @@ pub(crate) const MIGRATIONS: &[&str] = &[
 /// The schema version of the last released app, which every newer schema
 /// must upgrade from.
 #[cfg(test)]
-pub(crate) const RELEASED_SCHEMA: usize = 10;
+pub(crate) const RELEASED_SCHEMA: usize = 12;
 
 /// The setting holding the store's clock: the latest time it has stamped
 /// or seen, so new stamps never go backwards (see `Store::stamp`).
@@ -521,6 +544,129 @@ impl Store {
         let transaction = self.connection.unchecked_transaction()?;
         record_deletion(&transaction, RecordKind::Target, id, self.stamp(0)?)?;
         transaction.execute("DELETE FROM targets WHERE id = ?1", [id])?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    // Shotguns ------------------------------------------------------------
+
+    pub fn shotguns(&self) -> Result<Vec<Shotgun>, StoreError> {
+        let mut shotguns = self.query_all("SELECT data FROM shotguns", [], |row| {
+            from_json_column::<Shotgun>(&row.get::<_, String>(0)?)
+        })?;
+        shotguns.iter_mut().for_each(Shotgun::upgrade_legacy);
+        shotguns.sort_by_key(|shotgun| shotgun.name.to_lowercase());
+        Ok(shotguns)
+    }
+
+    pub fn save_shotgun(&self, shotgun: &mut Shotgun) -> Result<(), StoreError> {
+        shotgun.upgrade_legacy();
+        shotgun.validate().map_err(StoreError::Invalid)?;
+        shotgun.updated_at = self.stamp(shotgun.updated_at)?;
+        self.put_undeleted(RecordKind::Shotgun, &shotgun.id, |connection| {
+            put_shotgun(connection, shotgun)
+        })
+    }
+
+    /// Deletes the gun and what was measured with it.
+    pub fn delete_shotgun(&self, id: &str) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let at = self.stamp(0)?;
+        self.delete_shotgun_loads_where(&transaction, "shotgun_id", id, at)?;
+        record_deletion(&transaction, RecordKind::Shotgun, id, at)?;
+        transaction.execute("DELETE FROM shotguns WHERE id = ?1", [id])?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    fn delete_shotgun_loads_where(
+        &self,
+        transaction: &rusqlite::Transaction<'_>,
+        column: &str,
+        id: &str,
+        at: i64,
+    ) -> Result<(), StoreError> {
+        let loads: Vec<String> = self.query_all(
+            &format!("SELECT id FROM shotgun_loads WHERE {column} = ?1"),
+            [id],
+            |row| row.get(0),
+        )?;
+        for load in loads {
+            record_deletion(transaction, RecordKind::ShotgunLoad, &load, at)?;
+        }
+        transaction.execute(
+            &format!("DELETE FROM shotgun_loads WHERE {column} = ?1"),
+            [id],
+        )?;
+        Ok(())
+    }
+
+    // Shells ---------------------------------------------------------------
+
+    pub fn shells(&self) -> Result<Vec<Shell>, StoreError> {
+        let mut shells = self.query_all("SELECT data FROM shells", [], |row| {
+            from_json_column::<Shell>(&row.get::<_, String>(0)?)
+        })?;
+        shells.iter_mut().for_each(Shell::upgrade_legacy);
+        shells.sort_by_key(|shell| shell.display_name().to_lowercase());
+        Ok(shells)
+    }
+
+    pub fn save_shell(&self, shell: &mut Shell) -> Result<(), StoreError> {
+        shell.upgrade_legacy();
+        shell.validate().map_err(StoreError::Invalid)?;
+        shell.updated_at = self.stamp(shell.updated_at)?;
+        self.put_undeleted(RecordKind::Shell, &shell.id, |connection| {
+            put_shell(connection, shell)
+        })
+    }
+
+    /// Deletes the shell and what was measured with it.
+    pub fn delete_shell(&self, id: &str) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let at = self.stamp(0)?;
+        self.delete_shotgun_loads_where(&transaction, "shell_id", id, at)?;
+        record_deletion(&transaction, RecordKind::Shell, id, at)?;
+        transaction.execute("DELETE FROM shells WHERE id = ?1", [id])?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    // Shells in shotguns ---------------------------------------------------
+
+    pub fn shotgun_loads(&self) -> Result<Vec<ShotgunLoad>, StoreError> {
+        self.query_all("SELECT data FROM shotgun_loads", [], |row| {
+            from_json_column::<ShotgunLoad>(&row.get::<_, String>(0)?)
+        })
+    }
+
+    /// Saves the pattern boards of a shell in a gun; one record a pair.
+    pub fn save_shotgun_load(&self, load: &mut ShotgunLoad) -> Result<(), StoreError> {
+        let barrels = self
+            .shotguns()?
+            .into_iter()
+            .find(|shotgun| shotgun.id == load.shotgun_id)
+            .map(|shotgun| shotgun.barrels.len())
+            .ok_or_else(|| StoreError::Invalid("save the shotgun first".into()))?;
+        if !self.shells()?.iter().any(|shell| shell.id == load.shell_id) {
+            return Err(StoreError::Invalid("save the shell first".into()));
+        }
+        load.validate(Some(barrels)).map_err(StoreError::Invalid)?;
+        load.updated_at = self.stamp(load.updated_at)?;
+        self.put_undeleted(RecordKind::ShotgunLoad, &load.id, |connection| {
+            // Another record for the same pair (from a sync) is replaced.
+            connection.execute(
+                "DELETE FROM shotgun_loads WHERE shotgun_id = ?1 AND shell_id = ?2 AND id <> ?3",
+                params![load.shotgun_id, load.shell_id, load.id],
+            )?;
+            put_shotgun_load(connection, load)
+        })
+    }
+
+    pub fn delete_shotgun_load(&self, id: &str) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        record_deletion(&transaction, RecordKind::ShotgunLoad, id, self.stamp(0)?)?;
+        transaction.execute("DELETE FROM shotgun_loads WHERE id = ?1", [id])?;
         transaction.commit()?;
         Ok(())
     }
@@ -1405,6 +1551,48 @@ pub(crate) fn put_target(connection: &Connection, target: &Target) -> Result<(),
         "INSERT INTO targets (id, data, updated_at) VALUES (?1, ?2, ?3)
          ON CONFLICT (id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
         params![target.id, serde_json::to_string(target)?, target.updated_at],
+    )?;
+    Ok(())
+}
+
+pub(crate) fn put_shotgun(connection: &Connection, shotgun: &Shotgun) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO shotguns (id, data, updated_at) VALUES (?1, ?2, ?3)
+         ON CONFLICT (id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+        params![
+            shotgun.id,
+            serde_json::to_string(shotgun)?,
+            shotgun.updated_at
+        ],
+    )?;
+    Ok(())
+}
+
+pub(crate) fn put_shell(connection: &Connection, shell: &Shell) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO shells (id, data, updated_at) VALUES (?1, ?2, ?3)
+         ON CONFLICT (id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+        params![shell.id, serde_json::to_string(shell)?, shell.updated_at],
+    )?;
+    Ok(())
+}
+
+pub(crate) fn put_shotgun_load(
+    connection: &Connection,
+    load: &ShotgunLoad,
+) -> Result<(), StoreError> {
+    connection.execute(
+        "INSERT INTO shotgun_loads (id, shotgun_id, shell_id, data, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT (id) DO UPDATE SET shotgun_id = excluded.shotgun_id,
+             shell_id = excluded.shell_id, data = excluded.data, updated_at = excluded.updated_at",
+        params![
+            load.id,
+            load.shotgun_id,
+            load.shell_id,
+            serde_json::to_string(load)?,
+            load.updated_at
+        ],
     )?;
     Ok(())
 }

@@ -184,7 +184,7 @@ impl CalculatorPage {
             match frame.rifle {
                 None => {
                     ui.heading(tr("Add a rifle to start"));
-                    if ui.button(tr("Go to Rifles")).clicked() {
+                    if ui.button(tr("Go to Guns")).clicked() {
                         actions.push(Action::Goto(Page::Rifles));
                     }
                     if ui.button(tr("Load demo data")).clicked() {
@@ -196,7 +196,7 @@ impl CalculatorPage {
                         "No {} bullets in your collection",
                         caliber_name(&rifle.caliber)
                     ));
-                    if ui.button(tr("Go to Bullets")).clicked() {
+                    if ui.button(tr("Go to Ammunition")).clicked() {
                         actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                     }
                 }
@@ -852,7 +852,7 @@ impl ResultsView<'_> {
     fn phone_scope(&self, ui: &mut Ui, solution: &Solution, requests: &mut ViewRequests) {
         let Some((scope, reticle)) = self.optics else {
             ui.weak(tr(
-                "Choose a scope and reticle for this rifle (Rifles) to see the view through it.",
+                "Choose a scope and reticle for this rifle (Guns) to see the view through it.",
             ));
             return;
         };

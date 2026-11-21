@@ -307,7 +307,7 @@ impl CardsPage {
                     "Dope cards and stand cards are made for a rifle and a bullet. Add a rifle \
                      and a bullet for it first.",
                 ));
-                if ui.button(tr("Go to Rifles")).clicked() {
+                if ui.button(tr("Go to Guns")).clicked() {
                     actions.push(Action::Goto(Page::Rifles));
                 }
             });

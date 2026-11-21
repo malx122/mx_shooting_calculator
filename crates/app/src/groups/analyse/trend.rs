@@ -286,11 +286,11 @@ fn too_little(ui: &mut egui::Ui, trend: &TrendData, metric: Metric, against: Aga
             match against {
                 Against::Order | Against::Date => "",
                 Against::Charge => tr(
-                    "Give the load's recipe its charge on the Bullets page, or include ladder \
+                    "Give the load's recipe its charge on the Ammunition page, or include ladder \
                      rungs.",
                 ),
                 Against::Seating => tr(
-                    "Give the load's recipe its CBTO on the Bullets page, or include ladder \
+                    "Give the load's recipe its CBTO on the Ammunition page, or include ladder \
                      rungs.",
                 ),
                 Against::Temperature => tr("Give the session, or the group, its temperature."),

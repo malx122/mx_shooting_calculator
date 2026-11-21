@@ -18,6 +18,7 @@ use crate::i18n::tr;
 const CASE: Color32 = Color32::from_rgb(0xea, 0xd9, 0xab);
 const BULLET: Color32 = Color32::from_rgb(0xe3, 0xb4, 0x8e);
 const PRIMER: Color32 = Color32::from_rgb(0xb8, 0xb8, 0xb4);
+pub const HULL: Color32 = Color32::from_rgb(0xb3, 0x2d, 0x2a);
 const OUTLINE: Color32 = Color32::from_rgb(0x1d, 0x2a, 0x22);
 const TEXT: f32 = 11.0;
 /// A row of labels: letter and value on one line.
@@ -45,7 +46,33 @@ fn value_text(cartridge: &Cartridge, letter: &str, value: f64) -> String {
     }
 }
 
+/// A shotgun shell's diameters by C.I.P.'s table VII letters: the rim (g),
+/// the body ahead of it (d) and the mouth (h).
+fn shell_diameters(cartridge: &Cartridge) -> Vec<Measure> {
+    let case = &cartridge.case;
+    vec![
+        Measure {
+            letter: "g",
+            at: case.rim_thickness / 2.0,
+            value: case.rim_diameter,
+        },
+        Measure {
+            letter: "d",
+            at: case.rim_thickness + 0.6,
+            value: case.body_diameter,
+        },
+        Measure {
+            letter: "h",
+            at: case.length - 3.0,
+            value: case.mouth_diameter,
+        },
+    ]
+}
+
 fn diameters(cartridge: &Cartridge) -> Vec<Measure> {
+    if cartridge.hull.is_some() {
+        return shell_diameters(cartridge);
+    }
     let case = &cartridge.case;
     let mut out = vec![Measure {
         letter: "R1",
@@ -92,21 +119,39 @@ fn diameters(cartridge: &Cartridge) -> Vec<Measure> {
     });
     // The bullet where it is widest out of the case: between the mouth and
     // the nose, or just past the mouth when the nose starts inside it.
-    let nose = cartridge.overall_length - cartridge.bullet.nose_length;
-    out.push(Measure {
-        letter: "G1",
-        at: if nose > case.length + 1.0 {
-            (case.length + nose) / 2.0
-        } else {
-            case.length + 0.3
-        },
-        value: cartridge.bullet.diameter,
-    });
+    if let Some(bullet) = &cartridge.bullet {
+        let nose = cartridge.overall_length - bullet.nose_length;
+        out.push(Measure {
+            letter: "G1",
+            at: if nose > case.length + 1.0 {
+                (case.length + nose) / 2.0
+            } else {
+                case.length + 0.3
+            },
+            value: bullet.diameter,
+        });
+    }
     out
 }
 
 fn lengths(cartridge: &Cartridge) -> Vec<Measure> {
     let case = &cartridge.case;
+    if cartridge.hull.is_some() {
+        // The rim (t), and the shell crimped as it is loaded; its open
+        // length (l) is in the line under the drawing.
+        return vec![
+            Measure {
+                letter: "t",
+                at: case.rim_thickness,
+                value: case.rim_thickness,
+            },
+            Measure {
+                letter: "L",
+                at: case.length,
+                value: case.length,
+            },
+        ];
+    }
     let mut out = vec![Measure {
         letter: "R",
         at: case.rim_thickness,
@@ -136,11 +181,13 @@ fn lengths(cartridge: &Cartridge) -> Vec<Measure> {
         at: case.length,
         value: case.length,
     });
-    out.push(Measure {
-        letter: "L6",
-        at: cartridge.overall_length,
-        value: cartridge.overall_length,
-    });
+    if cartridge.bullet.is_some() {
+        out.push(Measure {
+            letter: "L6",
+            at: cartridge.overall_length,
+            value: cartridge.overall_length,
+        });
+    }
     out
 }
 
@@ -149,6 +196,17 @@ fn lengths(cartridge: &Cartridge) -> Vec<Measure> {
 fn others(cartridge: &Cartridge) -> String {
     let case = &cartridge.case;
     let mut parts = Vec::new();
+    if let Some(hull) = &cartridge.hull {
+        parts.push(format!(
+            "l {}",
+            value_text(cartridge, "l", hull.open_length)
+        ));
+        parts.push(crate::i18n::trf!(
+            "brass head about {:.0} (typical)",
+            hull.head_height
+        ));
+        return parts.join(" · ");
+    }
     if let Some(bevel) = &case.head_bevel {
         parts.push(format!("f {:.2}", bevel.length));
         parts.push(format!("β {}°", bevel.degrees));
@@ -181,6 +239,12 @@ fn meaning(letter: &str) -> &'static str {
         "L2" => tr("from the head to where the neck starts"),
         "L3" => tr("case length"),
         "L6" => tr("overall length, head to bullet tip"),
+        "g" => tr("rim diameter"),
+        "t" => tr("rim thickness"),
+        "d" => tr("body diameter ahead of the rim"),
+        "h" => tr("diameter at the mouth"),
+        "l" => tr("shell length opened (fired), as its caliber's name says"),
+        "L" => tr("shell length crimped, as loaded (SAAMI's maximum, or estimated)"),
         _ => "",
     }
 }
@@ -366,6 +430,7 @@ pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, width: f32, height: f32) {
                 Material::Case => CASE,
                 Material::Bullet => BULLET,
                 Material::Primer => PRIMER,
+                Material::Hull => HULL,
             };
             let first = mesh.vertices.len() as u32;
             mesh.colored_vertex(at(a0, r0), colour);

@@ -23,8 +23,8 @@ use crate::StoreError;
 use crate::barrels::{Barrel, Clean, RoundLogEntry, ZeroReset};
 use crate::db::{
     Blob, Store, blob_by_id, bullet_from_row, from_json_column, load_from_row, observe_on,
-    put_blob, put_bullet, put_load, put_rifle, put_scope, put_shot, put_target, record_deletion,
-    rifle_from_row, stamp_on, sweep_orphans,
+    put_blob, put_bullet, put_load, put_rifle, put_scope, put_shell, put_shot, put_shotgun,
+    put_shotgun_load, put_target, record_deletion, rifle_from_row, stamp_on, sweep_orphans,
 };
 use crate::deletions::{Deletion, RecordKind};
 use crate::groups::{Analysis, Group, Ladder};
@@ -32,6 +32,7 @@ use crate::model::{Bullet, Rifle, RifleLoad, now_ms};
 use crate::optics::UserScope;
 use crate::photos::Photo;
 use crate::sessions::Session;
+use crate::shotguns::{Shell, Shotgun, ShotgunLoad};
 use crate::shots::Shot;
 use crate::targets::Target;
 
@@ -49,10 +50,12 @@ const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/pe
 /// 6: the shot log.
 /// 7: attribution for separately licensed bullet data. Older readers must not
 /// silently discard it when importing and re-exporting records.
-/// 8: shot groups and what goes with them: barrels, the round log, cleans,
+/// 8: shotguns with their chokes, shotgun shells, and the pattern boards
+/// counted with a shell in a gun.
+/// 9: shot groups and what goes with them: barrels, the round log, cleans,
 /// zero resets, range sessions, photos, ladders and analyses; rifles name
 /// their barrel and rounds before logging; handloads have a recipe.
-pub const VERSION: u32 = 8;
+pub const VERSION: u32 = 9;
 
 // This and the types in it are the documented export format: changing
 // them changes docs/export-format.schema.json and the field reference in
@@ -68,7 +71,7 @@ pub struct PersonalData {
     /// Always `mxsc/personal-data`. Files from the app's earlier names say
     /// `mhc/personal-data` or `ballistic-calculator/personal-data`.
     pub format: String,
-    /// The format's version; this description is of version 8. A reader
+    /// The format's version; this description is of version 9. A reader
     /// should refuse versions newer than it knows.
     pub version: u32,
     /// When the file was written, in milliseconds since 1970 (UTC).
@@ -90,6 +93,16 @@ pub struct PersonalData {
     /// and, after a shot at game, where the hunter and the animal stood.
     #[serde(default)]
     pub shots: Vec<Shot>,
+    /// The hunter's shotguns, each with its barrels' chokes.
+    #[serde(default)]
+    pub shotguns: Vec<Shotgun>,
+    /// The hunter's shotgun shells: shot and slugs, by caliber.
+    #[serde(default)]
+    pub shells: Vec<Shell>,
+    /// What is particular to a shell in a shotgun: the pattern boards
+    /// counted with it.
+    #[serde(default)]
+    pub shotgun_loads: Vec<ShotgunLoad>,
     /// Barrels of the hunter's rifles, fitted or not.
     #[serde(default)]
     pub barrels: Vec<Barrel>,
@@ -135,6 +148,9 @@ pub struct CatalogDetails {
     /// The calibers named by rifles and bullets (their `caliber`).
     #[serde(default)]
     pub calibers: Vec<CaliberDetails>,
+    /// The shotgun calibers named by shotguns and shells (their `caliber`).
+    #[serde(default)]
+    pub shotgun_calibers: Vec<ShotgunCaliberDetails>,
     /// The catalog scopes named by rifles (their `scope_id`).
     #[serde(default)]
     pub scopes: Vec<ScopeDetails>,
@@ -145,7 +161,10 @@ pub struct CatalogDetails {
 
 impl CatalogDetails {
     pub fn is_empty(&self) -> bool {
-        self.calibers.is_empty() && self.scopes.is_empty() && self.reticles.is_empty()
+        self.calibers.is_empty()
+            && self.shotgun_calibers.is_empty()
+            && self.scopes.is_empty()
+            && self.reticles.is_empty()
     }
 
     /// The catalog entries `data` refers to.
@@ -158,6 +177,15 @@ impl CatalogDetails {
             .chain(data.bullets.iter().map(|bullet| bullet.caliber.as_str()))
             .collect();
         calibers.sort_unstable();
+        calibers.dedup();
+        let mut shotgun_calibers: Vec<&str> = data
+            .shotguns
+            .iter()
+            .map(|shotgun| shotgun.caliber.as_str())
+            .chain(data.shells.iter().map(|shell| shell.caliber.as_str()))
+            .collect();
+        shotgun_calibers.sort_unstable();
+        shotgun_calibers.dedup();
         calibers.dedup();
         let mut scopes: Vec<&str> = data
             .rifles
@@ -186,6 +214,17 @@ impl CatalogDetails {
                     key: caliber.key.clone(),
                     name: caliber.name.clone(),
                     bullet_diameter_mm: caliber.bullet_diameter_mm,
+                })
+                .collect(),
+            shotgun_calibers: shotgun_calibers
+                .into_iter()
+                .filter_map(|key| catalog.shotgun_caliber(key))
+                .map(|caliber| ShotgunCaliberDetails {
+                    key: caliber.key.clone(),
+                    name: caliber.name.clone(),
+                    gauge: caliber.gauge,
+                    length_mm: caliber.length_mm,
+                    bore_mm: caliber.bore_mm,
                 })
                 .collect(),
             scopes: scopes
@@ -223,6 +262,22 @@ impl CatalogDetails {
                 .collect(),
         }
     }
+}
+
+/// A shotgun caliber, as a shotgun's or shell's `caliber` names it.
+#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ShotgunCaliberDetails {
+    /// The key records use, e.g. `12-76`.
+    pub key: String,
+    /// Its name, e.g. `12/76`.
+    pub name: String,
+    /// Its gauge: `"12"`, `".410"`.
+    pub gauge: crate::shotguns::Gauge,
+    /// The length in its name, mm: a shell fits a gun of its gauge whose
+    /// caliber's length is the same or longer.
+    pub length_mm: f64,
+    /// The bore's nominal (least) diameter, mm.
+    pub bore_mm: f64,
 }
 
 /// A caliber, as a rifle's or bullet's `caliber` names it.
@@ -376,6 +431,9 @@ record!(RifleLoad, RecordKind::RifleLoad);
 record!(UserScope, RecordKind::Scope);
 record!(Target, RecordKind::Target);
 record!(Shot, RecordKind::Shot);
+record!(Shotgun, RecordKind::Shotgun);
+record!(Shell, RecordKind::Shell);
+record!(ShotgunLoad, RecordKind::ShotgunLoad);
 record!(Barrel, RecordKind::Barrel);
 record!(RoundLogEntry, RecordKind::RoundLogEntry);
 record!(Clean, RecordKind::Clean);
@@ -400,6 +458,9 @@ impl Store {
             scopes: self.scopes()?,
             targets: self.targets()?,
             shots: self.shots()?,
+            shotguns: self.shotguns()?,
+            shells: self.shells()?,
+            shotgun_loads: self.shotgun_loads()?,
             barrels: groups.barrels,
             round_log: groups.round_log,
             cleans: groups.cleans,
@@ -514,6 +575,24 @@ impl Store {
                     .optional()?)
             })?;
         }
+        for shotgun in &data.shotguns {
+            shotgun.validate().map_err(StoreError::Invalid)?;
+            latest = latest.max(shotgun.updated_at);
+            merge_record(
+                &transaction,
+                shotgun,
+                mode,
+                &mut report,
+                put_shotgun,
+                |tx, s| {
+                    Ok(tx
+                        .query_row("SELECT data FROM shotguns WHERE id = ?1", [&s.id], |row| {
+                            from_json_column::<Shotgun>(&row.get::<_, String>(0)?)
+                        })
+                        .optional()?)
+                },
+            )?;
+        }
         for rifle in &data.rifles {
             rifle.validate().map_err(StoreError::Invalid)?;
             latest = latest.max(rifle.updated_at);
@@ -558,6 +637,31 @@ impl Store {
             load.validate().map_err(StoreError::Invalid)?;
             latest = latest.max(load.updated_at);
             import_load(&transaction, load, mode, &mut report)?;
+        }
+        for shell in &data.shells {
+            shell.validate().map_err(StoreError::Invalid)?;
+            latest = latest.max(shell.updated_at);
+            merge_record(
+                &transaction,
+                shell,
+                mode,
+                &mut report,
+                put_shell,
+                |tx, s| {
+                    Ok(tx
+                        .query_row("SELECT data FROM shells WHERE id = ?1", [&s.id], |row| {
+                            from_json_column::<Shell>(&row.get::<_, String>(0)?)
+                        })
+                        .optional()?)
+                },
+            )?;
+        }
+        for load in &data.shotgun_loads {
+            // Not against the gun's barrels: a board for a barrel since taken
+            // off the gun is kept but not used, and mustn't stop the file.
+            load.validate(None).map_err(StoreError::Invalid)?;
+            latest = latest.max(load.updated_at);
+            import_shotgun_load(&transaction, load, mode, &mut report)?;
         }
         let mut blobs = Blobs {
             transaction: &transaction,
@@ -695,6 +799,33 @@ fn apply_deletion(
         }
         None => {}
     }
+    // A gun's or shell's pattern boards go with it, here as on the device
+    // that deleted it, so both copies end up the same (rifle loads go with
+    // their rifle by the database's own cascade).
+    let column = match deletion.kind {
+        RecordKind::Shotgun => Some("shotgun_id"),
+        RecordKind::Shell => Some("shell_id"),
+        _ => None,
+    };
+    if let Some(column) = column {
+        let mut boards = transaction.prepare(&format!(
+            "SELECT id, updated_at FROM shotgun_loads WHERE {column} = ?1"
+        ))?;
+        let dependent: Vec<(String, i64)> = boards
+            .query_map([&deletion.id], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .collect::<Result<_, _>>()?;
+        drop(boards);
+        for (id, updated_at) in dependent {
+            transaction.execute("DELETE FROM shotgun_loads WHERE id = ?1", [&id])?;
+            record_deletion(
+                transaction,
+                RecordKind::ShotgunLoad,
+                &id,
+                deletion.deleted_at.max(updated_at),
+            )?;
+            report.deleted += 1;
+        }
+    }
     record_deletion(
         transaction,
         deletion.kind,
@@ -723,6 +854,9 @@ fn without_future(data: &PersonalData) -> PersonalData {
     fix(&mut data.scopes, limit);
     fix(&mut data.targets, limit);
     fix(&mut data.shots, limit);
+    fix(&mut data.shotguns, limit);
+    fix(&mut data.shells, limit);
+    fix(&mut data.shotgun_loads, limit);
     fix(&mut data.barrels, limit);
     fix(&mut data.round_log, limit);
     fix(&mut data.cleans, limit);
@@ -813,6 +947,8 @@ pub fn read_export(json: &str) -> Result<PersonalData, StoreError> {
         .iter_mut()
         .for_each(RifleLoad::upgrade_legacy);
     data.targets.iter_mut().for_each(Target::upgrade_legacy);
+    data.shotguns.iter_mut().for_each(Shotgun::upgrade_legacy);
+    data.shells.iter_mut().for_each(Shell::upgrade_legacy);
     Ok(data)
 }
 
@@ -904,6 +1040,66 @@ fn import_load(
     }
     if merge.writes() {
         put_load(transaction, &load)?;
+    }
+    report.count(merge);
+    Ok(())
+}
+
+/// A shotgun load is identified by its gun and shell as well as its id, as
+/// a rifle load is.
+fn import_shotgun_load(
+    transaction: &Transaction<'_>,
+    load: &ShotgunLoad,
+    mode: Mode,
+    report: &mut ImportReport,
+) -> Result<(), StoreError> {
+    let gun = transaction
+        .query_row(
+            "SELECT 1 FROM shotguns WHERE id = ?1",
+            [&load.shotgun_id],
+            |_| Ok(()),
+        )
+        .optional()?;
+    let shell = transaction
+        .query_row(
+            "SELECT 1 FROM shells WHERE id = ?1",
+            [&load.shell_id],
+            |_| Ok(()),
+        )
+        .optional()?;
+    let (Some(()), Some(())) = (gun, shell) else {
+        // Its gun or shell was deleted here more recently: so is the load.
+        if deleted_at(transaction, RecordKind::Shotgun, &load.shotgun_id)?.is_some()
+            || deleted_at(transaction, RecordKind::Shell, &load.shell_id)?.is_some()
+        {
+            report.count(Merge::KeptLocal);
+            return Ok(());
+        }
+        return Err(StoreError::Invalid(
+            "a pattern board refers to a shotgun or shell missing from the file".into(),
+        ));
+    };
+    let Some(load) = against_deletion(transaction, load, mode)? else {
+        report.count(Merge::KeptLocal);
+        return Ok(());
+    };
+    let local = transaction
+        .query_row(
+            "SELECT data FROM shotgun_loads WHERE shotgun_id = ?1 AND shell_id = ?2",
+            params![load.shotgun_id, load.shell_id],
+            |row| from_json_column::<ShotgunLoad>(&row.get::<_, String>(0)?),
+        )
+        .optional()?;
+    let comparable = local.clone().map(|mut local| {
+        local.id = load.id.clone();
+        local
+    });
+    let merge = decide(comparable.as_ref(), &load, mode);
+    if let (Merge::Updated, Some(local)) = (merge, &local) {
+        transaction.execute("DELETE FROM shotgun_loads WHERE id = ?1", [&local.id])?;
+    }
+    if merge.writes() {
+        put_shotgun_load(transaction, &load)?;
     }
     report.count(merge);
     Ok(())

@@ -1,8 +1,8 @@
-//! The Rifles page: the hunter's rifles and own scopes, with an editor for
-//! each, and for each rifle the bullets shot in it (their loads).
+//! The Guns page: the hunter's rifles, shotguns and own scopes, with an
+//! editor for each, and for each rifle the bullets shot in it (their loads).
 
 use ballistics_store::{
-    AngleUnit, Catalog, ClickUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, Rifle, UserScope,
+    AngleUnit, Catalog, ClickUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, Rifle, Shotgun, UserScope,
 };
 use eframe::egui::{self, RichText};
 
@@ -11,6 +11,7 @@ use crate::i18n::{tr, trf};
 use crate::loads::LoadEditor;
 use crate::mobile;
 use crate::number_field::NumberField;
+use crate::shotguns::ShotgunEditor;
 use crate::sight_picture::reticle_preview;
 use crate::units::{self, Quantity, optional_quantity, quantity};
 use crate::widgets::{
@@ -26,6 +27,8 @@ enum Editing {
     Nothing,
     Rifle(Rifle),
     Scope(UserScope),
+    /// A shotgun, held by `shotguns`.
+    Shotgun,
 }
 
 pub struct RiflesPage {
@@ -41,6 +44,8 @@ pub struct RiflesPage {
     blank_scope: Option<UserScope>,
     /// The open rifle's round counts, barrels and round log.
     history: crate::rifle_history::HistoryState,
+    /// The shotguns' list and editor.
+    shotguns: ShotgunEditor,
 }
 
 impl Default for RiflesPage {
@@ -54,6 +59,7 @@ impl Default for RiflesPage {
             blank_rifle: None,
             blank_scope: None,
             history: Default::default(),
+            shotguns: ShotgunEditor::default(),
         }
     }
 }
@@ -69,6 +75,7 @@ impl RiflesPage {
     pub fn back(&mut self) {
         self.editing = Editing::Nothing;
         self.loads.forget();
+        self.shotguns.back();
     }
 
     /// The open editor has changes that aren't saved.
@@ -88,6 +95,22 @@ impl RiflesPage {
                     None => self.blank_scope.as_ref() != Some(scope),
                 }
             }
+            Editing::Shotgun => self.shotguns.unsaved(data),
+        }
+    }
+
+    pub fn shotgun_saved(&mut self, shotgun: &Shotgun) {
+        self.shotguns.saved(shotgun);
+    }
+
+    pub fn shotgun_boards_saved(&mut self) {
+        self.shotguns.boards_saved();
+    }
+
+    pub fn shotgun_deleted(&mut self, id: &str) {
+        self.shotguns.deleted(id);
+        if !self.shotguns.is_open() && matches!(self.editing, Editing::Shotgun) {
+            self.editing = Editing::Nothing;
         }
     }
 
@@ -176,7 +199,7 @@ impl RiflesPage {
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| self.phone_list(ui, data, &mut actions));
                 } else {
-                    if mobile::back_button(ui, tr("Rifles")) {
+                    if mobile::back_button(ui, tr("Guns")) {
                         actions.push(Action::Back);
                     }
                     let cancel = egui::ScrollArea::vertical()
@@ -219,9 +242,16 @@ impl RiflesPage {
 
     /// The open editor. Returns true when the hunter cancels a new record.
     fn editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) -> bool {
+        if matches!(self.editing, Editing::Shotgun) && !self.shotguns.is_open() {
+            self.editing = Editing::Nothing;
+        }
         match &mut self.editing {
             Editing::Nothing => {
-                ui.weak(tr("Choose a rifle or scope, or add a new one."));
+                ui.weak(tr("Choose a rifle, shotgun or scope, or add a new one."));
+                false
+            }
+            Editing::Shotgun => {
+                self.shotguns.detail(ui, data, actions);
                 false
             }
             Editing::Rifle(rifle) => rifle_editor(
@@ -239,36 +269,24 @@ impl RiflesPage {
         }
     }
 
-    /// The phone's list: big rows for rifles and own scopes.
+    /// The phone's list: big rows for the guns and own scopes.
     fn phone_list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
-        ui.heading(tr("Rifles"));
-        if ui.button(tr("+ New rifle")).clicked() {
-            self.new_rifle();
-        }
-        for rifle in &data.rifles {
-            let scope = rifle
-                .scope_id
-                .as_deref()
-                .and_then(|id| data.scope(id))
-                .map(|scope| format!(" · {}", scope.display_name()))
-                .unwrap_or_default();
-            let detail = format!("{}{scope}", caliber_name(&rifle.caliber));
-            if mobile::list_row(ui, &rifle.name, &detail, false).clicked() {
-                self.editing = Editing::Rifle(rifle.clone());
+        ui.heading(tr("Guns"));
+        ui.horizontal_wrapped(|ui| {
+            if ui.button(tr("+ New rifle")).clicked() {
+                self.new_rifle();
+            }
+            if ui.button(tr("+ New shotgun")).clicked() {
+                self.new_shotgun();
+            }
+        });
+        for gun in guns(data) {
+            let (name, detail) = gun.texts(data);
+            if mobile::list_row(ui, name, &detail, false).clicked() {
+                self.open_gun(gun);
             }
         }
-        if data.rifles.is_empty() {
-            ui.weak(tr("No rifles yet."));
-            if ui
-                .button(tr("Load demo data"))
-                .on_hover_text(tr(
-                    "Three rifles with bullets, a scope and a target, to try the app",
-                ))
-                .clicked()
-            {
-                actions.push(Action::LoadDemo);
-            }
-        }
+        self.empty_note(ui, data, actions);
         ui.add_space(12.0);
         ui.heading(tr("My scopes"));
         ui.weak(tr("For scopes that aren't in the catalog."));
@@ -278,6 +296,46 @@ impl RiflesPage {
         for scope in &data.scopes {
             if mobile::list_row(ui, &scope.display_name(), "", false).clicked() {
                 self.editing = Editing::Scope(scope.clone());
+            }
+        }
+    }
+
+    fn new_shotgun(&mut self) {
+        self.shotguns.open(Shotgun::new(), None);
+        self.editing = Editing::Shotgun;
+    }
+
+    fn open_gun(&mut self, gun: Gun<'_>) {
+        match gun {
+            Gun::Rifle(rifle) => {
+                self.shotguns.back();
+                self.editing = Editing::Rifle(rifle.clone());
+            }
+            Gun::Shotgun(shotgun) => {
+                self.shotguns.open(shotgun.clone(), None);
+                self.editing = Editing::Shotgun;
+            }
+        }
+    }
+
+    /// Opens a shotgun with a shell's pattern boards showing.
+    pub fn edit_shotgun_load(&mut self, shotgun: &Shotgun, shell_id: &str) {
+        self.shotguns.open(shotgun.clone(), Some(shell_id));
+        self.editing = Editing::Shotgun;
+    }
+
+    fn empty_note(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        if data.rifles.is_empty() && data.shotguns.is_empty() {
+            ui.weak(tr("No guns yet."));
+            if ui
+                .button(tr("Load demo data"))
+                .on_hover_text(tr(
+                    "Three rifles with bullets, a shotgun with shells, a scope and a target, to \
+                     try the app",
+                ))
+                .clicked()
+            {
+                actions.push(Action::LoadDemo);
             }
         }
     }
@@ -292,31 +350,35 @@ impl RiflesPage {
     }
 
     fn list(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
-        ui.heading(tr("Rifles"));
-        if ui.button(tr("+ New rifle")).clicked() {
-            self.new_rifle();
-        }
-        ui.add_space(4.0);
-        for rifle in &data.rifles {
-            let selected =
-                matches!(&self.editing, Editing::Rifle(editing) if editing.id == rifle.id);
-            let label = format!("{}\n{}", rifle.name, caliber_name(&rifle.caliber));
-            if ui.selectable_label(selected, label).clicked() {
-                self.editing = Editing::Rifle(rifle.clone());
+        ui.heading(tr("Guns"));
+        ui.horizontal_wrapped(|ui| {
+            if ui.button(tr("+ New rifle")).clicked() {
+                self.new_rifle();
             }
-        }
-        if data.rifles.is_empty() {
-            ui.weak(tr("No rifles yet."));
+            if ui.button(tr("+ New shotgun")).clicked() {
+                self.new_shotgun();
+            }
+        });
+        ui.add_space(4.0);
+        for gun in guns(data) {
+            let selected = match gun {
+                Gun::Rifle(rifle) => {
+                    matches!(&self.editing, Editing::Rifle(editing) if editing.id == rifle.id)
+                }
+                Gun::Shotgun(shotgun) => {
+                    matches!(self.editing, Editing::Shotgun)
+                        && self.shotguns.open_id() == Some(shotgun.id.as_str())
+                }
+            };
+            let (name, detail) = gun.texts(data);
             if ui
-                .button(tr("Load demo data"))
-                .on_hover_text(tr(
-                    "Three rifles with bullets, a scope and a target, to try the app",
-                ))
+                .selectable_label(selected, format!("{name}\n{detail}"))
                 .clicked()
             {
-                actions.push(Action::LoadDemo);
+                self.open_gun(gun);
             }
         }
+        self.empty_note(ui, data, actions);
 
         ui.separator();
         ui.heading(tr("My scopes"));
@@ -1072,4 +1134,57 @@ fn preview_caption(reticle: &Reticle) -> String {
             reticle.inner_extent_mrad()
         )
     }
+}
+
+/// A rifle or a shotgun, for the one list of guns.
+#[derive(Clone, Copy)]
+enum Gun<'a> {
+    Rifle(&'a Rifle),
+    Shotgun(&'a Shotgun),
+}
+
+impl Gun<'_> {
+    fn name(&self) -> &str {
+        match self {
+            Gun::Rifle(rifle) => &rifle.name,
+            Gun::Shotgun(shotgun) => &shotgun.name,
+        }
+    }
+
+    /// Its name, and its caliber (and scope) or gauge (and chokes).
+    fn texts(&self, data: &Data) -> (&str, String) {
+        match self {
+            Gun::Rifle(rifle) => {
+                let scope = rifle
+                    .scope_id
+                    .as_deref()
+                    .and_then(|id| data.scope(id))
+                    .map(|scope| format!(" · {}", scope.display_name()))
+                    .unwrap_or_default();
+                (
+                    &rifle.name,
+                    format!("{}{scope}", caliber_name(&rifle.caliber)),
+                )
+            }
+            Gun::Shotgun(shotgun) => (
+                &shotgun.name,
+                trf!(
+                    "Shotgun, {}",
+                    crate::widgets::shotgun_caliber_name(&shotgun.caliber)
+                ),
+            ),
+        }
+    }
+}
+
+/// The hunter's rifles and shotguns together, by name.
+fn guns(data: &Data) -> Vec<Gun<'_>> {
+    let mut guns: Vec<Gun> = data
+        .rifles
+        .iter()
+        .map(Gun::Rifle)
+        .chain(data.shotguns.iter().map(Gun::Shotgun))
+        .collect();
+    guns.sort_by_key(|gun| gun.name().to_lowercase());
+    guns
 }

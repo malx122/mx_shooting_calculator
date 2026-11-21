@@ -10,6 +10,7 @@ fn main() {
     for (constant, folder) in [
         ("BULLETS", "bullets"),
         ("SCOPES", "scopes"),
+        ("SHELLS", "shells"),
         ("CHAMBERSIM_BULLETS", "third-party/chambersim/bullets"),
     ] {
         let dir = root.join(folder);

@@ -363,3 +363,31 @@ pub fn scope_summary(scope: &Scope) -> String {
     }
     parts.join(" · ")
 }
+
+/// A shotgun caliber's name ("12/76"), or the key when the catalog doesn't
+/// know it.
+pub fn shotgun_caliber_name(key: &str) -> String {
+    Catalog::builtin()
+        .shotgun_caliber(key)
+        .map_or_else(|| key.to_owned(), |caliber| caliber.name.clone())
+}
+
+/// A choice of shotgun caliber, common ones marked, others by gauge.
+pub fn shotgun_caliber_picker(ui: &mut egui::Ui, id: &str, key: &mut String) -> egui::Response {
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(shotgun_caliber_name(key))
+        .height(360.0)
+        .show_ui(ui, |ui| {
+            for caliber in &Catalog::builtin().shotgun_calibers {
+                let common = caliber.nordic_use == ballistics_store::NordicUse::Common;
+                let label = if common {
+                    RichText::new(&caliber.name).strong()
+                } else {
+                    RichText::new(&caliber.name)
+                };
+                ui.selectable_value(key, caliber.key.clone(), label)
+                    .on_hover_text(caliber.aliases.join(" · "));
+            }
+        })
+        .response
+}

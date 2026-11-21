@@ -7,8 +7,8 @@ use std::rc::Rc;
 
 use ballistics_store::{
     Bullet, Catalog, Country, Group, GroupView, GroupsData, PLAIN_CROSSHAIR, Pending, Photo,
-    PhotoStore, Reticle, Rifle, RifleLoad, RoundLogEntry, Scope, Shot, Store, StoreError, Target,
-    UserScope,
+    PhotoStore, Reticle, Rifle, RifleLoad, RoundLogEntry, Scope, Shell, Shot, Shotgun, ShotgunLoad,
+    Store, StoreError, Target, UserScope,
 };
 use eframe::egui::{self, RichText};
 use serde::{Deserialize, Serialize};
@@ -106,6 +106,18 @@ pub enum Action {
     DeleteScope(String),
     SaveTarget(Target),
     DeleteTarget(String),
+    SaveShotgun(Box<Shotgun>),
+    DeleteShotgun(String),
+    SaveShell(Box<Shell>),
+    DeleteShell(String),
+    SaveShotgunLoad(Box<ShotgunLoad>),
+    DeleteShotgunLoad(String),
+    /// The Ammunition page with the shells that fit a shotgun caliber.
+    ShowShellsFor(String),
+    /// Calculate with a gun and its ammunition (gun id, bullet or shell id).
+    CalculateWith(String, String),
+    /// Open a shotgun with a shell's pattern boards (gun id, shell id).
+    EditShotgunLoad(String, String),
     /// Save a shot from Calculate in the log and open it there.
     LogShot(Box<Shot>),
     SaveShot(Box<Shot>),
@@ -154,6 +166,9 @@ pub struct Data {
     pub targets: Vec<Target>,
     /// The shot log, newest first.
     pub shots: Vec<Shot>,
+    pub shotguns: Vec<Shotgun>,
+    pub shells: Vec<Shell>,
+    pub shotgun_loads: Vec<ShotgunLoad>,
     /// Whose hunting rules to check, if any (none when target shooting).
     pub country: Option<Country>,
     /// Hunting: ethical limits and the rules apply. Off for target shooting.
@@ -518,6 +533,9 @@ impl App {
                 scopes: self.store.scopes()?,
                 targets: self.store.targets()?,
                 shots: self.store.shots()?,
+                shotguns: self.store.shotguns()?,
+                shells: self.store.shells()?,
+                shotgun_loads: self.store.shotgun_loads()?,
                 country: self.rules_country(),
                 hunting: self.hunting(),
                 region: None,
@@ -914,6 +932,50 @@ impl App {
                 self.targets.deleted(&id);
                 tr("Target deleted").to_owned()
             }),
+            Action::SaveShotgun(mut shotgun) => self.store.save_shotgun(&mut shotgun).map(|()| {
+                self.rifles.shotgun_saved(&shotgun);
+                trf!("Saved {}", shotgun.name)
+            }),
+            Action::DeleteShotgun(id) => self.store.delete_shotgun(&id).map(|()| {
+                self.rifles.shotgun_deleted(&id);
+                tr("Shotgun deleted").to_owned()
+            }),
+            Action::SaveShell(mut shell) => self.store.save_shell(&mut shell).map(|()| {
+                self.bullets.shell_saved(&shell);
+                trf!("Saved {}", shell.display_name())
+            }),
+            Action::DeleteShell(id) => self.store.delete_shell(&id).map(|()| {
+                self.bullets.shell_deleted(&id);
+                tr("Shell deleted").to_owned()
+            }),
+            Action::SaveShotgunLoad(mut load) => {
+                self.store.save_shotgun_load(&mut load).map(|()| {
+                    self.rifles.shotgun_boards_saved();
+                    tr("Saved the pattern boards").to_owned()
+                })
+            }
+            Action::DeleteShotgunLoad(id) => self.store.delete_shotgun_load(&id).map(|()| {
+                self.rifles.shotgun_boards_saved();
+                tr("Pattern boards removed: the chokes' nominal patterns again").to_owned()
+            }),
+            Action::ShowShellsFor(caliber) => {
+                self.bullets.show_shells_for(&caliber);
+                self.page = Page::Bullets;
+                return;
+            }
+            Action::EditShotgunLoad(gun, shell) => {
+                if let Some(shotgun) = self.data.shotguns.iter().find(|stored| stored.id == gun) {
+                    self.rifles.edit_shotgun_load(shotgun, &shell);
+                }
+                self.page = Page::Rifles;
+                return;
+            }
+            Action::CalculateWith(gun, ammunition) => {
+                self.calculator.inputs.rifle_id = Some(gun);
+                self.calculator.inputs.bullet_id = Some(ammunition);
+                self.page = Page::Calculate;
+                return;
+            }
             Action::LogShot(mut shot) => {
                 if let Some(bullet) = self.data.bullets.iter().find(|b| b.id == shot.bullet_id) {
                     shot.bullet_name = bullet.display_name();
@@ -1590,8 +1652,8 @@ impl App {
                 for (page, label) in [
                     (Page::Calculate, tr("Calculate")),
                     (Page::Groups, tr("Groups")),
-                    (Page::Rifles, tr("Rifles")),
-                    (Page::Bullets, tr("Bullets")),
+                    (Page::Rifles, tr("Guns")),
+                    (Page::Bullets, tr("Ammunition")),
                     (Page::Targets, tr("Targets")),
                     (Page::Cards, tr("Cards")),
                 ] {
@@ -2071,8 +2133,8 @@ impl App {
             let tabs = [
                 (Page::Calculate, tr("Calculate")),
                 (Page::Groups, tr("Groups")),
-                (Page::Rifles, tr("Rifles")),
-                (Page::Bullets, tr("Bullets")),
+                (Page::Rifles, tr("Guns")),
+                (Page::Bullets, tr("Ammunition")),
                 (Page::Targets, tr("Targets")),
             ];
             let width = ui.available_width() / tabs.len() as f32;

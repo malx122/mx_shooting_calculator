@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 mod finland;
 pub mod hunting;
+pub mod shotgun;
 mod sweden;
 
 use std::sync::OnceLock;

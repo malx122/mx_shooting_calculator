@@ -18,7 +18,11 @@ gives:
   and sport targets at true size;
 - a shot log of the shots you took, with the solution the app gave, what
   came of them and, after a shot at game, the way to where the animal
-  stood.
+  stood;
+- shotguns, kept and calculated as rifles are: chokes, shells and your own
+  pattern boards; on Calculate each shell range by range (pellet energy,
+  spread, pattern), its pattern on the target at true size, what Swedish
+  and Finnish law says, lead to steel, slugs, and how far shot carries.
 
 It is in English, Swedish and Finnish.
 
@@ -119,7 +123,7 @@ Below 640 points of width (any phone, and a narrow desktop window) the app
 switches to a one-column layout with bigger text and touch targets
 (`mobile.rs`, `calculator/phone.rs`):
 
-- **Navigation:** a bottom tab bar (Calculate, Rifles, Bullets, Targets,
+- **Navigation:** a bottom tab bar (Calculate, Guns, Ammunition, Targets,
   Cards) and a compact header whose menu holds the Shot log, Units, Language,
   what the app is used for, Hunting rules, Sync, Import, Export, Load demo
   data, Install and the version.
@@ -142,7 +146,7 @@ switches to a one-column layout with bigger text and touch targets
   - **Wind:** a clock dial for the direction and quick speeds.
   - **Target:** search, recent targets, and **No target** (just the reticle
     and the impact point).
-- **Rifles, Bullets, Targets and the Shot log:** a list, then the record full
+- **Guns (rifles, shotguns and scopes), Ammunition, Targets and the Shot log:** a list, then the record full
   screen with a way back.
 
 ### Versions and releases
@@ -203,7 +207,9 @@ backups or databases from loading needs a new major version.
   Kahles K318i with the SKMR4 (first focal plane, mrad);
 - a **Browning X-Bolt** in .308 Win, with two factory loads, a handload, a
   velocity measured in that rifle, and a Kahles HELIA 2,4-12x56i with the
-  4-Dot.
+  4-Dot;
+- an **over-and-under 12/76** with quarter and half chokes, a lead US 3
+  shell with a counted pattern board, and a steel US 3 shell.
 
 ```sh
 cargo seed   # (re)create target/dev.sqlite from the fixture
@@ -250,7 +256,7 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
 
 ## How it is used
 
-1. **Rifles:** add each rifle with:
+1. **Guns:** add each rifle with:
    - its caliber, from a searchable list of about 50 common calibers;
    - twist, sight height, scope and click value. The scope comes from the
      catalog or from **My scopes**: scopes you enter yourself, with
@@ -289,7 +295,14 @@ window and dock icon, so no bitmaps are stored. The colors are defined in
      and uses it from then on. The AI tools use it too.
 
    Calculate uses a load once it is saved.
-2. **Bullets:** build your collection.
+
+   Shotguns go in the same list: the gauge and each barrel's choke, and
+   under **Shells in this gun** the pattern boards you counted with each
+   shell, which replace the choke's nominal pattern.
+2. **Ammunition:** build your collection of bullets, and shotgun shells:
+   from the catalog (**Catalog**, then **Shotgun** and a caliber: Gamebore
+   and Norma, formerly Gyttorp) or by hand (**Add a shotgun shell**: shot or
+   a slug, for a caliber such as 12/70).
    - **From the catalog** (**+ Add from the catalog**): pick a caliber, then
      factory ammunition in that caliber or a component bullet that fits its
      bore. With hunting rules set, a column gives each one's legal class

@@ -28,10 +28,48 @@ pub struct Print {
     pub name: Option<String>,
 }
 
+/// What is printed: a caliber's key, names and cartridge, a rifle's or a
+/// shotgun's.
+#[derive(Clone, Copy)]
+pub struct Printed<'a> {
+    pub key: &'a str,
+    pub name: &'a str,
+    pub aliases: &'a [String],
+    pub cartridge: &'a Cartridge,
+}
+
+impl Caliber {
+    /// Its cartridge with its names, for printing; None without one.
+    pub fn printed(&self) -> Option<Printed<'_>> {
+        Some(Printed {
+            key: &self.key,
+            name: &self.name,
+            aliases: &self.aliases,
+            cartridge: self.cartridge.as_ref()?,
+        })
+    }
+}
+
+impl crate::catalog::ShotgunCaliber {
+    /// Its shell with its names, for printing; None without one.
+    pub fn printed(&self) -> Option<Printed<'_>> {
+        Some(Printed {
+            key: &self.key,
+            name: &self.name,
+            aliases: &self.aliases,
+            cartridge: self.cartridge.as_ref()?,
+        })
+    }
+}
+
 impl Print {
     /// The file name to suggest, e.g. "308-win-cartridge.stl".
     pub fn file_name(caliber: &Caliber) -> String {
-        format!("{}-cartridge.stl", caliber.key)
+        Self::file_name_for(&caliber.key)
+    }
+
+    pub fn file_name_for(key: &str) -> String {
+        format!("{key}-cartridge.stl")
     }
 }
 
@@ -39,8 +77,13 @@ impl Print {
 /// `font` (a TrueType file) when given. None when the caliber has no
 /// cartridge.
 pub fn print(caliber: &Caliber, font: Option<&[u8]>) -> Option<Print> {
-    let cartridge = caliber.cartridge.as_ref()?;
-    let engraving = font.and_then(|font| caliber_engraving(caliber, font));
+    print_this(caliber.printed()?, font)
+}
+
+/// A cartridge or shell as an STL, as `print` makes it.
+pub fn print_this(printed: Printed<'_>, font: Option<&[u8]>) -> Option<Print> {
+    let cartridge = printed.cartridge;
+    let engraving = font.and_then(|font| caliber_engraving(printed, font));
     let slices = match &engraving {
         // Fine enough round the body for the letters.
         Some(_) => {
@@ -57,7 +100,7 @@ pub fn print(caliber: &Caliber, font: Option<&[u8]>) -> Option<Print> {
         .engraved_solid(slices, engraving.as_ref().map(|(_, engraving)| engraving))
         .stl(&format!(
             "{} cartridge, mm, MX Shooting Calculator",
-            caliber.name
+            printed.name
         ));
     Some(Print {
         stl,
@@ -67,13 +110,17 @@ pub fn print(caliber: &Caliber, font: Option<&[u8]>) -> Option<Print> {
 
 /// The caliber's name cut into its case, or failing that its longest
 /// other name that fits ("5mm RRM" for 5mm Remington Rimfire Magnum).
-fn caliber_engraving(caliber: &Caliber, font: &[u8]) -> Option<(String, Engraving)> {
-    let cartridge = caliber.cartridge.as_ref()?;
-    let mut aliases: Vec<&String> = caliber.aliases.iter().collect();
+fn caliber_engraving(printed: Printed<'_>, font: &[u8]) -> Option<(String, Engraving)> {
+    let mut aliases: Vec<&String> = printed.aliases.iter().collect();
     aliases.sort_by_key(|alias| std::cmp::Reverse(alias.chars().count()));
-    std::iter::once(&caliber.name)
-        .chain(aliases)
-        .find_map(|name| Some((name.clone(), name_engraving(cartridge, name, font)?)))
+    std::iter::once(printed.name)
+        .chain(aliases.into_iter().map(String::as_str))
+        .find_map(|name| {
+            Some((
+                name.to_owned(),
+                name_engraving(printed.cartridge, name, font)?,
+            ))
+        })
 }
 
 /// A name to cut into the side of the case, for the printed copy: along
@@ -93,6 +140,8 @@ fn name_engraving(cartridge: &Cartridge, name: &str, font: &[u8]) -> Option<Engr
             );
             (shoulder.start - reach - 1.0, shoulder.diameter)
         }
+        // A shell: on the hull, short of the crimp.
+        None if cartridge.hull.is_some() => (case.length - 5.0, case.mouth_diameter),
         None => (case.length - 1.0, case.mouth_diameter),
     };
     let room = end - start;
@@ -282,7 +331,7 @@ mod tests {
             let Some(cartridge) = &caliber.cartridge else {
                 continue;
             };
-            let (_, engraving) = caliber_engraving(caliber, FONT)
+            let (_, engraving) = caliber_engraving(caliber.printed().unwrap(), FONT)
                 .unwrap_or_else(|| panic!("{}: no name fits", caliber.name));
             assert!(engraving.cut.iter().any(|&cut| cut), "{}", caliber.name);
             // On the body: past where it starts, short of the shoulder.
@@ -301,7 +350,7 @@ mod tests {
         // The letters read the right way: the period of ".308 Win" sits on
         // the baseline, which is on the far side of the turning direction.
         let caliber = Catalog::builtin().caliber("308-win").unwrap();
-        let (name, e) = caliber_engraving(caliber, FONT).unwrap();
+        let (name, e) = caliber_engraving(caliber.printed().unwrap(), FONT).unwrap();
         assert_eq!(name, ".308 Win");
         let cut = |row: usize, column: usize| e.cut[row * e.columns + column];
         let first = (0..e.columns)

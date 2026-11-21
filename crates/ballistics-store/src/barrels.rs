@@ -15,6 +15,7 @@ pub const MAX_ROUNDS_PER_ENTRY: u32 = 10_000;
 
 /// A barrel that is or was on one of the hunter's rifles.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[schemars(rename = "RifleBarrel")]
 pub struct Barrel {
     /// The barrel's id, unique among barrels.
     pub id: String,

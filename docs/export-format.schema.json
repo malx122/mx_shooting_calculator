@@ -9,7 +9,7 @@
       "type": "string"
     },
     "version": {
-      "description": "The format's version; this description is of version 8. A reader\nshould refuse versions newer than it knows.",
+      "description": "The format's version; this description is of version 9. A reader\nshould refuse versions newer than it knows.",
       "type": "integer",
       "format": "uint32",
       "minimum": 0
@@ -64,11 +64,35 @@
       },
       "default": []
     },
+    "shotguns": {
+      "description": "The hunter's shotguns, each with its barrels' chokes.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Shotgun"
+      },
+      "default": []
+    },
+    "shells": {
+      "description": "The hunter's shotgun shells: shot and slugs, by caliber.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Shell"
+      },
+      "default": []
+    },
+    "shotgun_loads": {
+      "description": "What is particular to a shell in a shotgun: the pattern boards\ncounted with it.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ShotgunLoad"
+      },
+      "default": []
+    },
     "barrels": {
       "description": "Barrels of the hunter's rifles, fitted or not.",
       "type": "array",
       "items": {
-        "$ref": "#/$defs/Barrel"
+        "$ref": "#/$defs/RifleBarrel"
       },
       "default": []
     },
@@ -159,6 +183,9 @@
     "scopes",
     "targets",
     "shots",
+    "shotguns",
+    "shells",
+    "shotgun_loads",
     "barrels",
     "round_log",
     "cleans",
@@ -1853,7 +1880,478 @@
         "search_radius_m"
       ]
     },
+    "Shotgun": {
+      "description": "A shotgun: its caliber and barrels with their chokes.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The gun's id, unique among shotguns.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The hunter's name for it.",
+          "type": "string"
+        },
+        "caliber": {
+          "description": "Its caliber's key in the app's catalog: \"12-76\" for a 12/76.",
+          "type": "string",
+          "default": ""
+        },
+        "barrels": {
+          "description": "Its barrels, each with a choke: one for a single-barrel gun, two for\nan over-and-under or side-by-side.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Barrel"
+          }
+        },
+        "sight_height_cm": {
+          "description": "For slugs: the height of the sights (or scope) above the bore, cm;\n`null` for a bead.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "slug_zero_m": {
+          "description": "For slugs: the range the sights are set for, m.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "notes": {
+          "description": "Notes about it.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "caliber",
+        "barrels",
+        "sight_height_cm",
+        "slug_zero_m",
+        "notes",
+        "updated_at"
+      ]
+    },
     "Barrel": {
+      "description": "One of the gun's barrels.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "What the hunter calls it: \"Under\", \"Over\", \"Right\"; empty for a gun\nwith one barrel.",
+          "type": "string",
+          "default": ""
+        },
+        "choke": {
+          "description": "Its choke, fixed or the tube in it.",
+          "$ref": "#/$defs/Choke"
+        }
+      },
+      "required": [
+        "name",
+        "choke"
+      ]
+    },
+    "Choke": {
+      "description": "A barrel's choke: by its name, or by its constriction as measured or\nstamped.",
+      "oneOf": [
+        {
+          "description": "By its name.",
+          "type": "object",
+          "properties": {
+            "by": {
+              "type": "string",
+              "const": "name"
+            },
+            "name": {
+              "description": "The choke.",
+              "$ref": "#/$defs/ChokeName"
+            }
+          },
+          "required": [
+            "by",
+            "name"
+          ]
+        },
+        {
+          "description": "By its constriction: how much narrower the choke is than the bore.",
+          "type": "object",
+          "properties": {
+            "by": {
+              "type": "string",
+              "const": "constriction"
+            },
+            "mm": {
+              "description": "Constriction, mm.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "by",
+            "mm"
+          ]
+        }
+      ]
+    },
+    "ChokeName": {
+      "description": "A choke by its name, from open to tight.",
+      "oneOf": [
+        {
+          "description": "No constriction (★★★★★).",
+          "type": "string",
+          "const": "cylinder"
+        },
+        {
+          "description": "About 0.13 mm (⅛).",
+          "type": "string",
+          "const": "skeet"
+        },
+        {
+          "description": "American improved cylinder, about 0.25 mm.",
+          "type": "string",
+          "const": "improved_cylinder"
+        },
+        {
+          "description": "Quarter choke (¼, ★★★★), often called improved cylinder in Europe.",
+          "type": "string",
+          "const": "light_modified"
+        },
+        {
+          "description": "Half choke (½, ★★★).",
+          "type": "string",
+          "const": "modified"
+        },
+        {
+          "description": "Three-quarter choke (¾, ★★).",
+          "type": "string",
+          "const": "improved_modified"
+        },
+        {
+          "description": "Light full (⅞).",
+          "type": "string",
+          "const": "light_full"
+        },
+        {
+          "description": "Full choke (1/1, ★).",
+          "type": "string",
+          "const": "full"
+        },
+        {
+          "description": "Tighter than full, as turkey chokes are.",
+          "type": "string",
+          "const": "extra_full"
+        }
+      ]
+    },
+    "Shell": {
+      "description": "A shotgun shell in the hunter's collection: shot or a slug, for one\nshotgun caliber, as rifle bullets are for one rifle caliber.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The shell's id, unique among shells.",
+          "type": "string"
+        },
+        "caliber": {
+          "description": "Its caliber's key in the app's catalog: \"12-70\" for a 12/70 shell\n(see the export's `catalog`, or docs/shotgun-research/calibers.md).\nIt fits a gun of its gauge with a chamber as long or longer.",
+          "type": "string",
+          "default": ""
+        },
+        "catalog_id": {
+          "description": "The catalog shell it was copied from, if any.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "manufacturer": {
+          "description": "Its maker: \"Gyttorp\".",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Its name, as the box gives it: \"Röda Papp 32 g US 5\".",
+          "type": "string"
+        },
+        "payload": {
+          "description": "Shot or a slug.",
+          "$ref": "#/$defs/Payload"
+        },
+        "velocity_mps": {
+          "description": "The velocity the box gives (or the hunter measured), m/s.",
+          "type": "number",
+          "format": "double"
+        },
+        "velocity_at": {
+          "description": "Where that velocity is measured.",
+          "$ref": "#/$defs/VelocityAt",
+          "default": "v2_5"
+        },
+        "notes": {
+          "description": "Notes about it.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "caliber",
+        "catalog_id",
+        "manufacturer",
+        "name",
+        "payload",
+        "velocity_mps",
+        "velocity_at",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "Payload": {
+      "description": "What a shell is loaded with.",
+      "oneOf": [
+        {
+          "description": "Shot: many round pellets.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "shot"
+            },
+            "material": {
+              "description": "What the pellets are made of.",
+              "$ref": "#/$defs/ShotMaterial"
+            },
+            "pellet_mm": {
+              "description": "One pellet's diameter, mm (the number on the box stands for\ndifferent sizes in different countries).",
+              "type": "number",
+              "format": "double"
+            },
+            "load_g": {
+              "description": "The whole load of shot, g.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "kind",
+            "material",
+            "pellet_mm",
+            "load_g"
+          ]
+        },
+        {
+          "description": "A slug: one projectile.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "slug"
+            },
+            "mass_g": {
+              "description": "The slug's mass, g.",
+              "type": "number",
+              "format": "double"
+            },
+            "diameter_mm": {
+              "description": "Its diameter, mm.",
+              "type": "number",
+              "format": "double"
+            },
+            "bc_g1": {
+              "description": "Its ballistic coefficient against the G1 standard (lb/in²), as\nmakers publish it.",
+              "type": "number",
+              "format": "double"
+            },
+            "lead_free": {
+              "description": "It contains no lead.",
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "kind",
+            "mass_g",
+            "diameter_mm",
+            "bc_g1",
+            "lead_free"
+          ]
+        }
+      ]
+    },
+    "ShotMaterial": {
+      "description": "What shot is made of.",
+      "oneOf": [
+        {
+          "description": "Lead (hardened with antimony).",
+          "type": "string",
+          "const": "lead"
+        },
+        {
+          "description": "Soft iron, called steel.",
+          "type": "string",
+          "const": "steel"
+        },
+        {
+          "description": "Bismuth with a little tin.",
+          "type": "string",
+          "const": "bismuth"
+        },
+        {
+          "description": "Tungsten, nickel and iron, such as HEVI-Shot.",
+          "type": "string",
+          "const": "tungsten_iron"
+        },
+        {
+          "description": "Tungsten powder in a polymer, such as Tungsten-Matrix.",
+          "type": "string",
+          "const": "tungsten_matrix"
+        },
+        {
+          "description": "Tungsten super shot (TSS).",
+          "type": "string",
+          "const": "tss"
+        },
+        {
+          "description": "Zinc.",
+          "type": "string",
+          "const": "zinc"
+        }
+      ]
+    },
+    "VelocityAt": {
+      "description": "Where the velocity on the box was measured.",
+      "oneOf": [
+        {
+          "description": "At the muzzle (\"V0\").",
+          "type": "string",
+          "const": "muzzle"
+        },
+        {
+          "description": "1 m from the muzzle (\"V1\", as Gamebore prints it).",
+          "type": "string",
+          "const": "v1"
+        },
+        {
+          "description": "2.5 m from the muzzle (\"V2.5\", as C.I.P. makers print it).",
+          "type": "string",
+          "const": "v2_5"
+        },
+        {
+          "description": "3 feet from the muzzle, as American makers print it.",
+          "type": "string",
+          "const": "three_feet"
+        },
+        {
+          "description": "The British \"observed velocity\": the average over the first 20 yards.",
+          "type": "string",
+          "const": "observed"
+        }
+      ]
+    },
+    "ShotgunLoad": {
+      "description": "What is particular to a shell in one shotgun: the pattern boards the\nhunter shot with it, as a rifle load holds the velocities measured in\none rifle.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The record's id, unique among shotgun loads.",
+          "type": "string"
+        },
+        "shotgun_id": {
+          "description": "The shotgun (`shotguns`).",
+          "type": "string"
+        },
+        "shell_id": {
+          "description": "The shell (`shells`).",
+          "type": "string"
+        },
+        "patterns": {
+          "description": "Pattern boards counted with this shell in this gun, which replace\nits choke's nominal pattern for that barrel.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PatternTest"
+          },
+          "default": []
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "shotgun_id",
+        "shell_id",
+        "patterns",
+        "updated_at"
+      ]
+    },
+    "PatternTest": {
+      "description": "A pattern the hunter shot and counted: how many pellets landed inside a\ncircle at a distance. The Nordic test is a 75 cm circle at 35 m.",
+      "type": "object",
+      "properties": {
+        "barrel": {
+          "description": "Which of the gun's barrels shot it, counted from 0 in `barrels`.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "distance_m": {
+          "description": "From the muzzle to the board, m.",
+          "type": "number",
+          "format": "double"
+        },
+        "circle_cm": {
+          "description": "The circle's diameter, cm, drawn round the pattern's densest part.",
+          "type": "number",
+          "format": "double"
+        },
+        "pellets_inside": {
+          "description": "Pellets counted inside the circle; 0 until counted, and a board\nwith none is left out.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "pellets_in_load": {
+          "description": "Pellets in the whole load, if counted (or taken from the box);\n`null` to work them out from the load and pellet size.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        }
+      },
+      "required": [
+        "barrel",
+        "distance_m",
+        "circle_cm",
+        "pellets_inside",
+        "pellets_in_load"
+      ]
+    },
+    "RifleBarrel": {
       "description": "A barrel that is or was on one of the hunter's rifles.",
       "type": "object",
       "properties": {
@@ -2945,6 +3443,9 @@
         "scope",
         "target",
         "shot",
+        "shotgun",
+        "shell",
+        "shotgun_load",
         "barrel",
         "round_log_entry",
         "clean",
@@ -2968,6 +3469,14 @@
           },
           "default": []
         },
+        "shotgun_calibers": {
+          "description": "The shotgun calibers named by shotguns and shells (their `caliber`).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ShotgunCaliberDetails"
+          },
+          "default": []
+        },
         "scopes": {
           "description": "The catalog scopes named by rifles (their `scope_id`).",
           "type": "array",
@@ -2987,6 +3496,7 @@
       },
       "required": [
         "calibers",
+        "shotgun_calibers",
         "scopes",
         "reticles"
       ]
@@ -3013,6 +3523,63 @@
         "key",
         "name",
         "bullet_diameter_mm"
+      ]
+    },
+    "ShotgunCaliberDetails": {
+      "description": "A shotgun caliber, as a shotgun's or shell's `caliber` names it.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "description": "The key records use, e.g. `12-76`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name, e.g. `12/76`.",
+          "type": "string"
+        },
+        "gauge": {
+          "description": "Its gauge: `\"12\"`, `\".410\"`.",
+          "$ref": "#/$defs/Gauge"
+        },
+        "length_mm": {
+          "description": "The length in its name, mm: a shell fits a gun of its gauge whose\ncaliber's length is the same or longer.",
+          "type": "number",
+          "format": "double"
+        },
+        "bore_mm": {
+          "description": "The bore's nominal (least) diameter, mm.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "gauge",
+        "length_mm",
+        "bore_mm"
+      ]
+    },
+    "Gauge": {
+      "description": "A shotgun's bore size.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "10",
+            "12",
+            "16",
+            "20",
+            "24",
+            "28",
+            "32"
+          ]
+        },
+        {
+          "description": ".410 bore, also called 36 gauge.",
+          "type": "string",
+          "const": ".410"
+        }
       ]
     },
     "ScopeDetails": {

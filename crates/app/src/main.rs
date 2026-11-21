@@ -32,6 +32,7 @@ mod rifles;
 mod sensors;
 mod sessions;
 mod shot_log;
+mod shotguns;
 mod sight_picture;
 mod startup;
 mod sync;

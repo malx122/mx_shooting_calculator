@@ -1131,13 +1131,14 @@ fn caliber(arguments: &Value) -> Result<Answer, String> {
                     .join(", ")
             ));
         }
-        let bullet = &cartridge.bullet;
-        lines.push(format!(
-            "The model's typical bullet: {}, {} long, seated to the maximum overall length ({}).",
-            bullet.name,
-            mm(bullet.length),
-            bullet.source
-        ));
+        if let Some(bullet) = &cartridge.bullet {
+            lines.push(format!(
+                "The model's typical bullet: {}, {} long, seated to the maximum overall length ({}).",
+                bullet.name,
+                mm(bullet.length),
+                bullet.source
+            ));
+        }
         data["cartridge"] = json!({
             "kind": kind,
             "shape": shape,
@@ -1145,12 +1146,12 @@ fn caliber(arguments: &Value) -> Result<Answer, String> {
             "maximum_mm": maximum,
             "tolerances_mm": cartridge.tolerances,
             "primer_diameter_mm": cartridge.primer_diameter,
-            "typical_bullet": {
+            "typical_bullet": cartridge.bullet.as_ref().map(|bullet| json!({
                 "name": bullet.name,
                 "diameter_mm": bullet.diameter,
                 "length_mm": bullet.length,
                 "source": bullet.source,
-            },
+            })),
         });
     }
 

@@ -7,6 +7,8 @@
 use std::f64::consts::PI;
 use std::sync::Arc;
 
+pub mod shotgun;
+
 use ballistics_core::solver;
 use ballistics_core::{
     Atmosphere, BcBands, Coriolis, DragCurve, DragModel, Load, RangeRow, Scenario, Solution, Wind,

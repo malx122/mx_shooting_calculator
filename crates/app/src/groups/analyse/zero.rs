@@ -40,7 +40,7 @@ pub fn show(
         super::weak(
             ui,
             tr(
-                "A zero check is of a rifle: add one on the Rifles page, then save groups shot \
+                "A zero check is of a rifle: add one on the Guns page, then save groups shot \
                 with it.",
             ),
         );

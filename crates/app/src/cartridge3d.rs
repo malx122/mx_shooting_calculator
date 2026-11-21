@@ -2,16 +2,19 @@
 //! turned round its axis and shaded as brass, copper and the primer, with a
 //! millimetre ruler beside it. Drag to turn it; double-click to put it back.
 
-use ballistics_store::{Caliber, Cartridge, Material};
+use ballistics_store::{Cartridge, Material};
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, vec2};
 
 use crate::i18n::{tr, trf};
 
 /// Faces round the axis.
-const SLICES: usize = 64;
+/// Round the axis; a multiple of a star crimp's 8 folds.
+const SLICES: usize = 96;
 const BRASS: [f32; 3] = [0.80, 0.62, 0.30];
 const COPPER: [f32; 3] = [0.74, 0.42, 0.24];
 const PRIMER: [f32; 3] = [0.72, 0.72, 0.70];
+/// A shotgun shell's plastic hull.
+const HULL: [f32; 3] = [0.70, 0.16, 0.14];
 /// The view it opens with: a little from above and from behind, so the
 /// head shows.
 const YAW: f32 = 0.35;
@@ -25,22 +28,22 @@ struct Turn {
 
 /// Draws the cartridge in a box of `size` points, as large as fits.
 pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, size: egui::Vec2) {
-    let id = egui::Id::unique("cartridge3d");
-    let (rect, response) = ui.allocate_exact_size(size, Sense::click_and_drag());
-    let mut turn = ui.data(|data| data.get_temp::<Turn>(id)).unwrap_or(Turn {
-        yaw: YAW,
+    // A shell opens turned to its crimp, a cartridge to its head.
+    let shell = cartridge.hull.is_some();
+    let start = Turn {
+        yaw: if shell { -YAW } else { YAW },
         pitch: PITCH,
-    });
+    };
+    let id = egui::Id::unique(("cartridge3d", shell));
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click_and_drag());
+    let mut turn = ui.data(|data| data.get_temp::<Turn>(id)).unwrap_or(start);
     if response.dragged() {
         let delta = response.drag_delta();
         turn.yaw += delta.x * 0.01;
         turn.pitch = (turn.pitch + delta.y * 0.01).clamp(-1.5, 1.5);
     }
     if response.double_clicked() {
-        turn = Turn {
-            yaw: YAW,
-            pitch: PITCH,
-        };
+        turn = start;
     }
     ui.data_mut(|data| data.insert_temp(id, turn));
     let inside = rect.shrink(6.0);
@@ -75,14 +78,14 @@ pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, size: egui::Vec2) {
 /// on the desktop, a download in the browser, with the caliber's name cut
 /// into the side when `engrave`. Returns the message to show and whether it
 /// failed.
-pub fn save_stl(caliber: &Caliber, engrave: bool) -> (String, bool) {
+pub fn save_stl(printed: ballistics_store::Printed<'_>, engrave: bool) -> (String, bool) {
     let font = engrave
         .then(|| crate::cards::fonts::Font::BarlowCondensedBold.file())
         .flatten();
-    let Some(print) = ballistics_store::print::print(caliber, font) else {
+    let Some(print) = ballistics_store::print::print_this(printed, font) else {
         return (String::new(), true);
     };
-    let (message, failed) = write_stl(caliber, &print.stl);
+    let (message, failed) = write_stl(printed.key, &print.stl);
     if engrave && print.name.is_none() && !failed && message != tr("Not saved") {
         let note = tr("The name is too long to cut into this case.");
         return (format!("{message}. {note}"), failed);
@@ -90,8 +93,8 @@ pub fn save_stl(caliber: &Caliber, engrave: bool) -> (String, bool) {
     (message, failed)
 }
 
-fn write_stl(caliber: &Caliber, bytes: &[u8]) -> (String, bool) {
-    let file = ballistics_store::Print::file_name(caliber);
+fn write_stl(key: &str, bytes: &[u8]) -> (String, bool) {
+    let file = ballistics_store::Print::file_name_for(key);
     #[cfg(not(target_arch = "wasm32"))]
     {
         let Some(path) = rfd::FileDialog::new()
@@ -164,6 +167,7 @@ fn scene(cartridge: &Cartridge, turn: Turn, rect: Rect, ink: Color32) -> Scene {
             Material::Case => BRASS,
             Material::Primer => PRIMER,
             Material::Bullet => COPPER,
+            Material::Hull => HULL,
         };
         for &point in points {
             let (a, b) = (last, point);
@@ -175,24 +179,44 @@ fn scene(cartridge: &Cartridge, turn: Turn, rect: Rect, ink: Color32) -> Scene {
             }
             // Outward, as the outline runs from the head to the tip.
             let (nz, nr) = (-dr / length, dz / length);
+            // A star crimp's folds press the top in; its faces are then
+            // shaded by their own slope.
+            let folded = outline.star.filter(|star| a[0].max(b[0]) >= star.from);
             for slice in 0..SLICES {
-                let corner = |p: [f64; 2], step: usize| {
+                let place = |p: [f64; 2], step: usize| {
                     let angle = std::f32::consts::TAU * step as f32 / SLICES as f32;
+                    let pressed =
+                        folded.map_or(0.0, |star| star.press(p[0], p[1], f64::from(angle)) as f32);
                     let (s, c) = angle.sin_cos();
                     let r = p[1] as f32;
-                    let position = view(turn, [p[0] as f32 - middle, r * c, r * s]);
-                    let normal = view(turn, [nz, nr * c, nr * s]);
-                    (position, normal)
+                    ([p[0] as f32 - pressed - middle, r * c, r * s], (c, s))
                 };
-                let corners = [
-                    corner(a, slice),
-                    corner(b, slice),
-                    corner(b, slice + 1),
-                    corner(a, slice + 1),
+                let raw = [
+                    place(a, slice),
+                    place(b, slice),
+                    place(b, slice + 1),
+                    place(a, slice + 1),
                 ];
+                let normal_at = |(c, s): (f32, f32)| match folded {
+                    Some(_) => {
+                        // Outward from the quad's two diagonals.
+                        let d1 = sub(raw[2].0, raw[0].0);
+                        let d2 = sub(raw[3].0, raw[1].0);
+                        let n = normalized(cross(d1, d2));
+                        let outward = [nz, nr * c, nr * s];
+                        if dot(n, outward) < 0.0 {
+                            [-n[0], -n[1], -n[2]]
+                        } else {
+                            n
+                        }
+                    }
+                    None => [nz, nr * c, nr * s],
+                };
+                let corners = raw
+                    .map(|(position, round)| (view(turn, position), view(turn, normal_at(round))));
                 // Faces turned away are hidden by the ones in front.
                 let mid = (slice as f32 + 0.5) / SLICES as f32 * std::f32::consts::TAU;
-                let facing = view(turn, [nz, nr * mid.cos(), nr * mid.sin()]);
+                let facing = view(turn, normal_at((mid.cos(), mid.sin())));
                 if facing[2] < 0.0 {
                     continue;
                 }
@@ -323,6 +347,18 @@ fn shade(color: [f32; 3], normal: [f32; 3], light: [f32; 3]) -> Color32 {
         (value.clamp(0.0, 1.0) * 255.0).round() as u8
     };
     Color32::from_rgb(channel(color[0]), channel(color[1]), channel(color[2]))
+}
+
+fn sub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {

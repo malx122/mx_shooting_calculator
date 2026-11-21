@@ -14,6 +14,9 @@ pub enum RecordKind {
     Scope,
     Target,
     Shot,
+    Shotgun,
+    Shell,
+    ShotgunLoad,
     Barrel,
     RoundLogEntry,
     Clean,
@@ -34,6 +37,9 @@ impl RecordKind {
             RecordKind::Scope => "scope",
             RecordKind::Target => "target",
             RecordKind::Shot => "shot",
+            RecordKind::Shotgun => "shotgun",
+            RecordKind::Shell => "shell",
+            RecordKind::ShotgunLoad => "shotgun_load",
             RecordKind::Barrel => "barrel",
             RecordKind::RoundLogEntry => "round_log_entry",
             RecordKind::Clean => "clean",
@@ -46,13 +52,16 @@ impl RecordKind {
         }
     }
 
-    pub const ALL: [RecordKind; 15] = [
+    pub const ALL: [RecordKind; 18] = [
         RecordKind::Rifle,
         RecordKind::Bullet,
         RecordKind::RifleLoad,
         RecordKind::Scope,
         RecordKind::Target,
         RecordKind::Shot,
+        RecordKind::Shotgun,
+        RecordKind::Shell,
+        RecordKind::ShotgunLoad,
         RecordKind::Barrel,
         RecordKind::RoundLogEntry,
         RecordKind::Clean,
@@ -79,6 +88,9 @@ impl RecordKind {
             RecordKind::Scope => "scopes",
             RecordKind::Target => "targets",
             RecordKind::Shot => "shots",
+            RecordKind::Shotgun => "shotguns",
+            RecordKind::Shell => "shells",
+            RecordKind::ShotgunLoad => "shotgun_loads",
             RecordKind::Barrel => "barrels",
             RecordKind::RoundLogEntry => "round_log",
             RecordKind::Clean => "cleans",

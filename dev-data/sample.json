@@ -1,6 +1,6 @@
 {
   "format": "mxsc/personal-data",
-  "version": 4,
+  "version": 8,
   "exported_at": 1760832000000,
   "rifles": [
     {
@@ -453,6 +453,84 @@
       "min_energy_j": 150.0,
       "notes": "Demo data: a custom target copied from the red fox and made smaller.",
       "catalog_id": "red-fox",
+      "updated_at": 1760832000000
+    }
+  ],
+  "shotguns": [
+    {
+      "id": "7a0e3b52-1c2d-5e8f-9a41-6b7c8d9e0f12",
+      "name": "Over-and-under 12/76",
+      "caliber": "12-76",
+      "barrels": [
+        {
+          "name": "Under",
+          "choke": {
+            "by": "name",
+            "name": "light_modified"
+          }
+        },
+        {
+          "name": "Over",
+          "choke": {
+            "by": "name",
+            "name": "modified"
+          }
+        }
+      ],
+      "sight_height_cm": null,
+      "slug_zero_m": null,
+      "notes": "Demo shotgun.",
+      "updated_at": 1760832000000
+    }
+  ],
+  "shells": [
+    {
+      "id": "2b9f4e61-7d3a-5c0b-8e12-3f4a5b6c7d81",
+      "caliber": "12-70",
+      "manufacturer": "Gyttorp",
+      "name": "Jakt 36 g US 3",
+      "payload": {
+        "kind": "shot",
+        "material": "lead",
+        "pellet_mm": 3.5,
+        "load_g": 36.0
+      },
+      "velocity_mps": 400.0,
+      "velocity_at": "v2_5",
+      "notes": "Roe deer and fox. Counted on the pattern board at 35 m.",
+      "updated_at": 1760832000000
+    },
+    {
+      "id": "4c1a2b3d-8e9f-5a6b-9c7d-0e1f2a3b4c92",
+      "caliber": "12-70",
+      "manufacturer": "Gyttorp",
+      "name": "Steel 32 g US 3",
+      "payload": {
+        "kind": "shot",
+        "material": "steel",
+        "pellet_mm": 3.5,
+        "load_g": 32.0
+      },
+      "velocity_mps": 420.0,
+      "velocity_at": "v2_5",
+      "notes": "Ducks.",
+      "updated_at": 1760832000000
+    }
+  ],
+  "shotgun_loads": [
+    {
+      "id": "9d2e7f40-3b1c-5a6d-8e9f-1a2b3c4d5e63",
+      "shotgun_id": "7a0e3b52-1c2d-5e8f-9a41-6b7c8d9e0f12",
+      "shell_id": "2b9f4e61-7d3a-5c0b-8e12-3f4a5b6c7d81",
+      "patterns": [
+        {
+          "barrel": 1,
+          "distance_m": 35.0,
+          "circle_cm": 75.0,
+          "pellets_inside": 96,
+          "pellets_in_load": null
+        }
+      ],
       "updated_at": 1760832000000
     }
   ]

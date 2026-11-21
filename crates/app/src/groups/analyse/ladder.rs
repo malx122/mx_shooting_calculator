@@ -320,7 +320,7 @@ fn create(ui: &mut egui::Ui, state: &mut State, data: &Data, actions: &mut Vec<A
                 ui.end_row();
                 if handloads.is_empty() {
                     ui.label("");
-                    ui.weak(tr("Add the handload on the Bullets page first."));
+                    ui.weak(tr("Add the handload on the Ammunition page first."));
                     ui.end_row();
                 }
                 ui.label(tr("Varies"));

@@ -111,7 +111,7 @@ fn data_attribution_survives_storage_backups_and_sync_without_catalog_links() {
     );
     let json = source.export_json().unwrap();
     let export: serde_json::Value = serde_json::from_str(&json).unwrap();
-    assert_eq!(export["version"], transfer::VERSION);
+    assert!(export["version"].as_u64() >= Some(7));
     assert_eq!(
         export["bullets"][0]["data_attribution"]["license"],
         "CC-BY-SA-4.0"
@@ -1080,6 +1080,9 @@ fn demo_data_loads_once() {
     let again = store.load_demo().unwrap();
     assert_eq!((again.added, again.updated), (0, 0));
     assert_eq!(store.rifles().unwrap().len(), 3);
+    assert_eq!(store.shotguns().unwrap().len(), 1);
+    assert_eq!(store.shells().unwrap().len(), 2);
+    assert_eq!(store.shotgun_loads().unwrap().len(), 1);
 }
 
 // Sync ---------------------------------------------------------------------
@@ -1914,7 +1917,7 @@ fn range_records_export_import_and_match_the_schema() {
     let data = range_day(&store, &tikka, &oryx);
     let export = store.export_json().unwrap();
     let value: serde_json::Value = serde_json::from_str(&export).unwrap();
-    assert_eq!(value["version"], 8);
+    assert_eq!(value["version"], 9);
     let validator = jsonschema::validator_for(&schema::export_schema()).unwrap();
     let problems: Vec<String> = validator
         .iter_errors(&value)
@@ -1954,7 +1957,6 @@ fn range_records_export_import_and_match_the_schema() {
 fn files_from_before_groups_still_import_and_newer_ones_are_refused() {
     let (old, _, _) = populated();
     let mut value: serde_json::Value = serde_json::from_str(&old.export_json().unwrap()).unwrap();
-    value["version"] = 7.into();
     let fields = value.as_object_mut().unwrap();
     for list in [
         "barrels",
@@ -1972,10 +1974,20 @@ fn files_from_before_groups_still_import_and_newer_ones_are_refused() {
     let rifle = fields["rifles"][0].as_object_mut().unwrap();
     rifle.remove("fitted_barrel_id");
     rifle.remove("rounds_before_logging");
+    // Format 8 (0.11) has the shotgun lists; format 7 has neither.
+    value["version"] = 8.into();
     let mut store = Store::open_in_memory().unwrap();
     assert_eq!(store.import_json(&value.to_string()).unwrap().added, 3);
     assert_eq!(store.rifles().unwrap(), old.rifles().unwrap());
     assert_eq!(store.groups_data().unwrap(), GroupsData::default());
+    value["version"] = 7.into();
+    let fields = value.as_object_mut().unwrap();
+    for list in ["shotguns", "shells", "shotgun_loads"] {
+        assert!(fields.remove(list).is_some(), "{list} is written");
+    }
+    let mut store = Store::open_in_memory().unwrap();
+    assert_eq!(store.import_json(&value.to_string()).unwrap().added, 3);
+    assert_eq!(store.rifles().unwrap(), old.rifles().unwrap());
 
     value["version"] = (transfer::VERSION + 1).into();
     assert!(matches!(
@@ -2469,6 +2481,42 @@ fn the_released_database_upgrades_with_its_data_intact() {
             ],
         )
         .unwrap();
+    // Shotgun records as 0.11 kept them.
+    let (shotgun, shell, _, shotgun_load) = shotgun_and_shells();
+    for (table, id, data, updated_at) in [
+        (
+            "shotguns",
+            &shotgun.id,
+            serde_json::to_string(&shotgun).unwrap(),
+            shotgun.updated_at,
+        ),
+        (
+            "shells",
+            &shell.id,
+            serde_json::to_string(&shell).unwrap(),
+            shell.updated_at,
+        ),
+    ] {
+        connection
+            .execute(
+                &format!("INSERT INTO {table} (id, data, updated_at) VALUES (?1, ?2, ?3)"),
+                rusqlite::params![id, data, updated_at],
+            )
+            .unwrap();
+    }
+    connection
+        .execute(
+            "INSERT INTO shotgun_loads (id, shotgun_id, shell_id, data, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![
+                shotgun_load.id,
+                shotgun_load.shotgun_id,
+                shotgun_load.shell_id,
+                serde_json::to_string(&shotgun_load).unwrap(),
+                shotgun_load.updated_at
+            ],
+        )
+        .unwrap();
     drop(connection);
 
     let store = Store::open(&path).unwrap();
@@ -2499,6 +2547,9 @@ fn the_released_database_upgrades_with_its_data_intact() {
     let load = store.rifle_load("r1", "b1").unwrap().unwrap();
     assert_eq!(load.velocities[0].velocity_mps, 781.0);
     assert_eq!(store.shots().unwrap(), vec![shot]);
+    assert_eq!(store.shotguns().unwrap(), vec![shotgun]);
+    assert_eq!(store.shells().unwrap(), vec![shell]);
+    assert_eq!(store.shotgun_loads().unwrap(), vec![shotgun_load]);
     assert_eq!(store.deletions().unwrap().len(), 1);
     assert_eq!(
         store.setting::<String>("units").unwrap().as_deref(),
@@ -2517,8 +2568,9 @@ fn the_released_database_upgrades_with_its_data_intact() {
     store.save_rifle(&mut fitted).unwrap();
     let export = store.export_data().unwrap();
     assert_eq!((export.rifles.len(), export.barrels.len()), (1, 1));
+    assert_eq!((export.shotguns.len(), export.shotgun_loads.len()), (1, 1));
     let mut copy = Store::open_in_memory().unwrap();
-    assert_eq!(copy.import_data(&export, false).unwrap().added, 5);
+    assert_eq!(copy.import_data(&export, false).unwrap().added, 8);
     drop(store);
     std::fs::remove_file(path).unwrap();
 }
@@ -2566,4 +2618,240 @@ fn a_record_saved_again_after_its_deletion_keeps_later_edits_against_an_old_back
         store.deletions().unwrap().is_empty(),
         "saving took back the deletions"
     );
+}
+
+fn shotgun_and_shells() -> (Shotgun, Shell, Shell, ShotgunLoad) {
+    let mut shotgun = Shotgun::new();
+    shotgun.name = "Over-and-under".into();
+    let mut shot = Shell::new("12-70");
+    shot.name = "Lead US 3, 36 g".into();
+    shot.payload = Payload::Shot {
+        material: ShotMaterial::Lead,
+        pellet_mm: 3.5,
+        load_g: 36.0,
+    };
+    let mut slug = Shell::new("12-70");
+    slug.name = "Brenneke Classic".into();
+    slug.payload = Payload::Slug {
+        mass_g: 31.5,
+        diameter_mm: 18.5,
+        bc_g1: 0.071,
+        lead_free: false,
+    };
+    slug.velocity_mps = 430.0;
+    slug.velocity_at = VelocityAt::Muzzle;
+    let mut load = ShotgunLoad::new(&shotgun.id, &shot.id);
+    load.patterns.push(PatternTest {
+        barrel: 1,
+        distance_m: 35.0,
+        circle_cm: 75.0,
+        pellets_inside: 95,
+        pellets_in_load: None,
+    });
+    (shotgun, shot, slug, load)
+}
+
+#[test]
+fn shotguns_shells_and_their_boards_are_stored_exported_and_synced() {
+    let path = temporary_path();
+    let (mut shotgun, mut shot, mut slug, mut load) = shotgun_and_shells();
+    let store = Store::open(&path).unwrap();
+    // Boards need their gun saved first.
+    assert!(store.save_shotgun_load(&mut load.clone()).is_err());
+    store.save_shotgun(&mut shotgun).unwrap();
+    store.save_shell(&mut shot).unwrap();
+    store.save_shell(&mut slug).unwrap();
+    store.save_shotgun_load(&mut load).unwrap();
+    drop(store);
+    let store = Store::open(&path).unwrap();
+    assert_eq!(store.shotguns().unwrap(), vec![shotgun.clone()]);
+    assert_eq!(store.shells().unwrap().len(), 2);
+    assert_eq!(store.shotgun_loads().unwrap(), vec![load.clone()]);
+
+    // One record a gun and shell: a second for the pair replaces the first.
+    let mut again = ShotgunLoad::new(&shotgun.id, &shot.id);
+    store.save_shotgun_load(&mut again).unwrap();
+    assert_eq!(store.shotgun_loads().unwrap(), vec![again.clone()]);
+    store.save_shotgun_load(&mut load).unwrap();
+
+    // A backup brings them back whole; importing it again changes nothing.
+    let json = store.export_json().unwrap();
+    let mut restored = Store::open_in_memory().unwrap();
+    assert_eq!(restored.import_json(&json).unwrap().added, 4);
+    assert_eq!(restored.shotgun_loads().unwrap(), vec![load.clone()]);
+    assert!(!restored.import_json(&json).unwrap().changed());
+
+    // Deleting the shell deletes its boards; deleting the gun travels by
+    // sync.
+    store.delete_shell(&shot.id).unwrap();
+    assert!(store.shotgun_loads().unwrap().is_empty());
+    store.delete_shotgun(&shotgun.id).unwrap();
+    let report = restored.merge_sync(&store.export_data().unwrap()).unwrap();
+    assert_eq!(report.deleted, 3);
+    assert!(restored.shotguns().unwrap().is_empty());
+    assert!(restored.shotgun_loads().unwrap().is_empty());
+    assert_eq!(restored.shells().unwrap(), vec![slug]);
+    let _ = std::fs::remove_file(&path);
+}
+
+#[test]
+fn shotguns_and_shells_must_be_shootable() {
+    let store = Store::open_in_memory().unwrap();
+    let (gun, shell, _, load) = shotgun_and_shells();
+    let gun_refused = |change: &dyn Fn(&mut Shotgun)| {
+        let mut gun = gun.clone();
+        change(&mut gun);
+        store.save_shotgun(&mut gun).is_err()
+    };
+    assert!(!gun_refused(&|_| {}));
+    assert!(gun_refused(&|gun| gun.name = " ".into()));
+    assert!(gun_refused(&|gun| gun.barrels.clear()));
+    assert!(gun_refused(&|gun| {
+        gun.barrels[0].choke = Choke::Constriction { mm: 5.0 }
+    }));
+    assert!(gun_refused(&|gun| gun.slug_zero_m = Some(1.0)));
+    let shell_refused = |change: &dyn Fn(&mut Shell)| {
+        let mut shell = shell.clone();
+        change(&mut shell);
+        store.save_shell(&mut shell).is_err()
+    };
+    assert!(!shell_refused(&|_| {}));
+    assert!(shell_refused(&|shell| shell.name.clear()));
+    assert!(shell_refused(&|shell| shell.velocity_mps = f64::NAN));
+    assert!(shell_refused(&|shell| {
+        shell.payload = Payload::Shot {
+            material: ShotMaterial::Steel,
+            pellet_mm: 0.2,
+            load_g: 32.0,
+        }
+    }));
+    let load_refused = |change: &dyn Fn(&mut ShotgunLoad)| {
+        let mut load = load.clone();
+        change(&mut load);
+        store.save_shotgun_load(&mut load).is_err()
+    };
+    assert!(!load_refused(&|_| {}));
+    assert!(load_refused(&|load| load.patterns[0].barrel = 2));
+    assert!(load_refused(
+        &|load| load.patterns[0].pellets_in_load = Some(50)
+    ));
+    assert!(load_refused(&|load| load.patterns[0].distance_m = 1.0));
+}
+
+#[test]
+fn a_newer_file_is_refused_by_its_version_before_its_records() {
+    // A later format may hold records this version can't read at all.
+    let newer = r#"{"format": "mxsc/personal-data", "version": 999, "exported_at": 0,
+        "rifles": [], "bullets": [], "rifle_loads": [],
+        "deleted": [{"kind": "something_new", "id": "x", "deleted_at": 1}]}"#;
+    let error = crate::transfer::read_export(newer).unwrap_err().to_string();
+    assert!(error.contains("newer version"), "{error}");
+}
+
+#[test]
+fn boards_go_with_a_gun_deleted_on_another_device_and_sync_settles() {
+    let (mut gun, mut shell, _, mut load) = shotgun_and_shells();
+    let mut a = Store::open_in_memory().unwrap();
+    a.save_shotgun(&mut gun).unwrap();
+    a.save_shell(&mut shell).unwrap();
+    let mut b = Store::open_in_memory().unwrap();
+    b.merge_sync(&a.export_data().unwrap()).unwrap();
+    // B counts boards while A deletes the gun.
+    b.save_shotgun_load(&mut load).unwrap();
+    a.delete_shotgun(&gun.id).unwrap();
+    b.merge_sync(&a.export_data().unwrap()).unwrap();
+    assert!(b.shotguns().unwrap().is_empty());
+    assert!(b.shotgun_loads().unwrap().is_empty());
+    // Both ways once more, and nothing is left to change on either side.
+    a.merge_sync(&b.export_data().unwrap()).unwrap();
+    assert!(!b.merge_sync(&a.export_data().unwrap()).unwrap().changed());
+    assert!(!a.merge_sync(&b.export_data().unwrap()).unwrap().changed());
+    let deleted = |store: &Store| {
+        let mut ids: Vec<String> = store
+            .deletions()
+            .unwrap()
+            .into_iter()
+            .map(|deletion| deletion.id)
+            .collect();
+        ids.sort();
+        ids
+    };
+    assert_eq!(deleted(&a), deleted(&b));
+}
+
+#[test]
+fn shotgun_calibers_fit_the_way_chambers_do() {
+    let catalog = Catalog::builtin();
+    let keys: std::collections::HashSet<_> = catalog
+        .shotgun_calibers
+        .iter()
+        .map(|caliber| caliber.key.as_str())
+        .collect();
+    assert_eq!(keys.len(), catalog.shotgun_calibers.len(), "duplicate key");
+    for gauge in Gauge::ALL {
+        assert!(catalog.usual_shotgun_caliber(gauge).is_some(), "{gauge:?}");
+    }
+    let caliber = |key: &str| catalog.shotgun_caliber(key).unwrap();
+    assert!(caliber("12-70").fits(caliber("12-76")));
+    assert!(caliber("12-70").fits(caliber("12-70")));
+    assert!(!caliber("12-76").fits(caliber("12-70")));
+    assert!(!caliber("20-70").fits(caliber("12-76")));
+    assert_eq!(
+        catalog.usual_shotgun_caliber(Gauge::Twelve).unwrap().key,
+        "12-70"
+    );
+    for caliber in &catalog.shotgun_calibers {
+        assert!(
+            caliber.bore_mm > 9.0 && caliber.bore_mm < 21.0,
+            "{}",
+            caliber.key
+        );
+        assert!(
+            (caliber.chamber_mm - caliber.length_mm).abs() < 1.0,
+            "{}",
+            caliber.key
+        );
+        assert!(!caliber.sources.is_empty(), "{}", caliber.key);
+    }
+}
+
+#[test]
+fn shotguns_and_shells_kept_with_only_a_gauge_get_its_usual_caliber() {
+    let json = r#"{"format": "mxsc/personal-data", "version": 8, "exported_at": 0,
+        "rifles": [], "bullets": [], "rifle_loads": [],
+        "shotguns": [{"id": "g", "name": "Old", "gauge": "20",
+            "barrels": [{"name": "", "choke": {"by": "name", "name": "modified"}}]}],
+        "shells": [{"id": "s", "gauge": "12", "name": "Old shell",
+            "payload": {"kind": "shot", "material": "lead", "pellet_mm": 3.0, "load_g": 32.0},
+            "velocity_mps": 400.0}]}"#;
+    let mut store = Store::open_in_memory().unwrap();
+    store.import_json(json).unwrap();
+    assert_eq!(store.shotguns().unwrap()[0].caliber, "20-70");
+    assert_eq!(store.shells().unwrap()[0].caliber, "12-70");
+    let gun = &store.shotguns().unwrap()[0];
+    assert!(!gun.takes(&store.shells().unwrap()[0]));
+}
+
+#[test]
+fn catalog_shells_copy_into_shells_that_can_be_saved() {
+    let catalog = Catalog::builtin();
+    assert!(catalog.shells.len() >= 100);
+    let mut ids = std::collections::HashSet::new();
+    for shell in &catalog.shells {
+        assert!(ids.insert(shell.id.as_str()), "duplicate {}", shell.id);
+        let caliber = catalog
+            .shotgun_caliber(&shell.caliber)
+            .unwrap_or_else(|| panic!("{}: no caliber {}", shell.id, shell.caliber));
+        // Listed under the shortest caliber it fits.
+        assert!(shell.length_mm <= caliber.length_mm + 0.01, "{}", shell.id);
+        assert!(shell.source_url.starts_with("https://"), "{}", shell.id);
+        let copy = shell.to_collection();
+        copy.validate()
+            .unwrap_or_else(|problem| panic!("{}: {problem}", shell.id));
+        assert_eq!(copy.catalog_id.as_deref(), Some(shell.id.as_str()));
+    }
+    let twelve_76 = catalog.shotgun_caliber("12-76").unwrap();
+    let fits: Vec<_> = catalog.shells_for(twelve_76).collect();
+    assert!(fits.iter().any(|shell| shell.caliber == "12-70"));
+    assert!(fits.iter().all(|shell| !shell.caliber.starts_with("20")));
 }

@@ -250,9 +250,140 @@ impl CatalogBullet {
     }
 }
 
+/// How common a shotgun caliber is in Nordic hunting (a judgement where no
+/// source gives figures; see docs/shotgun-research/calibers.md).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NordicUse {
+    Common,
+    Uncommon,
+    Rare,
+}
+
+/// C.I.P.'s limits for steel shot in a shotgun caliber (decision XXXII-45,
+/// 2014), velocity at 2.5 m.
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+pub struct SteelLimits {
+    pub max_velocity_mps: f64,
+    pub max_momentum_ns: f64,
+    /// The largest shot; for high-performance steel, `None`: larger shot
+    /// only through a choke of 0.5 mm or less, up to
+    /// `max_shot_any_choke_mm` with any.
+    pub max_shot_mm: Option<f64>,
+    pub max_shot_any_choke_mm: Option<f64>,
+}
+
+/// A shotgun caliber: a gauge and a chamber length, as C.I.P. sets them
+/// ("12/76"). A shell fits a gun of its gauge whose chamber is as long as
+/// the shell or longer, never shorter.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct ShotgunCaliber {
+    pub key: String,
+    /// "12/76".
+    pub name: String,
+    pub gauge: crate::shotguns::Gauge,
+    /// The length in its name, mm (70 for 12/70): the fired shell's length.
+    pub length_mm: f64,
+    /// C.I.P.'s least chamber length, mm.
+    pub chamber_mm: f64,
+    /// C.I.P.'s least bore, mm, and its allowed range.
+    pub bore_mm: f64,
+    pub bore_range_mm: Option<[f64; 2]>,
+    /// The greatest mean pressure, bar, for standard loads and for
+    /// high-performance ones (only in guns with superior proof).
+    pub pmax_bar: f64,
+    pub pmax_high_performance_bar: Option<f64>,
+    pub standard_steel: Option<SteelLimits>,
+    pub high_performance_steel: Option<SteelLimits>,
+    pub nordic_use: NordicUse,
+    /// Its shell's outside, from the C.I.P. drawing, for drawing it in 3D.
+    #[serde(default)]
+    pub cartridge: Option<Cartridge>,
+    /// Other names in shops and on boxes: "12/76 Magnum", "kal. 12/76".
+    pub aliases: Vec<String>,
+    pub sources: Vec<String>,
+    #[serde(default)]
+    pub notes: String,
+}
+
+impl ShotgunCaliber {
+    /// Whether a shell of this caliber may be fired in a gun of `gun`'s.
+    pub fn fits(&self, gun: &ShotgunCaliber) -> bool {
+        self.gauge == gun.gauge && self.length_mm <= gun.length_mm + 0.01
+    }
+}
+
+/// A shotgun shell from a maker's range: one pellet size of one load, so it
+/// copies into the hunter's collection as one shell.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct CatalogShell {
+    pub id: String,
+    pub manufacturer: String,
+    pub product: String,
+    /// The caliber it is made for, or the shortest it fits when its own
+    /// length has none (a 12/86 shell is listed as 12/89).
+    pub caliber: String,
+    /// The shell's length as the maker prints it, mm.
+    pub length_mm: f64,
+    pub payload: crate::shotguns::Payload,
+    /// The size as printed on the box: "No 5", "US 3", "BB".
+    pub size_label: Option<String>,
+    pub velocity_mps: f64,
+    pub velocity_at: crate::shotguns::VelocityAt,
+    /// "fibre", "plastic" or "bio".
+    pub wad: Option<String>,
+    /// For steel: "standard" or "HP" (high-performance, for guns with
+    /// steel proof).
+    pub steel_proof: Option<String>,
+    /// What the maker says it is for.
+    #[serde(default)]
+    pub purpose: String,
+    pub source_url: String,
+    pub verified_on: String,
+    #[serde(default)]
+    pub notes: String,
+}
+
+impl CatalogShell {
+    /// "Gamebore Regal Game 32 g No 6".
+    pub fn display_name(&self) -> String {
+        format!("{} {}", self.manufacturer, self.title())
+    }
+
+    /// The product with its load and size: "Regal Game 32 g No 6".
+    pub fn title(&self) -> String {
+        let load = match self.payload {
+            crate::shotguns::Payload::Shot { load_g, .. } => format!(" {load_g} g"),
+            crate::shotguns::Payload::Slug { mass_g, .. } => format!(" {mass_g} g"),
+        };
+        let size = self
+            .size_label
+            .as_deref()
+            .map(|label| format!(" {label}"))
+            .unwrap_or_default();
+        format!("{}{load}{size}", self.product)
+    }
+
+    /// A copy for the hunter's collection.
+    pub fn to_collection(&self) -> crate::shotguns::Shell {
+        let mut shell = crate::shotguns::Shell::new(&self.caliber);
+        shell.manufacturer = self.manufacturer.clone();
+        shell.name = self.title();
+        shell.payload = self.payload;
+        shell.velocity_mps = self.velocity_mps;
+        shell.velocity_at = self.velocity_at;
+        shell.catalog_id = Some(self.id.clone());
+        shell
+    }
+}
+
 #[derive(Debug)]
 pub struct Catalog {
     pub calibers: Vec<Caliber>,
+    /// Shotgun calibers, by gauge and chamber length.
+    pub shotgun_calibers: Vec<ShotgunCaliber>,
+    /// Shotgun shells from makers' ranges.
+    pub shells: Vec<CatalogShell>,
     pub bullets: Vec<CatalogBullet>,
     pub scopes: Vec<Scope>,
     pub reticles: Vec<Reticle>,
@@ -276,6 +407,10 @@ impl Catalog {
         bullets.extend(from_files::<CatalogBullet>(files::CHAMBERSIM_BULLETS)?);
         Catalog {
             calibers: serde_json::from_str(include_str!("../catalog/calibers.json"))?,
+            shotgun_calibers: serde_json::from_str(include_str!(
+                "../catalog/shotgun-calibers.json"
+            ))?,
+            shells: from_files(files::SHELLS)?,
             bullets,
             scopes: from_files(files::SCOPES)?,
             reticles: serde_json::from_str(include_str!("../catalog/reticles.json"))?,
@@ -292,6 +427,8 @@ impl Catalog {
     pub fn from_json(calibers: &str, bullets: &str) -> serde_json::Result<Catalog> {
         Ok(Catalog {
             calibers: serde_json::from_str(calibers)?,
+            shotgun_calibers: Vec::new(),
+            shells: Vec::new(),
             bullets: serde_json::from_str(bullets)?,
             scopes: Vec::new(),
             reticles: Vec::new(),
@@ -360,6 +497,38 @@ impl Catalog {
     /// The current id for a reticle id that may have been merged away.
     pub fn reticle_id<'a>(&'a self, id: &'a str) -> &'a str {
         self.reticle(id).map_or(id, |reticle| reticle.id.as_str())
+    }
+
+    pub fn shell(&self, id: &str) -> Option<&CatalogShell> {
+        self.shells.iter().find(|shell| shell.id == id)
+    }
+
+    /// The catalog shells a gun of this caliber can fire.
+    pub fn shells_for<'a>(
+        &'a self,
+        gun: &'a ShotgunCaliber,
+    ) -> impl Iterator<Item = &'a CatalogShell> + 'a {
+        self.shells.iter().filter(move |shell| {
+            self.shotgun_caliber(&shell.caliber)
+                .is_some_and(|caliber| caliber.fits(gun))
+        })
+    }
+
+    pub fn shotgun_caliber(&self, key: &str) -> Option<&ShotgunCaliber> {
+        self.shotgun_calibers
+            .iter()
+            .find(|caliber| caliber.key == key)
+    }
+
+    /// The shotgun caliber a gauge is usually chambered for: 12/70, 20/70,
+    /// .410/76; for records made before calibers.
+    pub fn usual_shotgun_caliber(&self, gauge: crate::shotguns::Gauge) -> Option<&ShotgunCaliber> {
+        let usual = |caliber: &&ShotgunCaliber| caliber.gauge == gauge;
+        self.shotgun_calibers
+            .iter()
+            .filter(usual)
+            .find(|caliber| caliber.nordic_use == NordicUse::Common)
+            .or_else(|| self.shotgun_calibers.iter().rev().find(usual))
     }
 
     pub fn caliber(&self, key: &str) -> Option<&Caliber> {

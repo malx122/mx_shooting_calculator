@@ -572,7 +572,7 @@ figure.sk figcaption b { color: var(--ink); }
 
 <!-- ============================================================== -->
 <h2 id="data">8. Data model</h2>
-<p>New records follow MXSC's newer pattern: a table with <code>id</code>, a JSON <code>data</code> blob and <code>updated_at</code>, merged by time, with tombstones for deletions. Units in field names, always metric. Everything below goes into the documented backup format (version 8) with generated schema docs.</p>
+<p>New records follow MXSC's newer pattern: a table with <code>id</code>, a JSON <code>data</code> blob and <code>updated_at</code>, merged by time, with tombstones for deletions. Units in field names, always metric. Everything below goes into the documented backup format (version 9) with generated schema docs.</p>
 <div class="wrap"><table>
 <tr><th>Record</th><th>Main fields</th><th>Notes</th></tr>
 <tr><td>Bullet (extended)</td><td>Handloads gain <code>recipe</code>: powder, charge_gr, primer, brass, coal_mm, cbto_mm, notes.</td><td>Needed for ladders and "make this my load". Factory bullets unchanged.</td></tr>
@@ -595,7 +595,7 @@ figure.sk figcaption b { color: var(--ink); }
 <ul style="padding-left:18px;margin:0">
 <li><code>groups-core</code>: geometry, 2-point and 4-point calibration (homography), all statistics and tests (χ², F, normal quantiles written in-house like <code>ballistics-core</code>, no dependencies), composites, zero, ladder, trend. Pure, fully unit-tested.</li>
 <li><code>groups-vision</code> <span class="tag p3">P3</span>: hole suggestions, MX target marks, finding new holes. Uses the <code>image</code> crate.</li>
-<li><code>ballistics-store</code>: migrations 11+, the new records, backup v8, photo store trait.</li>
+<li><code>ballistics-store</code>: migration 13 (after 0.11's 11 and 12), the new records, backup v9, photo store trait.</li>
 <li><code>crates/app/src/groups/</code>: library, marking canvas, details, save sheet, analyse pages; rifles.rs and bullets.rs gain barrels, round log and recipe.</li>
 </ul></div>
 <div class="card"><h3>Photos</h3>

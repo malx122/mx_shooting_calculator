@@ -22,7 +22,13 @@ pub struct Cartridge {
     /// The drawing the case's measurements come from.
     pub source: String,
     pub case: CaseShape,
-    pub bullet: BulletShape,
+    /// A typical bullet seated in it; none for a shotgun shell.
+    #[serde(default)]
+    pub bullet: Option<BulletShape>,
+    /// A shotgun shell's hull: its brass head and the crimp that closes it;
+    /// none for a rifle cartridge.
+    #[serde(default)]
+    pub hull: Option<Hull>,
     /// From the case head to the bullet's tip (L6).
     pub overall_length: f64,
     /// The primer seen in the case head; none on a rimfire case.
@@ -38,9 +44,12 @@ pub struct Cartridge {
 }
 
 /// The drawing letters a tolerance may be given for, and the value each
-/// stands for in the model.
-pub const TOLERANCE_LETTERS: [&str; 13] = [
-    "R", "R1", "R3", "E", "E1", "P1", "P2", "L1", "L2", "L3", "H1", "H2", "L6",
+/// stands for in the model: a rifle cartridge's, then a shotgun shell's
+/// (C.I.P. table VII: g rim diameter, t rim thickness, d body, h mouth, l
+/// open length).
+pub const TOLERANCE_LETTERS: [&str; 18] = [
+    "R", "R1", "R3", "E", "E1", "P1", "P2", "L1", "L2", "L3", "H1", "H2", "L6", "g", "t", "d", "h",
+    "l",
 ];
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -71,6 +80,61 @@ pub struct CaseShape {
     pub mouth_diameter: f64,
     /// Case length (L3).
     pub length: f64,
+}
+
+/// A shotgun shell's hull: a plastic (or paper) tube in a brass head,
+/// closed by folding its mouth in. Every shell is drawn with the same
+/// 8-fold star crimp, the commonest: which crimp a load has isn't known.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct Hull {
+    /// How far the brass head reaches up the hull from the case head:
+    /// about 8–12 mm "low brass", 16–25 mm "high brass". No standard sets
+    /// it; a typical one from makers' hulls.
+    pub head_height: f64,
+    /// The shell's length opened (fired), as its caliber's name says (l);
+    /// the case's `length` is the crimped, loaded one.
+    pub open_length: f64,
+    /// The crimped length is estimated from the open one: no standard gives
+    /// it for this caliber.
+    #[serde(default)]
+    pub crimped_length_estimated: bool,
+}
+
+/// The star crimp's folds, the rounding of its edge, and the depth of its
+/// dip in the middle and of its folds, mm: what a typical 12-bore crimp
+/// looks like, scaled to the shell.
+const STAR_FOLDS: u32 = 8;
+const CRIMP_EDGE: f64 = 1.3;
+const STAR_DIP: f64 = 2.4;
+const STAR_FOLD: f64 = 0.9;
+/// Points from the star crimp's edge in to the middle, for its folds.
+const STAR_POINTS: usize = 10;
+
+/// A star crimp's folds: the top's surface pressed in along each fold line,
+/// deepest halfway in and nothing at the edge or the middle, so the solid
+/// stays closed.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StarFolds {
+    pub folds: u32,
+    /// The crimp's top runs from this radius in to the middle.
+    pub radius: f64,
+    /// Points at least this far from the head lie on the top.
+    pub from: f64,
+    pub depth: f64,
+}
+
+impl StarFolds {
+    /// How far a point of the top at `radius` and `angle` is pressed in
+    /// (towards the head), mm.
+    pub fn press(&self, along: f64, radius: f64, angle: f64) -> f64 {
+        if along < self.from || radius >= self.radius || radius <= 0.0 {
+            return 0.0;
+        }
+        let across = (std::f64::consts::PI * radius / self.radius).sin();
+        // Valleys halfway between the folds' ridges.
+        let crease = 1.0 - (self.folds as f64 * angle / 2.0).cos().abs();
+        self.depth * across * crease * crease
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -161,6 +225,8 @@ pub enum Material {
     Case,
     Primer,
     Bullet,
+    /// A shotgun shell's plastic hull.
+    Hull,
 }
 
 /// The cartridge's outline, to turn round its axis: points as [along the
@@ -170,10 +236,85 @@ pub enum Material {
 pub struct Outline {
     pub start: [f64; 2],
     pub stretches: Vec<(Material, Vec<[f64; 2]>)>,
+    /// A star crimp's folds on the top, which turning the outline alone
+    /// can't give.
+    pub star: Option<StarFolds>,
 }
 
 impl Cartridge {
     pub fn outline(&self) -> Outline {
+        match (&self.bullet, &self.hull) {
+            (_, Some(hull)) => self.shell_outline(hull),
+            (Some(bullet), None) => self.cartridge_outline(bullet),
+            // A case alone: drawn as a shell all of brass.
+            (None, None) => self.shell_outline(&Hull {
+                head_height: self.case.length,
+                open_length: self.case.length,
+                crimped_length_estimated: false,
+            }),
+        }
+    }
+
+    /// A shotgun shell: the brass head, the hull and its crimp.
+    fn shell_outline(&self, hull: &Hull) -> Outline {
+        let case = &self.case;
+        let mut stretches = Vec::new();
+        let rim = case.rim_diameter / 2.0;
+        let body = case.body_diameter / 2.0;
+        let mouth = case.mouth_diameter / 2.0;
+        let length = case.length;
+        // The body tapers evenly from the rim to the mouth.
+        let at = |along: f64| {
+            body + (mouth - body) * (along - case.rim_thickness) / (length - case.rim_thickness)
+        };
+        if let Some(primer) = self.primer_diameter {
+            stretches.push((Material::Primer, vec![[0.0, primer / 2.0]]));
+        }
+        // The head, its rim's edges rounded a little.
+        let mut brass = vec![[0.0, self.primer_diameter.map_or(0.0, |p| p / 2.0)]];
+        let round = (case.rim_thickness / 3.0).min(0.4);
+        fillet(&mut brass, [0.0, rim], [case.rim_thickness, rim], round);
+        fillet(
+            &mut brass,
+            [case.rim_thickness, rim],
+            [case.rim_thickness, body],
+            round,
+        );
+        brass.push([case.rim_thickness, body]);
+        brass.remove(0);
+        let head = hull
+            .head_height
+            .clamp(case.rim_thickness, length - CRIMP_EDGE * 2.0);
+        brass.push([head, at(head)]);
+        stretches.push((Material::Case, brass));
+
+        // The hull up to the crimp's rounded edge, and the crimp.
+        let scale = (case.body_diameter / 20.6).clamp(0.4, 1.2);
+        let edge = CRIMP_EDGE * scale;
+        let mut tube = vec![[length - edge, at(length - edge)]];
+        let top = at(length);
+        fillet(&mut tube, [length, top], [length, 0.0], edge);
+        let inner = top - edge;
+        let dip = STAR_DIP * scale;
+        for i in 1..=STAR_POINTS {
+            let t = i as f64 / STAR_POINTS as f64;
+            tube.push([length - dip * t, inner * (1.0 - t)]);
+        }
+        let star = Some(StarFolds {
+            folds: STAR_FOLDS,
+            radius: inner,
+            from: length - dip - 1e-9,
+            depth: STAR_FOLD * scale,
+        });
+        stretches.push((Material::Hull, tube));
+        Outline {
+            start: [0.0, 0.0],
+            stretches,
+            star,
+        }
+    }
+
+    fn cartridge_outline(&self, bullet_shape: &BulletShape) -> Outline {
         let case = &self.case;
         let mut stretches = Vec::new();
         let rim = case.rim_diameter / 2.0;
@@ -241,9 +382,7 @@ impl Cartridge {
         brass.push([case.length, mouth]);
 
         // The bullet from where it leaves the case mouth.
-        let mut bullet = self
-            .bullet
-            .outline(self.overall_length - self.bullet.length);
+        let mut bullet = bullet_shape.outline(self.overall_length - bullet_shape.length);
         // The tip exactly at the overall length, whatever the rounding.
         for point in bullet.iter_mut().rev().take(2) {
             point[0] = self.overall_length;
@@ -262,6 +401,7 @@ impl Cartridge {
         Outline {
             start: [0.0, 0.0],
             stretches,
+            star: None,
         }
     }
 }
@@ -362,7 +502,10 @@ impl Cartridge {
                         .filter(|engraving| engraving.cuts(along, signed * radius))
                         .map_or(0.0, |engraving| engraving.depth);
                     let r = radius - cut;
-                    vertices.push([r * angle.cos(), r * angle.sin(), along]);
+                    let pressed = outline
+                        .star
+                        .map_or(0.0, |star| star.press(along, radius, angle));
+                    vertices.push([r * angle.cos(), r * angle.sin(), along - pressed]);
                 }
                 rings.push((first, slices as u32));
             }
@@ -595,7 +738,10 @@ mod tests {
             drawn += 1;
             let name = &caliber.name;
             let case = &cartridge.case;
-            let bullet = &cartridge.bullet;
+            let bullet = cartridge
+                .bullet
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name}: a rifle cartridge has its bullet"));
             assert!(
                 (bullet.diameter - caliber.bullet_diameter_mm).abs() <= 0.03 + 1e-9,
                 "{name}: the bullet's diameter is the caliber's"
@@ -793,12 +939,53 @@ mod tests {
     }
 
     #[test]
-    fn the_solid_is_closed_faces_out_and_has_the_outlines_volume() {
-        for caliber in &Catalog::builtin().calibers {
-            let Some(cartridge) = &caliber.cartridge else {
-                continue;
-            };
+    fn every_shotgun_caliber_has_a_shell_true_to_its_drawing() {
+        for caliber in &Catalog::builtin().shotgun_calibers {
             let name = &caliber.name;
+            let cartridge = caliber
+                .cartridge
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name}: its shell"));
+            let (case, hull) = (&cartridge.case, cartridge.hull.as_ref().unwrap());
+            assert!(cartridge.bullet.is_none(), "{name}");
+            assert!(case.rim_diameter > case.body_diameter, "{name}: a rim");
+            assert!(case.body_diameter >= case.mouth_diameter, "{name}: tapers");
+            // C.I.P.'s bore is wider than the shell's mouth.
+            assert!(case.mouth_diameter < caliber.bore_mm + 2.5, "{name}");
+            // Crimped shorter than open, by 3–11 mm, and the open length is
+            // the one in its name.
+            let short = hull.open_length - case.length;
+            assert!((3.0..11.5).contains(&short), "{name}: {short}");
+            assert!((hull.open_length - caliber.length_mm).abs() < 1.0, "{name}");
+            assert!(hull.head_height > case.rim_thickness && hull.head_height < case.length / 2.0);
+            assert_eq!(cartridge.overall_length, case.length);
+            for letter in ["g", "t", "d", "h", "l"] {
+                assert!(
+                    cartridge.tolerances.contains_key(letter),
+                    "{name}: {letter}"
+                );
+            }
+            let outline = cartridge.outline();
+            assert!(outline.star.is_some(), "{name}: the crimp's folds");
+            let points = points(&outline);
+            assert_eq!(points.last().unwrap()[1], 0.0, "{name}: closed on the axis");
+        }
+    }
+
+    #[test]
+    fn the_solid_is_closed_faces_out_and_has_the_outlines_volume() {
+        let catalog = Catalog::builtin();
+        let all = catalog
+            .calibers
+            .iter()
+            .filter_map(|caliber| Some((&caliber.name, caliber.cartridge.as_ref()?)))
+            .chain(
+                catalog
+                    .shotgun_calibers
+                    .iter()
+                    .filter_map(|caliber| Some((&caliber.name, caliber.cartridge.as_ref()?))),
+            );
+        for (name, cartridge) in all {
             let solid = cartridge.solid(128);
             // Closed: each edge is used once each way.
             let mut edges = std::collections::HashMap::new();
@@ -827,8 +1014,14 @@ mod tests {
                 .sum();
             let volume = solid.volume();
             assert!(volume > 0.0, "{name}: faces out");
+            // A star crimp's folds press a little of the top in.
+            let (low, high) = match cartridge.hull {
+                Some(_) => (-0.01, 0.001),
+                None => (-0.001, 0.001),
+            };
+            let off = volume / exact - 1.0;
             assert!(
-                (volume / exact - 1.0).abs() < 0.001,
+                (low..high).contains(&off),
                 "{name}: {volume} against {exact}"
             );
             // Stands on its head, as tall as the cartridge.

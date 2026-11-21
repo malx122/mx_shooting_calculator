@@ -22,7 +22,7 @@ stands and named label designs stay on the device and are not synced.
 ```json
 {
   "format": "mxsc/personal-data",
-  "version": 8,
+  "version": 9,
   "exported_at": 1792473562000,
   "rifles": [ { "id": "…", "name": "Browning X-Bolt", "caliber": "308-win", "twist_in": 10.0, … } ],
   "bullets": [ { "id": "…", "manufacturer": "Federal", "name": "Terminal Ascent", "mass_g": 11.34, … } ],
@@ -30,6 +30,9 @@ stands and named label designs stay on the device and are not synced.
   "scopes": [],
   "targets": [],
   "shots": [ { "id": "…", "taken_at": 1792473562000, "rifle_id": "…", "range_m": 150.0, "outcome": "hit", … } ],
+  "shotguns": [ { "id": "…", "name": "Beretta Silver Pigeon", "caliber": "12-76", "barrels": [ … ], … } ],
+  "shells": [ { "id": "…", "caliber": "12-70", "manufacturer": "Gyttorp", "name": "Jakt 36 g US 3", "payload": { … }, … } ],
+  "shotgun_loads": [ { "id": "…", "shotgun_id": "…", "shell_id": "…", "patterns": [ … ], … } ],
   "barrels": [ { "id": "…", "rifle_id": "…", "name": "Factory", "length_mm": 510.0, … } ],
   "round_log": [ { "id": "…", "rifle_id": "…", "barrel_id": "…", "rounds": 5, "at": 1792473562000, … } ],
   "cleans": [],
@@ -78,14 +81,15 @@ stands and named label designs stay on the device and are not synced.
   from the photo's top-left corner.
 - **Points** are arrays of two numbers, `[x, y]`.
 - **Ids** are strings, unique within each kind of record. Records refer to
-  each other by id: a rifle load names its `rifle_id` and `bullet_id`; a
-  rifle's `scope_id` names one of the file's `scopes`, or else a scope in the
-  app's catalog. A photo's id is the SHA-256 of its bytes, in lowercase
-  hexadecimal. Apart from a rifle load's, a reference may name a record that
-  has since been deleted: a group keeps naming its rifle, and a reader should
-  skip what it can't find.
+  each other by id: a rifle load names its `rifle_id` and `bullet_id`, and a
+  shotgun load its `shotgun_id` and `shell_id`; a rifle's `scope_id` names
+  one of the file's `scopes`, or else a scope in the app's catalog. A
+  photo's id is the SHA-256 of its bytes, in lowercase hexadecimal. Apart
+  from a rifle load's and a shotgun load's, a reference may name a record
+  that has since been deleted: a group keeps naming its rifle, and a reader
+  should skip what it can't find.
 - **References to the app's catalog:** a `caliber` is a key such as
-  `308-win`, a `scope_id` may name a catalog scope, a `reticle_id` a catalog
+  `308-win` (for a shotgun or a shell, such as `12-76`), a `scope_id` may name a catalog scope, a `reticle_id` a catalog
   reticle, and an animal target's `silhouette` one of the app's drawings. The
   `catalog` section of an exported file writes out the calibers, scopes and
   reticles the records name, so a reader doesn't need the app. Sync copies
@@ -156,6 +160,38 @@ Positions are personal: they say where the hunter hunts. The app keeps them
 on the hunter's devices, in their sync copy (encrypted on the sync server,
 or in the app's own folder of their Google Drive) and in the files they
 export, and sends them nowhere else.
+
+## Shotguns
+
+Shotguns are kept the way rifles are:
+
+- each of `shotguns` is a gun: its `caliber`, a key in the app's catalog of
+  shotgun calibers such as `12-76` (gauge 12, 76 mm chamber), and `barrels`,
+  each with its
+  `choke`, given either by name (`"by": "name"`, such as `modified` for half
+  choke) or by its constriction in mm (`"by": "constriction"`). For slugs,
+  `sight_height_cm` and `slug_zero_m` give its sights;
+- each of `shells` is ammunition for a `caliber`, as a bullet is for a
+  rifle caliber: a `12-70` shell fits guns of gauge 12 with a chamber as long
+  or longer (12/70, 12/76, 12/89), never shorter. It is loaded with shot (`material`, `pellet_mm`, `load_g`) or a slug
+  (`mass_g`, `diameter_mm`, `bc_g1`), with `velocity_mps` as the box gives
+  it and `velocity_at`, where it was measured (`muzzle`, `v2_5` at 2.5 m,
+  `three_feet`, or `observed`, the British average over the first 20
+  yards);
+- each of `shotgun_loads` is a shell in a gun (`shotgun_id`, `shell_id`), as
+  a rifle load is a bullet in a rifle, with the `patterns` the hunter shot
+  and counted: the `barrel` (its index in the gun's `barrels`), the
+  `distance_m`, the `circle_cm` and `pellets_inside`. The share inside is
+  `pellets_inside` over `pellets_in_load`, or over the pellets the shell's
+  `load_g` of `pellet_mm` shot holds when that is left out. A board with
+  `pellets_inside` 0, or more than that worked-out count, is kept but not
+  used; one with more than its own `pellets_in_load` is refused. A board for
+  a barrel the gun no longer has is kept but not used.
+  There is one record for each gun and shell: a file with two is merged
+  into one, the later winning, as rifle loads are by their rifle and bullet.
+
+Pellet sizes are kept in mm, since a number on a box stands for different
+sizes in different countries (US 5 is 3.05 mm, English 5 is 2.79 mm).
 
 ## Shot groups
 
@@ -294,10 +330,10 @@ group as a picture (**Picture (PNG)**).
 ## Writing a file for the app
 
 The app reads files written by other programs:
-- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (8).
+- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (9).
 - Fields marked "may be left out" can be omitted.
 - Unknown fields are ignored, and the `catalog` section is never imported.
-- Every record is checked before anything is saved. Numbers must be finite and within what rifles and bullets can be. If any record fails, nothing from the file is imported, and the app says which record failed.
+- Every record is checked before anything is saved. Numbers must be finite and within what guns and their ammunition can be. If any record fails, nothing from the file is imported, and the app says which record failed.
 
 ## Versions
 
@@ -309,8 +345,9 @@ The app reads files written by other programs:
 | 4 | The hunter's own targets. |
 | 5 | Deleted records. Later, still version 5: the `catalog` section (ignored by imports), truing, shot statistics on velocities, a zero height. |
 | 6 | The shot log (`shots`). |
-| 7 | Attribution for bullet data copied from separately licensed collections (`data_attribution`). |
-| 8 | Shot groups (`groups`) on photos (`photos`) or grids, with barrels, the round log, cleans, zero resets, range sessions, ladders and analyses; rifles name their fitted barrel and rounds fired before logging; handloads keep a `recipe`. |
+| 7 | Attribution for separately licensed bullet data (`data_attribution`). |
+| 8 | Shotguns (`shotguns`) with their chokes, shotgun shells (`shells`), and the pattern boards of a shell in a gun (`shotgun_loads`). |
+| 9 | Shot groups (`groups`) on photos (`photos`) or grids, with barrels, the round log, cleans, zero resets, range sessions, ladders and analyses; rifles name their fitted barrel and rounds fired before logging; handloads keep a `recipe`. |
 
 ## Field reference
 
@@ -323,7 +360,7 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | string | Always `mxsc/personal-data`. Files from the app's earlier names say `mhc/personal-data` or `ballistic-calculator/personal-data`. |
-| `version` | integer | The format's version; this description is of version 8. A reader should refuse versions newer than it knows. |
+| `version` | integer | The format's version; this description is of version 9. A reader should refuse versions newer than it knows. |
 | `exported_at` | integer | When the file was written, in milliseconds since 1970 (UTC). |
 | `rifles` | array of [Rifle](#rifle) | The hunter's rifles. |
 | `bullets` | array of [Bullet](#bullet) | The hunter's bullets: factory ammunition and handloads. |
@@ -331,7 +368,10 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | `scopes` | array of [UserScope](#userscope) | Scopes the hunter entered (catalog scopes are only named by id). |
 | `targets` | array of [Target](#target) | Targets the hunter made or copied (catalog targets aren't included). |
 | `shots` | array of [Shot](#shot) | The shot log: shots the hunter took, with the solution the app gave and, after a shot at game, where the hunter and the animal stood. |
-| `barrels` | array of [Barrel](#barrel) | Barrels of the hunter's rifles, fitted or not. |
+| `shotguns` | array of [Shotgun](#shotgun) | The hunter's shotguns, each with its barrels' chokes. |
+| `shells` | array of [Shell](#shell) | The hunter's shotgun shells: shot and slugs, by caliber. |
+| `shotgun_loads` | array of [ShotgunLoad](#shotgunload) | What is particular to a shell in a shotgun: the pattern boards counted with it. |
+| `barrels` | array of [RifleBarrel](#riflebarrel) | Barrels of the hunter's rifles, fitted or not. |
 | `round_log` | array of [RoundLogEntry](#roundlogentry) | Rounds fired, for the round counts of actions and barrels. |
 | `cleans` | array of [Clean](#clean) | When barrels were cleaned. |
 | `zero_resets` | array of [ZeroReset](#zeroreset) | When rifles' zeros were set again. |
@@ -789,7 +829,132 @@ Where the animal stood, worked out from the hunter's position, the bearing and t
 | `longitude_degrees` | number | East positive, west negative. |
 | `search_radius_m` | number | How far around the spot to search: the bearing's, the range's and the position's possible errors together. |
 
+### Shotgun
+
+A shotgun: its caliber and barrels with their chokes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The gun's id, unique among shotguns. |
+| `name` | string | The hunter's name for it. |
+| `caliber` | string | Its caliber's key in the app's catalog: "12-76" for a 12/76. |
+| `barrels` | array of [Barrel](#barrel) | Its barrels, each with a choke: one for a single-barrel gun, two for an over-and-under or side-by-side. |
+| `sight_height_cm` | number or null | For slugs: the height of the sights (or scope) above the bore, cm; `null` for a bead. |
+| `slug_zero_m` | number or null | For slugs: the range the sights are set for, m. |
+| `notes` | string | Notes about it. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
 ### Barrel
+
+One of the gun's barrels.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | What the hunter calls it: "Under", "Over", "Right"; empty for a gun with one barrel. |
+| `choke` | [Choke](#choke) | Its choke, fixed or the tube in it. |
+
+### Choke
+
+A barrel's choke: by its name, or by its constriction as measured or stamped.
+
+One of:
+
+- `by`: `"name"`, with `name` ([ChokeName](#chokename)): By its name.
+- `by`: `"constriction"`, with `mm` (number): By its constriction: how much narrower the choke is than the bore.
+
+### ChokeName
+
+A choke by its name, from open to tight.
+
+One of:
+
+- `"cylinder"`: No constriction (★★★★★).
+- `"skeet"`: About 0.13 mm (⅛).
+- `"improved_cylinder"`: American improved cylinder, about 0.25 mm.
+- `"light_modified"`: Quarter choke (¼, ★★★★), often called improved cylinder in Europe.
+- `"modified"`: Half choke (½, ★★★).
+- `"improved_modified"`: Three-quarter choke (¾, ★★).
+- `"light_full"`: Light full (⅞).
+- `"full"`: Full choke (1/1, ★).
+- `"extra_full"`: Tighter than full, as turkey chokes are.
+
+### Shell
+
+A shotgun shell in the hunter's collection: shot or a slug, for one shotgun caliber, as rifle bullets are for one rifle caliber.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The shell's id, unique among shells. |
+| `caliber` | string | Its caliber's key in the app's catalog: "12-70" for a 12/70 shell (see the export's `catalog`, or docs/shotgun-research/calibers.md). It fits a gun of its gauge with a chamber as long or longer. |
+| `catalog_id` | string or null | The catalog shell it was copied from, if any. |
+| `manufacturer` | string | Its maker: "Gyttorp". |
+| `name` | string | Its name, as the box gives it: "Röda Papp 32 g US 5". |
+| `payload` | [Payload](#payload) | Shot or a slug. |
+| `velocity_mps` | number | The velocity the box gives (or the hunter measured), m/s. |
+| `velocity_at` | [VelocityAt](#velocityat) | Where that velocity is measured. |
+| `notes` | string | Notes about it. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Payload
+
+What a shell is loaded with.
+
+One of:
+
+- `kind`: `"shot"`, with `material` ([ShotMaterial](#shotmaterial)), `pellet_mm` (number), `load_g` (number): Shot: many round pellets.
+- `kind`: `"slug"`, with `mass_g` (number), `diameter_mm` (number), `bc_g1` (number), `lead_free` (boolean): A slug: one projectile.
+
+### ShotMaterial
+
+What shot is made of.
+
+One of:
+
+- `"lead"`: Lead (hardened with antimony).
+- `"steel"`: Soft iron, called steel.
+- `"bismuth"`: Bismuth with a little tin.
+- `"tungsten_iron"`: Tungsten, nickel and iron, such as HEVI-Shot.
+- `"tungsten_matrix"`: Tungsten powder in a polymer, such as Tungsten-Matrix.
+- `"tss"`: Tungsten super shot (TSS).
+- `"zinc"`: Zinc.
+
+### VelocityAt
+
+Where the velocity on the box was measured.
+
+One of:
+
+- `"muzzle"`: At the muzzle ("V0").
+- `"v1"`: 1 m from the muzzle ("V1", as Gamebore prints it).
+- `"v2_5"`: 2.5 m from the muzzle ("V2.5", as C.I.P. makers print it).
+- `"three_feet"`: 3 feet from the muzzle, as American makers print it.
+- `"observed"`: The British "observed velocity": the average over the first 20 yards.
+
+### ShotgunLoad
+
+What is particular to a shell in one shotgun: the pattern boards the hunter shot with it, as a rifle load holds the velocities measured in one rifle.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The record's id, unique among shotgun loads. |
+| `shotgun_id` | string | The shotgun (`shotguns`). |
+| `shell_id` | string | The shell (`shells`). |
+| `patterns` | array of [PatternTest](#patterntest) | Pattern boards counted with this shell in this gun, which replace its choke's nominal pattern for that barrel. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### PatternTest
+
+A pattern the hunter shot and counted: how many pellets landed inside a circle at a distance. The Nordic test is a 75 cm circle at 35 m.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `barrel` | integer | Which of the gun's barrels shot it, counted from 0 in `barrels`. |
+| `distance_m` | number | From the muzzle to the board, m. |
+| `circle_cm` | number | The circle's diameter, cm, drawn round the pattern's densest part. |
+| `pellets_inside` | integer | Pellets counted inside the circle; 0 until counted, and a board with none is left out. |
+| `pellets_in_load` | integer or null | Pellets in the whole load, if counted (or taken from the box); `null` to work them out from the load and pellet size. |
+
+### RifleBarrel
 
 A barrel that is or was on one of the hunter's rifles.
 
@@ -1054,6 +1219,9 @@ One of:
 - `"scope"`
 - `"target"`
 - `"shot"`
+- `"shotgun"`
+- `"shell"`
+- `"shotgun_load"`
 - `"barrel"`
 - `"round_log_entry"`
 - `"clean"`
@@ -1071,6 +1239,7 @@ What the records name from the app's built-in catalog.
 | Field | Type | Meaning |
 |---|---|---|
 | `calibers` | array of [CaliberDetails](#caliberdetails) | The calibers named by rifles and bullets (their `caliber`). |
+| `shotgun_calibers` | array of [ShotgunCaliberDetails](#shotguncaliberdetails) | The shotgun calibers named by shotguns and shells (their `caliber`). |
 | `scopes` | array of [ScopeDetails](#scopedetails) | The catalog scopes named by rifles (their `scope_id`). |
 | `reticles` | array of [ReticleDetails](#reticledetails) | The catalog reticles named by rifles and scopes (their `reticle_id`). |
 
@@ -1083,6 +1252,33 @@ A caliber, as a rifle's or bullet's `caliber` names it.
 | `key` | string | The key records use, e.g. `308-win`. |
 | `name` | string | Its name, e.g. `.308 Win`. |
 | `bullet_diameter_mm` | number | The bullet diameter the caliber takes, mm. |
+
+### ShotgunCaliberDetails
+
+A shotgun caliber, as a shotgun's or shell's `caliber` names it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `key` | string | The key records use, e.g. `12-76`. |
+| `name` | string | Its name, e.g. `12/76`. |
+| `gauge` | [Gauge](#gauge) | Its gauge: `"12"`, `".410"`. |
+| `length_mm` | number | The length in its name, mm: a shell fits a gun of its gauge whose caliber's length is the same or longer. |
+| `bore_mm` | number | The bore's nominal (least) diameter, mm. |
+
+### Gauge
+
+A shotgun's bore size.
+
+One of:
+
+- `"10"`
+- `"12"`
+- `"16"`
+- `"20"`
+- `"24"`
+- `"28"`
+- `"32"`
+- `".410"`: .410 bore, also called 36 gauge.
 
 ### ScopeDetails
 
