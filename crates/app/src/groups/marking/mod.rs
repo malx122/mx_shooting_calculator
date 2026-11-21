@@ -13,6 +13,7 @@ pub use grid::GridSizes;
 mod history;
 mod holes;
 mod live;
+mod mx;
 mod paint;
 mod scale;
 #[cfg(test)]
@@ -140,6 +141,12 @@ enum Command {
     AddSuggested,
     /// Drop the suggestions.
     CancelSuggested,
+    /// Show the suggestions of a later photo that may be of another sheet.
+    GoOn,
+    /// Pick a later photo of the sheet.
+    LaterPhoto,
+    /// Aim at the sheet's aim point, numbered from 0.
+    PickAim(usize),
     Back,
     Cancel,
     Done,
@@ -196,6 +203,28 @@ pub struct Marking {
     holes: holes::Search,
     /// The camera and canvas of the last frame.
     last_canvas: Option<(Camera, Rect)>,
+    /// The MX target on the photo, looked for once its pixels are in.
+    sheet: SheetSearch,
+    print: scale::PrintScale,
+    /// Aim points of other groups on this photo, px.
+    taken_aims: Vec<[f64; 2]>,
+    /// A later photo of the sheet was asked for.
+    later_wanted: bool,
+    /// A later photo's pixels, to compare once the sheet is found.
+    later: Option<groups_vision::grid::InkImage>,
+    /// An aim point of the sheet may still be offered: once, on a new
+    /// group.
+    offer_aim: bool,
+    /// The rings shown come from a later photo.
+    later_rings: bool,
+}
+
+/// The search for an MX target on the photo.
+#[derive(Clone, Debug, PartialEq)]
+enum SheetSearch {
+    NotYet,
+    Found(Box<mx::Sheet>),
+    Failed(groups_vision::marks::NoMarks),
 }
 
 /// How far (points) round a mark a press still takes it.
@@ -278,6 +307,13 @@ impl Marking {
             visible_px: None,
             holes: holes::Search::Idle,
             last_canvas: None,
+            sheet: SheetSearch::NotYet,
+            print: scale::PrintScale::new(None),
+            taken_aims: Vec::new(),
+            later_wanted: false,
+            later: None,
+            offer_aim: false,
+            later_rings: false,
         }
     }
 
@@ -301,6 +337,7 @@ impl Marking {
             step,
         );
         marking.finder.auto = step == Step::Scale && calibration.is_none();
+        marking.offer_aim = true;
         marking
     }
 
@@ -369,8 +406,10 @@ impl Marking {
                 .photo
                 .map(|photo| f64::from(photo.size_px[0].min(photo.size_px[1]))),
         };
+        self.find_sheet(context);
         self.find_grid(context);
         self.find_holes(ui.ctx(), context);
+        self.compare_later(context);
         let narrow = mobile::is_narrow(ui.ctx());
         let full = ui.available_rect_before_wrap();
         let live = self.live_view(&crate::units::prefs(ui.ctx()), context);
@@ -455,10 +494,243 @@ impl Marking {
         self.selected = None;
     }
 
+    /// Looks once for an MX target on the photo when its pixels are in:
+    /// on a new photo it sets the scale; on a photo scaled by its marks it
+    /// brings back the layout, for the aim points.
+    fn find_sheet(&mut self, context: &MarkingContext) {
+        if self.sheet != SheetSearch::NotYet || !self.is_photo() {
+            return;
+        }
+        if self.calibration.is_some() && self.scale.mode != scale::ScaleMode::MxTarget {
+            self.sheet = SheetSearch::Failed(groups_vision::marks::NoMarks::NotFound);
+            return;
+        }
+        let Some(photo) = context.photo else {
+            return;
+        };
+        let Some(ink) = photo.ink.as_ref() else {
+            return;
+        };
+        let sheet = match mx::find(ink, photo.size_px) {
+            Ok(sheet) => sheet,
+            Err(reason) => {
+                self.sheet = SheetSearch::Failed(reason);
+                return;
+            }
+        };
+        let rectangle = sheet.marks.rectangle_mm();
+        if self.calibration.is_none() && self.scale.corners.is_empty() {
+            self.finder.auto = false;
+            self.scale.place_sheet(sheet.corners_px(), rectangle);
+            if let Some(scale) = self.print.device {
+                self.scale.set_print_scale(scale);
+            }
+            self.selected = None;
+        } else if self.scale.mode == scale::ScaleMode::MxTarget
+            && self.scale.mx_rectangle_mm.is_none()
+        {
+            // Reopened: the stored rectangle gives the print scale.
+            let scale = self.scale.width_mm / rectangle[0];
+            for draft in [
+                &mut self.scale,
+                &mut self.initial.scale,
+                &mut self.committed.scale,
+            ] {
+                draft.mx_rectangle_mm = Some(rectangle);
+                draft.print_scale = scale;
+            }
+        }
+        self.sheet = SheetSearch::Found(Box::new(sheet));
+        if self.step == Step::Aim {
+            self.preselect_aim();
+        }
+    }
+
+    /// The MX target found, when the photo is scaled by its marks.
+    fn mx_sheet(&self) -> Option<&mx::Sheet> {
+        match &self.sheet {
+            SheetSearch::Found(sheet) if self.scale.mode == scale::ScaleMode::MxTarget => {
+                Some(sheet)
+            }
+            _ => None,
+        }
+    }
+
+    /// The MX target's aim points, px, numbered as printed.
+    fn mx_aims(&self) -> Vec<[f64; 2]> {
+        self.mx_sheet()
+            .map_or_else(Vec::new, mx::Sheet::aim_points_px)
+    }
+
+    /// With no aim yet, takes the first of the sheet's aim points no other
+    /// group on the photo uses, as if it had been there from the start.
+    fn preselect_aim(&mut self) {
+        if !self.offer_aim || self.aim().is_some() {
+            return;
+        }
+        if self.mx_sheet().is_none() {
+            return;
+        }
+        self.offer_aim = false;
+        let Some(sheet) = self.mx_sheet() else {
+            return;
+        };
+        let aims_mm = sheet.marks.aim_points_mm();
+        let taken: Vec<[f64; 2]> = self
+            .taken_aims
+            .iter()
+            .filter_map(|px| sheet.px_to_sheet(*px))
+            .collect();
+        let Some(index) = mx::next_aim(&aims_mm, &taken) else {
+            return;
+        };
+        let Some(at) = sheet.aim_points_px().get(index).copied() else {
+            return;
+        };
+        let unchanged = self.marks == self.committed.marks;
+        let untouched = self.marks == self.initial.marks;
+        self.set_aim(Some(at));
+        if unchanged {
+            self.committed.marks = self.marks.clone();
+        }
+        if untouched {
+            self.initial.marks = self.marks.clone();
+        }
+    }
+
+    /// The scale step's controls, with the MX target's.
+    fn scale_controls(&mut self, ui: &mut egui::Ui) {
+        let (sheet, failure) = match &self.sheet {
+            SheetSearch::Found(sheet) => (Some(&**sheet), None),
+            SheetSearch::Failed(reason) => (None, mx::failure(*reason)),
+            SheetSearch::NotYet => (None, None),
+        };
+        let mut panel = scale::MxPanel {
+            sheet,
+            failure,
+            print: &mut self.print,
+        };
+        scale::controls(
+            ui,
+            &mut self.scale,
+            &mut self.finder,
+            self.sight,
+            &mut panel,
+        );
+    }
+
+    /// Starts with the print scale this device measured, if it has.
+    pub fn with_print_scale(mut self, device: Option<f64>) -> Self {
+        self.print = scale::PrintScale::new(device);
+        self
+    }
+
+    /// The print scale this device measured, to keep.
+    pub fn print_scale(&self) -> Option<f64> {
+        self.print.device
+    }
+
+    /// Starts knowing the aim points other groups on this photo use, px:
+    /// the next free one is offered.
+    pub fn with_taken_aims(mut self, aims: Vec<[f64; 2]>) -> Self {
+        self.taken_aims = aims;
+        self
+    }
+
+    /// Whether a later photo of the sheet was asked for since last asked.
+    pub fn take_later_request(&mut self) -> bool {
+        std::mem::take(&mut self.later_wanted)
+    }
+
+    /// Whether a later photo can be compared: a photo scaled by its MX
+    /// target's marks, or one not looked at yet.
+    pub fn takes_later_photo(&self) -> bool {
+        self.is_photo()
+            && self.scale.mode == scale::ScaleMode::MxTarget
+            && !matches!(self.sheet, SheetSearch::Failed(_))
+    }
+
+    /// A later photo of the sheet, its pixels to compare with the shots.
+    pub fn later_photo(&mut self, picture: &groups_vision::Thumbnail) {
+        if self.step != Step::Shots {
+            self.go_to(Step::Shots);
+        }
+        self.later = Some(groups_vision::grid::InkImage::from_rgba(
+            picture.width_px,
+            picture.height_px,
+            &picture.rgba,
+        ));
+        self.holes = holes::Search::Looking { frames: 0 };
+    }
+
+    /// Compares a later photo, once the sheet on this one is known.
+    fn compare_later(&mut self, context: &MarkingContext) {
+        if self.later.is_none() || self.sheet == SheetSearch::NotYet || !self.holes.due() {
+            return;
+        }
+        let Some(later) = self.later.take() else {
+            return;
+        };
+        self.later_rings = true;
+        let refuse = |error: mx::LaterError| holes::Search::Refused(holes::Refusal::Later(error));
+        let (Some(sheet), Some(space)) = (self.mx_sheet(), self.space(context)) else {
+            self.holes = refuse(mx::LaterError::NotMx);
+            return;
+        };
+        let Some(calibre) = context.calibre_mm.filter(|c| c.is_finite() && *c > 0.0) else {
+            self.holes = refuse(mx::LaterError::NoCalibre);
+            return;
+        };
+        let shots_mm: Vec<[f64; 2]> = (0..self.shot_count())
+            .filter_map(|index| sheet.px_to_sheet(self.shot(index)?.0))
+            .collect();
+        let calibre_sheet = mx::sheet_calibre(calibre, self.scale.print_scale);
+        let first_ink = context.photo.and_then(|photo| photo.ink.as_ref());
+        let result = mx::compare(sheet, first_ink, &later, &shots_mm, calibre_sheet);
+        let core = self.core_calibration();
+        self.holes = match result {
+            Err(error) => refuse(error),
+            Ok(found) => {
+                let suggestions: Vec<holes::Suggestion> = found
+                    .new
+                    .iter()
+                    .filter_map(|hole| {
+                        let at = sheet.sheet_to_px(hole.sheet_mm)?;
+                        let display = space.to_display(at)?;
+                        let mm_per_unit = space.mm_per_unit(core.as_ref(), display)?;
+                        let radius = 0.5 * hole.diameter_mm * self.scale.print_scale / mm_per_unit;
+                        let grown = matches!(hole.kind, mx::Kind::Grown { .. });
+                        Some(holes::Suggestion {
+                            at,
+                            radius,
+                            ticked: !grown && !hole.on_print && hole.score >= holes::LOW_SCORE,
+                            near_marked: false,
+                            score: hole.score,
+                            blob: None,
+                            through: hole.kind != mx::Kind::New,
+                        })
+                    })
+                    .collect();
+                if found.doubtful() {
+                    holes::Search::Doubt {
+                        suggestions,
+                        lined_up: found.lined_up,
+                        marked: found.marked,
+                    }
+                } else if suggestions.is_empty() {
+                    holes::Search::Refused(holes::Refusal::NoneNew)
+                } else {
+                    holes::Search::Shown(suggestions)
+                }
+            }
+        };
+        self.selected = None;
+    }
+
     /// Looks for holes on the part of the photo shown last frame, once
     /// "Looking for holes…" has been on screen.
     fn find_holes(&mut self, context: &egui::Context, marking: &MarkingContext) {
-        if !self.holes.due() {
+        if !self.holes.due() || self.later.is_some() {
             return;
         }
         let (Some(photo), Some(space), Some((camera, rect))) =
@@ -563,15 +835,16 @@ impl Marking {
 
     /// Whether hole suggestions are showing.
     fn suggesting(&self) -> bool {
-        self.holes.shown().is_some()
+        self.holes.rings().is_some()
     }
 
     /// Goes back: drops the hole suggestions, or back one step. `false`
     /// when already at the first step, so the caller closes marking (asking
     /// first if `unsaved`).
     pub fn back(&mut self) -> bool {
-        if self.suggesting() {
+        if self.suggesting() || self.later.is_some() {
             self.holes = holes::Search::Idle;
+            self.later = None;
             return true;
         }
         let index = self.step_index();
@@ -606,6 +879,11 @@ impl Marking {
         self.selected = None;
         self.last_tap = None;
         self.holes = holes::Search::Idle;
+        self.later = None;
+        if step == Step::Aim {
+            self.step = step;
+            self.preselect_aim();
+        }
         if step == Step::Shots && self.step == Step::Aim && self.aim().is_some() {
             self.zoom_to_aim = true;
         }
@@ -829,7 +1107,11 @@ impl Marking {
         self.selected = match self.step {
             Step::Scale => self.scale.place(at).map(Handle::Scale),
             Step::Aim => {
-                self.set_aim(Some(at));
+                let snapped = self.mx_sheet().and_then(|sheet| {
+                    let index = mx::snap_aim(&sheet.marks.aim_points_mm(), sheet.px_to_sheet(at)?)?;
+                    sheet.aim_points_px().get(index).copied()
+                });
+                self.set_aim(Some(snapped.unwrap_or(at)));
                 Some(Handle::Aim)
             }
             Step::Shots => self.add_shot(at).map(Handle::Shot),
@@ -912,7 +1194,10 @@ impl Marking {
             Command::Delete => {
                 match self.selected {
                     Some(Handle::Shot(index)) => self.remove_shot(index),
-                    Some(Handle::Aim) => self.set_aim(None),
+                    Some(Handle::Aim) => {
+                        self.offer_aim = false;
+                        self.set_aim(None);
+                    }
                     Some(Handle::Scale(index)) => self.scale.remove(index),
                     None => {}
                 }
@@ -953,6 +1238,7 @@ impl Marking {
                 }
             }
             Command::NoAim => {
+                self.offer_aim = false;
                 self.set_aim(None);
                 self.go_to(Step::Shots);
                 self.fit = true;
@@ -965,13 +1251,29 @@ impl Marking {
             }
             Command::Zoom(to) => self.zoom_view(to),
             Command::Detect => {
+                self.later_rings = false;
                 if self.step == Step::Shots && self.is_photo() && !self.holes.looking() {
                     self.selected = None;
                     self.holes.ask();
                 }
             }
             Command::AddSuggested => self.add_suggested(space),
-            Command::CancelSuggested => self.holes = holes::Search::Idle,
+            Command::GoOn => self.holes.go_on(),
+            Command::LaterPhoto => {
+                if self.takes_later_photo() {
+                    self.later_wanted = true;
+                }
+            }
+            Command::PickAim(index) => {
+                if let Some(at) = self.mx_aims().get(index).copied() {
+                    self.set_aim(Some(at));
+                    self.selected = Some(Handle::Aim);
+                }
+            }
+            Command::CancelSuggested => {
+                self.holes = holes::Search::Idle;
+                self.later = None;
+            }
             Command::Back | Command::Cancel | Command::Done => {}
         }
     }
@@ -1415,6 +1717,13 @@ impl Marking {
         if self.step == Step::Scale {
             self.paint_scale(painter, space, camera);
         }
+        if self.step == Step::Aim {
+            for (index, aim) in self.mx_aims().into_iter().enumerate() {
+                if let Some(screen) = at(aim) {
+                    paint::aim_point(painter, screen, index + 1);
+                }
+            }
+        }
 
         if self.step == Step::Shots
             && let (Some(centre), Some(radius)) = (live.centre_mm, live.mean_radius_mm)
@@ -1444,7 +1753,7 @@ impl Marking {
             );
         }
 
-        if let Some(suggestions) = self.holes.shown() {
+        if let Some(suggestions) = self.holes.rings() {
             holes::paint(painter, suggestions, space, camera);
         }
 
@@ -1504,7 +1813,9 @@ impl Marking {
                     }
                 }
             }
-            scale::ScaleMode::GridSquares | scale::ScaleMode::FourCorners => {
+            scale::ScaleMode::GridSquares
+            | scale::ScaleMode::FourCorners
+            | scale::ScaleMode::MxTarget => {
                 if let ScaleState::Ready(calibration) = state
                     && let Reference::Rectangle {
                         corners,
@@ -1556,9 +1867,9 @@ impl Marking {
             if let Some(screen) = at(mark) {
                 let label = match self.scale.mode {
                     scale::ScaleMode::TwoPoints => ["A", "B"][index.min(1)].to_owned(),
-                    scale::ScaleMode::GridSquares | scale::ScaleMode::FourCorners => {
-                        (index + 1).to_string()
-                    }
+                    scale::ScaleMode::GridSquares
+                    | scale::ScaleMode::FourCorners
+                    | scale::ScaleMode::MxTarget => (index + 1).to_string(),
                 };
                 paint::handle(
                     painter,
@@ -1668,7 +1979,9 @@ impl Marking {
     /// The instruction's colour: a warning when holes weren't looked for.
     fn instruction_color(&self, palette: &theme::Palette) -> egui::Color32 {
         match self.holes {
-            holes::Search::Refused(_) if self.step == Step::Shots => palette.warning,
+            holes::Search::Refused(_) | holes::Search::Doubt { .. } if self.step == Step::Shots => {
+                palette.warning
+            }
             _ => palette.text_muted,
         }
     }
@@ -1678,13 +1991,48 @@ impl Marking {
         match self.step {
             Step::Scale => scale::instruction(&self.scale),
             Step::Aim => match self.aim() {
+                None if self.mx_sheet().is_some() => {
+                    tr("Pick the aim point this group was shot at, or tap where you aimed.")
+                        .to_owned()
+                }
                 None => tr("Tap the point you aimed at.").to_owned(),
                 Some(_) => tr("Drag the crosshair to move it, or go on to the shots.").to_owned(),
             },
             Step::Shots => {
+                let through = self
+                    .holes
+                    .shown()
+                    .is_some_and(|rings| rings.iter().any(|ring| ring.through));
                 match &self.holes {
+                    holes::Search::Looking { .. } if self.later.is_some() => {
+                        return tr("Comparing with the later photo…").to_owned();
+                    }
                     holes::Search::Looking { .. } => return tr("Looking for holes…").to_owned(),
                     holes::Search::Refused(refusal) => return refusal.message(),
+                    holes::Search::Doubt {
+                        lined_up, marked, ..
+                    } => {
+                        return trf!(
+                            "This may be a different sheet: only {} of {} marked shots line up \
+                             with holes in the later photo.",
+                            lined_up,
+                            marked
+                        );
+                    }
+                    holes::Search::Shown(_) if self.later_rings && !through => {
+                        return tr(
+                            "New holes from the later photo, drawn on this one: tap a ring to \
+                             tick or untick it.",
+                        )
+                        .to_owned();
+                    }
+                    holes::Search::Shown(_) if through => {
+                        return tr(
+                            "New holes in the later photo, to check. A ring marked ! may be a \
+                             shot through an earlier hole.",
+                        )
+                        .to_owned();
+                    }
                     holes::Search::Shown(_) if narrow => {
                         return tr("Suggestions to check: tap a ring to tick or untick it.")
                             .to_owned();

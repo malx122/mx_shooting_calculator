@@ -1029,6 +1029,7 @@ fn every_step() -> Vec<(&'static str, Marking)> {
         near_marked: !ticked,
         score: 0.8,
         blob,
+        through: false,
     };
     suggested.holes = holes::Search::Shown(vec![
         ring([651.0, 471.0], false, None),
@@ -1843,6 +1844,7 @@ fn tapping_a_ring_ticks_it_and_add_takes_exactly_the_ticked_in_one_undo() {
         near_marked: false,
         score: 0.8,
         blob: None,
+        through: false,
     };
     // Given out of order: numbered from the top left all the same.
     marking.holes = holes::Search::Shown(vec![
@@ -2141,4 +2143,800 @@ fn holes_sample_photo() {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/screens/m4");
     std::fs::create_dir_all(&directory).unwrap();
     std::fs::write(directory.join("holes-sample.bmp"), bmp).unwrap();
+}
+
+// --- MX targets ---
+
+type Matrix = [[f64; 3]; 3];
+
+fn apply(m: &Matrix, [x, y]: [f64; 2]) -> [f64; 2] {
+    let w = m[2][0] * x + m[2][1] * y + m[2][2];
+    [
+        (m[0][0] * x + m[0][1] * y + m[0][2]) / w,
+        (m[1][0] * x + m[1][1] * y + m[1][2]) / w,
+    ]
+}
+
+fn multiply(a: &Matrix, b: &Matrix) -> Matrix {
+    std::array::from_fn(|i| std::array::from_fn(|j| (0..3).map(|k| a[i][k] * b[k][j]).sum()))
+}
+
+fn invert(m: &Matrix) -> Matrix {
+    let c =
+        |r0: usize, r1: usize, c0: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
+    let adj = [
+        [c(1, 2, 1, 2), -c(0, 2, 1, 2), c(0, 1, 1, 2)],
+        [-c(1, 2, 0, 2), c(0, 2, 0, 2), -c(0, 1, 0, 2)],
+        [c(1, 2, 0, 1), -c(0, 2, 0, 1), c(0, 1, 0, 1)],
+    ];
+    let det = m[0][0] * adj[0][0] + m[0][1] * adj[1][0] + m[0][2] * adj[2][0];
+    adj.map(|row| row.map(|v| v / det))
+}
+
+/// An A4 MX target with four aim points and a 10 mm grid.
+fn mx_layout() -> groups_vision::marks::Layout {
+    crate::cards::mx_target::MxTargetOptions {
+        paper: crate::cards::mx_target::MxPaper::A4,
+        landscape: false,
+        aims: 4,
+        grid: crate::cards::mx_target::MxGrid::Mm10,
+        square: false,
+        size_mm: 40,
+    }
+    .layout()
+}
+
+/// Holes on the MX test sheet, mm from its top left: between the aims.
+fn sheet_holes(offsets: &[[f64; 2]]) -> Vec<[f64; 2]> {
+    offsets
+        .iter()
+        .map(|[x, y]| [105.0 + x, 148.5 + y])
+        .collect()
+}
+
+/// A photo 1600 × 1200 of the MX test sheet with dark holes `radius_mm`
+/// at `holes` (sheet mm), turned `turn` degrees and seen a little from the
+/// side; `cover` whites out the bottom-right mark. Also sheet mm to px.
+fn mx_photo(
+    context: &egui::Context,
+    holes: &[[f64; 2]],
+    radius_mm: f64,
+    turn: f64,
+    cover: bool,
+) -> (PhotoImage, groups_vision::Thumbnail, Matrix) {
+    use crate::cards::sheet::{Ink, Mark};
+    use tiny_skia::{Color, FillRule, Paint, PathBuilder, Pixmap, Transform};
+    let layout = mx_layout();
+    let mut sheet = crate::cards::mx_target::page(&layout);
+    for [x, y] in holes {
+        let points = (0..32)
+            .map(|i| {
+                let a = std::f64::consts::TAU * f64::from(i) / 32.0;
+                [
+                    (x + radius_mm * a.cos()) as f32,
+                    (y + radius_mm * a.sin()) as f32,
+                ]
+            })
+            .collect();
+        sheet.fill(points, Ink::Black);
+    }
+    if cover {
+        let [cx, cy] = layout.mark_centres_mm()[2];
+        let half = (layout.mark_mm() * 0.7) as f32;
+        sheet.rect(
+            cx as f32 - half,
+            cy as f32 - half,
+            2.0 * half,
+            2.0 * half,
+            Ink::White,
+        );
+    }
+    let scale = 6.0f32;
+    let (sw, sh) = (
+        (sheet.width * scale).ceil() as u32,
+        (sheet.height * scale).ceil() as u32,
+    );
+    let mut pixmap = Pixmap::new(sw, sh).unwrap();
+    pixmap.fill(Color::WHITE);
+    for mark in &sheet.marks {
+        let Mark::Fill { points, ink, .. } = mark else {
+            if let Mark::Line {
+                points,
+                width,
+                ink,
+                closed,
+                ..
+            } = mark
+            {
+                let mut path = PathBuilder::new();
+                path.move_to(points[0][0], points[0][1]);
+                for p in &points[1..] {
+                    path.line_to(p[0], p[1]);
+                }
+                if *closed {
+                    path.close();
+                }
+                if let Some(path) = path.finish() {
+                    let [r, g, b] = ink.rgb();
+                    let mut paint = Paint::default();
+                    paint.set_color_rgba8(r, g, b, 255);
+                    let stroke = tiny_skia::Stroke {
+                        width: *width,
+                        ..Default::default()
+                    };
+                    pixmap.stroke_path(
+                        &path,
+                        &paint,
+                        &stroke,
+                        Transform::from_scale(scale, scale),
+                        None,
+                    );
+                }
+            }
+            continue;
+        };
+        let mut path = PathBuilder::new();
+        path.move_to(points[0][0], points[0][1]);
+        for p in &points[1..] {
+            path.line_to(p[0], p[1]);
+        }
+        path.close();
+        if let Some(path) = path.finish() {
+            let [r, g, b] = ink.rgb();
+            let mut paint = Paint::default();
+            paint.set_color_rgba8(r, g, b, 255);
+            pixmap.fill_path(
+                &path,
+                &paint,
+                FillRule::Winding,
+                Transform::from_scale(scale, scale),
+                None,
+            );
+        }
+    }
+    let grey: Vec<u8> = pixmap
+        .data()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|p| ((u32::from(p[0]) * 3 + u32::from(p[1]) * 6 + u32::from(p[2])) / 10) as u8)
+        .collect();
+    let [width_mm, height_mm] = layout.sheet_mm();
+    let (w, h) = (1600u32, 1200u32);
+    let (s, c) = turn.to_radians().sin_cos();
+    let fit = (0.85 * f64::from(h) / (width_mm * s.abs() + height_mm * c.abs()))
+        .min(0.85 * f64::from(w) / (width_mm * c.abs() + height_mm * s.abs()));
+    let centre = [
+        [1.0, 0.0, -width_mm / 2.0],
+        [0.0, 1.0, -height_mm / 2.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let turned = [
+        [fit * c, -fit * s, 0.0],
+        [fit * s, fit * c, 0.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let tilt = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.5e-4, -1.0e-4, 1.0]];
+    let to_photo = [
+        [1.0, 0.0, f64::from(w) / 2.0 + 13.0],
+        [0.0, 1.0, f64::from(h) / 2.0 - 7.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let to_px = multiply(&to_photo, &multiply(&tilt, &multiply(&turned, &centre)));
+    let to_mm = invert(&to_px);
+    let mut rgba = Vec::with_capacity((w * h * 4) as usize);
+    let at = |x: usize, y: usize| f64::from(grey[y * sw as usize + x]);
+    for y in 0..h {
+        for x in 0..w {
+            let [mx, my] = apply(&to_mm, [f64::from(x) + 0.5, f64::from(y) + 0.5]);
+            let (fx, fy) = (mx * f64::from(scale) - 0.5, my * f64::from(scale) - 0.5);
+            let value =
+                if fx < 0.0 || fy < 0.0 || fx >= f64::from(sw - 1) || fy >= f64::from(sh - 1) {
+                    60.0
+                } else {
+                    let (ix, iy) = (fx as usize, fy as usize);
+                    let (ax, ay) = (fx - ix as f64, fy - iy as f64);
+                    let top = at(ix, iy) + ax * (at(ix + 1, iy) - at(ix, iy));
+                    let bottom = at(ix, iy + 1) + ax * (at(ix + 1, iy + 1) - at(ix, iy + 1));
+                    top + ay * (bottom - top)
+                };
+            let v = value.round() as u8;
+            rgba.extend([v, v, v, 255]);
+        }
+    }
+    let image = egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &rgba);
+    let photo = PhotoImage {
+        id: "mx".into(),
+        texture: context.load_texture("mx-photo", image, egui::TextureOptions::LINEAR),
+        size_px: [w, h],
+        ink: Some(groups_vision::grid::InkImage::from_rgba(w, h, &rgba)),
+    };
+    let thumbnail = groups_vision::Thumbnail {
+        width_px: w,
+        height_px: h,
+        rgba,
+    };
+    (photo, thumbnail, to_px)
+}
+
+fn near_px(a: [f64; 2], b: [f64; 2], tolerance: f64) -> bool {
+    (a[0] - b[0]).hypot(a[1] - b[1]) < tolerance
+}
+
+/// A photo of an MX target is scaled by its marks and straightened with
+/// the sheet upright, however the photo is turned; the aim step offers the
+/// sheet's aim points, the first one picked.
+#[test]
+fn an_mx_target_scales_and_keeps_the_sheet_up() {
+    let layout = mx_layout();
+    for turn in [0.0, 90.0, 180.0] {
+        let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+        let (image, _, to_px) = mx_photo(&run.context, &[], 3.25, turn, false);
+        let mut marking = Marking::new_photo("mx".into(), None).with_print_scale(Some(1.0));
+        for _ in 0..3 {
+            run.frame(&mut marking, Some(&image), Vec::new());
+        }
+        assert_eq!(marking.scale.mode, ScaleMode::MxTarget, "{turn}");
+        assert!(
+            matches!(marking.finder.search, grid::Search::Idle),
+            "the grid isn't looked for"
+        );
+        let Some(Calibration::FourCorner {
+            ordered,
+            width_mm,
+            height_mm,
+            ..
+        }) = marking.scale.to_store()
+        else {
+            panic!("{turn}: {:?}", marking.scale.state());
+        };
+        assert!(ordered);
+        let rectangle = layout.rectangle_mm();
+        assert!(close(width_mm, rectangle[0], 1e-9) && close(height_mm, rectangle[1], 1e-9));
+        for (corner, mm) in marking.scale.corners.iter().zip(layout.mark_centres_mm()) {
+            assert!(
+                near_px(*corner, apply(&to_px, mm), 1.0),
+                "{turn}: {corner:?}"
+            );
+        }
+        marking.apply(Command::Next, None);
+        assert_eq!(marking.step, Step::Aim);
+        let aims = marking.mx_aims();
+        assert_eq!(aims.len(), 4);
+        let printed = layout.aim_points_mm();
+        for (aim, mm) in aims.iter().zip(&printed) {
+            assert!(near_px(*aim, apply(&to_px, *mm), 1.5), "{turn}");
+        }
+        assert_eq!(marking.aim(), Some(aims[0]), "the first aim is taken");
+        assert!(!marking.unsaved() || marking.calibration.is_some());
+        // Straightened: the sheet's top is up on screen.
+        run.frame(&mut marking, Some(&image), Vec::new());
+        let space = marking
+            .space(&MarkingContext {
+                photo: Some(&image),
+                calibre_mm: None,
+                distance_m: None,
+            })
+            .unwrap();
+        assert!(matches!(space, Space::Straightened { .. }));
+        let shown = |px: [f64; 2]| space.to_display(px).unwrap();
+        assert!(
+            shown(aims[0]).y < shown(aims[2]).y - 50.0,
+            "{turn}: top row higher"
+        );
+        assert!(
+            shown(aims[0]).x < shown(aims[1]).x - 50.0,
+            "{turn}: first aim on the left"
+        );
+        // Picking and snapping to aim points.
+        marking.apply(Command::PickAim(3), None);
+        assert_eq!(marking.aim(), Some(aims[3]));
+        let near_second = apply(&to_px, [printed[1][0] + 3.0, printed[1][1] - 2.0]);
+        marking.place(near_second);
+        assert!(near_px(marking.aim().unwrap(), aims[1], 1e-6), "snapped");
+        let far = apply(&to_px, [105.0, 148.5]);
+        marking.place(far);
+        assert_eq!(
+            marking.aim(),
+            Some(far),
+            "tapped by hand away from the aims"
+        );
+    }
+}
+
+/// The print scale measured on this device sizes the rectangle; another
+/// group on the photo starts at the next free aim; marks moved by hand
+/// make a tapped scale.
+#[test]
+fn the_print_scale_and_the_next_aim_apply() {
+    let layout = mx_layout();
+    let mut run = Run::new(ThemeChoice::Sun, 390.0);
+    let (image, _, to_px) = mx_photo(&run.context, &[], 3.25, 0.0, false);
+    let mut marking = Marking::new_photo("mx".into(), None).with_print_scale(Some(1.02));
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&image), Vec::new());
+    }
+    let rectangle = layout.rectangle_mm();
+    assert!(close(marking.scale.width_mm, rectangle[0] * 1.02, 1e-9));
+    assert!(close(marking.scale.height_mm, rectangle[1] * 1.02, 1e-9));
+    let stored = marking.scale.to_store();
+    let first_aim = apply(&to_px, layout.aim_points_mm()[0]);
+
+    let mut another = Marking::new_photo("mx".into(), stored)
+        .with_print_scale(Some(1.02))
+        .with_taken_aims(vec![first_aim]);
+    assert_eq!(another.step, Step::Aim);
+    for _ in 0..3 {
+        run.frame(&mut another, Some(&image), Vec::new());
+    }
+    assert_eq!(another.scale.mode, ScaleMode::MxTarget);
+    assert!(close(another.scale.print_scale, 1.02, 1e-9), "found again");
+    let second = apply(&to_px, layout.aim_points_mm()[1]);
+    assert!(near_px(another.aim().unwrap(), second, 1.5));
+    assert!(!another.unsaved(), "the aim offered is no change");
+
+    // Back to the MX target from another way keeps this draft's own factor.
+    marking.scale.mode = ScaleMode::TwoPoints;
+    let sheet = mx::find(image.ink.as_ref().unwrap(), image.size_px).unwrap();
+    let corners = sheet.corners_px();
+    marking
+        .scale
+        .place_sheet(corners, sheet.marks.rectangle_mm());
+    assert!(close(marking.scale.width_mm, rectangle[0] * 1.02, 1e-9));
+}
+
+#[test]
+fn hidden_marks_and_curled_sheets_are_warned_about() {
+    use groups_vision::marks::Seen;
+    let context = egui::Context::default();
+    let (image, ..) = mx_photo(&context, &[], 3.25, 0.0, true);
+    let sheet = mx::find(image.ink.as_ref().unwrap(), image.size_px).expect("three marks do");
+    assert_eq!(sheet.marks.seen[2], Seen::Estimated);
+    assert!(
+        sheet
+            .warnings()
+            .contains(&"One corner mark was estimated: less exact".to_owned())
+    );
+    let read = [Seen::Read; 4];
+    assert!(mx::warnings(&read, 0.03).is_empty());
+    assert_eq!(
+        mx::warnings(&read, 0.07),
+        ["The sheet doesn't lie flat: press it flat for exact numbers"]
+    );
+    assert_eq!(
+        mx::failure(groups_vision::marks::NoMarks::NotFound),
+        None,
+        "most photos aren't MX targets"
+    );
+    assert!(mx::failure(groups_vision::marks::NoMarks::Inconsistent).is_some());
+}
+
+/// A marking on the MX test sheet with shots at `marked` (sheet mm).
+fn marked_sheet(run: &mut Run, image: &PhotoImage, to_px: &Matrix, marked: &[[f64; 2]]) -> Marking {
+    marked_sheet_at(run, image, to_px, marked, 1.0)
+}
+
+/// The same, on a sheet printed `print` times its size.
+fn marked_sheet_at(
+    run: &mut Run,
+    image: &PhotoImage,
+    to_px: &Matrix,
+    marked: &[[f64; 2]],
+    print: f64,
+) -> Marking {
+    let mut marking = Marking::new_photo("mx".into(), None).with_print_scale(Some(print));
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(image), Vec::new());
+    }
+    marking.go_to(Step::Aim);
+    marking.go_to(Step::Shots);
+    for mm in marked {
+        marking.add_shot(apply(to_px, *mm));
+    }
+    marking.commit();
+    run.frame(&mut marking, Some(image), Vec::new());
+    marking
+}
+
+fn compare_later(
+    run: &mut Run,
+    marking: &mut Marking,
+    image: &PhotoImage,
+    later: &groups_vision::Thumbnail,
+) {
+    marking.apply(Command::LaterPhoto, None);
+    assert!(marking.take_later_request());
+    marking.later_photo(later);
+    for _ in 0..4 {
+        run.frame(marking, Some(image), Vec::new());
+    }
+}
+
+/// A later photo of the sheet, turned round and seen from elsewhere, gives
+/// its new holes as suggestions where they are on the sheet.
+#[test]
+fn a_later_photo_suggests_the_new_holes() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[[-12.0, -20.0], [10.0, -5.0], [-3.0, 15.0]]);
+    let new = sheet_holes(&[[14.0, 22.0], [-15.0, 5.0]]);
+    let (image, _, to_px) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let all: Vec<[f64; 2]> = old.iter().chain(&new).copied().collect();
+    let (_, later, _) = mx_photo(&run.context, &all, 3.25, 180.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    let suggestions = marking
+        .holes
+        .shown()
+        .unwrap_or_else(|| panic!("{:?}", marking.holes))
+        .to_vec();
+    assert_eq!(suggestions.len(), 2, "{suggestions:?}");
+    for mm in &new {
+        let want = apply(&to_px, *mm);
+        assert!(
+            suggestions
+                .iter()
+                .any(|s| near_px(s.at, want, 6.0) && s.ticked && !s.through),
+            "{mm:?} in {suggestions:?}"
+        );
+    }
+    let space = marking.space(&MarkingContext {
+        photo: Some(&image),
+        calibre_mm: None,
+        distance_m: None,
+    });
+    marking.apply(Command::AddSuggested, space.as_ref());
+    assert_eq!(marking.shot_count(), 5);
+}
+
+#[test]
+fn a_later_photo_of_another_sheet_or_a_grown_hole_is_flagged() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[[-12.0, -20.0], [10.0, -5.0], [-3.0, 15.0]]);
+    let (image, _, to_px) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+
+    // Other holes altogether: maybe another sheet.
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let elsewhere = sheet_holes(&[[15.0, 25.0], [-18.0, 0.0], [5.0, 30.0]]);
+    let (_, later, _) = mx_photo(&run.context, &elsewhere, 3.25, 90.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    let holes::Search::Doubt {
+        lined_up, marked, ..
+    } = marking.holes
+    else {
+        panic!("{:?}", marking.holes);
+    };
+    assert_eq!((lined_up, marked), (0, 3));
+    assert!(
+        marking
+            .instruction(false)
+            .starts_with("This may be a different sheet")
+    );
+    marking.apply(Command::GoOn, None);
+    assert_eq!(marking.holes.shown().map(<[_]>::len), Some(3));
+
+    // A second shot half through the first hole.
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let mut grown = old.clone();
+    grown.push([old[0][0] + 4.5, old[0][1] + 1.0]);
+    let (_, later, _) = mx_photo(&run.context, &grown, 3.25, 0.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    let suggestions = marking
+        .holes
+        .shown()
+        .unwrap_or_else(|| panic!("{:?}", marking.holes));
+    assert!(
+        suggestions
+            .iter()
+            .any(|s| s.through && near_px(s.at, apply(&to_px, old[0]), 30.0)),
+        "{suggestions:?}"
+    );
+
+    // A later photo with a mark hidden.
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let (_, later, _) = mx_photo(&run.context, &old, 3.25, 0.0, true);
+    compare_later(&mut run, &mut marking, &image, &later);
+    assert_eq!(
+        marking.holes,
+        holes::Search::Refused(holes::Refusal::Later(mx::LaterError::MarkHidden))
+    );
+}
+
+/// Writes two photos of the MX test sheet for trying the app (`cargo test
+/// -p mxsc mx_sample_photos -- --ignored`): three holes, then five, turned.
+#[test]
+#[ignore]
+fn mx_sample_photos() {
+    let context = egui::Context::default();
+    let old = sheet_holes(&[[-12.0, -20.0], [10.0, -5.0], [-3.0, 15.0]]);
+    let all = sheet_holes(&[
+        [-12.0, -20.0],
+        [10.0, -5.0],
+        [-3.0, 15.0],
+        [14.0, 22.0],
+        [-15.0, 5.0],
+    ]);
+    let directory =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/screens/m4");
+    std::fs::create_dir_all(&directory).unwrap();
+    for (name, holes, turn) in [
+        ("mx-sample-1.png", &old, 0.0),
+        ("mx-sample-2.png", &all, 180.0),
+    ] {
+        let (_, picture, _) = mx_photo(&context, holes, 3.9, turn, false);
+        let mut png = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut png, picture.width_px, picture.height_px);
+            encoder.set_color(png::ColorType::Rgba);
+            let mut writer = encoder.write_header().unwrap();
+            writer.write_image_data(&picture.rgba).unwrap();
+        }
+        std::fs::write(directory.join(name), png).unwrap();
+    }
+}
+
+/// The aim (sheet mm → calibration mm) of an MX marking at the printed
+/// aim points, and their distances.
+fn aim_spacing(marking: &Marking, to_px: &Matrix) -> (f64, f64) {
+    let layout = mx_layout();
+    let aims = layout.aim_points_mm();
+    let ScaleState::Ready(calibration) = marking.scale.state() else {
+        panic!("{:?}", marking.scale.state());
+    };
+    let mm = |sheet: [f64; 2]| {
+        let px = apply(to_px, sheet);
+        calibration.to_mm(Point::new(px[0], px[1])).unwrap()
+    };
+    let (first, second, third) = (mm(aims[0]), mm(aims[1]), mm(aims[2]));
+    (second.x - first.x, first.y - third.y)
+}
+
+/// Marks dragged by hand keep the sheet's order; marks left for tapped
+/// corners keep their sizes along the right edges, the sheet on its side
+/// or upside down.
+#[test]
+fn hand_edits_keep_the_sheet_s_sizes() {
+    let layout = mx_layout();
+    let aims = layout.aim_points_mm();
+    let (across, down) = (aims[1][0] - aims[0][0], aims[2][1] - aims[0][1]);
+    for turn in [90.0, 180.0] {
+        let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+        let (image, _, to_px) = mx_photo(&run.context, &[], 3.25, turn, false);
+        let mut marking = Marking::new_photo("mx".into(), None).with_print_scale(Some(1.0));
+        for _ in 0..3 {
+            run.frame(&mut marking, Some(&image), Vec::new());
+        }
+        let first = marking.scale.corners[0];
+        marking.scale.set_handle(0, [first[0] + 0.3, first[1]]);
+        assert_eq!(marking.scale.mode, ScaleMode::MxTarget, "{turn}");
+        assert!(marking.scale.moved_by_hand);
+        let (x, y) = aim_spacing(&marking, &to_px);
+        assert!(
+            close(x, across, 0.5) && close(y, down, 0.5),
+            "{turn}: {x} {y}"
+        );
+
+        marking.scale.leave_mx();
+        assert_eq!(marking.scale.mode, ScaleMode::FourCorners);
+        assert!(marking.scale.retapped);
+        let ScaleState::Ready(calibration) = marking.scale.state() else {
+            panic!();
+        };
+        let mm = |sheet: [f64; 2]| {
+            let px = apply(&to_px, sheet);
+            calibration.to_mm(Point::new(px[0], px[1])).unwrap()
+        };
+        let (a, b, c) = (mm(aims[0]), mm(aims[1]), mm(aims[2]));
+        assert!(
+            close(a.distance(b), across, 0.5) && close(a.distance(c), down, 0.5),
+            "{turn}: {} {}",
+            a.distance(b),
+            a.distance(c)
+        );
+        assert!(!matches!(
+            marking.scale.to_store(),
+            Some(Calibration::FourCorner { ordered: true, .. })
+        ));
+    }
+}
+
+/// The aim point is offered once, on a new group only: "No aim point" and
+/// a reopened group without an aim stay without one.
+#[test]
+fn an_aim_given_up_stays_given_up() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let (image, _, _) = mx_photo(&run.context, &[], 3.25, 0.0, false);
+    let mut marking = Marking::new_photo("mx".into(), None).with_print_scale(Some(1.0));
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&image), Vec::new());
+    }
+    marking.apply(Command::Next, None);
+    assert!(marking.aim().is_some());
+    marking.apply(Command::NoAim, None);
+    marking.apply(Command::GoTo(Step::Aim), None);
+    assert_eq!(marking.aim(), None, "not brought back");
+
+    let stored = marking.scale.to_store();
+    let mut group = group_template();
+    group.marks = marking.marks.clone();
+    let mut reopened = Marking::edit(&group, stored.as_ref(), None);
+    for _ in 0..3 {
+        run.frame(&mut reopened, Some(&image), Vec::new());
+    }
+    reopened.apply(Command::GoTo(Step::Aim), None);
+    assert_eq!(reopened.aim(), None);
+    assert!(!reopened.unsaved());
+}
+
+/// A ragged hole holding several marked shots lines them all up; a later
+/// photo of the same sheet with nothing new says so, and of another sheet
+/// with nothing new is still flagged.
+#[test]
+fn ragged_holes_line_up() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[
+        [0.0, 0.0],
+        [2.0, 0.5],
+        [1.0, 2.0],
+        [-1.0, 1.0],
+        [20.0, 20.0],
+    ]);
+    let (image, _, to_px) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let (_, later, _) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    assert_eq!(
+        marking.holes,
+        holes::Search::Refused(holes::Refusal::NoneNew)
+    );
+
+    let mut all = old.clone();
+    all.push(sheet_holes(&[[-20.0, 25.0]])[0]);
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let (_, later, _) = mx_photo(&run.context, &all, 3.25, 0.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    assert_eq!(
+        marking.holes.shown().map(<[_]>::len),
+        Some(1),
+        "{:?}",
+        marking.holes
+    );
+
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let (_, blank, _) = mx_photo(&run.context, &[], 3.25, 0.0, false);
+    compare_later(&mut run, &mut marking, &image, &blank);
+    assert!(
+        matches!(
+            marking.holes,
+            holes::Search::Doubt {
+                lined_up: 0,
+                marked: 5,
+                ..
+            }
+        ),
+        "{:?}",
+        marking.holes
+    );
+    assert!(mx::doubtful(1, 3) && !mx::doubtful(2, 4) && !mx::doubtful(0, 0));
+}
+
+/// A separate shot touching a marked one's hole is ticked; a hole a second
+/// shot went through is flagged and left to check.
+#[test]
+fn touching_shots_are_ticked_and_grown_holes_checked() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[[-12.0, -20.0], [10.0, -5.0], [-3.0, 15.0]]);
+    let (image, _, to_px) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+    for gap in [6.6, 7.0] {
+        let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+        let mut all = old.clone();
+        all.push([old[0][0] + gap, old[0][1]]);
+        let (_, later, _) = mx_photo(&run.context, &all, 3.25, 0.0, false);
+        compare_later(&mut run, &mut marking, &image, &later);
+        let rings = marking
+            .holes
+            .shown()
+            .unwrap_or_else(|| panic!("{:?}", marking.holes));
+        let want = apply(&to_px, all[3]);
+        assert!(
+            rings
+                .iter()
+                .any(|ring| near_px(ring.at, want, 6.0) && ring.ticked),
+            "{gap}: {rings:?}"
+        );
+    }
+}
+
+/// Holes on a printed aim mark's outline, at its cross and on a grid
+/// crossing are found, beside a corner mark too; the printed marks give no
+/// ticked rings.
+#[test]
+fn holes_on_the_print_are_found() {
+    let layout = mx_layout();
+    let aims = layout.aim_points_mm();
+    let size = layout.aim_size_mm();
+    let marks = layout.mark_centres_mm();
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[[-12.0, -20.0]]);
+    let (image, _, to_px) = mx_photo(&run.context, &old, 3.25, 0.0, false);
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &old);
+    let new = vec![
+        // Inside the first diamond, against its outline.
+        [aims[0][0] - size * 0.16, aims[0][1] - size * 0.16],
+        // On the second aim's cross.
+        [aims[1][0] + 4.0, aims[1][1]],
+        // On a grid crossing.
+        [105.0, 120.0 + 0.5],
+        // Beside a corner mark.
+        [marks[3][0] + 17.0, marks[3][1]],
+    ];
+    let all: Vec<[f64; 2]> = old.iter().chain(&new).copied().collect();
+    let (_, later, _) = mx_photo(&run.context, &all, 3.25, 0.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    let rings = marking
+        .holes
+        .shown()
+        .unwrap_or_else(|| panic!("{:?}", marking.holes));
+    let missing: Vec<&[f64; 2]> = new
+        .iter()
+        .filter(|mm| {
+            !rings
+                .iter()
+                .any(|ring| near_px(ring.at, apply(&to_px, **mm), 6.0))
+        })
+        .collect();
+    assert!(missing.is_empty(), "{missing:?} not in {rings:?}");
+    for ring in rings.iter().filter(|ring| ring.ticked) {
+        assert!(
+            new.iter()
+                .any(|mm| near_px(ring.at, apply(&to_px, *mm), 6.0)),
+            "a ticked ring on no hole: {ring:?}"
+        );
+    }
+}
+
+/// On a sheet printed larger, holes are matched at the bullet's size as
+/// printed, and the rings are the true size.
+#[test]
+fn a_later_photo_allows_for_the_print_scale() {
+    let print = 1.1;
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let old = sheet_holes(&[[-12.0, -20.0], [10.0, -5.0], [-3.0, 15.0]]);
+    let new = sheet_holes(&[[14.0, 22.0], [-15.0, 5.0]]);
+    let radius = 3.25 / print;
+    let (image, _, to_px) = mx_photo(&run.context, &old, radius, 90.0, false);
+    let mut marking = marked_sheet_at(&mut run, &image, &to_px, &old, print);
+    let all: Vec<[f64; 2]> = old.iter().chain(&new).copied().collect();
+    let (_, later, _) = mx_photo(&run.context, &all, radius, 180.0, false);
+    compare_later(&mut run, &mut marking, &image, &later);
+    let rings = marking
+        .holes
+        .shown()
+        .unwrap_or_else(|| panic!("{:?}", marking.holes));
+    assert_eq!(rings.len(), 2, "{rings:?}");
+    for ring in rings {
+        assert!(
+            new.iter()
+                .any(|mm| near_px(ring.at, apply(&to_px, *mm), 3.0))
+        );
+        // Straightened: display units are true mm.
+        assert!(close(2.0 * ring.radius, 6.5, 0.8), "{}", ring.radius);
+    }
+    assert!(close(mx::sheet_calibre(6.5, print), 6.5 / 1.1, 1e-12));
+}
+
+/// A later photo's request goes when the shooter leaves the shots.
+#[test]
+fn a_later_photo_is_dropped_on_leaving() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let (image, later, to_px) = mx_photo(&run.context, &[], 3.25, 0.0, false);
+    let mut marking = marked_sheet(&mut run, &image, &to_px, &[]);
+    marking.later_photo(&later);
+    assert!(marking.back());
+    assert!(marking.later.is_none());
+    marking.later_photo(&later);
+    marking.apply(Command::CancelSuggested, None);
+    assert!(marking.later.is_none());
+    marking.later_photo(&later);
+    marking.go_to(Step::Aim);
+    assert!(marking.later.is_none());
 }

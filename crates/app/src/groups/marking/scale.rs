@@ -12,6 +12,9 @@ use crate::theme;
 /// How the photo is scaled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScaleMode {
+    /// A printed MX target's corner marks, found on the photo: the sheet's
+    /// own corners in its own order.
+    MxTarget,
     /// Four crossings of the target's grid, a counted number of squares apart.
     GridSquares,
     TwoPoints,
@@ -40,6 +43,18 @@ pub struct ScaleDraft {
     pub squares_across: u32,
     /// Squares between the crossings along the left edge.
     pub squares_down: u32,
+    /// The MX target's rectangle through its marks as printed, when its
+    /// layout is known; `width_mm` and `height_mm` are this times
+    /// `print_scale`.
+    pub mx_rectangle_mm: Option<[f64; 2]>,
+    /// How much larger the printer made the sheet: what its 100 mm ruler
+    /// measures, over 100.
+    pub print_scale: f64,
+    /// The MX target's marks were left for tapped corners: up is the
+    /// photo's now.
+    pub retapped: bool,
+    /// The MX target's marks were dragged or nudged, keeping their order.
+    pub moved_by_hand: bool,
 }
 
 /// Lengths offered for two points, mm.
@@ -117,6 +132,10 @@ impl Default for ScaleDraft {
             square_mm: 25.4,
             squares_across: 4,
             squares_down: 4,
+            mx_rectangle_mm: None,
+            print_scale: 1.0,
+            retapped: false,
+            moved_by_hand: false,
         }
     }
 }
@@ -135,6 +154,18 @@ impl ScaleDraft {
                 mode: ScaleMode::TwoPoints,
                 points: [Some(*a_px), Some(*b_px)],
                 distance_mm: *distance_mm,
+                ..blank
+            },
+            Some(Calibration::FourCorner {
+                corners_px,
+                width_mm,
+                height_mm,
+                ordered: true,
+            }) => ScaleDraft {
+                mode: ScaleMode::MxTarget,
+                corners: corners_px.to_vec(),
+                width_mm: *width_mm,
+                height_mm: *height_mm,
                 ..blank
             },
             Some(Calibration::FourCorner {
@@ -185,7 +216,7 @@ impl ScaleDraft {
                 .enumerate()
                 .filter_map(|(i, p)| p.map(|p| (i, p)))
                 .collect(),
-            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
                 self.corners.iter().copied().enumerate().collect()
             }
         }
@@ -194,18 +225,23 @@ impl ScaleDraft {
     pub fn handle(&self, index: usize) -> Option<[f64; 2]> {
         match self.mode {
             ScaleMode::TwoPoints => self.points.get(index).copied().flatten(),
-            ScaleMode::GridSquares | ScaleMode::FourCorners => self.corners.get(index).copied(),
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
+                self.corners.get(index).copied()
+            }
         }
     }
 
     pub fn set_handle(&mut self, index: usize, at: [f64; 2]) {
+        if self.mode == ScaleMode::MxTarget {
+            self.moved_by_hand = true;
+        }
         match self.mode {
             ScaleMode::TwoPoints => {
                 if let Some(point) = self.points.get_mut(index) {
                     *point = Some(at);
                 }
             }
-            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
                 if let Some(corner) = self.corners.get_mut(index) {
                     *corner = at;
                 }
@@ -221,7 +257,7 @@ impl ScaleDraft {
                 self.points[index] = Some(at);
                 Some(index)
             }
-            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
                 if self.corners.len() >= 4 {
                     return None;
                 }
@@ -232,17 +268,57 @@ impl ScaleDraft {
     }
 
     pub fn remove(&mut self, index: usize) {
+        self.leave_mx();
         match self.mode {
             ScaleMode::TwoPoints => {
                 if let Some(point) = self.points.get_mut(index) {
                     *point = None;
                 }
             }
-            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
                 if index < self.corners.len() {
                     self.corners.remove(index);
                 }
             }
+        }
+    }
+
+    /// Leaves the MX target's marks for four tapped corners, taken in the
+    /// order the photo shows them: on a sheet shown on its side, its width
+    /// and height swap so the sizes stay along the right edges.
+    pub fn leave_mx(&mut self) {
+        if self.mode != ScaleMode::MxTarget {
+            return;
+        }
+        if let [first, second, ..] = self.corners[..] {
+            let angle = (second[1] - first[1]).atan2(second[0] - first[0]);
+            let turns = (angle / std::f64::consts::FRAC_PI_2).round() as i64;
+            if turns.rem_euclid(2) == 1 {
+                std::mem::swap(&mut self.width_mm, &mut self.height_mm);
+            }
+        }
+        self.mode = ScaleMode::FourCorners;
+        self.retapped = true;
+    }
+
+    /// Takes an MX target's mark centres (photo px, the sheet's top left,
+    /// top right, bottom right, bottom left) and its rectangle as printed.
+    pub fn place_sheet(&mut self, corners: [[f64; 2]; 4], rectangle_mm: [f64; 2]) {
+        self.mode = ScaleMode::MxTarget;
+        self.corners = corners.to_vec();
+        self.mx_rectangle_mm = Some(rectangle_mm);
+        self.retapped = false;
+        self.moved_by_hand = false;
+        self.set_print_scale(self.print_scale);
+    }
+
+    /// Sets how much larger the printer made the sheet, and the rectangle
+    /// with it.
+    pub fn set_print_scale(&mut self, scale: f64) {
+        self.print_scale = scale;
+        if let Some([width, height]) = self.mx_rectangle_mm {
+            self.width_mm = width * scale;
+            self.height_mm = height * scale;
         }
     }
 
@@ -255,13 +331,17 @@ impl ScaleDraft {
                 }
                 points => return ScaleState::ToTap(points.iter().filter(|p| p.is_none()).count()),
             },
-            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners | ScaleMode::MxTarget => {
                 if self.corners.len() < 4 {
                     return ScaleState::ToTap(4 - self.corners.len());
                 }
                 let corners = [0, 1, 2, 3].map(|i| point(self.corners[i]));
                 let (width_mm, height_mm) = self.sides_mm();
-                groups_core::Calibration::four_corners(corners, width_mm, height_mm)
+                if self.mode == ScaleMode::MxTarget {
+                    groups_core::Calibration::sheet_corners(corners, width_mm, height_mm)
+                } else {
+                    groups_core::Calibration::four_corners(corners, width_mm, height_mm)
+                }
             }
         };
         match result {
@@ -310,6 +390,7 @@ impl ScaleDraft {
             width_mm,
             height_mm,
         } = calibration.reference()
+            && self.mode != ScaleMode::MxTarget
         {
             let across = 0.5 * (corners[0].distance(corners[1]) + corners[3].distance(corners[2]));
             let down = 0.5 * (corners[0].distance(corners[3]) + corners[1].distance(corners[2]));
@@ -364,6 +445,9 @@ fn grid_of(width_mm: f64, height_mm: f64) -> Option<(f64, u32, u32)> {
 /// The line telling what to do now.
 pub fn instruction(draft: &ScaleDraft) -> String {
     match (draft.mode, draft.state()) {
+        (ScaleMode::MxTarget, _) => {
+            tr("The MX target's corner marks set the scale. Drag one to set it by hand.").to_owned()
+        }
         (ScaleMode::TwoPoints, ScaleState::ToTap(2)) => {
             tr("Tap one end of a known length, such as a grid line.").to_owned()
         }
@@ -417,6 +501,7 @@ pub fn refusal(mode: ScaleMode, error: CalibrationError) -> &'static str {
         (_, ScaleMode::GridSquares) => {
             tr("Give the square's size and how many squares across and down.")
         }
+        (_, ScaleMode::MxTarget) => tr("The MX target's marks don't make a sheet."),
     }
 }
 
@@ -436,7 +521,7 @@ pub fn note_text(mode: ScaleMode, note: ScaleNote) -> String {
              further apart.",
             (100.0 * fraction).max(1.0)
         ),
-        (ScaleNote::Uncertain(fraction), ScaleMode::FourCorners) => trf!(
+        (ScaleNote::Uncertain(fraction), ScaleMode::FourCorners | ScaleMode::MxTarget) => trf!(
             "The corners are close together: the scale may be off by {:.0}%. Use a bigger \
              rectangle.",
             (100.0 * fraction).max(1.0)
@@ -543,19 +628,157 @@ pub fn implausible(
     warnings
 }
 
+/// The print scale asked about once on this device, and the question.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PrintScale {
+    /// What the sheet's 100 mm ruler measured, over 100; `None` until asked.
+    pub device: Option<f64>,
+    /// The question is showing.
+    pub asking: bool,
+    /// What the shooter typed, mm.
+    pub ruler_mm: f64,
+}
+
+impl PrintScale {
+    pub fn new(device: Option<f64>) -> Self {
+        PrintScale {
+            device,
+            asking: false,
+            ruler_mm: super::mx::RULER_MM * device.unwrap_or(1.0),
+        }
+    }
+}
+
+/// What the scale step knows of an MX target on the photo.
+pub struct MxPanel<'a> {
+    pub sheet: Option<&'a super::mx::Sheet>,
+    /// Why marks that were there couldn't be used.
+    pub failure: Option<&'static str>,
+    pub print: &'a mut PrintScale,
+}
+
+/// The MX target's lines: what was found, warnings, and the print scale.
+fn mx_lines(ui: &mut egui::Ui, draft: &mut ScaleDraft, mx: &mut MxPanel) {
+    let palette = theme::palette(ui.ctx());
+    if let Some(sheet) = mx.sheet {
+        let layout = sheet.layout();
+        let count = layout.aims.count();
+        let text = if count == 1 {
+            trf!(
+                "MX target found: {}, 1 aim. Scale and straightening set.",
+                layout.paper.name()
+            )
+        } else {
+            trf!(
+                "MX target found: {}, {} aims. Scale and straightening set.",
+                layout.paper.name(),
+                count
+            )
+        };
+        ui.label(RichText::new(text).color(palette.good));
+        ui.label(RichText::new(crate::cards::mx_target::words(&layout)).color(palette.text_muted));
+        for warning in sheet.warnings() {
+            ui.label(RichText::new(warning).color(palette.warning));
+        }
+    }
+    if draft.moved_by_hand {
+        ui.label(
+            RichText::new(tr(
+                "A corner mark was moved by hand; the sheet's up is still its own.",
+            ))
+            .color(palette.text_muted),
+        );
+    }
+    if draft.mx_rectangle_mm.is_none() {
+        return;
+    }
+    let print = &mut *mx.print;
+    if print.device.is_none() || print.asking {
+        ui.label(tr(
+            "For this device's printer: does the ruler on the sheet measure 100 mm? Until you \
+             answer, it is taken as 100 mm.",
+        ));
+        ui.horizontal_wrapped(|ui| {
+            let mut answer = None;
+            if ui.button(tr("Yes, 100 mm")).clicked() {
+                answer = Some(super::mx::RULER_MM);
+            }
+            ui.label(tr("or it measures"));
+            ui.add(
+                NumberField::new(&mut print.ruler_mm)
+                    .range(90.0..=110.0)
+                    .max_decimals(1)
+                    .suffix(" mm"),
+            );
+            if ui.button(tr("Use this")).clicked() {
+                answer = Some(print.ruler_mm);
+            }
+            if let Some(ruler) = answer {
+                let scale = ruler / super::mx::RULER_MM;
+                print.device = Some(scale);
+                print.ruler_mm = ruler;
+                print.asking = false;
+                draft.set_print_scale(scale);
+            }
+        });
+    } else {
+        ui.horizontal_wrapped(|ui| {
+            let ruler = super::mx::RULER_MM * draft.print_scale;
+            ui.label(
+                RichText::new(trf!(
+                    "Print scale: the ruler measures {} mm.",
+                    super::tenths(ruler)
+                ))
+                .color(palette.text_muted),
+            );
+            if ui.small_button(tr("Change")).clicked() {
+                print.asking = true;
+                print.ruler_mm = ruler;
+            }
+        });
+    }
+}
+
 pub fn controls(
     ui: &mut egui::Ui,
     draft: &mut ScaleDraft,
     finder: &mut super::grid::Finder,
     sight: Sight,
+    mx: &mut MxPanel,
 ) {
     let palette = theme::palette(ui.ctx());
+    if let Some(failure) = mx.failure {
+        ui.label(RichText::new(failure).color(palette.warning));
+    }
     ui.horizontal_wrapped(|ui| {
+        if let Some(sheet) = mx.sheet
+            && ui
+                .selectable_label(draft.mode == ScaleMode::MxTarget, tr("MX target"))
+                .clicked()
+            && draft.mode != ScaleMode::MxTarget
+        {
+            draft.place_sheet(sheet.corners_px(), sheet.marks.rectangle_mm());
+        }
+        let was_mx = draft.mode == ScaleMode::MxTarget;
         ui.selectable_value(&mut draft.mode, ScaleMode::GridSquares, tr("Grid squares"));
         ui.selectable_value(&mut draft.mode, ScaleMode::FourCorners, tr("4 corners"));
         ui.selectable_value(&mut draft.mode, ScaleMode::TwoPoints, tr("2 points"));
+        if was_mx && draft.mode == ScaleMode::FourCorners {
+            draft.mode = ScaleMode::MxTarget;
+            draft.leave_mx();
+        }
     });
+    if draft.retapped && draft.mode == ScaleMode::FourCorners {
+        ui.label(
+            RichText::new(tr(
+                "Moved by hand: the MX target's marks are now four tapped corners, and up is \
+                 as the photo shows it.",
+            ))
+            .color(palette.warning),
+        );
+    }
     match draft.mode {
+        ScaleMode::MxTarget => mx_lines(ui, draft, mx),
         ScaleMode::GridSquares => {
             ui.horizontal_wrapped(|ui| {
                 ui.label(tr("Square"));

@@ -7,7 +7,7 @@ use eframe::egui::{
 };
 
 use super::paint::{Icon, paint_icon};
-use super::scale::{self, ScaleState};
+use super::scale::ScaleState;
 use super::{Command, Handle, LiveView, Marking, Step, ZoomTo};
 use crate::i18n::{tr, trf};
 use crate::{mobile, theme};
@@ -393,7 +393,50 @@ impl Marking {
                     commands.push(Command::Delete);
                 }
             }
-            Step::Aim => {}
+            Step::Aim => {
+                if tall.is_none() {
+                    self.aim_chips(ui, commands);
+                }
+            }
+        }
+    }
+
+    /// The MX target's aim points to pick from, numbered as printed.
+    pub(super) fn aim_chips(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
+        let aims = self.mx_aims();
+        if aims.len() < 2 {
+            return;
+        }
+        ui.label(tr("This group's aim:"));
+        let current = self.aim();
+        for (index, at) in aims.iter().enumerate() {
+            let chosen = current.is_some_and(|aim| (aim[0] - at[0]).hypot(aim[1] - at[1]) < 0.5);
+            let size = if mobile::is_narrow(ui.ctx()) {
+                vec2(mobile::TOUCH, mobile::TOUCH)
+            } else {
+                vec2(28.0, 0.0)
+            };
+            if ui
+                .add(egui::Button::selectable(chosen, (index + 1).to_string()).min_size(size))
+                .clicked()
+            {
+                commands.push(Command::PickAim(index));
+            }
+        }
+    }
+
+    /// "Add a later photo of this sheet", where it can be compared.
+    fn later_button(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
+        if self.step == Step::Shots
+            && self.takes_later_photo()
+            && ui
+                .button(tr("Later photo"))
+                .on_hover_text(tr(
+                    "Add a later photo of this sheet: its new holes are suggested",
+                ))
+                .clicked()
+        {
+            commands.push(Command::LaterPhoto);
         }
     }
 
@@ -415,6 +458,15 @@ impl Marking {
 
     /// While hole suggestions show: how many, Add and Cancel.
     fn suggestion_bar(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
+        if let super::holes::Search::Doubt { .. } = self.holes {
+            if primary(ui, tr("Go on"), true) {
+                commands.push(Command::GoOn);
+            }
+            if secondary(ui, tr("Cancel")) {
+                commands.push(Command::CancelSuggested);
+            }
+            return;
+        }
         let Some(suggestions) = self.holes.shown() else {
             return;
         };
@@ -522,7 +574,12 @@ impl Marking {
             let row = child.horizontal(|ui| self.phone_header(ui, commands));
             remember_rect(ui, "marking-header", row.response.rect);
             if self.step == Step::Shots {
-                self.strip(&mut child, live);
+                child.horizontal_wrapped(|ui| {
+                    self.strip(ui, live);
+                    if !self.suggesting() {
+                        self.later_button(ui, commands);
+                    }
+                });
             }
         } else {
             child.horizontal(|ui| {
@@ -541,6 +598,7 @@ impl Marking {
                 } else {
                     self.undo_redo(ui, None, commands);
                     self.step_tools(ui, None, commands);
+                    self.later_button(ui, commands);
                 }
                 if self.step == Step::Shots {
                     let font = TextStyle::Body.resolve(ui.style());
@@ -561,7 +619,7 @@ impl Marking {
                 RichText::new(self.instruction(false)).color(self.instruction_color(palette)),
             );
             if self.step == Step::Scale {
-                scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
+                self.scale_controls(&mut child);
             }
         }
         child.add_space(if narrow { 4.0 } else { 6.0 });
@@ -612,7 +670,10 @@ impl Marking {
             .wrap(),
         );
         if self.step == Step::Scale {
-            scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
+            self.scale_controls(&mut child);
+        }
+        if self.step == Step::Aim {
+            child.horizontal_wrapped(|ui| self.aim_chips(ui, commands));
         }
         let row = child.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;

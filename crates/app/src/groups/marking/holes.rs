@@ -31,6 +31,8 @@ pub struct Suggestion {
     pub score: f64,
     /// The touching holes found as one blob share a number.
     pub blob: Option<u32>,
+    /// Likely a shot through an earlier hole, from a later photo.
+    pub through: bool,
 }
 
 /// Why no rings are shown.
@@ -49,6 +51,10 @@ pub enum Refusal {
     Full {
         left_out: usize,
     },
+    /// A later photo couldn't be compared.
+    Later(super::mx::LaterError),
+    /// A later photo shows no hole that isn't marked.
+    NoneNew,
     /// Nothing of the photo shows, or it can't be read.
     Unreadable,
     NoneFound,
@@ -64,6 +70,8 @@ impl Refusal {
             ),
             Refusal::ZoomOut => tr("Zoom out a little").to_owned(),
             Refusal::Coarse => tr("The photo is too coarse here to find holes").to_owned(),
+            Refusal::Later(error) => error.message(),
+            Refusal::NoneNew => tr("The later photo shows no holes that aren't marked.").to_owned(),
             Refusal::Full { left_out } => trf!(
                 "A group holds at most {} shots: {} holes weren't added.",
                 ballistics_store::groups::MAX_SHOTS,
@@ -87,6 +95,13 @@ pub enum Search {
         frames: u8,
     },
     Shown(Vec<Suggestion>),
+    /// From a later photo where most marked shots have no hole: maybe
+    /// another sheet; shown once the shooter goes on.
+    Doubt {
+        suggestions: Vec<Suggestion>,
+        lined_up: usize,
+        marked: usize,
+    },
     Refused(Refusal),
 }
 
@@ -116,6 +131,26 @@ impl Search {
         match self {
             Search::Shown(suggestions) => Some(suggestions),
             _ => None,
+        }
+    }
+
+    /// The rings on the canvas: shown, or waiting on "This may be a
+    /// different sheet".
+    pub fn rings(&self) -> Option<&[Suggestion]> {
+        match self {
+            Search::Shown(suggestions) | Search::Doubt { suggestions, .. } => Some(suggestions),
+            _ => None,
+        }
+    }
+
+    /// Goes on past "This may be a different sheet".
+    pub fn go_on(&mut self) {
+        if let Search::Doubt { suggestions, .. } = self {
+            *self = if suggestions.is_empty() {
+                Search::Refused(Refusal::NoneNew)
+            } else {
+                Search::Shown(std::mem::take(suggestions))
+            };
         }
     }
 
@@ -374,6 +409,7 @@ pub fn look(look: &Look) -> Result<Vec<Suggestion>, Refusal> {
                 near_marked: hole.near_marked,
                 score: hole.score,
                 blob: hole.split.map(|split| split.blob),
+                through: false,
             })
         })
         .collect();
@@ -429,7 +465,16 @@ pub fn paint(painter: &Painter, suggestions: &[Suggestion], space: &Space, camer
             Stroke::new(line, paint::SUGGESTED.gamma_multiply(strength)),
         );
         let badge = centre + vec2(0.71, -0.71) * (radius + 2.0);
-        if suggestion.near_marked {
+        if suggestion.through {
+            painter.circle_filled(badge, 8.0, paint::OUTLINE);
+            painter.text(
+                badge,
+                eframe::egui::Align2::CENTER_CENTER,
+                "!",
+                eframe::egui::FontId::proportional(12.0),
+                paint::FLIER,
+            );
+        } else if suggestion.near_marked {
             painter.circle_filled(badge, 5.0, paint::OUTLINE);
             painter.circle_filled(badge, 3.5, paint::RING);
         } else if suggestion.score < LOW_SCORE {

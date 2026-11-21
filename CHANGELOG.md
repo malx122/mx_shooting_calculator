@@ -46,6 +46,18 @@ any release may still change things noticeably.
     ring to tick or untick it, then **Add** the ticked ones as shots in one
     undo step, numbered from the top left. Holes already marked, and doubtful
     ones, start unticked.
+  - **MX targets** are recognised on a photo by their corner marks: the
+    scale and straightening are set by themselves, with the sheet's top up
+    however the photo is turned, and a warning when a mark was only
+    estimated or the sheet doesn't lie flat. The app asks once what the
+    sheet's 100 mm ruler measures, to allow for the printer's scaling. The
+    aim step offers the sheet's aim points; another group on the same
+    photo starts at the next free one.
+  - **Later photo:** photograph an MX target again after more shots and
+    the holes not yet marked are suggested, found through the sheet's own
+    marks however the photo was taken. A later photo that doesn't line up
+    with the marked shots is flagged as maybe another sheet, and a hole
+    that grew or split as a likely shot through an earlier one.
   - **Blank grid** for a target you didn't photograph, at true scale.
   - **Photos stay on the device:** reduced to 4096 pixels unless you keep
     the originals, with their location and other metadata taken out. Groups,

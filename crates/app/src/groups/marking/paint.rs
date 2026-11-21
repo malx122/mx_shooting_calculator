@@ -389,6 +389,18 @@ pub fn label_pill(painter: &Painter, at: Pos2, text: &str, anchor: Align2) {
     painter.galley(rect.min + vec2(5.0, 2.0), galley, Color32::WHITE);
 }
 
+/// A printed aim point to pick, with its number.
+pub fn aim_point(painter: &Painter, at: Pos2, number: usize) {
+    painter.circle_stroke(at, 9.0, Stroke::new(3.6, OUTLINE));
+    painter.circle_stroke(at, 9.0, Stroke::new(1.6, AIM));
+    label_pill(
+        painter,
+        at + vec2(12.0, -12.0),
+        &number.to_string(),
+        Align2::LEFT_BOTTOM,
+    );
+}
+
 /// A line with a dark outline, solid or dashed.
 pub fn outlined_line(
     painter: &Painter,

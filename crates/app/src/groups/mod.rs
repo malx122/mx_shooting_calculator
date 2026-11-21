@@ -65,6 +65,9 @@ pub struct GroupSettings {
     pub grid_mm: [f64; 2],
     /// The grid square sizes photos were last scaled by.
     pub grid_sizes: marking::GridSizes,
+    /// What an MX target's 100 mm ruler measured as printed here, over
+    /// 100; `None` until asked.
+    pub mx_print_scale: Option<f64>,
 }
 
 impl Default for GroupSettings {
@@ -75,6 +78,7 @@ impl Default for GroupSettings {
             count_rounds: true,
             grid_mm: [200.0, 200.0],
             grid_sizes: marking::GridSizes::default(),
+            mx_print_scale: None,
         }
     }
 }
@@ -379,6 +383,8 @@ pub struct GroupsPage {
     sheet_up: bool,
     /// A full photo was drawn this frame, so its texture stays.
     photo_shown: bool,
+    /// The photo being picked is a later photo of the sheet being marked.
+    import_later: bool,
 }
 
 impl GroupsPage {
@@ -397,6 +403,7 @@ impl GroupsPage {
             notice: None,
             sheet_up: false,
             photo_shown: false,
+            import_later: false,
         }
     }
 
@@ -536,6 +543,7 @@ impl GroupsPage {
     pub fn drop_file(&mut self, file: crate::files::File) -> bool {
         let photo = self.import.dropped(file);
         if photo {
+            self.import_later = false;
             self.sheet = None;
         }
         photo
@@ -548,6 +556,7 @@ impl GroupsPage {
             return;
         };
         self.textures.release_photo();
+        self.import_later = false;
         if let Some(group) = flow.from().and_then(|id| find(data, id)) {
             self.view = View::Group(Box::new(Open::new(group)));
         }
@@ -616,7 +625,8 @@ impl GroupsPage {
             imported.id.clone(),
             known.and_then(|photo| photo.calibration),
         )
-        .with_grid_sizes(self.settings.grid_sizes);
+        .with_grid_sizes(self.settings.grid_sizes)
+        .with_print_scale(self.settings.mx_print_scale);
         actions.push(Action::KeepPhoto(Box::new(imported)));
         self.start_marking(
             marking,
@@ -638,12 +648,16 @@ impl GroupsPage {
             self.import
                 .poll(context, self.settings.keep_original_photos, long_edge)
         {
-            match result {
-                Ok(imported) => {
+            let later = std::mem::take(&mut self.import_later);
+            match (result, &mut self.view) {
+                (Ok((_, pixels)), View::Marking(flow)) if later => {
+                    flow.marking.later_photo(&pixels);
+                }
+                (Ok(imported), _) => {
                     self.notice = None;
                     self.start_photo(context, imported, data, &mut actions);
                 }
-                Err(message) => self.notice = Some(message),
+                (Err(message), _) => self.notice = Some(message),
             }
         }
         if let View::Group(open) = &self.view
@@ -759,6 +773,7 @@ impl GroupsPage {
                 if phone {
                     self.sheet = Some(Sheet::NewGroup);
                 } else {
+                    self.import_later = false;
                     self.import.choose(context, false);
                 }
             }
@@ -963,6 +978,13 @@ impl GroupsPage {
             distance_m: Some(flow.form.distance_m),
         };
         let outcome = flow.marking.show(ui, &marking_context);
+        if let Some(scale) = flow.marking.print_scale() {
+            self.settings.mx_print_scale = Some(scale);
+        }
+        if flow.marking.take_later_request() {
+            self.import_later = true;
+            self.import.choose(ui.ctx(), false);
+        }
         match outcome {
             MarkingOutcome::Working => {}
             MarkingOutcome::Cancelled => self.close_marking(data),
@@ -1307,6 +1329,7 @@ impl GroupsPage {
         let missing = matches!(here, Some(PhotoHere::Missing));
         let no_scale = matches!(measured, Err(MeasureError::NoScale));
         let mut start = None;
+        let mut later = false;
         let mut header = |ui: &mut egui::Ui, open: &mut Open| {
             ui.horizontal_top(|ui| {
                 if let Some(PhotoHere::Ready(texture, size)) = &here {
@@ -1350,6 +1373,24 @@ impl GroupsPage {
                         .clicked()
                     {
                         start = Some(true);
+                    }
+                    let on_mx_target = photo.is_some_and(|photo| {
+                        matches!(
+                            photo.calibration,
+                            Some(ballistics_store::Calibration::FourCorner { ordered: true, .. })
+                        )
+                    });
+                    if on_mx_target
+                        && ui
+                            .add_enabled(
+                                !missing,
+                                egui::Button::new(tr("Add a later photo of this sheet")),
+                            )
+                            .on_hover_text(tr("Its new holes are suggested as shots"))
+                            .clicked()
+                    {
+                        later = true;
+                        start = Some(false);
                     }
                     let ready = matches!(here, Some(PhotoHere::Ready(..)));
                     if ui
@@ -1470,16 +1511,33 @@ impl GroupsPage {
                     calibration.as_ref(),
                     data.group_views.get(&stored.id).copied(),
                 );
+                let marking = marking.with_print_scale(self.settings.mx_print_scale);
                 let form = Form::of(stored);
                 self.start_marking(marking, Purpose::Edit(stored.id.clone()), form);
+                if later {
+                    self.import_later = true;
+                    self.import.choose(ui.ctx(), false);
+                }
             }
             Some(true) => {
                 if let Some(photo) = photo {
                     let taken_at = photo.taken_at.unwrap_or(stored.taken_at);
                     let group = Group::on_photo(&photo.id, taken_at);
                     let form = Form::like(stored);
+                    let taken = data
+                        .groups
+                        .groups
+                        .iter()
+                        .filter(|group| group.photo_id() == Some(photo.id.as_str()))
+                        .filter_map(|group| match &group.marks {
+                            ballistics_store::Marks::Photo(marks) => marks.aim_px,
+                            ballistics_store::Marks::Grid(_) => None,
+                        })
+                        .collect();
                     self.start_marking(
-                        Marking::new_photo(photo.id.clone(), photo.calibration),
+                        Marking::new_photo(photo.id.clone(), photo.calibration)
+                            .with_print_scale(self.settings.mx_print_scale)
+                            .with_taken_aims(taken),
                         Purpose::New {
                             group: Box::new(group),
                             photo: None,
@@ -1534,6 +1592,7 @@ impl GroupsPage {
                 match choice {
                     Some(0) | Some(1) => {
                         self.sheet = None;
+                        self.import_later = false;
                         self.import.choose(context, choice == Some(0));
                     }
                     Some(_) => self.sheet = Some(Sheet::Grid),
