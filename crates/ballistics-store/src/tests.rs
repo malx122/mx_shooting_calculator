@@ -111,7 +111,7 @@ fn data_attribution_survives_storage_backups_and_sync_without_catalog_links() {
     );
     let json = source.export_json().unwrap();
     let export: serde_json::Value = serde_json::from_str(&json).unwrap();
-    assert_eq!(export["version"], 7);
+    assert_eq!(export["version"], transfer::VERSION);
     assert_eq!(
         export["bullets"][0]["data_attribution"]["license"],
         "CC-BY-SA-4.0"
@@ -1261,8 +1261,8 @@ fn restoring_a_backup_brings_deleted_records_back() {
     store.delete_rifle(&tikka.id).unwrap();
     assert_eq!(
         store.deletions().unwrap().len(),
-        2,
-        "the rifle and its load"
+        1,
+        "the rifle; its load goes with it"
     );
     let report = store.import_json(&backup).unwrap();
     assert!(report.added >= 1);
@@ -1587,4 +1587,936 @@ fn shots_sync_and_their_deletions_follow() {
     sync(&mut desktop, &key, &mut shared);
     sync(&mut phone, &key, &mut shared);
     assert_eq!(shared.writes, writes, "settled");
+}
+
+// Shot groups and what goes with them --------------------------------------
+
+/// A day at the range for `rifle` and `bullet`: a fitted barrel, a session,
+/// a photo with a group on it, a grid group that is a ladder's rung, the
+/// round log, a clean, a zero reset and an analysis.
+fn range_day(store: &Store, rifle: &Rifle, bullet: &Bullet) -> GroupsData {
+    let mut factory = Barrel::new(&rifle.id, "Factory");
+    factory.length_mm = Some(510.0);
+    factory.twist_in = Some(11.0);
+    factory.fitted_at = Some(1_000);
+    factory.rounds_before_logging = 100;
+    store.save_barrel(&mut factory).unwrap();
+    let mut fitted = store.rifle(&rifle.id).unwrap().unwrap();
+    fitted.fitted_barrel_id = Some(factory.id.clone());
+    fitted.rounds_before_logging = 250;
+    store.save_rifle(&mut fitted).unwrap();
+
+    let mut session = Session::new(2_000);
+    session.place = "Boden".into();
+    session.conditions = Conditions {
+        temperature_c: Some(6.0),
+        pressure_hpa: Some(1011.0),
+        wind_speed_mps: Some(2.0),
+        wind_clock: Some(9.0),
+        ..Conditions::default()
+    };
+    store.save_session(&mut session).unwrap();
+    let mut photo = Photo::new(photo_id(b"the photo's bytes"), 4000, 3000);
+    photo.taken_at = Some(2_100);
+    photo.calibration = Some(Calibration::FourCorner {
+        corners_px: [
+            [100.0, 120.0],
+            [3900.0, 100.0],
+            [3880.0, 2900.0],
+            [120.0, 2880.0],
+        ],
+        width_mm: 297.0,
+        height_mm: 210.0,
+    });
+    store.save_photo(&mut photo).unwrap();
+
+    let mut on_photo = Group::on_photo(&photo.id, 2_200);
+    let Marks::Photo(marks) = &mut on_photo.marks else {
+        unreachable!()
+    };
+    marks.aim_px = Some([2000.0, 1500.0]);
+    marks.shots = vec![
+        PhotoShot {
+            x_px: 2010.5,
+            y_px: 1490.0,
+            cold_bore: true,
+            called_flier: false,
+            velocity_mps: Some(823.0),
+        },
+        PhotoShot {
+            x_px: 2030.0,
+            y_px: 1505.25,
+            cold_bore: false,
+            called_flier: true,
+            velocity_mps: None,
+        },
+    ];
+    on_photo.rifle_id = Some(rifle.id.clone());
+    on_photo.barrel_id = Some(factory.id.clone());
+    on_photo.bullet_id = Some(bullet.id.clone());
+    on_photo.distance_m = Some(100.0);
+    on_photo.session_id = Some(session.id.clone());
+    on_photo.conditions.temperature_c = Some(4.0);
+    on_photo.dialled_offset_mrad = [0.1, 0.5];
+    on_photo.tags = vec!["practice".into()];
+    store.save_group(&mut on_photo).unwrap();
+    store
+        .set_group_view(
+            &on_photo.id,
+            &GroupView {
+                zoom: 3.0,
+                centre: [2000.0, 1500.0],
+            },
+        )
+        .unwrap();
+    let mut entry = RoundLogEntry::for_group(&on_photo, 2).unwrap();
+    store.save_round_log_entry(&mut entry).unwrap();
+    store
+        .save_clean(&mut Clean::new(&rifle.id, Some(&factory.id), 2_300))
+        .unwrap();
+    store
+        .save_zero_reset(&mut ZeroReset::new(&rifle.id, Some(&factory.id), 1_500))
+        .unwrap();
+
+    let mut ladder = Ladder::new(&rifle.id, &bullet.id, LadderVariable::Charge);
+    ladder.name = "N150 charge".into();
+    store.save_ladder(&mut ladder).unwrap();
+    let mut rung = Group::on_grid(300.0, 300.0, 2_400);
+    let Marks::Grid(marks) = &mut rung.marks else {
+        unreachable!()
+    };
+    marks.shots = vec![
+        GridShot {
+            x_mm: -4.0,
+            y_mm: 6.5,
+            cold_bore: false,
+            called_flier: false,
+            velocity_mps: Some(820.0),
+        },
+        GridShot {
+            x_mm: 3.0,
+            y_mm: -1.0,
+            cold_bore: false,
+            called_flier: false,
+            velocity_mps: Some(826.0),
+        },
+    ];
+    rung.extra_velocities_mps = vec![818.0];
+    rung.rifle_id = Some(rifle.id.clone());
+    rung.ladder_id = Some(ladder.id.clone());
+    rung.rung_value = Some(2.85);
+    rung.include_in_zero = false;
+    store.save_group(&mut rung).unwrap();
+    store
+        .save_round_log_entry(&mut RoundLogEntry::new(
+            &rifle.id,
+            Some(&factory.id),
+            2,
+            2_400,
+        ))
+        .unwrap();
+
+    let mut analysis = Analysis::new(
+        AnalysisKind::Compare,
+        "Before and after",
+        vec![on_photo.id.clone(), rung.id.clone()],
+    );
+    analysis.settings = serde_json::json!({ "rank_by": "mean_radius" });
+    store.save_analysis(&mut analysis).unwrap();
+    store.groups_data().unwrap()
+}
+
+#[test]
+fn range_records_save_read_back_and_give_round_counts() {
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    assert_eq!(data.barrels.len(), 1);
+    assert_eq!(data.round_log.len(), 2);
+    assert_eq!(data.round_log[0].at, 2_400, "newest first");
+    assert_eq!(data.groups.len(), 2);
+    assert_eq!(data.groups[0].rung_value, Some(2.85), "newest first");
+    assert!(data.groups.iter().all(|group| group.updated_at > 0));
+
+    let on_photo = &data.groups[1];
+    assert_eq!(store.group(&on_photo.id).unwrap().as_ref(), Some(on_photo));
+    let photo_id = on_photo.photo_id().unwrap();
+    assert_eq!(
+        store.groups_on_photo(photo_id).unwrap(),
+        vec![on_photo.clone()]
+    );
+    assert_eq!(store.photo(photo_id).unwrap(), Some(data.photos[0].clone()));
+    let session = &data.sessions[0];
+    assert_eq!(
+        store.groups_in_session(&session.id).unwrap(),
+        vec![on_photo.clone()]
+    );
+    assert_eq!(store.groups_for_rifle(&tikka.id).unwrap().len(), 2);
+    assert_eq!(
+        store.groups_in_ladder(&data.ladders[0].id).unwrap(),
+        vec![data.groups[0].clone()]
+    );
+    assert_eq!(
+        on_photo.conditions.or(session.conditions).temperature_c,
+        Some(4.0)
+    );
+    assert_eq!(
+        on_photo.conditions.or(session.conditions).wind_clock,
+        Some(9.0)
+    );
+
+    let rifle = store.rifle(&tikka.id).unwrap().unwrap();
+    let barrel = store
+        .barrel(rifle.fitted_barrel_id.as_deref().unwrap())
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        store.barrels_for_rifle(&rifle.id).unwrap(),
+        vec![barrel.clone()]
+    );
+    let counts = RoundCounts::derive(&rifle, Some(&barrel), &data.round_log, &data.cleans);
+    assert_eq!(
+        counts,
+        RoundCounts {
+            action: 254,
+            barrel: Some(104),
+            since_clean: Some(2),
+            last_clean_at: Some(2_300),
+        }
+    );
+}
+
+#[test]
+fn impossible_range_records_are_refused() {
+    let (store, tikka, oryx) = populated();
+    let invalid = |result: Result<(), StoreError>| matches!(result, Err(StoreError::Invalid(_)));
+
+    let mut group = Group::on_photo("IMG_0412.JPG", 0);
+    assert!(invalid(store.save_group(&mut group)));
+    let mut photo = Photo::new(photo_id(b"x"), 100, 100);
+    photo.calibration = Some(Calibration::TwoPoint {
+        a_px: [10.0, 10.0],
+        b_px: [10.0, 10.0],
+        distance_mm: 25.0,
+    });
+    assert!(invalid(store.save_photo(&mut photo)));
+    photo.calibration = Some(Calibration::FourCorner {
+        corners_px: [[0.0, 0.0], [90.0, 0.0], [90.0, 90.0], [90.0, 90.0]],
+        width_mm: 210.0,
+        height_mm: 297.0,
+    });
+    assert!(invalid(store.save_photo(&mut photo)));
+    let mut group = Group::on_photo(&photo_id(b"x"), 0);
+    let mut fouled = group.clone();
+    fouled.extra_velocities_mps = vec![820.0, 28.5];
+    assert!(invalid(store.save_group(&mut fouled)));
+    let Marks::Photo(marks) = &mut group.marks else {
+        unreachable!()
+    };
+    marks.shots = vec![
+        PhotoShot {
+            x_px: f64::NAN,
+            y_px: 0.0,
+            cold_bore: false,
+            called_flier: false,
+            velocity_mps: None,
+        };
+        2
+    ];
+    assert!(invalid(store.save_group(&mut group.clone())));
+    let mut slow = Group::on_grid(300.0, 300.0, 0);
+    let Marks::Grid(marks) = &mut slow.marks else {
+        unreachable!()
+    };
+    marks.shots.push(GridShot {
+        x_mm: 0.0,
+        y_mm: 0.0,
+        cold_bore: false,
+        called_flier: false,
+        velocity_mps: Some(2850.0),
+    });
+    assert!(invalid(store.save_group(&mut slow)));
+    let mut tagged = Group::on_grid(300.0, 300.0, 0);
+    tagged.tags = vec![" practice".into()];
+    assert!(invalid(store.save_group(&mut tagged)));
+    tagged.tags = vec!["practice".into()];
+    tagged.distance_m = Some(0.0);
+    assert!(invalid(store.save_group(&mut tagged)));
+    tagged.distance_m = Some(100.0);
+    store.save_group(&mut tagged).unwrap();
+
+    let mut session = Session::new(0);
+    session.conditions.humidity_percent = Some(120.0);
+    assert!(invalid(store.save_session(&mut session)));
+    let mut analysis = Analysis::new(AnalysisKind::Composite, "All", Vec::new());
+    analysis.settings = serde_json::json!([1, 2]);
+    assert!(invalid(store.save_analysis(&mut analysis)));
+    assert!(invalid(store.save_ladder(&mut Ladder::new(
+        &tikka.id,
+        "",
+        LadderVariable::Seating
+    ))));
+    let mut handload = store.bullet(&oryx.id).unwrap().unwrap();
+    handload.recipe = Some(Recipe {
+        charge_g: Some(45.0),
+        ..Recipe::default()
+    });
+    assert!(invalid(store.save_bullet(&mut handload)));
+    let mut rifle = store.rifle(&tikka.id).unwrap().unwrap();
+    rifle.rounds_before_logging = 2_000_000;
+    assert!(invalid(store.save_rifle(&mut rifle)));
+    assert_eq!(store.groups().unwrap().len(), 1, "only the valid group");
+}
+
+#[test]
+fn a_handload_recipe_round_trips() {
+    let (store, _, oryx) = populated();
+    let mut handload = store.bullet(&oryx.id).unwrap().unwrap();
+    assert_eq!(handload.recipe, None);
+    let recipe = Recipe {
+        powder: "Vihtavuori N150".into(),
+        charge_g: Some(2.85),
+        primer: "CCI BR-2".into(),
+        brass: "Lapua, 3rd firing".into(),
+        coal_mm: Some(71.1),
+        cbto_mm: Some(57.2),
+        notes: "Seated 0.5 mm off".into(),
+    };
+    handload.recipe = Some(recipe.clone());
+    store.save_bullet(&mut handload).unwrap();
+    assert_eq!(
+        store.bullet(&oryx.id).unwrap().unwrap().recipe,
+        Some(recipe.clone())
+    );
+    let export: serde_json::Value = serde_json::from_str(&store.export_json().unwrap()).unwrap();
+    assert_eq!(export["bullets"][0]["recipe"]["charge_g"], 2.85);
+    let mut copy = Store::open_in_memory().unwrap();
+    copy.import_json(&export.to_string()).unwrap();
+    assert_eq!(copy.bullet(&oryx.id).unwrap().unwrap().recipe, Some(recipe));
+    // A factory bullet has no recipe, and writes none.
+    let mut factory = bullet("Factory", "308-win");
+    factory.kind = BulletKind::Factory;
+    store.save_bullet(&mut factory).unwrap();
+    let export: serde_json::Value = serde_json::from_str(&store.export_json().unwrap()).unwrap();
+    let factory = export["bullets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|bullet| bullet["kind"] == "factory")
+        .unwrap();
+    assert!(factory.get("recipe").is_none());
+}
+
+#[test]
+fn range_records_export_import_and_match_the_schema() {
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    let export = store.export_json().unwrap();
+    let value: serde_json::Value = serde_json::from_str(&export).unwrap();
+    assert_eq!(value["version"], 8);
+    let validator = jsonschema::validator_for(&schema::export_schema()).unwrap();
+    let problems: Vec<String> = validator
+        .iter_errors(&value)
+        .map(|error| format!("{error} at {}", error.instance_path()))
+        .collect();
+    assert!(problems.is_empty(), "{problems:#?}");
+    // The shapes the format describes.
+    let on_photo = &value["groups"][1];
+    assert_eq!(on_photo["marks"]["on"], "photo");
+    assert_eq!(value["photos"][0]["calibration"]["kind"], "four_corner");
+    assert!(
+        on_photo["marks"].get("view").is_none(),
+        "views stay on the device"
+    );
+    assert_eq!(
+        on_photo["conditions"],
+        serde_json::json!({ "temperature_c": 4.0 })
+    );
+    assert_eq!(value["groups"][0]["extra_velocities_mps"][0], 818.0);
+    assert_eq!(on_photo["marks"]["shots"][0]["x_px"], 2010.5);
+    assert_eq!(value["groups"][0]["marks"]["on"], "grid");
+    assert_eq!(value["groups"][0]["marks"]["shots"][0]["y_mm"], 6.5);
+    assert_eq!(value["sessions"][0]["temperature_c"], 6.0);
+    assert_eq!(value["rifles"][0]["rounds_before_logging"], 250);
+    assert_eq!(value["ladders"][0]["variable"], "charge");
+
+    let mut copy = Store::open_in_memory().unwrap();
+    let report = copy.import_json(&export).unwrap();
+    // A rifle, a bullet and a load, then the range day's eleven records.
+    assert_eq!((report.added, report.total()), (14, 14));
+    assert_eq!(copy.import_json(&export).unwrap().unchanged, 14);
+    assert_eq!(copy.groups_data().unwrap(), data);
+    assert_eq!(copy.rifles().unwrap(), store.rifles().unwrap());
+}
+
+#[test]
+fn files_from_before_groups_still_import_and_newer_ones_are_refused() {
+    let (old, _, _) = populated();
+    let mut value: serde_json::Value = serde_json::from_str(&old.export_json().unwrap()).unwrap();
+    value["version"] = 7.into();
+    let fields = value.as_object_mut().unwrap();
+    for list in [
+        "barrels",
+        "round_log",
+        "cleans",
+        "zero_resets",
+        "sessions",
+        "photos",
+        "groups",
+        "ladders",
+        "analyses",
+    ] {
+        assert!(fields.remove(list).is_some(), "{list} is written");
+    }
+    let rifle = fields["rifles"][0].as_object_mut().unwrap();
+    rifle.remove("fitted_barrel_id");
+    rifle.remove("rounds_before_logging");
+    let mut store = Store::open_in_memory().unwrap();
+    assert_eq!(store.import_json(&value.to_string()).unwrap().added, 3);
+    assert_eq!(store.rifles().unwrap(), old.rifles().unwrap());
+    assert_eq!(store.groups_data().unwrap(), GroupsData::default());
+
+    value["version"] = (transfer::VERSION + 1).into();
+    assert!(matches!(
+        store.import_json(&value.to_string()),
+        Err(StoreError::Invalid(_))
+    ));
+}
+
+#[test]
+fn range_records_sync_and_their_deletions_follow() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let (mut phone, tikka, oryx) = populated();
+    let data = range_day(&phone, &tikka, &oryx);
+    let mut desktop = Store::open_in_memory().unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert_eq!(desktop.groups_data().unwrap(), data);
+
+    // Notes written on the desktop reach the phone; the phone's later edit
+    // of the same group wins over the desktop's earlier one.
+    let mut edited = desktop.group(&data.groups[0].id).unwrap().unwrap();
+    edited.notes = "Flat spot?".into();
+    desktop.save_group(&mut edited).unwrap();
+    let mut session = phone.session(&data.sessions[0].id).unwrap().unwrap();
+    session.notes = "Gusty after noon".into();
+    phone.save_session(&mut session).unwrap();
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert_eq!(
+        phone.group(&edited.id).unwrap().unwrap().notes,
+        "Flat spot?"
+    );
+    assert_eq!(
+        desktop.session(&session.id).unwrap().unwrap().notes,
+        "Gusty after noon"
+    );
+
+    // Deleted on the phone, deleted on the desktop; the photo goes with
+    // its last group.
+    let photo = &data.photos[0].id;
+    assert!(
+        !phone.delete_photo(photo).unwrap(),
+        "a group is marked on it"
+    );
+    assert!(phone.photo(photo).unwrap().is_some());
+    phone.delete_group(&edited.id).unwrap();
+    phone.delete_group(&data.groups[1].id).unwrap();
+    assert!(phone.delete_photo(photo).unwrap());
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert_eq!(desktop.group(&edited.id).unwrap(), None);
+    assert!(desktop.photos().unwrap().is_empty());
+    assert!(
+        desktop
+            .deletions()
+            .unwrap()
+            .iter()
+            .all(|d| d.kind != RecordKind::Photo),
+        "photo records are never remembered as deleted"
+    );
+    assert!(
+        desktop
+            .deletions()
+            .unwrap()
+            .iter()
+            .any(|d| d.kind == RecordKind::Group && d.id == edited.id)
+    );
+    let writes = shared.writes;
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    assert!(phone.photos().unwrap().is_empty());
+    assert_eq!(shared.writes, writes, "settled");
+}
+
+#[test]
+fn deleting_a_barrel_or_a_rifle_takes_its_history_along() {
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    let barrel = &data.barrels[0];
+    let before = store.rifle(&tikka.id).unwrap().unwrap();
+    store.delete_barrel(&barrel.id).unwrap();
+    let after = store.rifle(&tikka.id).unwrap().unwrap();
+    assert_eq!(after.fitted_barrel_id, None);
+    assert!(after.updated_at > before.updated_at, "the unfitting syncs");
+    assert!(store.barrels().unwrap().is_empty());
+    assert!(store.cleans().unwrap().is_empty());
+    assert!(store.zero_resets().unwrap().is_empty());
+    assert_eq!(store.round_log().unwrap().len(), 2, "the action fired them");
+    let kinds = |store: &Store| -> Vec<RecordKind> {
+        store
+            .deletions()
+            .unwrap()
+            .iter()
+            .map(|deletion| deletion.kind)
+            .collect()
+    };
+    assert_eq!(kinds(&store), vec![RecordKind::Barrel], "only the barrel's");
+
+    // A rifle with its barrel, history and loads.
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    store
+        .save_clean(&mut Clean::new(&tikka.id, None, 2_500))
+        .unwrap();
+    store.delete_rifle(&tikka.id).unwrap();
+    let left = store.groups_data().unwrap();
+    assert!(left.barrels.is_empty(), "barrels");
+    assert!(left.round_log.is_empty(), "round log");
+    assert!(left.cleans.is_empty(), "cleans");
+    assert!(left.zero_resets.is_empty(), "zero resets");
+    assert!(store.rifle_loads().unwrap().is_empty(), "loads");
+    assert_eq!(kinds(&store), vec![RecordKind::Rifle], "only the rifle's");
+    assert_eq!(left.groups.len(), 2, "groups stay");
+    assert_eq!(left.ladders.len(), 1, "ladders stay");
+    assert_eq!(left.photos, data.photos);
+}
+
+/// The phone and the desktop, in step, with a range day for the phone's
+/// rifle.
+fn two_devices_with_a_range_day() -> (Store, Store, SyncKey, Shared, Rifle, GroupsData) {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let (mut phone, tikka, oryx) = populated();
+    let data = range_day(&phone, &tikka, &oryx);
+    let mut desktop = Store::open_in_memory().unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    (phone, desktop, key, shared, tikka, data)
+}
+
+/// When `store` deleted the record of `id`.
+fn deleted_at(store: &Store, id: &str) -> i64 {
+    store
+        .deletions()
+        .unwrap()
+        .iter()
+        .find(|deletion| deletion.id == id)
+        .unwrap()
+        .deleted_at
+}
+
+#[test]
+fn a_rifle_deleted_on_one_device_and_edited_later_on_another_comes_back_whole() {
+    let (mut phone, mut desktop, key, mut shared, tikka, data) = two_devices_with_a_range_day();
+    phone.delete_rifle(&tikka.id).unwrap();
+    let mut rifle = desktop.rifle(&tikka.id).unwrap().unwrap();
+    rifle.notes = "Kept after all".into();
+    rifle.updated_at = deleted_at(&phone, &tikka.id) + 1_000;
+    desktop.save_rifle(&mut rifle).unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    for store in [&phone, &desktop] {
+        let rifle = store.rifle(&tikka.id).unwrap().unwrap();
+        assert_eq!(rifle.notes, "Kept after all");
+        let kept = store.groups_data().unwrap();
+        assert_eq!(kept, data);
+        assert_eq!(rifle.fitted_barrel_id, Some(kept.barrels[0].id.clone()));
+        assert_eq!(store.rifle_loads().unwrap().len(), 1, "its load too");
+    }
+}
+
+#[test]
+fn a_barrel_deleted_on_one_device_and_edited_later_on_another_comes_back_whole() {
+    let (mut phone, mut desktop, key, mut shared, _, data) = two_devices_with_a_range_day();
+    let barrel = &data.barrels[0];
+    phone.delete_barrel(&barrel.id).unwrap();
+    let mut edited = desktop.barrel(&barrel.id).unwrap().unwrap();
+    edited.notes = "Still shooting".into();
+    edited.updated_at = deleted_at(&phone, &barrel.id) + 1_000;
+    desktop.save_barrel(&mut edited).unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    for store in [&phone, &desktop] {
+        let kept = store.groups_data().unwrap();
+        assert_eq!(kept.barrels[0].notes, "Still shooting");
+        assert_eq!((kept.cleans.len(), kept.zero_resets.len()), (1, 1));
+        assert_eq!(kept.round_log.len(), 2);
+    }
+}
+
+#[test]
+fn history_added_elsewhere_after_its_rifle_was_deleted_goes_with_it() {
+    let (mut phone, mut desktop, key, mut shared, tikka, data) = two_devices_with_a_range_day();
+    phone.delete_rifle(&tikka.id).unwrap();
+    // The desktop hasn't heard, and logs more for the rifle and its barrel.
+    let later = deleted_at(&phone, &tikka.id) + 1_000;
+    let barrel = &data.barrels[0].id;
+    let mut spare = Barrel::new(&tikka.id, "Spare");
+    spare.updated_at = later;
+    desktop.save_barrel(&mut spare).unwrap();
+    for mut clean in [
+        Clean::new(&tikka.id, None, later),
+        Clean::new(&tikka.id, Some(barrel), later),
+    ] {
+        clean.updated_at = later;
+        desktop.save_clean(&mut clean).unwrap();
+    }
+    let mut entry = RoundLogEntry::new(&tikka.id, Some(barrel), 5, later);
+    entry.updated_at = later;
+    desktop.save_round_log_entry(&mut entry).unwrap();
+    let mut reset = ZeroReset::new(&tikka.id, None, later);
+    reset.updated_at = later;
+    desktop.save_zero_reset(&mut reset).unwrap();
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    for store in [&phone, &desktop] {
+        assert_eq!(store.rifle(&tikka.id).unwrap(), None);
+        let left = store.groups_data().unwrap();
+        assert!(left.barrels.is_empty());
+        assert!(left.round_log.is_empty());
+        assert!(left.cleans.is_empty());
+        assert!(left.zero_resets.is_empty());
+        assert!(store.rifle_loads().unwrap().is_empty());
+    }
+    let writes = shared.writes;
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    assert_eq!(shared.writes, writes, "settled");
+}
+
+#[test]
+fn a_barrel_moved_to_another_rifle_keeps_its_history_when_the_old_rifle_goes() {
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    let mut sako = rifle("Sako", "308-win");
+    store.save_rifle(&mut sako).unwrap();
+    let mut moved = data.barrels[0].clone();
+    moved.rifle_id = sako.id.clone();
+    store.save_barrel(&mut moved).unwrap();
+    store.delete_rifle(&tikka.id).unwrap();
+    let left = store.groups_data().unwrap();
+    assert_eq!(left.barrels.len(), 1);
+    assert_eq!((left.round_log.len(), left.cleans.len()), (2, 1));
+    let counts = RoundCounts::derive(&sako, Some(&moved), &left.round_log, &left.cleans);
+    assert_eq!(counts.barrel, Some(104));
+}
+
+#[test]
+fn a_photo_deleted_on_one_device_stays_for_a_group_made_on_another() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let mut phone = Store::open_in_memory().unwrap();
+    let mut photo = Photo::new(photo_id(b"target"), 400, 300);
+    phone.save_photo(&mut photo).unwrap();
+    let mut first = Group::on_photo(&photo.id, 1_000);
+    phone.save_group(&mut first).unwrap();
+    let mut desktop = Store::open_in_memory().unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+
+    phone.delete_group(&first.id).unwrap();
+    assert!(phone.delete_photo(&photo.id).unwrap());
+    let mut second = Group::on_photo(&photo.id, 2_000);
+    desktop.save_group(&mut second).unwrap();
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    for store in [&phone, &desktop] {
+        assert_eq!(
+            store.photo(&photo.id).unwrap().map(|p| p.id),
+            Some(photo.id.clone())
+        );
+        assert_eq!(store.groups().unwrap().len(), 1);
+    }
+    // Imported again after it went, nothing remembers it as deleted.
+    assert!(phone.deletions().unwrap().iter().all(|d| d.id != photo.id));
+    phone.delete_group(&second.id).unwrap();
+    assert!(phone.delete_photo(&photo.id).unwrap());
+    let mut again = photo.clone();
+    phone.save_photo(&mut again).unwrap();
+    assert!(phone.photo(&photo.id).unwrap().is_some());
+    assert!(phone.deletions().unwrap().iter().all(|d| d.id != photo.id));
+}
+
+#[test]
+fn a_photo_forgotten_here_isnt_brought_back_without_a_group() {
+    let key = SyncKey::generate();
+    let mut shared = Shared::default();
+    let mut phone = Store::open_in_memory().unwrap();
+    let mut desktop = Store::open_in_memory().unwrap();
+    let mut photo = Photo::new(photo_id(b"unused"), 400, 300);
+    desktop.save_photo(&mut photo).unwrap();
+    sync(&mut desktop, &key, &mut shared);
+    let report = sync(&mut phone, &key, &mut shared);
+    assert_eq!(phone.photo(&photo.id).unwrap(), None);
+    assert_eq!(report.added, 0);
+    assert!(
+        desktop.photo(&photo.id).unwrap().is_some(),
+        "the desktop's own"
+    );
+    assert_eq!(
+        desktop.photo_ids_in_use().unwrap(),
+        std::collections::BTreeSet::from([photo.id.clone()])
+    );
+}
+
+#[test]
+fn a_view_stays_on_its_device() {
+    let (store, tikka, oryx) = populated();
+    let data = range_day(&store, &tikka, &oryx);
+    let group = &data.groups[1].id;
+    assert_eq!(
+        store.group_view(group).unwrap(),
+        Some(GroupView {
+            zoom: 3.0,
+            centre: [2000.0, 1500.0]
+        })
+    );
+    assert!(!store.export_json().unwrap().contains("\"zoom\""));
+    let mut copy = Store::open_in_memory().unwrap();
+    copy.import_json(&store.export_json().unwrap()).unwrap();
+    assert_eq!(copy.group_view(group).unwrap(), None);
+    let bad = GroupView {
+        zoom: 0.0,
+        centre: [0.0, 0.0],
+    };
+    assert!(matches!(
+        store.set_group_view(group, &bad),
+        Err(StoreError::Invalid(_))
+    ));
+    store.delete_group(group).unwrap();
+    assert_eq!(store.group_view(group).unwrap(), None);
+}
+
+#[test]
+fn a_group_saved_on_two_devices_is_counted_once() {
+    let (mut phone, mut desktop, key, mut shared, tikka, data) = two_devices_with_a_range_day();
+    let group = &data.groups[1];
+    let logged = phone.round_log_entry_for_group(&group.id).unwrap().unwrap();
+    assert_eq!(logged.id, RoundLogEntry::id_for_group(&group.id));
+    assert_eq!(
+        (logged.rifle_id.as_str(), logged.rounds),
+        (tikka.id.as_str(), 2)
+    );
+    // Both devices log the same group again, as saving it would.
+    for store in [&phone, &desktop] {
+        let mut entry = RoundLogEntry::for_group(group, 3).unwrap();
+        store.save_round_log_entry(&mut entry).unwrap();
+    }
+    sync(&mut phone, &key, &mut shared);
+    sync(&mut desktop, &key, &mut shared);
+    sync(&mut phone, &key, &mut shared);
+    for store in [&phone, &desktop] {
+        let log = store.round_log().unwrap();
+        assert_eq!(log.len(), 2);
+        assert_eq!(
+            log.iter()
+                .filter(|entry| entry.group_id.as_deref() == Some(group.id.as_str()))
+                .count(),
+            1
+        );
+    }
+    assert_eq!(phone.round_log_entry_for_group("nothing").unwrap(), None);
+    assert_eq!(
+        RoundLogEntry::for_group(&Group::on_grid(100.0, 100.0, 0), 5),
+        None
+    );
+}
+
+#[test]
+fn imported_groups_are_checked_and_their_times_kept_sane() {
+    let (store, tikka, oryx) = populated();
+    range_day(&store, &tikka, &oryx);
+    let export: serde_json::Value = serde_json::from_str(&store.export_json().unwrap()).unwrap();
+
+    // A group that breaks a rule stops the whole file.
+    let mut broken = export.clone();
+    broken["groups"][0]["distance_m"] = 0.into();
+    let mut fresh = Store::open_in_memory().unwrap();
+    assert!(matches!(
+        fresh.import_json(&broken.to_string()),
+        Err(StoreError::Invalid(_))
+    ));
+    assert!(fresh.rifles().unwrap().is_empty());
+
+    // A group stamped years ahead is taken as old: a later edit wins.
+    let mut ahead = export.clone();
+    let id = ahead["groups"][0]["id"].as_str().unwrap().to_owned();
+    ahead["groups"][0]["updated_at"] = (model::now_ms() + 3 * 365 * 86_400_000).into();
+    fresh.import_json(&ahead.to_string()).unwrap();
+    assert_eq!(fresh.group(&id).unwrap().unwrap().updated_at, 0);
+
+    // A group stamped a little ahead moves the clock: edits after it are
+    // stamped later still.
+    let soon = model::now_ms() + 86_400_000;
+    let mut close = export.clone();
+    close["groups"][0]["updated_at"] = soon.into();
+    let mut other = Store::open_in_memory().unwrap();
+    other.import_json(&close.to_string()).unwrap();
+    let mut session = Session::new(0);
+    other.save_session(&mut session).unwrap();
+    assert!(session.updated_at > soon);
+}
+
+#[test]
+fn a_file_from_a_newer_app_is_refused_as_newer_before_its_records_are_read() {
+    let mut store = Store::open_in_memory().unwrap();
+    let newer = format!(
+        r#"{{"format":"mxsc/personal-data","version":{},"exported_at":0,
+            "rifles":[],"bullets":[],"rifle_loads":[],
+            "deleted":[{{"kind":"something_new","id":"x","deleted_at":1}}]}}"#,
+        transfer::VERSION + 1
+    );
+    match store.import_json(&newer) {
+        Err(StoreError::Invalid(message)) => assert!(message.contains("newer"), "{message}"),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[test]
+fn sync_copies_are_compressed_and_older_ones_still_open() {
+    let key = SyncKey::generate();
+    let (mut store, tikka, oryx) = populated();
+    range_day(&store, &tikka, &oryx);
+    let round = store.sync_round(Some(&key), None).unwrap();
+    let sealed = round.upload.unwrap();
+    assert_eq!(&sealed[..4], b"MXS2");
+    let json = serde_json::to_vec(&store.export_data().unwrap()).unwrap();
+    assert!(
+        sealed.len() * 2 < json.len(),
+        "{} of {}",
+        sealed.len(),
+        json.len()
+    );
+    assert_eq!(
+        transfer::read_export(std::str::from_utf8(&key.open(&sealed).unwrap()).unwrap())
+            .unwrap()
+            .groups
+            .len(),
+        2
+    );
+    // A copy from a newer app says so, not that the key is wrong.
+    let mut newer = sealed.clone();
+    newer[3] = b'9';
+    match key.open(&newer) {
+        Err(StoreError::Invalid(message)) => assert!(message.contains("newer"), "{message}"),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[test]
+fn the_released_database_upgrades_with_its_data_intact() {
+    let path = temporary_path();
+    let connection = rusqlite::Connection::open(&path).unwrap();
+    for migration in &crate::db::MIGRATIONS[..crate::db::RELEASED_SCHEMA] {
+        connection.execute_batch(migration).unwrap();
+    }
+    connection
+        .pragma_update(None, "user_version", crate::db::RELEASED_SCHEMA as i64)
+        .unwrap();
+    let mut tikka = rifle("Tikka T3x", "308-win");
+    tikka.id = "r1".into();
+    let mut oryx = bullet("Oryx", "308-win");
+    oryx.id = "b1".into();
+    let mut shot = logged_shot(&tikka, &oryx, 1_500);
+    shot.updated_at = 1_600;
+    connection
+        .execute_batch(
+            "INSERT INTO rifles (id, name, caliber, barrel_length_mm, twist_in,
+                 right_hand_twist, sight_height_cm, zero_range_m, zero_temperature_c,
+                 zero_pressure_hpa, click_unit, click_value, notes, updated_at, scope_id,
+                 reticle_id, zero_powder_temperature_c, zero_humidity_percent, table_settings,
+                 zero_height_cm)
+             VALUES ('r1', 'Tikka T3x', '308-win', 510, 11, 1, 4.5, 100, 15, 1013.25, 'mil',
+                 0.1, 'Old rifle', 100, NULL, NULL, NULL, 50, NULL, 4);
+             INSERT INTO bullets (id, kind, manufacturer, name, caliber, diameter_mm, mass_g,
+                 bc_g1, drag_model, muzzle_velocity_mps, velocity_temperature_c,
+                 velocity_per_degree, construction, lead_free, notes, updated_at)
+             VALUES ('b1', 'handload', 'Test', 'Oryx', '308-win', 7.82, 11.7, 0.45, 'G1', 790,
+                 15, 0.5, 'other', 0, 'Old bullet', 110);
+             INSERT INTO rifle_loads (id, rifle_id, bullet_id, notes, updated_at, velocities)
+             VALUES ('l1', 'r1', 'b1', '', 120,
+                 '[{\"temperature_c\": 12.0, \"velocity_mps\": 781.0}]');
+             INSERT INTO deleted (kind, id, deleted_at) VALUES ('scope', 'gone', 90);
+             INSERT INTO settings (key, value) VALUES ('units', '\"metric\"');",
+        )
+        .unwrap();
+    connection
+        .execute(
+            "INSERT INTO shots (id, data, taken_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![
+                shot.id,
+                serde_json::to_string(&shot).unwrap(),
+                shot.taken_at,
+                shot.updated_at
+            ],
+        )
+        .unwrap();
+    drop(connection);
+
+    let store = Store::open(&path).unwrap();
+    let version: i64 = store
+        .connection_ref()
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap();
+    assert_eq!(version, crate::db::MIGRATIONS.len() as i64);
+    let rifle = store.rifle("r1").unwrap().unwrap();
+    assert_eq!(
+        (rifle.name.as_str(), rifle.notes.as_str(), rifle.updated_at),
+        ("Tikka T3x", "Old rifle", 100)
+    );
+    assert_eq!(
+        (rifle.zero_height_cm, rifle.barrel_length_mm),
+        (4.0, Some(510.0))
+    );
+    assert_eq!(
+        (rifle.fitted_barrel_id, rifle.rounds_before_logging),
+        (None, 0)
+    );
+    let bullet = store.bullet("b1").unwrap().unwrap();
+    assert_eq!(
+        (bullet.notes.as_str(), bullet.updated_at),
+        ("Old bullet", 110)
+    );
+    assert_eq!(bullet.recipe, None);
+    let load = store.rifle_load("r1", "b1").unwrap().unwrap();
+    assert_eq!(load.velocities[0].velocity_mps, 781.0);
+    assert_eq!(store.shots().unwrap(), vec![shot]);
+    assert_eq!(store.deletions().unwrap().len(), 1);
+    assert_eq!(
+        store.setting::<String>("units").unwrap().as_deref(),
+        Some("metric")
+    );
+    assert_eq!(
+        store.file_path().map(|file| file.canonicalize().unwrap()),
+        Some(path.canonicalize().unwrap())
+    );
+
+    // The new tables take records, and the whole lot exports.
+    let mut barrel = Barrel::new("r1", "Factory");
+    store.save_barrel(&mut barrel).unwrap();
+    let mut fitted = store.rifle("r1").unwrap().unwrap();
+    fitted.fitted_barrel_id = Some(barrel.id.clone());
+    store.save_rifle(&mut fitted).unwrap();
+    let export = store.export_data().unwrap();
+    assert_eq!((export.rifles.len(), export.barrels.len()), (1, 1));
+    let mut copy = Store::open_in_memory().unwrap();
+    assert_eq!(copy.import_data(&export, false).unwrap().added, 5);
+    drop(store);
+    std::fs::remove_file(path).unwrap();
 }

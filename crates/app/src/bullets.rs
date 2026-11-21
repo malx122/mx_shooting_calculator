@@ -283,7 +283,7 @@ impl BulletsPage {
                         egui::Button::new(RichText::new(tr("Save")).strong()),
                     );
                     if save.clicked() {
-                        actions.push(Action::SaveBullet(bullet.clone()));
+                        actions.push(Action::SaveBullet(Box::new(bullet.clone())));
                     }
                     if let Some(stored) = stored {
                         if changed && ui.button(tr("Undo changes")).clicked() {

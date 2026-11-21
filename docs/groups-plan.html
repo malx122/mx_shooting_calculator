@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MX Groups plan</title>
+<style>
+:root {
+  --page: #f6f3ec; --ink: #1d2620; --muted: #5d6a61; --rule: #d8d2c4; --card: #fffdf8;
+  --accent: #b45018; --accent-soft: #f6e2d4; --good: #2f7a45; --warn: #9a6a00; --bad: #b3261e;
+  --code: #efe9dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0b1a11; --ink: #f1eadb; --muted: #b8b2a2; --rule: #2b5a3e; --card: #122619;
+    --accent: #e8702a; --accent-soft: #2a2416; --good: #7fc08c; --warn: #e9b949; --bad: #f0624d;
+    --code: #183022;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0b1a11; --ink: #f1eadb; --muted: #b8b2a2; --rule: #2b5a3e; --card: #122619;
+  --accent: #e8702a; --accent-soft: #2a2416; --good: #7fc08c; --warn: #e9b949; --bad: #f0624d;
+  --code: #183022;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 -apple-system, "Segoe UI", system-ui, sans-serif; }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 21px; margin: 44px 0 10px; padding-top: 14px; border-top: 1px solid var(--rule); }
+h3 { font-size: 16px; margin: 22px 0 6px; }
+p, li { max-width: 78ch; }
+.lede { color: var(--muted); font-size: 16px; margin: 0 0 18px; }
+.meta { color: var(--muted); font-size: 13px; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin: 14px 0 0; }
+nav.toc a { color: var(--accent); text-decoration: none; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 6px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--rule); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+.wrap { overflow-x: auto; }
+.callout { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.p1 { color: var(--good); } .p2 { color: var(--accent); } .p3 { color: var(--warn); } .p4 { color: var(--muted); }
+.better { color: var(--good); font-weight: 600; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+.card h3 { margin-top: 4px; }
+ol.q > li { margin: 0 0 14px; }
+ol.q .rec { color: var(--muted); font-size: 14px; }
+.formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+
+/* ---------- app sketches: MX palette from crates/app/src/theme.rs ---------- */
+.sketches { display: flex; flex-wrap: wrap; gap: 26px 22px; margin-top: 16px; }
+figure.sk { margin: 0; width: 290px; }
+figure.sk figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+figure.sk figcaption b { color: var(--ink); }
+.phone { --f950:#0B1A11; --f900:#12261A; --f800:#18301F; --f700:#22402E; --f600:#2B5A3E; --f500:#3A6E4E;
+  --bone:#F1EADB; --bonem:#B8B2A2; --blaze:#E8702A; --meadow:#7FC08C; --amber:#E9B949; --alarm:#F0624D;
+  width: 290px; height: 600px; border-radius: 30px; border: 7px solid #050a07; background: var(--f900);
+  color: var(--bone); font: 13px/1.35 Ubuntu, "Segoe UI", system-ui, sans-serif; position: relative;
+  overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+.phone .hdr { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  background: var(--f950); border-bottom: 1px solid var(--f700); }
+.phone .logo { width: 24px; height: 24px; border-radius: 6px; background: var(--f700);
+  display: grid; place-items: center; font-weight: 800; font-size: 11px; }
+.phone .hdr .t { font-weight: 600; flex: 1; }
+.phone .hdr .menu { background: var(--f700); border-radius: 7px; padding: 2px 9px; color: var(--bonem); }
+.phone .back { color: var(--blaze); font-size: 12px; }
+.phone .body { padding: 10px 10px 0; position: absolute; top: 44px; bottom: 54px; left: 0; right: 0; overflow: hidden; }
+.phone .tabs { position: absolute; bottom: 0; left: 0; right: 0; height: 54px; background: var(--f950);
+  border-top: 1px solid var(--f700); display: flex; }
+.phone .tabs div { flex: 1; text-align: center; font-size: 10px; color: var(--bonem); padding-top: 7px; }
+.phone .tabs div i { display: block; font-style: normal; font-size: 16px; line-height: 20px; }
+.phone .tabs .on { color: var(--blaze); }
+.phone .tile { background: var(--f800); border: 1px solid var(--f700); border-radius: 10px; padding: 8px 10px; }
+.phone .tile .l { color: var(--bonem); font-size: 11px; }
+.phone .tile .v { font-size: 17px; }
+.phone .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.phone .btn { background: var(--f700); border-radius: 8px; padding: 6px 10px; display: inline-block; font-size: 12px; }
+.phone .btn.pri { background: var(--blaze); color: #1b0f06; font-weight: 600; }
+.phone .chip { display: inline-block; border: 1px solid var(--f600); border-radius: 99px; padding: 2px 9px; font-size: 11px; color: var(--bonem); margin: 0 3px 4px 0; }
+.phone .chip.on { border-color: var(--blaze); color: var(--blaze); }
+.phone .row { display: flex; align-items: center; gap: 9px; background: var(--f800); border: 1px solid var(--f700);
+  border-radius: 10px; padding: 7px 9px; margin-bottom: 6px; }
+.phone .row .main { flex: 1; min-width: 0; }
+.phone .row .sub { color: var(--bonem); font-size: 11px; }
+.phone .row .num { text-align: right; font-size: 13px; }
+.phone .row .num small { display: block; color: var(--bonem); font-size: 10px; }
+.phone .sec { color: var(--bonem); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 9px 2px 5px; }
+.phone .muted { color: var(--bonem); }
+.phone table.st { font-size: 11.5px; margin: 0; }
+.phone table.st td, .phone table.st th { padding: 4px 6px; border-bottom: 1px solid var(--f700); color: var(--bone); }
+.phone table.st th { color: var(--bonem); font-size: 10px; }
+.phone .steps { display: flex; gap: 4px; margin-bottom: 8px; }
+.phone .steps span { flex: 1; text-align: center; font-size: 10px; color: var(--bonem); border-top: 3px solid var(--f600); padding-top: 3px; }
+.phone .steps .done { border-color: var(--meadow); color: var(--meadow); }
+.phone .steps .now { border-color: var(--blaze); color: var(--bone); font-weight: 600; }
+.phone .seg { display: flex; background: var(--f800); border: 1px solid var(--f700); border-radius: 8px; overflow: hidden; font-size: 11.5px; }
+.phone .seg span { flex: 1; text-align: center; padding: 5px 2px; color: var(--bonem); }
+.phone .seg .on { background: var(--f600); color: var(--bone); }
+.phone .verdict { border-radius: 10px; padding: 9px 11px; background: #1d3a26; border: 1px solid var(--meadow); }
+.phone .verdict b { color: var(--meadow); font-size: 16px; letter-spacing: .04em; }
+.phone .sheet { position: absolute; left: 0; right: 0; bottom: 54px; background: var(--f800); border-top: 1px solid var(--f600);
+  border-radius: 16px 16px 0 0; padding: 8px 12px 10px; box-shadow: 0 -6px 18px rgba(0,0,0,.35); }
+.phone .grab { width: 36px; height: 4px; border-radius: 3px; background: var(--f500); margin: 0 auto 8px; }
+.phone .tool { display: flex; justify-content: space-between; gap: 4px; }
+.phone .tool span { flex: 1; text-align: center; font-size: 10px; color: var(--bonem); background: var(--f800);
+  border: 1px solid var(--f700); border-radius: 8px; padding: 5px 0; }
+.phone .tool span i { display: block; font-style: normal; font-size: 14px; color: var(--bone); }
+.phone .tool .hot { border-color: var(--blaze); }
+.desk { width: 100%; max-width: 1080px; aspect-ratio: 16 / 9.2; border-radius: 10px; border: 1px solid #050a07;
+  background: var(--f900); overflow: hidden; display: grid; grid-template-rows: 34px 1fr; color: var(--bone);
+  --f950:#0B1A11; --f900:#12261A; --f800:#18301F; --f700:#22402E; --f600:#2B5A3E; --f500:#3A6E4E;
+  --bone:#F1EADB; --bonem:#B8B2A2; --blaze:#E8702A; --meadow:#7FC08C; --amber:#E9B949;
+  font: 12px/1.35 Ubuntu, "Segoe UI", system-ui, sans-serif; box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+.desk .top { display: flex; align-items: center; gap: 4px; padding: 0 10px; background: var(--f950); border-bottom: 1px solid var(--f700); }
+.desk .top .tb { padding: 3px 10px; border-radius: 6px; color: var(--bonem); }
+.desk .top .tb.on { background: var(--blaze); color: #1b0f06; font-weight: 600; }
+.desk .panes { display: grid; grid-template-columns: 23% 1fr 27%; min-height: 0; }
+.desk .pane { padding: 10px; border-right: 1px solid var(--f700); overflow: hidden; min-height: 0; }
+.desk .row { display: flex; gap: 8px; align-items: center; background: var(--f800); border: 1px solid var(--f700); border-radius: 8px; padding: 6px 8px; margin-bottom: 5px; }
+.desk .row.sel { border-color: var(--blaze); }
+.desk .row .sub, .desk .muted { color: var(--bonem); font-size: 11px; }
+.desk table { font-size: 11.5px; margin: 0; }
+.desk td, .desk th { padding: 4px 6px; border-bottom: 1px solid var(--f700); color: var(--bone); }
+.desk th { color: var(--bonem); font-size: 10px; }
+.desk .chip { display: inline-block; border: 1px solid var(--f600); border-radius: 99px; padding: 1px 8px; font-size: 11px; color: var(--bonem); margin: 0 3px 4px 0; }
+.desk .chip.on { border-color: var(--blaze); color: var(--blaze); }
+.desk .tile { background: var(--f800); border: 1px solid var(--f700); border-radius: 8px; padding: 6px 9px; }
+.desk .tile .l { color: var(--bonem); font-size: 10.5px; } .desk .tile .v { font-size: 16px; }
+.desk .btn { background: var(--f700); border-radius: 6px; padding: 3px 9px; display: inline-block; font-size: 11px; }
+.desk .btn.pri { background: var(--blaze); color: #1b0f06; font-weight: 600; }
+.desk kbd { font: 10px ui-monospace, monospace; border: 1px solid var(--f500); border-radius: 4px; padding: 0 4px; color: var(--bonem); }
+@media (max-width: 700px) { .desk { aspect-ratio: auto; height: 560px; } .desk .panes { grid-template-columns: 1fr; } .desk .pane:not(.c) { display: none; } }
+</style>
+</head>
+<body>
+<!-- shared drawing parts for the sketches -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#c9c1ad" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="gridfine" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#c9c1ad" stroke-width="1"/>
+    </pattern>
+    <symbol id="hole" viewBox="-6 -6 12 12"><circle r="4.2" fill="#2a2420"/><circle r="4.2" fill="none" stroke="#6b5a48" stroke-width="1.4" opacity=".7"/></symbol>
+    <symbol id="aim" viewBox="-12 -12 24 24"><path d="M0 -10V10M-10 0H10" stroke="#5aa0e0" stroke-width="2"/><circle r="5" fill="none" stroke="#5aa0e0" stroke-width="2"/></symbol>
+  </defs>
+</svg>
+
+<main>
+<h1>MX Groups: plan</h1>
+<p class="lede">A shot-group analysis app built like MX Shooting Calculator: photograph a target, mark the holes, get honest statistics, and follow them across rifles, barrels, loads and range days. Desktop (Mac, Windows, Linux), web and phone from one Rust code base.</p>
+<p class="meta">Working name "MX Groups". Draft plan, 21 Nov 2026. Based on downrangeprecision.com (all public pages read) and the MXSC repo at <code>~/dev/ballistic calculator</code> (v0.10.1). Sketches use MXSC's own palette from <code>crates/app/src/theme.rs</code>. Numbers in sketches are illustrative.</p>
+<nav class="toc">
+  <a href="#what">1. What Downrange does</a><a href="#product">2. What we build</a><a href="#arch">3. Where it lives</a>
+  <a href="#features">4. Features by phase</a><a href="#sketches">5. Sketches</a><a href="#flow">6. The marking flow</a>
+  <a href="#stats">7. Statistics</a><a href="#data">8. Data model</a><a href="#tech">9. Technical design</a>
+  <a href="#phases">10. Milestones</a><a href="#risks">11. Risks</a><a href="#questions">12. Questions</a>
+</nav>
+
+<!-- ============================================================== -->
+<h2 id="what">1. What Downrange does</h2>
+<p>Downrange is an Android app (plus a Pro-only web app, no iPhone) for precision rifle shooters. Its whole loop:</p>
+<div class="wrap"><table>
+<tr><th>Area</th><th>What it does</th></tr>
+<tr><td>Marking</td><td>Photo or blank grid. Scale by 2 points and a typed distance, or 4 corners of a known rectangle for angled photos. Optional aim point, tap each hole, hold to select, drag to nudge, pinch zoom, glove mode, cold-bore shot, several groups per photo. Bullet-sized markers once a calibre is set.</td></tr>
+<tr><td>Group statistics</td><td>Extreme spread (centre and edge), mean radius, CEP-50, horizontal and vertical SD, dispersion, width × height, impact vs aim, 95% intervals from 5 shots, hit probability and R50/R90/R95, a "called flier" toggle that recomputes without a shot.</td></tr>
+<tr><td>Velocity</td><td>Paste a string or import LabRadar / MagnetoSpeed / generic CSV; pair readings to shots to see how much vertical the velocity explains.</td></tr>
+<tr><td>Hole detection</td><td>On-device model on Android (web has an older, weaker one). Works only on the zoomed area, suggests dashed rings you confirm.</td></tr>
+<tr><td>Records</td><td>Rifles with several barrels; round counts for the action, each barrel and since clean; cleaning log; loads and separate load-development profiles; range sessions with weather; zero resets.</td></tr>
+<tr><td>Analysis</td><td><b>Trend</b> (size or velocity against charge, seating, temperature, pressure, barrel rounds), <b>Zero check</b> (pooled impact since last reset: holding or drifting), <b>Compare</b> (cards, best and worst, a ratio test of two mean radii), <b>Composite</b> (pool groups into one), <b>Window</b> (load development: the run of charge or seating steps where impact moves least).</td></tr>
+<tr><td>Data</td><td>Offline, no ads or tracking. JSON backup (no photos), CSV and PNG exports (Pro), optional Sync to an EU server with Google or an e-mailed code.</td></tr>
+<tr><td>Money</td><td>Free: unlimited groups, 3 rifles, 5 loads, basic trend. Pro subscription: the analyses, exports, unlimited records and the web app.</td></tr>
+</table></div>
+<p>What it does <em>not</em> publish: any of its formulas (CEP, intervals, hit probability, flier criterion, the ratio test, the window tolerance). We will define and document ours.</p>
+
+<!-- ============================================================== -->
+<h2 id="product">2. What we build</h2>
+<p>The same loop, rebuilt in our own words, look and maths, and tied to what MXSC already knows about your rifle, scope and bullet. Five principles:</p>
+<div class="cols">
+  <div class="card"><h3>Results first</h3>Numbers update from the second hole. The group's correction reads the way MXSC reads a hold: "2 clicks left, 1 click up", using the rifle's own scope.</div>
+  <div class="card"><h3>Honest statistics</h3>Every size comes with how sure we can be. Small groups say so plainly ("5 shots can't tell these apart; about 14 each could"). All formulas are written down in <code>docs/</code>.</div>
+  <div class="card"><h3>Built for the bench</h3>A magnifier above your finger, bullet-sized rings that snap, big targets for gloves, one hand, undo on everything, and keyboard and mouse on the Mac.</div>
+  <div class="card"><h3>Same rules as MXSC</h3>Offline, no account, no ads, no tracking, no personal data; data on your devices; sync is optional and encrypted on the device.</div>
+  <div class="card"><h3>Closes the loop</h3>Measured precision, muzzle velocity, temperature drift and zero feed back into the calculator, so the dope gets better with every range day.</div>
+</div>
+<h3>Where we go further than Downrange</h3>
+<ul>
+  <li><span class="better">Perspective really corrected:</span> a 4-corner photo is shown straightened, not just computed straight.</li>
+  <li><span class="better">Re-scaling keeps your marks:</span> shots are stored in photo pixels, so fixing the scale never clears them.</li>
+  <li><span class="better">Printable MX targets</span> with corner marks: scale, perspective and aim point found by themselves.</li>
+  <li><span class="better">"Find new holes":</span> photograph the same target after the next string and the app finds what changed.</li>
+  <li><span class="better">Ballistics-aware velocity analysis:</span> compares the vertical your velocity spread <em>should</em> give at that distance (from MXSC's solver) with what you got.</li>
+  <li><span class="better">Powder temperature sensitivity</span> worked out from your sessions and offered to the bullet record in MXSC.</li>
+  <li><span class="better">Three-way zero verdict:</span> holding, drifting, or "can't tell yet", and a one-tap correction to the rifle's zero.</li>
+  <li><span class="better">Works on iPhone</span> (through the web app, like MXSC), Mac, Windows, Linux and Android.</li>
+  <li><span class="better">No paywall</span> (suggested; see question 2).</li>
+</ul>
+
+<!-- ============================================================== -->
+<h2 id="arch">3. Where it lives</h2>
+<p>MXSC today has rifles (with scope and click value), bullets (factory or handload), rifle loads (velocities by temperature, impact offset, zero, truing), targets, a shot log and chronograph import. It has <b>no</b> barrels, round counts, powder/charge/seating, range sessions, groups or photos. Whatever we choose, those are new. Three ways to place them:</p>
+<div class="wrap"><table>
+<tr><th>Option</th><th>Upsides</th><th>Downsides</th></tr>
+<tr><td><b>A. A "Groups" part of MXSC</b> (recommended)<br><span class="meta">new crates <code>groups-core</code> and <code>groups-vision</code>; screens in <code>crates/app/src/groups/</code></span></td>
+<td>Rifles, scopes and bullets entered once. Measured precision, velocity, temperature drift and zero flow straight into the calculator. One database, one backup format (v8), one sync, one release pipeline, one app to install on the phone. Least new plumbing.</td>
+<td>MXSC grows (about +0.5–1 MB of WebAssembly for image decoding). The phone tab bar must make room (Cards to the menu). Hunters who never shoot groups see one more tab (it could follow the "what do you use it for" choice).</td></tr>
+<tr><td><b>B. Separate app, same workspace</b><br><span class="meta">"MX Groups", its own binary, sharing crates</span></td>
+<td>A focused app with its own name and icon. MXSC stays as it is. The maths crates are shared anyway.</td>
+<td>The store is wired to MXSC's record kinds (<code>PersonalData</code>, <code>RecordKind</code>, migrations), so it needs generalising, and the UI kit (theme, sheets, tiles, number fields, i18n, files, web storage) must be pulled out of <code>crates/app</code>. Rifles live in two databases unless sync bridges them. Two PWAs on the phone.</td></tr>
+<tr><td><b>C. Separate repository</b></td>
+<td>Fully independent releases.</td>
+<td>Everything copied and drifting apart; no shared data at all. Not recommended.</td></tr>
+</table></div>
+<div class="callout"><b>Decided 21 Nov 2026: A</b>, a Groups part of MXSC, built as separate crates so a standalone app (B) stays possible later at little cost. The sketches below show A.</div>
+
+<!-- ============================================================== -->
+<h2 id="features">4. Features by phase</h2>
+<p><span class="tag p1">P1</span> first usable version · <span class="tag p2">P2</span> analysis · <span class="tag p3">P3</span> detection and automation · <span class="tag p4">later</span></p>
+<div class="wrap"><table>
+<tr><th>Feature</th><th>Our version</th><th>Phase</th></tr>
+<tr><td>Photo in</td><td>Phone: camera or library (web file input, no camera permission). Mac/PC: file dialog, drag and drop, paste a screenshot. EXIF orientation honoured. iPhone HEIC handled.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>No photo</td><td>Blank grid at true scale; tap shots in, or type x/y in mm (for scored paper or e-targets).</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Scale</td><td>2 points + distance with presets (1" grid square, 10/25/50 mm, a ring of a known target); 4 corners of a rectangle (A4, Letter, target size, custom) with real straightening.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Aim point</td><td>Tap, or "centre of the target" for known targets. Optional; without it, correction and zero analysis are off.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Marking</td><td>Tap adds; magnifier loupe over the finger; hold selects; drag moves; nudge pad; delete; undo/redo; bullet-size rings; several groups per photo; cold-bore and called-flier flags.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Group statistics</td><td>See <a href="#stats">section 7</a>: ES (c-c and e-e), MR, σ, CEP, R90/R95, SD H/V, width × height, impact vs aim in mil/MOA/cm@100 m and clicks, 95% ranges, flier check, hit chance on a chosen target.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Library</td><td>Groups by session, filter by rifle/barrel/load/tag, search, multi-select, archive, delete with undo, thumbnails of the marked group.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Rifles, barrels, loads</td><td>Reuse MXSC rifles (with scope and click value) and bullets/loads; add barrels, round log (action / barrel / since clean), cleans, load-development profiles and "promote the keeper to a load".</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Range sessions</td><td>Place, date, temperature, pressure, humidity, wind; weather filled from Open-Meteo like MXSC (position only when you press the button). Groups inherit, can override.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Velocity</td><td>Paste a string; per-shot pairing in marking order; CSV import (Garmin Xero / ShotView, LabRadar, MagnetoSpeed, generic with column picker). Avg, SD, ES, with a 95% range on SD.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Exports</td><td>PNG of a group (photo or grid, rings, numbers); CSV per group and per shot; backup in MXSC's open JSON format, extended.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>Compare &amp; composite</td><td>Side-by-side cards, best/worst by MR or ES, a proper two-group test with "shots you'd need"; composites with every statistic pooled from the shots.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Zero check</td><td>Pooled impact since the last zero reset for a barrel and load, net of dialled offsets; holding / drifting / can't tell yet; "apply to the rifle's zero" in MXSC.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Trend</td><td>Size, σ, velocity avg/SD, cold-bore offset against date, charge, seating, temperature, pressure, barrel rounds, since clean; one line per load; error bars; box plots.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Load development (Window)</td><td>Charge or seating ladders; rungs pooled; flat runs ranked by vertical, then horizontal, then size, with the noise shown as error bars; velocity flat spots too.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Velocity × vertical</td><td>Per-shot chart, how much vertical velocity explains, and the vertical MXSC's solver predicts from that velocity spread at that distance.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Feed MXSC</td><td>Measured σ → "Your precision"; average velocity → bullet MV; temperature sensitivity from sessions; zero offset.</td><td><span class="tag p2">P2</span></td></tr>
+<tr><td>Hole suggestions</td><td>Classic image processing sized by scale and calibre (no model to train), on the zoomed area; dashed rings you confirm, never auto-added.</td><td><span class="tag p3">P3</span></td></tr>
+<tr><td>Printable MX targets</td><td>PDF targets with corner marks (A4/Letter, several aim points); photo of one sets scale, straightens and finds aim points.</td><td><span class="tag p3">P3</span></td></tr>
+<tr><td>Find new holes</td><td>Second photo of the same target: aligned on the corner marks or the target's features; new holes suggested.</td><td><span class="tag p3">P3</span></td></tr>
+<tr><td>Sync</td><td>MXSC's encrypted sync for records; photos as separate encrypted blobs.</td><td><span class="tag p3">P3</span></td></tr>
+<tr><td>Reminders</td><td>Barrel clean due (in-app badge; push only on desktop).</td><td><span class="tag p4">later</span></td></tr>
+<tr><td>Sun theme</td><td>A light, high-contrast theme for bright ranges, for the whole app, with Dark / Sun / Follow system in the menu.</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>E-targets</td><td>ShotMarker and similar CSV imports. Not planned (decided 21 Nov).</td><td><span class="tag p4">later</span></td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="sketches">5. Sketches</h2>
+<p>Drawn as part of MXSC (option A in section 3). Phone first (below 640 points, like <code>mobile.rs</code>), then the desktop panes. Phone tabs become <b>Calculate · Groups · Rifles · Bullets · Targets</b>: Cards moves into the "•••" menu beside the Shot log, and Sessions joins them there. Analyse opens from the Groups header. As a separate app (option B) the tabs would be Groups · Analyse · Rifles · Loads.</p>
+
+<div class="sketches">
+
+<!-- 1. Groups list -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><div class="logo">MX</div><div class="t">Groups</div><span class="btn" style="padding:3px 9px">📈 Analyse</span><div class="menu">•••</div></div>
+  <div class="body">
+    <div style="display:flex;gap:6px;margin-bottom:8px"><span class="btn pri" style="flex:1;text-align:center;padding:9px">＋ New group</span><span class="btn" style="padding:9px 11px">⌗ Grid</span></div>
+    <div><span class="chip on">Tikka T3x · 6.5 CM ▾</span><span class="chip">All loads ▾</span><span class="chip">⌕</span></div>
+    <div class="sec">Today · Luleå range · 3 °C · 1011 hPa</div>
+    <div class="row">
+      <svg width="46" height="46" viewBox="80 80 50 50"><rect x="80" y="80" width="50" height="50" fill="#efe9dc"/><rect x="80" y="80" width="50" height="50" fill="url(#grid)"/><use href="#hole" x="102" y="88" width="10" height="10"/><use href="#hole" x="109" y="92" width="10" height="10"/><use href="#hole" x="98" y="104" width="10" height="10"/><use href="#hole" x="112" y="100" width="10" height="10"/><use href="#hole" x="105" y="95" width="10" height="10"/></svg>
+      <div class="main">41.2 gr · rung 4<div class="sub">5 shots · 100 m · H4350 ladder</div></div>
+      <div class="num">0.25 mil<small>MR 0.10</small></div></div>
+    <div class="row">
+      <svg width="46" height="46" viewBox="80 80 50 50"><rect x="80" y="80" width="50" height="50" fill="#efe9dc"/><rect x="80" y="80" width="50" height="50" fill="url(#grid)"/><use href="#hole" x="96" y="90" width="10" height="10"/><use href="#hole" x="113" y="96" width="10" height="10"/><use href="#hole" x="101" y="110" width="10" height="10"/><use href="#hole" x="108" y="86" width="10" height="10"/><use href="#hole" x="90" y="101" width="10" height="10"/></svg>
+      <div class="main">41.0 gr · rung 3<div class="sub">5 shots · 100 m · H4350 ladder</div></div>
+      <div class="num">0.38 mil<small>MR 0.15</small></div></div>
+    <div class="row">
+      <svg width="46" height="46" viewBox="80 80 50 50"><rect x="80" y="80" width="50" height="50" fill="#efe9dc"/><rect x="80" y="80" width="50" height="50" fill="url(#grid)"/><use href="#hole" x="100" y="97" width="10" height="10"/><use href="#hole" x="106" y="99" width="10" height="10"/><use href="#hole" x="103" y="104" width="10" height="10"/></svg>
+      <div class="main">Cold-bore check<div class="sub">3 shots · 100 m · ❄ 1 cold</div></div>
+      <div class="num" style="color:var(--meadow)">0.12 mil<small>on zero</small></div></div>
+    <div class="sec">12 Nov · Boden · 6 °C</div>
+    <div class="row">
+      <svg width="46" height="46" viewBox="80 80 50 50"><rect x="80" y="80" width="50" height="50" fill="#efe9dc"/><rect x="80" y="80" width="50" height="50" fill="url(#grid)"/><use href="#hole" x="98" y="92" width="10" height="10"/><use href="#hole" x="110" y="95" width="10" height="10"/><use href="#hole" x="104" y="108" width="10" height="10"/><use href="#hole" x="94" y="104" width="10" height="10"/><use href="#hole" x="113" y="104" width="10" height="10"/></svg>
+      <div class="main">ELD-M 140 · 300 m<div class="sub">10 shots · composite of 2</div></div>
+      <div class="num">0.41 mil<small>MR 0.16</small></div></div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div class="on"><i>⁘</i>Groups</div><div><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Groups.</b> The home screen. One big "New group"; groups sorted under their range session, each with a thumbnail of the marked group and its size.</figcaption>
+</figure>
+
+<!-- 2. Scale step -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Cancel</span><div class="t" style="text-align:center">New group</div><span class="back">Help</span></div>
+  <div class="body">
+    <div class="steps"><span class="done">Photo</span><span class="now">Scale</span><span>Aim</span><span>Shots</span><span>Save</span></div>
+    <svg width="270" height="300" viewBox="0 0 270 300" style="border-radius:10px;display:block;background:#4b4436">
+      <polygon points="34,26 246,40 236,286 22,270" fill="#efe9dc"/>
+      <polygon points="34,26 246,40 236,286 22,270" fill="url(#gridfine)" opacity=".9"/>
+      <circle cx="134" cy="150" r="54" fill="none" stroke="#2a2420" stroke-width="2"/><circle cx="134" cy="150" r="30" fill="none" stroke="#2a2420" stroke-width="2"/><circle cx="134" cy="150" r="8" fill="#2a2420"/>
+      <polygon points="34,26 246,40 236,286 22,270" fill="none" stroke="#E8702A" stroke-width="2" stroke-dasharray="6 4"/>
+      <g font-size="11" font-weight="700" fill="#1b0f06">
+        <circle cx="34" cy="26" r="10" fill="#E8702A"/><text x="30.5" y="30">1</text>
+        <circle cx="246" cy="40" r="10" fill="#E8702A"/><text x="242.5" y="44">2</text>
+        <circle cx="236" cy="286" r="10" fill="#E8702A"/><text x="232.5" y="290">3</text>
+        <circle cx="22" cy="270" r="10" fill="#E8702A"/><text x="18.5" y="274">4</text></g>
+    </svg>
+    <div class="seg" style="margin-top:8px"><span>2 points</span><span class="on">4 corners</span><span>MX target</span></div>
+    <div class="muted" style="margin:6px 2px 4px;font-size:11.5px">Tap the four corners of the sheet. Any order.</div>
+    <div><span class="chip on">A4 210 × 297</span><span class="chip">Letter</span><span class="chip">Custom…</span></div>
+  </div>
+  <div class="tabs" style="padding:8px 10px;gap:8px"><span class="btn" style="flex:0 0 auto;padding:9px 12px">Straighten ✓</span><span class="btn pri" style="flex:1;text-align:center;padding:9px">Next: aim point</span></div>
+</div>
+<figcaption><b>Scale.</b> One instruction line per step. With 4 corners the photo is shown straightened from the next step on. "MX target" finds its own corner marks.</figcaption>
+</figure>
+
+<!-- 3. Marking with loupe -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Aim</span><div class="t" style="text-align:center">Shots</div><span class="back">Done</span></div>
+  <div class="body" style="padding:0">
+    <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--f800);font-size:12px;border-bottom:1px solid var(--f700)">
+      <span>4 shots</span><span>ES <b>0.22</b> mil</span><span>MR <b>0.09</b></span><span class="muted">↻ live</span></div>
+    <svg width="276" height="420" viewBox="66 48 88 134" style="display:block">
+      <rect x="0" y="0" width="240" height="240" fill="#efe9dc"/><rect x="0" y="0" width="240" height="240" fill="url(#grid)"/>
+      <use href="#aim" x="90" y="86" width="20" height="20"/>
+      <use href="#hole" x="101" y="85" width="10" height="10"/><use href="#hole" x="112" y="90" width="10" height="10"/><use href="#hole" x="97" y="104" width="10" height="10"/><use href="#hole" x="116" y="101" width="10" height="10"/><use href="#hole" x="106" y="95" width="10" height="10"/>
+      <g fill="none" stroke="#E8702A" stroke-width="1"><circle cx="106" cy="90" r="3.6"/><circle cx="117" cy="95" r="3.6"/><circle cx="102" cy="109" r="3.6"/><circle cx="121" cy="106" r="3.6"/></g>
+      <g font-size="5" fill="#E8702A" font-weight="700"><text x="100" y="85">1</text><text x="122" y="92">2</text><text x="95" y="117">3</text><text x="126" y="112">4</text></g>
+      <clipPath id="lp"><circle cx="111" cy="70" r="17"/></clipPath>
+      <circle cx="111" cy="70" r="17" fill="#efe9dc"/>
+      <g clip-path="url(#lp)"><g transform="translate(111 70) scale(2.2) translate(-111 -100)"><rect x="80" y="70" width="60" height="60" fill="#efe9dc"/><rect x="80" y="70" width="60" height="60" fill="url(#grid)"/><use href="#hole" x="106" y="95" width="10" height="10"/></g>
+        <path d="M111 55V85M96 70H126" stroke="#E8702A" stroke-width=".6"/><circle cx="111" cy="70" r="7.9" fill="none" stroke="#E8702A" stroke-width=".8" stroke-dasharray="2 1.4"/></g>
+      <circle cx="111" cy="70" r="17" fill="none" stroke="#12261A" stroke-width="1.6"/><circle cx="111" cy="70" r="18.2" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.4"/>
+      <circle cx="111" cy="100" r="5.5" fill="none" stroke="#12261A" stroke-width=".7" stroke-dasharray="1.2 1"/>
+    </svg>
+    <div class="muted" style="text-align:center;font-size:11.5px;margin-top:4px">Lift to place shot 5 · hold a shot to move it</div>
+  </div>
+  <div class="tabs" style="padding:6px 6px;gap:4px;height:54px">
+    <div class="tool" style="width:100%"><span><i>↶</i>Undo</span><span><i>❄</i>Cold</span><span><i>⚑</i>Flier</span><span><i>⌖</i>Detect</span><span class="hot"><i>⧉</i>Group 2</span></div></div>
+</div>
+<figcaption><b>Mark.</b> The loupe shows what is under the finger, three times larger, and the shot lands where you lift. Rings are bullet-sized. Numbers update live.</figcaption>
+</figure>
+
+<!-- 4. Group result -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Groups</span><div class="t" style="text-align:center">41.2 gr · rung 4</div><span class="menu">⇪</span></div>
+  <div class="body">
+    <div style="display:flex;gap:8px">
+      <svg width="118" height="118" viewBox="86 76 44 44" style="border-radius:8px;flex:none">
+        <rect x="0" y="0" width="240" height="240" fill="#efe9dc"/><rect x="0" y="0" width="240" height="240" fill="url(#grid)"/>
+        <use href="#aim" x="94" y="88" width="12" height="12"/>
+        <use href="#hole" x="105" y="89" width="6" height="6"/><use href="#hole" x="112" y="93" width="6" height="6"/><use href="#hole" x="101" y="105" width="6" height="6"/><use href="#hole" x="115" y="101" width="6" height="6"/><use href="#hole" x="108" y="96" width="6" height="6"/>
+        <circle cx="111.2" cy="99.8" r="6.7" fill="none" stroke="#E8702A" stroke-width=".7"/>
+        <circle cx="111.2" cy="99.8" r="7" fill="none" stroke="#E9B949" stroke-width=".6" stroke-dasharray="1.4 1"/>
+        <path d="M109.7 99.8h3M111.2 98.3v3" stroke="#E8702A" stroke-width=".7"/>
+      </svg>
+      <div style="flex:1;display:grid;gap:6px">
+        <div class="tile"><div class="l">Extreme spread</div><div class="v">0.25 mil</div><div class="l">24.7 mm · e-e 31.4</div></div>
+        <div class="tile"><div class="l">Mean radius</div><div class="v">0.10 mil</div><div class="l">95%: 0.07–0.19</div></div>
+      </div>
+    </div>
+    <div class="tile" style="margin-top:7px;display:flex;justify-content:space-between">
+      <div><div class="l">Impact</div><div class="v">→ 0.17 · ↓ 0.06</div></div>
+      <div style="text-align:right"><div class="l">Dial</div><div class="v" style="color:var(--blaze)">2 L · 1 U</div><div class="l">0.1 mil clicks</div></div></div>
+    <table class="st" style="width:100%;margin-top:6px">
+      <tr><th>5 shots · 100 m</th><th>mil</th><th>mm</th></tr>
+      <tr><td>σ (radial)</td><td>0.09</td><td>8.9</td></tr>
+      <tr><td>CEP · R90</td><td>0.10 · 0.19</td><td>10.5 · 19.1</td></tr>
+      <tr><td>SD horiz. · vert.</td><td>0.07 · 0.06</td><td>6.7 · 6.2</td></tr>
+      <tr><td>Width × height</td><td>0.21 × 0.24</td><td>21 × 24</td></tr>
+      <tr><td>Hit 1 MOA circle</td><td colspan="2">96 % of shots</td></tr>
+    </table>
+    <div class="row" style="margin-top:7px;border-color:var(--amber)"><div class="main" style="font-size:12px">⚑ Shot 3 pulls the group<div class="sub">Without it: ES 0.16 · MR 0.07</div></div><span class="btn">Show</span></div>
+    <div class="row"><div class="main" style="font-size:12px">Velocity 5/5 paired<div class="sub">avg 823 m/s · SD 4.1 · ES 11</div></div><span class="muted">›</span></div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div class="on"><i>⁘</i>Groups</div><div><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Group.</b> Size and correction first, in the rifle's own clicks. Each size has its 95% range; a flier is suggested, never removed without you.</figcaption>
+</figure>
+
+<!-- 5. Load development window -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Groups</span><div class="t" style="text-align:center">Analyse</div><div class="menu">•••</div></div>
+  <div class="body">
+    <div class="seg" style="margin-bottom:8px"><span>Zero</span><span>Trend</span><span>Compare</span><span class="on">Ladder</span></div>
+    <div class="muted" style="font-size:11.5px">6.5 CM · H4350 ladder · 8 rungs × 3 shots · 300 m</div>
+    <svg width="270" height="165" viewBox="0 0 270 165" style="display:block;margin-top:4px">
+      <rect x="120" y="8" width="104" height="130" fill="#2B5A3E" opacity=".45" rx="4"/>
+      <text x="124" y="20" font-size="9.5" fill="#7FC08C">flat · 41.0–41.6 gr</text>
+      <line x1="22" y1="138" x2="262" y2="138" stroke="#3A6E4E"/>
+      <text x="2" y="12" font-size="8.5" fill="#B8B2A2">mil</text>
+      <g stroke="#B8B2A2" stroke-width="1"><line x1="34" y1="104" x2="34" y2="134"/><line x1="64" y1="84" x2="64" y2="116"/><line x1="94" y1="56" x2="94" y2="94"/><line x1="124" y1="48" x2="124" y2="78"/><line x1="154" y1="46" x2="154" y2="74"/><line x1="184" y1="50" x2="184" y2="80"/><line x1="214" y1="30" x2="214" y2="66"/><line x1="244" y1="12" x2="244" y2="48"/></g>
+      <polyline points="34,119 64,100 94,75 124,63 154,60 184,65 214,48 244,30" fill="none" stroke="#E8702A" stroke-width="2"/>
+      <g fill="#E8702A"><circle cx="34" cy="119" r="3.2"/><circle cx="64" cy="100" r="3.2"/><circle cx="94" cy="75" r="3.2"/><circle cx="124" cy="63" r="3.2"/><circle cx="154" cy="60" r="3.2"/><circle cx="184" cy="65" r="3.2"/><circle cx="214" cy="48" r="3.2"/><circle cx="244" cy="30" r="3.2"/></g>
+      <g font-size="8.5" fill="#B8B2A2"><text x="24" y="151">40.6</text><text x="84" y="151">41.0</text><text x="144" y="151">41.4</text><text x="204" y="151">41.8</text><text x="110" y="163">charge, gr · vertical impact ± noise</text></g>
+    </svg>
+    <div class="sec">Flattest runs</div>
+    <div class="row" style="border-color:var(--meadow)"><div class="main">41.0–41.6 gr · 4 steps<div class="sub">vertical moves 0.05 mil · noise ±0.06 · 823–826 m/s</div></div><span style="color:var(--meadow)">✓</span></div>
+    <div class="row"><div class="main">40.8–41.2 gr · 3 steps<div class="sub">vertical 0.12 mil · more than noise</div></div></div>
+    <div style="display:flex;gap:6px;margin-top:4px"><span class="btn">Composite</span><span class="btn pri" style="flex:1;text-align:center">Make 41.3 gr my load</span></div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div class="on"><i>⁘</i>Groups</div><div><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Ladder.</b> Vertical impact per rung with its noise as a bar, the flat run shaded, velocities alongside, and one tap to make the middle charge a real load.</figcaption>
+</figure>
+
+<!-- 6. Zero check -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Groups</span><div class="t" style="text-align:center">Analyse</div><div class="menu">•••</div></div>
+  <div class="body">
+    <div class="seg" style="margin-bottom:8px"><span class="on">Zero</span><span>Trend</span><span>Compare</span><span>Ladder</span></div>
+    <div><span class="chip on">Tikka T3x ▾</span><span class="chip on">Proof 24" ▾</span><span class="chip on">41.3 gr ▾</span></div>
+    <div class="verdict"><b>HOLDING</b><div style="font-size:12px;margin-top:2px">0.02 mil left, 0.04 mil high, 95% within ±0.05.<br><span class="muted">7 groups · 33 shots since reset on 2 Oct</span></div></div>
+    <svg width="270" height="190" viewBox="-60 -42 120 84" style="display:block;margin-top:8px;background:var(--f800);border-radius:10px">
+      <circle r="30" fill="none" stroke="#3A6E4E" stroke-width=".6"/><circle r="15" fill="none" stroke="#3A6E4E" stroke-width=".6"/>
+      <path d="M-40 0H40M0 -38V38" stroke="#3A6E4E" stroke-width=".6"/>
+      <text x="31" y="-2" font-size="4.5" fill="#B8B2A2">0.2 mil</text>
+      <use href="#aim" x="-6" y="-6" width="12" height="12"/>
+      <g fill="#E8702A"><circle cx="-6" cy="-9" r="1.8"/><circle cx="4" cy="-2" r="1.8"/><circle cx="-11" cy="5" r="1.8"/><circle cx="2" cy="-14" r="1.8"/><circle cx="-3" cy="3" r="1.8"/><circle cx="7" cy="-8" r="1.8"/><circle cx="-8" cy="-4" r="1.8"/></g>
+      <circle cx="-2" cy="-4" r="5" fill="none" stroke="#7FC08C" stroke-width=".8" stroke-dasharray="1.5 1"/>
+      <text x="-26" y="38" font-size="4.6" fill="#B8B2A2">group centres · ring = pooled 95%</text>
+    </svg>
+    <div class="row" style="margin-top:8px"><div class="main" style="font-size:12px">2 groups had a dialled offset<div class="sub">subtracted before pooling</div></div></div>
+    <div style="display:flex;gap:6px"><span class="btn">Zero reset now</span><span class="btn pri" style="flex:1;text-align:center">Use in calculator</span></div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div class="on"><i>⁘</i>Groups</div><div><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Zero.</b> Three possible verdicts: holding, drifting, or can't tell yet. "Use in calculator" writes the correction to the rifle's zero in MXSC.</figcaption>
+</figure>
+
+<!-- 7. Compare -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Groups</span><div class="t" style="text-align:center">Analyse</div><div class="menu">•••</div></div>
+  <div class="body">
+    <div class="seg" style="margin-bottom:8px"><span>Zero</span><span>Trend</span><span class="on">Compare</span><span>Ladder</span></div>
+    <div class="grid2">
+      <div class="tile" style="border-color:var(--meadow)"><div class="l" style="color:var(--meadow)">BEST · A</div><div style="font-size:12px">ELD-M 140</div><div class="v">MR 0.10</div><div class="l">5 shots · ES 0.25</div></div>
+      <div class="tile"><div class="l">B · +43%</div><div style="font-size:12px">Scenar-L 136</div><div class="v">MR 0.14</div><div class="l">5 shots · ES 0.33</div></div>
+    </div>
+    <div class="tile" style="margin-top:8px;border-color:var(--amber)">
+      <div style="color:var(--amber);font-weight:600">Can't tell yet</div>
+      <div style="font-size:12px;margin-top:3px">B looks 1.4× larger, but with 5 + 5 shots the true ratio could be anywhere from 0.7× to 2.8×.</div>
+      <svg width="240" height="34" viewBox="0 0 240 34" style="display:block;margin-top:6px">
+        <line x1="10" y1="16" x2="230" y2="16" stroke="#3A6E4E"/><line x1="62" y1="6" x2="62" y2="26" stroke="#B8B2A2" stroke-dasharray="2 2"/>
+        <rect x="35" y="11" width="160" height="10" rx="5" fill="#E9B949" opacity=".35"/><circle cx="96" cy="16" r="4" fill="#E9B949"/>
+        <g font-size="8" fill="#B8B2A2"><text x="56" y="33">1×</text><text x="28" y="33">0.7</text><text x="186" y="33">2.8</text></g></svg>
+      <div class="muted" style="font-size:11.5px">About 14 shots each would settle a difference this size.</div>
+    </div>
+    <table class="st" style="width:100%;margin-top:8px">
+      <tr><th></th><th>A</th><th>B</th></tr>
+      <tr><td>σ radial</td><td>0.09</td><td>0.12</td></tr>
+      <tr><td>SD vert.</td><td>0.06</td><td>0.11</td></tr>
+      <tr><td>Vel. SD</td><td>4.1</td><td>9.7</td></tr>
+    </table>
+    <div style="display:flex;gap:6px;margin-top:8px"><span class="btn">Save</span><span class="btn">Composite</span><span class="btn">＋ Group</span></div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div class="on"><i>⁘</i>Groups</div><div><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Compare.</b> Plain-language verdict with the plausible range drawn, and how many shots would settle it.</figcaption>
+</figure>
+
+<!-- 8. Rifle and barrels -->
+<figure class="sk">
+<div class="phone">
+  <div class="hdr"><span class="back">‹ Rifles</span><div class="t" style="text-align:center">Tikka T3x</div><span class="back">Edit</span></div>
+  <div class="body">
+    <div class="muted" style="font-size:11.5px;margin-bottom:6px">6.5 Creedmoor · Kahles K318i · 0.1 mil clicks</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div class="tile"><div class="l">Action</div><div class="v">2 412</div></div>
+      <div class="tile"><div class="l">Barrel</div><div class="v">1 180</div></div>
+      <div class="tile" style="border-color:var(--amber)"><div class="l" style="color:var(--amber)">Since clean</div><div class="v">212</div></div>
+    </div>
+    <div style="display:flex;gap:6px;margin:8px 0"><span class="btn pri" style="flex:1;text-align:center">＋ Log rounds</span><span class="btn">Cleaned</span></div>
+    <div class="sec">Barrels</div>
+    <div class="row" style="border-color:var(--blaze)"><div class="main">Proof 24" 1:8 <span class="chip on" style="margin:0 0 0 4px">fitted</span><div class="sub">since 14 Mar · 1 180 rounds · σ 0.09 mil</div></div></div>
+    <div class="row"><div class="main">Factory 24" 1:8<div class="sub">1 232 rounds · retired · σ 0.13 mil</div></div><span class="btn">Fit</span></div>
+    <div class="sec">Loads with this rifle</div>
+    <div class="row"><div class="main">41.3 gr H4350 · ELD-M 140<div class="sub">active · 7 groups · σ 0.09 · 823 m/s</div></div><span class="muted">›</span></div>
+    <div class="row"><div class="main">H4350 ladder (load dev)<div class="sub">8 rungs · kept apart from zero</div></div><span class="muted">›</span></div>
+    <div class="sec">Recent rounds</div>
+    <div class="muted" style="font-size:11.5px">Today · 24 on Proof · ladder<br>12 Nov · 40 on Proof · practice</div>
+  </div>
+  <div class="tabs"><div><i>⌖</i>Calculate</div><div><i>⁘</i>Groups</div><div class="on"><i>⌐</i>Rifles</div><div><i>▮</i>Bullets</div><div><i>◎</i>Targets</div></div>
+</div>
+<figcaption><b>Rifle.</b> MXSC's rifle, with barrels and round counts added. Each barrel and load shows its measured precision.</figcaption>
+</figure>
+
+</div><!-- /sketches -->
+
+<h3>Desktop (Mac, Windows, Linux, wide browser)</h3>
+<p>The same parts as panes, with MXSC's top tab bar: library on the left, the photo in the middle, numbers on the right. Mouse and keys: click adds, scroll zooms, space-drag pans, arrows nudge, <code>⌫</code> deletes, <code>⌘Z</code> undoes, <code>⌘V</code> pastes a photo.</p>
+<div class="desk">
+  <div class="top"><div class="logo" style="width:22px;height:22px;border-radius:5px;background:var(--f700);display:grid;place-items:center;font-weight:800;font-size:10px;margin-right:6px">MX</div>
+    <span style="font-weight:700;margin-right:12px;color:var(--bonem)">v0.11</span><span class="tb">Calculate</span><span class="tb on">Groups</span><span class="tb">Analyse</span><span class="tb">Rifles</span><span class="tb">Bullets</span><span class="tb">Targets</span><span class="tb">Cards</span><span style="flex:1"></span><span class="muted" style="font-size:11px">● sync on · 2 min ago</span></div>
+  <div class="panes">
+    <div class="pane">
+      <div class="btn pri" style="display:block;text-align:center;padding:6px;margin-bottom:8px">＋ New group <kbd style="color:#1b0f06;border-color:#1b0f06">⌘N</kbd></div>
+      <div><span class="chip on">Tikka T3x ▾</span><span class="chip">All loads ▾</span></div>
+      <div class="muted" style="margin:6px 0 4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em">Today · Luleå</div>
+      <div class="row sel"><div style="flex:1">41.2 gr · rung 4<div class="sub">5 · 100 m</div></div><div>0.25</div></div>
+      <div class="row"><div style="flex:1">41.0 gr · rung 3<div class="sub">5 · 100 m</div></div><div>0.38</div></div>
+      <div class="row"><div style="flex:1">40.8 gr · rung 2<div class="sub">5 · 100 m</div></div><div>0.31</div></div>
+      <div class="row"><div style="flex:1">Cold bore check<div class="sub">3 · 100 m</div></div><div>0.12</div></div>
+      <div class="muted" style="margin:6px 0 4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em">12 Nov · Boden</div>
+      <div class="row"><div style="flex:1">ELD-M 140 · 300 m<div class="sub">10 · composite</div></div><div>0.41</div></div>
+    </div>
+    <div class="pane c" style="display:grid;grid-template-rows:auto 1fr auto;gap:6px;padding:8px">
+      <div style="display:flex;gap:6px;align-items:center"><span class="btn">↶</span><span class="btn">↷</span><span class="btn">❄ Cold bore</span><span class="btn">⚑ Flier</span><span class="btn">⌖ Detect</span><span style="flex:1"></span><span class="btn">As marked ▾</span><span class="muted">220%</span></div>
+      <svg viewBox="50 58 130 92" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;background:#4b4436;border-radius:8px;min-height:0">
+        <rect x="0" y="0" width="240" height="240" fill="#efe9dc"/><rect x="0" y="0" width="240" height="240" fill="url(#grid)"/>
+        <use href="#aim" x="90" y="86" width="20" height="20"/>
+        <use href="#hole" x="101" y="85" width="10" height="10"/><use href="#hole" x="112" y="90" width="10" height="10"/><use href="#hole" x="97" y="104" width="10" height="10"/><use href="#hole" x="116" y="101" width="10" height="10"/><use href="#hole" x="106" y="95" width="10" height="10"/>
+        <g fill="none" stroke="#E8702A" stroke-width=".7"><circle cx="106" cy="90" r="3.6"/><circle cx="117" cy="95" r="3.6"/><circle cx="102" cy="109" r="3.6"/><circle cx="121" cy="106" r="3.6"/><circle cx="111" cy="100" r="3.6" stroke-width="1.3"/></g>
+        <circle cx="111.4" cy="100.0" r="8.4" fill="none" stroke="#E8702A" stroke-width=".45"/><circle cx="111.4" cy="100.0" r="9.8" fill="none" stroke="#E9B949" stroke-width=".4" stroke-dasharray="1.2 1"/>
+        <path d="M109.8 100.0h3.2M111.4 98.4v3.2" stroke="#E8702A" stroke-width=".5"/>
+        <g font-size="3.6" fill="#E8702A" font-weight="700"><text x="100" y="86">1</text><text x="122" y="92">2</text><text x="96" y="116">3</text><text x="126" y="112">4</text><text x="114" y="104">5</text></g>
+        <g font-size="3" fill="#6b5a48"><text x="132" y="74">○ mean radius</text><text x="132" y="78">◌ CEP</text><text x="132" y="82">✛ centre</text></g>
+      </svg>
+      <div class="muted" style="font-size:11px">Shot 5 selected · arrows nudge 0.1 mm · <kbd>⌫</kbd> removes · <kbd>C</kbd> cold bore · <kbd>F</kbd> flier</div>
+    </div>
+    <div class="pane" style="border-right:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div class="tile"><div class="l">Extreme spread</div><div class="v">0.25 mil</div><div class="l">24.7 mm</div></div>
+        <div class="tile"><div class="l">Mean radius</div><div class="v">0.10 mil</div><div class="l">95%: 0.07–0.19</div></div>
+        <div class="tile" style="grid-column:span 2;display:flex;justify-content:space-between"><div><div class="l">Impact</div><div class="v">→ 0.17 · ↓ 0.06</div></div><div style="text-align:right"><div class="l">Dial</div><div class="v" style="color:var(--blaze)">2 L · 1 U</div></div></div>
+      </div>
+      <table style="width:100%;margin-top:6px"><tr><th>Statistic</th><th>mil</th><th>mm</th><th>95%</th></tr>
+        <tr><td>σ radial</td><td>0.09</td><td>8.9</td><td>0.06–0.17</td></tr><tr><td>CEP</td><td>0.10</td><td>10.5</td><td>0.07–0.20</td></tr>
+        <tr><td>R90</td><td>0.19</td><td>19.1</td><td></td></tr><tr><td>SD H · V</td><td>0.07 · 0.06</td><td>6.7 · 6.2</td><td></td></tr>
+        <tr><td>W × H</td><td>0.21 × 0.24</td><td>21 × 24</td><td></td></tr></table>
+      <div class="tile" style="margin-top:6px"><div class="l">Session · Luleå · today</div>3 °C · 1011 hPa · 2 m/s from 9 o'clock</div>
+      <div class="tile" style="margin-top:6px"><div class="l">Velocity · paired</div>823 m/s · SD 4.1 · ES 11<div class="l">explains 38% of vertical · solver expects 0.4 mm per m/s</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<h2 id="flow">6. The marking flow, step by step</h2>
+<div class="wrap"><table>
+<tr><th>Step</th><th>Phone</th><th>Desktop</th><th>Usability details</th></tr>
+<tr><td>1 Photo</td><td>"Take photo" opens the camera through the browser's file input; "Library"; or "Grid".</td><td>Open, drop, or paste.</td><td>Last-used rifle, load, distance and session prefilled. Photo reduced once on import (see Q4). Rotate before marking.</td></tr>
+<tr><td>2 Scale</td><td>2 points / 4 corners / MX target.</td><td>Same, by click.</td><td>Loupe for each point. Presets for common lengths. The scale is checked for sense ("1 mm = 0.3 px: too coarse, take a closer photo"). Can be skipped and set later; shots stay.</td></tr>
+<tr><td>3 Aim</td><td>Tap the aim point, or "No aim point".</td><td>Click.</td><td>For known targets, snaps to the centre. Several aim points per photo for multi-bull targets.</td></tr>
+<tr><td>4 Shots</td><td>Tap, loupe, lift to place.</td><td>Click; arrows nudge.</td><td>Auto-zoom to the aim point. Ring snaps to the hole's dark centre within half a calibre (can be turned off). Live stats strip. "Group 2" starts the next group on the same photo with the same scale.</td></tr>
+<tr><td>5 Save</td><td>Sheet: rifle, barrel, load, distance, session, tags, velocity.</td><td>Right pane.</td><td>Only distance and load are needed. A new load or session can be made inline. Velocity can come later.</td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="stats">7. Statistics: what we compute and how</h2>
+<p>All maths in a pure Rust crate with unit tests against published tables, documented in <code>docs/group-statistics.md</code>. Shots are points <i>p<sub>i</sub></i> in millimetres on the target plane (after the scale and any straightening); angles use the group's distance. The model behind the intervals is the usual one for rifle groups: shots scatter round a centre with the same normal spread in both directions.</p>
+<div class="wrap"><table>
+<tr><th>Statistic</th><th>Definition</th><th>Notes</th></tr>
+<tr><td>Centre</td><td class="formula">c = mean(p_i)</td><td>Impact vs aim = c − aim. Shown as impact and as the correction to dial, in the scope's clicks.</td></tr>
+<tr><td>Extreme spread</td><td class="formula">ES = max |p_i − p_j|; e-e = ES + calibre</td><td>Kept because everybody uses it; labelled as the noisiest measure.</td></tr>
+<tr><td>Mean radius</td><td class="formula">MR = mean |p_i − c|</td><td>Uses every shot.</td></tr>
+<tr><td>Radial σ</td><td class="formula">σ̂² = Σ|p_i − c|² / (2(n−1))</td><td>The best single measure of precision; feeds CEP, R90, hit chance, comparisons and MXSC's "Your precision".</td></tr>
+<tr><td>95% range of σ (and MR, CEP)</td><td class="formula">2(n−1)σ̂²/σ² ~ χ²(2n−2)</td><td>Exact under the model, for any n ≥ 2, no resampling noise. ES's range comes from σ's range and the expected ES/σ for n shots.</td></tr>
+<tr><td>CEP, R90, R95</td><td class="formula">R_p = σ̂·√(−2 ln(1−p)): CEP = 1.177σ̂, R90 = 2.146σ̂, R95 = 2.448σ̂</td><td>If the group is clearly elliptical (SD H/V ratio), the Grubbs approximation is used instead and the card says so. The measured median radius is shown alongside.</td></tr>
+<tr><td>SD H, SD V, width × height</td><td class="formula">sample SD (n−1) per axis; max − min per axis</td><td>For wind (H) versus velocity (V) questions.</td></tr>
+<tr><td>Hit chance</td><td>Probability a shot lands in a chosen circle or rectangle, centred on aim (includes the offset) or on the group.</td><td>Circle around the group centre: closed form; with offset or rectangle: numerical integration of the bivariate normal. Targets from MXSC's target list.</td></tr>
+<tr><td>Flier check</td><td>Leave-one-out: for each shot, σ of the rest and that shot's distance from their centre; flag if it lies beyond the 99% radius of the rest and removing it cuts σ by ≥ 25%.</td><td>Only suggests. The user calls the flier; the view without it is labelled.</td></tr>
+<tr><td>Velocity</td><td class="formula">avg, ES, SD (n−1); SD's 95% range from χ²(n−1)</td><td>Readings outside 100–1500 m/s refused; "2,850" is never guessed.</td></tr>
+<tr><td>Velocity × vertical</td><td class="formula">least squares: vertical_i = a + b·v_i; R² = share explained</td><td>Shown next to the solver's expected b at that distance and muzzle velocity: b well below expected suggests positive compensation, b near zero with a large R² is chance. Needs 5 paired shots.</td></tr>
+<tr><td>Compare two groups</td><td class="formula">F = σ̂_A² / σ̂_B² ~ F(2n_A−2, 2n_B−2)</td><td>Gives the ratio's 95% range and the verdict: same (range inside 0.9–1.1), different (range excludes 1), can't tell yet; plus the shots per group needed to tell this ratio apart 80% of the time.</td></tr>
+<tr><td>Composite</td><td>All shots pooled after moving each group to a shared aim point (or its own centre if any lacks one).</td><td>σ from the pooled residuals, so mixed group sizes count correctly.</td></tr>
+<tr><td>Zero check</td><td>Per-shot mean impact (net of dialled offsets) since the last reset, with a 95% range that includes group-to-group variation.</td><td>Holding: range inside ±tolerance (default 0.1 mil / 0.35 MOA). Drifting: range excludes zero and centre beyond tolerance. Otherwise: can't tell yet, with how many more groups would help.</td></tr>
+<tr><td>Ladder window</td><td>Rungs at the same value pooled; each rung's vertical impact with its standard error σ̂/√n; every run of ≥ 3 neighbours scored by (max − min vertical) ÷ pooled noise, then horizontal, then σ.</td><td>Velocity flatness (m/s per grain) shown per run. The help text is candid: with 3-shot rungs most "flat spots" are noise; the error bars show it.</td></tr>
+<tr><td>Temperature sensitivity</td><td class="formula">avg velocity per session vs temperature: m/s per °C</td><td>Needs 3 sessions spread over ≥ 10 °C. Offered to the bullet record in MXSC.</td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="data">8. Data model</h2>
+<p>New records follow MXSC's newer pattern: a table with <code>id</code>, a JSON <code>data</code> blob and <code>updated_at</code>, merged by time, with tombstones for deletions. Units in field names, always metric. Everything below goes into the documented backup format (version 8) with generated schema docs.</p>
+<div class="wrap"><table>
+<tr><th>Record</th><th>Main fields</th><th>Notes</th></tr>
+<tr><td>Bullet (extended)</td><td>Handloads gain <code>recipe</code>: powder, charge_gr, primer, brass, coal_mm, cbto_mm, notes.</td><td>Needed for ladders and "make this my load". Factory bullets unchanged.</td></tr>
+<tr><td>Barrel <span class="tag p1">new</span></td><td>rifle_id, name, length_mm, twist, maker, fitted_at, retired_at, rounds_before_logging</td><td>Rifle gains <code>fitted_barrel_id</code>. Fitting a barrel offers to copy its length and twist into the rifle's ballistics.</td></tr>
+<tr><td>Round log entry <span class="tag p1">new</span></td><td>rifle_id, barrel_id (or action only), rounds, at, note, group_id?</td><td>Action, barrel and since-clean counts are derived, never stored.</td></tr>
+<tr><td>Clean <span class="tag p1">new</span></td><td>rifle_id, barrel_id, at, note</td><td></td></tr>
+<tr><td>Session <span class="tag p1">new</span></td><td>place, started_at, temperature_c, pressure_hpa, humidity, wind (speed, clock), notes</td><td>Weather from Open-Meteo on request. Shot-log entries can link to it too.</td></tr>
+<tr><td>Photo <span class="tag p1">new</span></td><td>id = SHA-256 of the bytes, width, height, mime, taken_at</td><td>Bytes are kept <b>outside</b> SQLite (see section 9). Same photo imported twice is stored once.</td></tr>
+<tr><td>Group <span class="tag p1">new</span></td><td>photo_id or grid; calibration (two-point a, b, mm | four-corner p1–p4, width_mm, height_mm | MX target); aim points; shots [{x_px, y_px, cold_bore, called_flier, velocity_mps?}]; view (zoom, pan); rifle_id, barrel_id, bullet_id, ladder_id + rung value; distance_m; session_id; condition overrides; dialled_offset_mrad (x, y); include_in_zero; tags; notes; archived</td><td>Shots stay in photo pixels so a new scale never loses them. Several groups can share one photo and calibration.</td></tr>
+<tr><td>Ladder <span class="tag p2">new</span></td><td>rifle_id, bullet_id, variable (charge | seating), notes, promoted_bullet_id?</td><td>Kept apart from zero and trend unless chosen.</td></tr>
+<tr><td>Zero reset <span class="tag p2">new</span></td><td>rifle_id, barrel_id?, at</td><td></td></tr>
+<tr><td>Analysis <span class="tag p2">new</span></td><td>kind (compare | composite | ladder), name, group_ids, settings</td><td>Rebuilt from the current groups when opened; a composite is listed in the library.</td></tr>
+</table></div>
+<p><b>What flows back into the calculator:</b> pooled σ for a rifle + load replaces the hand-typed "Your precision" group (<code>Inputs.group_cm</code>); average velocity and SD become a <code>VelocityPoint</code> with <code>ShotStats</code> on the <code>RifleLoad</code>; temperature sensitivity from sessions; the zero check's correction becomes the load's <code>impact_offset_mrad</code>. Each one is offered with a button, never written silently.</p>
+
+<!-- ============================================================== -->
+<h2 id="tech">9. Technical design</h2>
+<div class="cols">
+<div class="card"><h3>Crates</h3>
+<ul style="padding-left:18px;margin:0">
+<li><code>groups-core</code>: geometry, 2-point and 4-point calibration (homography), all statistics and tests (χ², F, normal quantiles written in-house like <code>ballistics-core</code>, no dependencies), composites, zero, ladder, trend. Pure, fully unit-tested.</li>
+<li><code>groups-vision</code> <span class="tag p3">P3</span>: hole suggestions, MX target marks, finding new holes. Uses the <code>image</code> crate.</li>
+<li><code>ballistics-store</code>: migrations 11+, the new records, backup v8, photo store trait.</li>
+<li><code>crates/app/src/groups/</code>: library, marking canvas, details, save sheet, analyse pages; rifles.rs and bullets.rs gain barrels, round log and recipe.</li>
+</ul></div>
+<div class="card"><h3>Photos</h3>
+<ul style="padding-left:18px;margin:0">
+<li>On the web, SQLite runs on an in-memory copy (<code>relaxed_idb.rs</code>), so photos inside it would sit in memory and be rewritten on every save. They go in their own IndexedDB store, keyed by hash; on desktop, files in the app-data folder under <code>photos/</code>.</li>
+<li>Import: decode, apply EXIF orientation, reduce once (see Q4), store JPEG. HEIC: the iPhone browser converts it; on the Mac, decoded with ImageIO.</li>
+<li>Display: GPU textures capped at 4096 px (the WebGL limit on many phones); full size kept for detection.</li>
+<li>Backup: JSON without photos (as now), plus "Backup with photos" as a <code>.zip</code>.</li>
+</ul></div>
+<div class="card"><h3>The marking canvas</h3>
+<ul style="padding-left:18px;margin:0">
+<li>An egui widget: textured mesh, <code>zoom_delta</code> pinch and ⌘/Ctrl-scroll zoom, two-finger or space-drag pan, as in <code>trajectory3d.rs</code>.</li>
+<li>Straightening is free: the photo is drawn as a 16 × 16 mesh whose corners go through the homography, so the GPU does the warp.</li>
+<li>Loupe: a second mesh sampling the area under the finger at 3×, drawn above it (flips sideways near an edge).</li>
+<li>Overlays painted as vectors at true bullet size. Undo/redo as a command stack per group.</li>
+<li>Prior art to borrow from: <code>tools/hitzone-editor.html</code> (calibration, drag, nudge, undo).</li>
+</ul></div>
+<div class="card"><h3>Platforms</h3>
+<ul style="padding-left:18px;margin:0">
+<li>Phone: the web app, installable, as now. "Take photo" uses <code>&lt;input type=file accept="image/*" capture="environment"&gt;</code>, so no camera permission is asked.</li>
+<li>Mac, Windows, Linux: native as now; file dialog (<code>files.rs</code>), drag and drop, paste an image (<code>arboard</code>).</li>
+<li>Back button and unsaved-changes guard: reuse <code>web::navigation</code>.</li>
+<li>Same tests at widths 1200 and 390 for every new page.</li>
+</ul></div>
+<div class="card"><h3>Exports</h3>
+<ul style="padding-left:18px;margin:0">
+<li>PNG of a group drawn on the CPU with <code>tiny-skia</code> (works on the web too) and the cards' fonts.</li>
+<li>CSV per group (one row per group) and per shot (mm and mrad, from the aim point and the centre).</li>
+<li>Printable MX targets through the cards' existing PDF path.</li>
+</ul></div>
+<div class="card"><h3>Hole suggestions (P3)</h3>
+<ul style="padding-left:18px;margin:0">
+<li>Scale and calibre give the hole's size in pixels, so the detector looks for exactly that: a Laplacian-of-Gaussian at that size on the zoomed area, local contrast against a ring around it, roundness, then pruning by distance.</li>
+<li>Touching holes: blobs about twice the area are split into two circles.</li>
+<li>Find new holes: align the second photo through the MX target marks, or by tapping the same two reference points again; new holes are what changed.</li>
+<li>All results are dashed suggestions; ones near marked shots start unticked.</li>
+</ul></div>
+<div class="card"><h3>Sync (P3)</h3>
+<ul style="padding-left:18px;margin:0">
+<li>The sync server caps a copy at 1 MiB. Groups are small, but a few thousand would pass it: compress the copy and raise the cap.</li>
+<li>Photos as separate encrypted blobs (same key, content-addressed), which needs blob storage behind the Cloudflare worker (R2). The Google Drive route stores them as separate appdata files.</li>
+<li>Both are server changes that CLAUDE.md asks your agreement for (Q5).</li>
+</ul></div>
+<div class="card"><h3>Privacy rules kept</h3>
+<ul style="padding-left:18px;margin:0">
+<li>No new permissions: camera through the file input, position only on the weather button.</li>
+<li>No analytics, no accounts, nothing readable on the server.</li>
+<li><code>site/privacy.html</code> updated in the same change as photo sync.</li>
+</ul></div>
+</div>
+
+<!-- ============================================================== -->
+<h2 id="phases">10. Milestones</h2>
+<div class="callout"><b>Overnight run, 21–22 Nov 2026:</b> M0 and the sun theme in parallel, then M1, M2 and M3, then M4 if there is time. Work in a separate MXSC worktree on branch <code>feat/groups</code> (main keeps the uncommitted shotgun work untouched); a local commit after each milestone passes an independent review; nothing pushed; about 10M tokens.</div>
+<p>Each milestone ends in a release that is useful on its own, with tests, the three languages, an independent review agent on the diff, and the CHANGELOG. Sizes are relative (S, M, L).</p>
+<div class="wrap"><table>
+<tr><th>#</th><th>Milestone</th><th>Contents</th><th>Size</th></tr>
+<tr><td>0</td><td>Foundations</td><td><code>groups-core</code> with geometry, calibration and every group statistic, tested against published values; store migrations; photo store on desktop and web; photo import with orientation and reduction.</td><td>M</td></tr>
+<tr><td>1</td><td>Mark and measure <span class="tag p1">P1</span></td><td>Marking canvas with loupe, 2-point and 4-corner scale with straightening, aim, shots, cold bore, flier, several groups per photo, blank grid; group details; save sheet; library. Phone and desktop. <b>First release.</b></td><td>L</td></tr>
+<tr><td>2</td><td>Rifles, sessions, velocity <span class="tag p1">P1</span></td><td>Barrels, round log, cleans, handload recipe; sessions with weather; velocity paste, pairing and CSV import (reusing <code>chrono.rs</code>); PNG/CSV/zip export; backup v8 docs.</td><td>M</td></tr>
+<tr><td>3</td><td>Analyse <span class="tag p2">P2</span></td><td>Compare, composite, zero check, trend, ladder; velocity × vertical with the solver; the four "use in calculator" buttons.</td><td>L</td></tr>
+<tr><td>4</td><td>Automation <span class="tag p3">P3</span></td><td>Hole suggestions, printable MX targets, find new holes.</td><td>L</td></tr>
+<tr><td>5</td><td>Sync <span class="tag p3">P3</span></td><td>Bigger compressed copies, photo blobs, privacy page.</td><td>M</td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="risks">11. Risks</h2>
+<div class="wrap"><table>
+<tr><th>Risk</th><th>What we do about it</th></tr>
+<tr><td>Fingers are less precise than the numbers suggest</td><td>Loupe, snap to the hole's centre, nudge pad, and testing on real phones in milestone 1 before anything else is built on top.</td></tr>
+<tr><td>Phone browsers run out of memory or texture size with 12–48 MP photos</td><td>Reduce on import, photos outside SQLite, one full-size texture at a time, cached thumbnails.</td></tr>
+<tr><td>iPhone Safari clears data of web apps that aren't installed after a week without use</td><td>Ask the browser to keep the data (as MXSC does), nudge to "Add to Home Screen", remind about the zip backup.</td></tr>
+<tr><td>Five-shot groups invite overconfident conclusions</td><td>A 95% range on every size, plain-language verdicts, and "shots you'd need" in Compare and Ladder.</td></tr>
+<tr><td>Hole suggestions miss or invent holes</td><td>Suggestions only, last in the plan; manual marking is complete without them.</td></tr>
+<tr><td>Sync copy limit and photo sync need server work</td><td>Photos local plus zip backup until milestone 5.</td></tr>
+<tr><td>Looking like a copy of Downrange</td><td>Own name, text, icons, layout and statistics; MXSC's look throughout. Nothing taken from its site or app beyond the idea of the features.</td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="questions">12. Questions before we start</h2>
+<h3>Needed before we start (all answered 21 Nov 2026)</h3>
+<ol class="q">
+<li><b>Part of MXSC, or a separate app?</b> <span class="better">Decided: part of MXSC (option A).</span></li>
+<li><b>Free, like MXSC?</b> <span class="better">Decided: everything free and open, as MXSC is.</span></li>
+<li><b>Name?</b> <span class="better">Settled by question 1: the tab is "Groups" in MXSC.</span></li>
+<li><b>Photo size:</b> <span class="better">Decided: reduce to 4000 px on the long side on import (about 1.5–2.5 MB), with a setting to keep originals.</span></li>
+<li><b>Photo sync:</b> <span class="better">Decided: photos stay on the device with zip backups first; the server change (compressed copies, raised cap, encrypted photo blobs in R2) comes in milestone 5.</span></li>
+<li><b>Phones:</b> <span class="better">Decided: MXSC's installable web app, as now; no store apps.</span></li>
+</ol>
+<h3>The rest (all answered 21 Nov 2026)</h3>
+<ol class="q" start="7">
+<li><b>Hole detection:</b> <span class="better">Decided: manual marking with loupe and snap first; classic image-processing suggestions in milestone 4; no trained model.</span></li>
+<li><b>Printable MX targets</b> <span class="better">Decided: yes, in A4, A3 and Letter.</span></li>
+<li><b>Chronograph:</b> <span class="better">Decided: Garmin Xero, LabRadar and MagnetoSpeed (the three MXSC already reads).</span></li>
+<li><b>Round counting:</b> <span class="better">Decided: a tick on the save sheet, on by default and remembered.</span></li>
+<li><b>Handload recipe</b> <span class="better">Decided: the full recipe: powder, charge, primer, brass, COAL, CBTO and notes.</span></li>
+<li><b>Angle units:</b> <span class="better">Decided: add cm per 100 m beside mil and MOA.</span></li>
+<li><b>Hunting extras:</b> <span class="better">Decided: neither for now.</span></li>
+<li><b>A light "sun" theme</b> <span class="better">Decided: build it now, for the whole app, in the overnight run.</span></li>
+<li><b>Electronic targets</b> <span class="better">Decided: skip for now.</span></li>
+</ol>
+
+</main>
+</body>
+</html>

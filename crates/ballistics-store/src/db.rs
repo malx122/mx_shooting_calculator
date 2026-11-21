@@ -7,14 +7,21 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
+use rusqlite::types::Value as SqlValue;
+
 use crate::StoreError;
+use crate::barrels::{Barrel, Clean, RoundLogEntry, ZeroReset};
 use crate::deletions::{Deletion, RecordKind};
+use crate::groups::{Analysis, Group, GroupView, Ladder};
 use crate::model::{
     BcModel, Bullet, BulletKind, ClickUnit, Construction, Rifle, RifleLoad, TableSettings, now_ms,
 };
 use crate::optics::UserScope;
+use crate::photos::Photo;
+use crate::sessions::Session;
 use crate::shots::Shot;
 use crate::targets::Target;
+use crate::transfer::Record;
 
 /// Each entry upgrades the schema by one version; never edit a released one.
 pub(crate) const MIGRATIONS: &[&str] = &[
@@ -133,7 +140,93 @@ pub(crate) const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE bullets ADD COLUMN data_attribution TEXT;
 "#,
+    r#"
+    ALTER TABLE rifles ADD COLUMN fitted_barrel_id TEXT;
+    ALTER TABLE rifles ADD COLUMN rounds_before_logging INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE bullets ADD COLUMN recipe TEXT;
+    CREATE TABLE barrels (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        rifle_id TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX barrels_by_rifle ON barrels (rifle_id);
+    CREATE TABLE round_log (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        rifle_id TEXT NOT NULL,
+        at INTEGER NOT NULL,
+        group_id TEXT,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX round_log_by_rifle ON round_log (rifle_id, at);
+    CREATE INDEX round_log_by_group ON round_log (group_id);
+    CREATE TABLE cleans (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        rifle_id TEXT NOT NULL,
+        at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX cleans_by_rifle ON cleans (rifle_id, at);
+    CREATE TABLE zero_resets (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        rifle_id TEXT NOT NULL,
+        at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX zero_resets_by_rifle ON zero_resets (rifle_id, at);
+    CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        started_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX sessions_by_time ON sessions (started_at);
+    CREATE TABLE photos (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE shot_groups (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        taken_at INTEGER NOT NULL,
+        photo_id TEXT,
+        rifle_id TEXT,
+        session_id TEXT,
+        ladder_id TEXT,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX shot_groups_by_time ON shot_groups (taken_at);
+    CREATE INDEX shot_groups_by_photo ON shot_groups (photo_id);
+    CREATE INDEX shot_groups_by_rifle ON shot_groups (rifle_id);
+    CREATE INDEX shot_groups_by_session ON shot_groups (session_id);
+    CREATE INDEX shot_groups_by_ladder ON shot_groups (ladder_id);
+    CREATE TABLE ladders (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        rifle_id TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX ladders_by_rifle ON ladders (rifle_id);
+    CREATE TABLE analyses (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE group_views (
+        group_id TEXT PRIMARY KEY,
+        view TEXT NOT NULL
+    );
+"#,
 ];
+
+/// The schema version of the last released app, which every newer schema
+/// must upgrade from.
+#[cfg(test)]
+pub(crate) const RELEASED_SCHEMA: usize = 10;
 
 /// The setting holding the store's clock: the latest time it has stamped
 /// or seen, so new stamps never go backwards (see `Store::stamp`).
@@ -311,21 +404,17 @@ impl Store {
         put_rifle(&self.connection, rifle)
     }
 
-    /// Deletes the rifle and the loads measured in it, remembering the
-    /// deletions so a sync deletes them on other devices too.
+    /// Deletes the rifle, remembering the deletion so a sync deletes it on
+    /// other devices too. What belongs to it goes with it (the loads
+    /// measured in it; its barrels, round log, cleans and zero resets)
+    /// without being remembered on its own: if another device edits the
+    /// rifle later, it comes back with all of them. Groups, ladders and
+    /// shots keep naming it.
     pub fn delete_rifle(&self, id: &str) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let at = self.stamp(0)?;
-        let loads: Vec<String> = self.query_all(
-            "SELECT id FROM rifle_loads WHERE rifle_id = ?1",
-            [id],
-            |row| row.get(0),
-        )?;
-        for load in loads {
-            record_deletion(&transaction, RecordKind::RifleLoad, &load, at)?;
-        }
-        record_deletion(&transaction, RecordKind::Rifle, id, at)?;
+        record_deletion(&transaction, RecordKind::Rifle, id, self.stamp(0)?)?;
         transaction.execute("DELETE FROM rifles WHERE id = ?1", [id])?;
+        sweep_orphans(&transaction)?;
         transaction.commit()?;
         Ok(())
     }
@@ -361,19 +450,11 @@ impl Store {
         put_bullet(&self.connection, bullet)
     }
 
-    /// Deletes the bullet and any velocities measured with it.
+    /// Deletes the bullet and the loads measured with it; as with a rifle,
+    /// only the bullet's deletion is remembered.
     pub fn delete_bullet(&self, id: &str) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let at = self.stamp(0)?;
-        let loads: Vec<String> = self.query_all(
-            "SELECT id FROM rifle_loads WHERE bullet_id = ?1",
-            [id],
-            |row| row.get(0),
-        )?;
-        for load in loads {
-            record_deletion(&transaction, RecordKind::RifleLoad, &load, at)?;
-        }
-        record_deletion(&transaction, RecordKind::Bullet, id, at)?;
+        record_deletion(&transaction, RecordKind::Bullet, id, self.stamp(0)?)?;
         transaction.execute("DELETE FROM bullets WHERE id = ?1", [id])?;
         transaction.commit()?;
         Ok(())
@@ -507,6 +588,335 @@ impl Store {
         Ok(())
     }
 
+    // Barrels, the round log, cleans and zero resets -------------------------
+
+    /// Every rifle's barrels, by name.
+    pub fn barrels(&self) -> Result<Vec<Barrel>, StoreError> {
+        let mut barrels: Vec<Barrel> = self.blobs("", [], "id")?;
+        barrels.sort_by_key(|barrel| barrel.name.to_lowercase());
+        Ok(barrels)
+    }
+
+    pub fn barrels_for_rifle(&self, rifle_id: &str) -> Result<Vec<Barrel>, StoreError> {
+        let mut barrels: Vec<Barrel> = self.blobs("WHERE rifle_id = ?1", [rifle_id], "id")?;
+        barrels.sort_by_key(|barrel| barrel.name.to_lowercase());
+        Ok(barrels)
+    }
+
+    pub fn barrel(&self, id: &str) -> Result<Option<Barrel>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    pub fn save_barrel(&self, barrel: &mut Barrel) -> Result<(), StoreError> {
+        self.save_blob(barrel)
+    }
+
+    /// Deletes the barrel, with its cleans and zero resets following it as a
+    /// rifle's history follows the rifle, and takes it off the rifle it is
+    /// fitted to. Its round log entries stay: the rounds went through the
+    /// action too.
+    pub fn delete_barrel(&self, id: &str) -> Result<(), StoreError> {
+        let at = self.stamp(0)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        transaction.execute(
+            "UPDATE rifles SET fitted_barrel_id = NULL, updated_at = MAX(updated_at + 1, ?2)
+             WHERE fitted_barrel_id = ?1",
+            params![id, at],
+        )?;
+        record_deletion(&transaction, RecordKind::Barrel, id, at)?;
+        transaction.execute("DELETE FROM barrels WHERE id = ?1", [id])?;
+        sweep_orphans(&transaction)?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// The round log, newest first.
+    pub fn round_log(&self) -> Result<Vec<RoundLogEntry>, StoreError> {
+        self.blobs("", [], "at DESC, id")
+    }
+
+    /// A rifle's round log, newest first.
+    pub fn round_log_for_rifle(&self, rifle_id: &str) -> Result<Vec<RoundLogEntry>, StoreError> {
+        self.blobs("WHERE rifle_id = ?1", [rifle_id], "at DESC, id")
+    }
+
+    pub fn save_round_log_entry(&self, entry: &mut RoundLogEntry) -> Result<(), StoreError> {
+        self.save_blob(entry)
+    }
+
+    /// The entry logging a group's rounds, if one was made.
+    pub fn round_log_entry_for_group(
+        &self,
+        group_id: &str,
+    ) -> Result<Option<RoundLogEntry>, StoreError> {
+        Ok(self
+            .blobs("WHERE group_id = ?1", [group_id], "at DESC, id")?
+            .into_iter()
+            .next())
+    }
+
+    pub fn delete_round_log_entry(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::RoundLogEntry, id)
+    }
+
+    /// Every clean, newest first.
+    pub fn cleans(&self) -> Result<Vec<Clean>, StoreError> {
+        self.blobs("", [], "at DESC, id")
+    }
+
+    pub fn cleans_for_rifle(&self, rifle_id: &str) -> Result<Vec<Clean>, StoreError> {
+        self.blobs("WHERE rifle_id = ?1", [rifle_id], "at DESC, id")
+    }
+
+    pub fn save_clean(&self, clean: &mut Clean) -> Result<(), StoreError> {
+        self.save_blob(clean)
+    }
+
+    pub fn delete_clean(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::Clean, id)
+    }
+
+    /// Every zero reset, newest first.
+    pub fn zero_resets(&self) -> Result<Vec<ZeroReset>, StoreError> {
+        self.blobs("", [], "at DESC, id")
+    }
+
+    pub fn zero_resets_for_rifle(&self, rifle_id: &str) -> Result<Vec<ZeroReset>, StoreError> {
+        self.blobs("WHERE rifle_id = ?1", [rifle_id], "at DESC, id")
+    }
+
+    pub fn save_zero_reset(&self, reset: &mut ZeroReset) -> Result<(), StoreError> {
+        self.save_blob(reset)
+    }
+
+    pub fn delete_zero_reset(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::ZeroReset, id)
+    }
+
+    // Sessions, photos, groups, ladders and analyses --------------------------
+
+    /// The range sessions, newest first.
+    pub fn sessions(&self) -> Result<Vec<Session>, StoreError> {
+        self.blobs("", [], "started_at DESC, id")
+    }
+
+    pub fn session(&self, id: &str) -> Result<Option<Session>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    pub fn save_session(&self, session: &mut Session) -> Result<(), StoreError> {
+        self.save_blob(session)
+    }
+
+    /// Deletes the session; its groups keep their own conditions.
+    pub fn delete_session(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::Session, id)
+    }
+
+    /// What is known about the photos; their bytes are in a `PhotoStore`.
+    pub fn photos(&self) -> Result<Vec<Photo>, StoreError> {
+        self.blobs("", [], "id")
+    }
+
+    pub fn photo(&self, id: &str) -> Result<Option<Photo>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    pub fn save_photo(&self, photo: &mut Photo) -> Result<(), StoreError> {
+        self.save_blob(photo)
+    }
+
+    /// Deletes the photo's record unless a group is marked on it, and says
+    /// whether no group is, so the photo's bytes can go too. Only this
+    /// device forgets it: other devices keep their copy while their groups
+    /// use it, and a merge brings it back with a group that does.
+    pub fn delete_photo(&self, id: &str) -> Result<bool, StoreError> {
+        let used = self
+            .query_one(
+                "SELECT 1 FROM shot_groups WHERE photo_id = ?1 LIMIT 1",
+                [id],
+                |_| Ok(()),
+            )?
+            .is_some();
+        if !used {
+            self.connection
+                .execute("DELETE FROM photos WHERE id = ?1", [id])?;
+        }
+        Ok(!used)
+    }
+
+    /// Every photo this device's records name: the photo records and the
+    /// photos groups are marked on. Bytes kept for any other photo are left
+    /// over.
+    pub fn photo_ids_in_use(&self) -> Result<std::collections::BTreeSet<String>, StoreError> {
+        Ok(self
+            .query_all(
+                "SELECT id FROM photos
+                 UNION SELECT photo_id FROM shot_groups WHERE photo_id IS NOT NULL",
+                [],
+                |row| row.get(0),
+            )?
+            .into_iter()
+            .collect())
+    }
+
+    /// The groups, newest first.
+    pub fn groups(&self) -> Result<Vec<Group>, StoreError> {
+        self.blobs("", [], "taken_at DESC, id")
+    }
+
+    pub fn group(&self, id: &str) -> Result<Option<Group>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    /// The groups marked on a photo, newest first.
+    pub fn groups_on_photo(&self, photo_id: &str) -> Result<Vec<Group>, StoreError> {
+        self.blobs("WHERE photo_id = ?1", [photo_id], "taken_at DESC, id")
+    }
+
+    /// The groups shot in a session, newest first.
+    pub fn groups_in_session(&self, session_id: &str) -> Result<Vec<Group>, StoreError> {
+        self.blobs("WHERE session_id = ?1", [session_id], "taken_at DESC, id")
+    }
+
+    /// The groups shot with a rifle, newest first.
+    pub fn groups_for_rifle(&self, rifle_id: &str) -> Result<Vec<Group>, StoreError> {
+        self.blobs("WHERE rifle_id = ?1", [rifle_id], "taken_at DESC, id")
+    }
+
+    /// The rungs of a ladder, newest first.
+    pub fn groups_in_ladder(&self, ladder_id: &str) -> Result<Vec<Group>, StoreError> {
+        self.blobs("WHERE ladder_id = ?1", [ladder_id], "taken_at DESC, id")
+    }
+
+    pub fn save_group(&self, group: &mut Group) -> Result<(), StoreError> {
+        self.save_blob(group)
+    }
+
+    /// Deletes the group. Round log entries made from it stay: the rounds
+    /// were fired.
+    pub fn delete_group(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::Group, id)?;
+        self.connection
+            .execute("DELETE FROM group_views WHERE group_id = ?1", [id])?;
+        Ok(())
+    }
+
+    /// How this device last showed the group; views are kept per device,
+    /// never exported or synced.
+    pub fn group_view(&self, group_id: &str) -> Result<Option<GroupView>, StoreError> {
+        let text: Option<String> = self.query_one(
+            "SELECT view FROM group_views WHERE group_id = ?1",
+            [group_id],
+            |row| row.get(0),
+        )?;
+        Ok(text.and_then(|text| serde_json::from_str(&text).ok()))
+    }
+
+    pub fn set_group_view(&self, group_id: &str, view: &GroupView) -> Result<(), StoreError> {
+        view.validate().map_err(StoreError::Invalid)?;
+        self.connection.execute(
+            "INSERT INTO group_views (group_id, view) VALUES (?1, ?2)
+             ON CONFLICT (group_id) DO UPDATE SET view = excluded.view",
+            params![group_id, serde_json::to_string(view)?],
+        )?;
+        Ok(())
+    }
+
+    /// The ladders, by name.
+    pub fn ladders(&self) -> Result<Vec<Ladder>, StoreError> {
+        let mut ladders: Vec<Ladder> = self.blobs("", [], "id")?;
+        ladders.sort_by_key(|ladder| ladder.name.to_lowercase());
+        Ok(ladders)
+    }
+
+    pub fn ladder(&self, id: &str) -> Result<Option<Ladder>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    pub fn save_ladder(&self, ladder: &mut Ladder) -> Result<(), StoreError> {
+        self.save_blob(ladder)
+    }
+
+    /// Deletes the ladder; its groups stay, naming it.
+    pub fn delete_ladder(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::Ladder, id)
+    }
+
+    /// The saved analyses, by name.
+    pub fn analyses(&self) -> Result<Vec<Analysis>, StoreError> {
+        let mut analyses: Vec<Analysis> = self.blobs("", [], "id")?;
+        analyses.sort_by_key(|analysis| analysis.name.to_lowercase());
+        Ok(analyses)
+    }
+
+    pub fn analysis(&self, id: &str) -> Result<Option<Analysis>, StoreError> {
+        blob_by_id(&self.connection, id)
+    }
+
+    pub fn save_analysis(&self, analysis: &mut Analysis) -> Result<(), StoreError> {
+        self.save_blob(analysis)
+    }
+
+    pub fn delete_analysis(&self, id: &str) -> Result<(), StoreError> {
+        self.delete_blob(RecordKind::Analysis, id)
+    }
+
+    /// Everything the Groups part shows besides rifles and bullets, read at
+    /// once.
+    pub fn groups_data(&self) -> Result<GroupsData, StoreError> {
+        Ok(GroupsData {
+            barrels: self.barrels()?,
+            round_log: self.round_log()?,
+            cleans: self.cleans()?,
+            zero_resets: self.zero_resets()?,
+            sessions: self.sessions()?,
+            photos: self.photos()?,
+            groups: self.groups()?,
+            ladders: self.ladders()?,
+            analyses: self.analyses()?,
+        })
+    }
+
+    fn blobs<T: Blob, P: rusqlite::Params>(
+        &self,
+        condition: &str,
+        parameters: P,
+        order: &str,
+    ) -> Result<Vec<T>, StoreError> {
+        let sql = format!(
+            "SELECT data FROM {} {condition} ORDER BY {order}",
+            T::KIND.table()
+        );
+        self.query_all(&sql, parameters, |row| {
+            from_json_column::<T>(&row.get::<_, String>(0)?)
+        })
+    }
+
+    /// Validates, stamps `updated_at` and inserts or updates the record.
+    fn save_blob<T: Blob>(&self, record: &mut T) -> Result<(), StoreError> {
+        record.check().map_err(StoreError::Invalid)?;
+        let at = self.stamp(record.updated_at())?;
+        record.set_updated_at(at);
+        put_blob(&self.connection, record)
+    }
+
+    fn delete_blob(&self, kind: RecordKind, id: &str) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        record_deletion(&transaction, kind, id, self.stamp(0)?)?;
+        transaction.execute(&format!("DELETE FROM {} WHERE id = ?1", kind.table()), [id])?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// The database file, for keeping things beside it; `None` in memory.
+    pub fn file_path(&self) -> Option<std::path::PathBuf> {
+        self.connection
+            .path()
+            .filter(|path| !path.is_empty())
+            .map(std::path::PathBuf::from)
+    }
+
     // Deletions and the clock ----------------------------------------------
 
     /// The records deleted on this device (or learnt from others), so a
@@ -631,14 +1041,181 @@ pub(crate) fn record_deletion(
     Ok(())
 }
 
+/// Removes what belongs to a rifle or a barrel this device remembers as
+/// deleted and doesn't have: the rifle's barrels, round log, cleans and
+/// zero resets (but not those of a barrel still kept, which follow the
+/// barrel), and the barrel's cleans and zero resets. Such records have no
+/// deletions of their own, so they follow their parent's fate whichever
+/// device last changed it. Also drops the views of groups that are gone.
+/// Returns how many records went.
+pub(crate) fn sweep_orphans(connection: &Connection) -> Result<usize, StoreError> {
+    let gone = |kind: RecordKind, column: &str| {
+        format!(
+            "{column} IN (SELECT id FROM deleted WHERE kind = '{}')
+             AND {column} NOT IN (SELECT id FROM {})",
+            kind.as_str(),
+            kind.table()
+        )
+    };
+    let barrel = "json_extract(data, '$.barrel_id')";
+    let rifle_gone = gone(RecordKind::Rifle, "rifle_id");
+    let mut swept = connection.execute(&format!("DELETE FROM barrels WHERE {rifle_gone}"), [])?;
+    for kind in [
+        RecordKind::RoundLogEntry,
+        RecordKind::Clean,
+        RecordKind::ZeroReset,
+    ] {
+        swept += connection.execute(
+            &format!(
+                "DELETE FROM {} WHERE {rifle_gone}
+                 AND ({barrel} IS NULL OR {barrel} NOT IN (SELECT id FROM barrels))",
+                kind.table()
+            ),
+            [],
+        )?;
+    }
+    for kind in [RecordKind::Clean, RecordKind::ZeroReset] {
+        swept += connection.execute(
+            &format!(
+                "DELETE FROM {} WHERE {}",
+                kind.table(),
+                gone(RecordKind::Barrel, barrel)
+            ),
+            [],
+        )?;
+    }
+    connection.execute(
+        "DELETE FROM group_views WHERE group_id NOT IN (SELECT id FROM shot_groups)",
+        [],
+    )?;
+    Ok(swept)
+}
+
+/// What the Groups part shows besides rifles and bullets.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GroupsData {
+    pub barrels: Vec<Barrel>,
+    /// Newest first.
+    pub round_log: Vec<RoundLogEntry>,
+    /// Newest first.
+    pub cleans: Vec<Clean>,
+    /// Newest first.
+    pub zero_resets: Vec<ZeroReset>,
+    /// Newest first.
+    pub sessions: Vec<Session>,
+    pub photos: Vec<Photo>,
+    /// Newest first.
+    pub groups: Vec<Group>,
+    pub ladders: Vec<Ladder>,
+    pub analyses: Vec<Analysis>,
+}
+
+/// A record kept as JSON in a table of its own, beside the columns its
+/// lists are sorted and filtered by.
+pub(crate) trait Blob: Record + DeserializeOwned {
+    /// Every column but `data`, with this record's values.
+    fn columns(&self) -> Vec<(&'static str, SqlValue)>;
+    fn check(&self) -> Result<(), String>;
+}
+
+macro_rules! blob {
+    ($type:ty $(, $column:literal => |$record:ident| $value:expr)* $(,)?) => {
+        impl Blob for $type {
+            fn columns(&self) -> Vec<(&'static str, SqlValue)> {
+                vec![
+                    ("id", SqlValue::Text(self.id.clone())),
+                    ("updated_at", SqlValue::Integer(self.updated_at)),
+                    $(($column, {
+                        let $record = self;
+                        SqlValue::from($value)
+                    }),)*
+                ]
+            }
+
+            fn check(&self) -> Result<(), String> {
+                self.validate()
+            }
+        }
+    };
+}
+
+blob!(Barrel, "rifle_id" => |barrel| barrel.rifle_id.clone());
+blob!(
+    RoundLogEntry,
+    "rifle_id" => |entry| entry.rifle_id.clone(),
+    "at" => |entry| entry.at,
+    "group_id" => |entry| entry.group_id.clone(),
+);
+blob!(
+    Clean,
+    "rifle_id" => |clean| clean.rifle_id.clone(),
+    "at" => |clean| clean.at,
+);
+blob!(
+    ZeroReset,
+    "rifle_id" => |reset| reset.rifle_id.clone(),
+    "at" => |reset| reset.at,
+);
+blob!(Session, "started_at" => |session| session.started_at);
+blob!(Photo);
+blob!(
+    Group,
+    "taken_at" => |group| group.taken_at,
+    "photo_id" => |group| group.photo_id().map(str::to_owned),
+    "rifle_id" => |group| group.rifle_id.clone(),
+    "session_id" => |group| group.session_id.clone(),
+    "ladder_id" => |group| group.ladder_id.clone(),
+);
+blob!(Ladder, "rifle_id" => |ladder| ladder.rifle_id.clone());
+blob!(Analysis);
+
+pub(crate) fn put_blob<T: Blob>(connection: &Connection, record: &T) -> Result<(), StoreError> {
+    let mut columns = record.columns();
+    columns.push(("data", SqlValue::Text(serde_json::to_string(record)?)));
+    let names: Vec<&str> = columns.iter().map(|(name, _)| *name).collect();
+    let places: Vec<String> = (1..=columns.len()).map(|at| format!("?{at}")).collect();
+    let updates: Vec<String> = names
+        .iter()
+        .filter(|name| **name != "id")
+        .map(|name| format!("{name} = excluded.{name}"))
+        .collect();
+    let sql = format!(
+        "INSERT INTO {} ({}) VALUES ({}) ON CONFLICT (id) DO UPDATE SET {}",
+        T::KIND.table(),
+        names.join(", "),
+        places.join(", "),
+        updates.join(", ")
+    );
+    connection
+        .prepare_cached(&sql)?
+        .execute(rusqlite::params_from_iter(
+            columns.into_iter().map(|(_, value)| value),
+        ))?;
+    Ok(())
+}
+
+pub(crate) fn blob_by_id<T: Blob>(
+    connection: &Connection,
+    id: &str,
+) -> Result<Option<T>, StoreError> {
+    Ok(connection
+        .query_row(
+            &format!("SELECT data FROM {} WHERE id = ?1", T::KIND.table()),
+            [id],
+            |row| from_json_column::<T>(&row.get::<_, String>(0)?),
+        )
+        .optional()?)
+}
+
 pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), StoreError> {
     connection.execute(
         "INSERT INTO rifles (id, name, caliber, barrel_length_mm, twist_in, right_hand_twist,
              sight_height_cm, zero_range_m, zero_temperature_c, zero_pressure_hpa, click_unit,
              click_value, notes, updated_at, scope_id, reticle_id, zero_powder_temperature_c,
-             zero_humidity_percent, table_settings, zero_height_cm)
+             zero_humidity_percent, table_settings, zero_height_cm, fitted_barrel_id,
+             rounds_before_logging)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19,
-                 ?20)
+                 ?20, ?21, ?22)
          ON CONFLICT (id) DO UPDATE SET
              name = excluded.name, caliber = excluded.caliber,
              barrel_length_mm = excluded.barrel_length_mm, twist_in = excluded.twist_in,
@@ -651,7 +1228,9 @@ pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), St
              zero_powder_temperature_c = excluded.zero_powder_temperature_c,
              zero_humidity_percent = excluded.zero_humidity_percent,
              table_settings = excluded.table_settings,
-             zero_height_cm = excluded.zero_height_cm",
+             zero_height_cm = excluded.zero_height_cm,
+             fitted_barrel_id = excluded.fitted_barrel_id,
+             rounds_before_logging = excluded.rounds_before_logging",
         params![
             rifle.id,
             rifle.name,
@@ -673,6 +1252,8 @@ pub(crate) fn put_rifle(connection: &Connection, rifle: &Rifle) -> Result<(), St
             rifle.zero_humidity_percent,
             serde_json::to_string(&rifle.table)?,
             rifle.zero_height_cm,
+            rifle.fitted_barrel_id,
+            rifle.rounds_before_logging,
         ],
     )?;
     Ok(())
@@ -683,9 +1264,9 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
         "INSERT INTO bullets (id, kind, manufacturer, name, caliber, diameter_mm, mass_g,
              length_mm, bc_g1, bc_g7, drag_model, muzzle_velocity_mps, velocity_temperature_c,
              velocity_per_degree, test_barrel_mm, construction, lead_free, min_expansion_mps,
-             catalog_id, notes, updated_at, bc_bands, drag_curve, data_attribution)
+             catalog_id, notes, updated_at, bc_bands, drag_curve, data_attribution, recipe)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-             ?18, ?19, ?20, ?21, ?22, ?23, ?24)
+             ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)
          ON CONFLICT (id) DO UPDATE SET
              kind = excluded.kind, manufacturer = excluded.manufacturer, name = excluded.name,
              caliber = excluded.caliber, diameter_mm = excluded.diameter_mm,
@@ -698,7 +1279,8 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
              lead_free = excluded.lead_free, min_expansion_mps = excluded.min_expansion_mps,
              catalog_id = excluded.catalog_id, notes = excluded.notes,
              updated_at = excluded.updated_at, bc_bands = excluded.bc_bands,
-             drag_curve = excluded.drag_curve, data_attribution = excluded.data_attribution",
+             drag_curve = excluded.drag_curve, data_attribution = excluded.data_attribution,
+             recipe = excluded.recipe",
         params![
             bullet.id,
             match bullet.kind {
@@ -732,6 +1314,11 @@ pub(crate) fn put_bullet(connection: &Connection, bullet: &Bullet) -> Result<(),
             serde_json::to_string(&bullet.drag_curve)?,
             bullet
                 .data_attribution
+                .as_ref()
+                .map(serde_json::to_string)
+                .transpose()?,
+            bullet
+                .recipe
                 .as_ref()
                 .map(serde_json::to_string)
                 .transpose()?,
@@ -837,6 +1424,8 @@ pub(crate) fn rifle_from_row(row: &Row<'_>) -> rusqlite::Result<Rifle> {
         click_value: row.get("click_value")?,
         scope_id: row.get("scope_id")?,
         reticle_id: row.get("reticle_id")?,
+        fitted_barrel_id: row.get("fitted_barrel_id")?,
+        rounds_before_logging: row.get("rounds_before_logging")?,
         zero_powder_temperature_c: row.get("zero_powder_temperature_c")?,
         zero_humidity_percent: row.get("zero_humidity_percent")?,
         table: match row.get::<_, Option<String>>("table_settings")? {
@@ -886,6 +1475,10 @@ pub(crate) fn bullet_from_row(row: &Row<'_>) -> rusqlite::Result<Bullet> {
         catalog_id: row.get("catalog_id")?,
         data_attribution: row
             .get::<_, Option<String>>("data_attribution")?
+            .map(|text| from_json_column(&text))
+            .transpose()?,
+        recipe: row
+            .get::<_, Option<String>>("recipe")?
             .map(|text| from_json_column(&text))
             .transpose()?,
         notes: row.get("notes")?,

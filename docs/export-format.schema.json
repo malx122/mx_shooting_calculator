@@ -9,7 +9,7 @@
       "type": "string"
     },
     "version": {
-      "description": "The format's version; this description is of version 7. A reader\nshould refuse versions newer than it knows.",
+      "description": "The format's version; this description is of version 8. A reader\nshould refuse versions newer than it knows.",
       "type": "integer",
       "format": "uint32",
       "minimum": 0
@@ -64,6 +64,78 @@
       },
       "default": []
     },
+    "barrels": {
+      "description": "Barrels of the hunter's rifles, fitted or not.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Barrel"
+      },
+      "default": []
+    },
+    "round_log": {
+      "description": "Rounds fired, for the round counts of actions and barrels.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RoundLogEntry"
+      },
+      "default": []
+    },
+    "cleans": {
+      "description": "When barrels were cleaned.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Clean"
+      },
+      "default": []
+    },
+    "zero_resets": {
+      "description": "When rifles' zeros were set again.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ZeroReset"
+      },
+      "default": []
+    },
+    "sessions": {
+      "description": "Days at the range, with their weather.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Session"
+      },
+      "default": []
+    },
+    "photos": {
+      "description": "What is known about the target photos groups are marked on. The\nphotos themselves are not in the file.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Photo"
+      },
+      "default": []
+    },
+    "groups": {
+      "description": "Shot groups: shots marked on a photo or a grid, with what, where and\nhow they were shot.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Group"
+      },
+      "default": []
+    },
+    "ladders": {
+      "description": "Load developments over several groups.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Ladder"
+      },
+      "default": []
+    },
+    "analyses": {
+      "description": "Saved comparisons and composites of groups.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Analysis"
+      },
+      "default": []
+    },
     "deleted": {
       "description": "Records deleted, so merging the file deletes them elsewhere too.",
       "type": "array",
@@ -87,6 +159,15 @@
     "scopes",
     "targets",
     "shots",
+    "barrels",
+    "round_log",
+    "cleans",
+    "zero_resets",
+    "sessions",
+    "photos",
+    "groups",
+    "ladders",
+    "analyses",
     "deleted"
   ],
   "$defs": {
@@ -212,6 +293,21 @@
           ],
           "default": null
         },
+        "fitted_barrel_id": {
+          "description": "The barrel on the rifle now: one of the file's `barrels`; `null`\nwhen the hunter keeps no barrels for it.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "rounds_before_logging": {
+          "description": "Rounds fired through the action before the hunter began the round\nlog (`round_log`); the logged rounds add to it.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 0
+        },
         "notes": {
           "description": "The hunter's notes.",
           "type": "string"
@@ -241,6 +337,8 @@
         "click_value",
         "scope_id",
         "reticle_id",
+        "fitted_barrel_id",
+        "rounds_before_logging",
         "notes",
         "updated_at"
       ]
@@ -516,6 +614,17 @@
             }
           ]
         },
+        "recipe": {
+          "description": "How a handload is loaded, if the hunter wrote it down.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Recipe"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "notes": {
           "description": "The hunter's notes.",
           "type": "string"
@@ -679,6 +788,68 @@
         "license",
         "license_url",
         "changes"
+      ]
+    },
+    "Recipe": {
+      "description": "How a handload is put together. Every part may be left blank.",
+      "type": "object",
+      "properties": {
+        "powder": {
+          "description": "The powder, e.g. `Vihtavuori N150`.",
+          "type": "string",
+          "default": ""
+        },
+        "charge_g": {
+          "description": "The powder charge, in grams (1 grain = 0.0648 g).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "primer": {
+          "description": "The primer, e.g. `CCI BR-2`.",
+          "type": "string",
+          "default": ""
+        },
+        "brass": {
+          "description": "The cases, e.g. `Lapua, 3rd firing`.",
+          "type": "string",
+          "default": ""
+        },
+        "coal_mm": {
+          "description": "Cartridge overall length (COAL), mm.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "cbto_mm": {
+          "description": "Cartridge base to ogive (CBTO), mm: the length that sets how far the\nbullet jumps to the rifling.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "notes": {
+          "description": "The hunter's notes on the recipe.",
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": [
+        "powder",
+        "charge_g",
+        "primer",
+        "brass",
+        "coal_mm",
+        "cbto_mm",
+        "notes"
       ]
     },
     "RifleLoad": {
@@ -1682,6 +1853,1040 @@
         "search_radius_m"
       ]
     },
+    "Barrel": {
+      "description": "A barrel that is or was on one of the hunter's rifles.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The barrel's id, unique among barrels.",
+          "type": "string"
+        },
+        "rifle_id": {
+          "description": "The rifle (one of the file's `rifles`) the barrel belongs to.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The hunter's name for it, e.g. `Factory` or `Bartlein 26\"`.",
+          "type": "string"
+        },
+        "length_mm": {
+          "description": "Its length; `null` when not known.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "twist_in": {
+          "description": "Barrel length for one turn of the rifling, in inches; `null` when not\nknown.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "right_hand_twist": {
+          "description": "Whether the rifling turns to the right, as most do.",
+          "type": "boolean",
+          "default": true
+        },
+        "maker": {
+          "description": "Who made it.",
+          "type": "string",
+          "default": ""
+        },
+        "fitted_at": {
+          "description": "When it was fitted to the rifle, in milliseconds since 1970 (UTC), if\nknown.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64",
+          "default": null
+        },
+        "retired_at": {
+          "description": "When it came off for good; `null` while it is still in use.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64",
+          "default": null
+        },
+        "rounds_before_logging": {
+          "description": "Rounds fired through it before the hunter began the round log; the\nlogged rounds add to it.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 0
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "rifle_id",
+        "name",
+        "length_mm",
+        "twist_in",
+        "right_hand_twist",
+        "maker",
+        "fitted_at",
+        "retired_at",
+        "rounds_before_logging",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "RoundLogEntry": {
+      "description": "Rounds fired through a rifle at one time, for the round counts.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The entry's id, unique among round log entries.",
+          "type": "string"
+        },
+        "rifle_id": {
+          "description": "The rifle fired (one of the file's `rifles`).",
+          "type": "string"
+        },
+        "barrel_id": {
+          "description": "The barrel they went through (one of the file's `barrels`); `null`\nwhen the hunter keeps no barrels for the rifle or didn't say: then\nthey count for the action only.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "rounds": {
+          "description": "How many rounds, 1 to 10 000.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "at": {
+          "description": "When they were fired, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "note": {
+          "description": "The hunter's note.",
+          "type": "string",
+          "default": ""
+        },
+        "group_id": {
+          "description": "The group (one of the file's `groups`) these rounds were, when the\nentry was made by saving one. Such an entry's id is the UUID (version\n5) of the group's id in the namespace\n`6d787363-726f-756e-6473-8f2a41c6d903`, so every device makes the same\none.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "rifle_id",
+        "barrel_id",
+        "rounds",
+        "at",
+        "note",
+        "group_id",
+        "updated_at"
+      ]
+    },
+    "Clean": {
+      "description": "A cleaning of a rifle's barrel.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The clean's id, unique among cleans.",
+          "type": "string"
+        },
+        "rifle_id": {
+          "description": "The rifle cleaned (one of the file's `rifles`).",
+          "type": "string"
+        },
+        "barrel_id": {
+          "description": "The barrel cleaned (one of the file's `barrels`); `null` for a rifle\nwhose barrels the hunter doesn't keep apart.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "at": {
+          "description": "When, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "note": {
+          "description": "The hunter's note, e.g. what was used.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "rifle_id",
+        "barrel_id",
+        "at",
+        "note",
+        "updated_at"
+      ]
+    },
+    "ZeroReset": {
+      "description": "The moment a rifle's zero was set again (a new scope, a new mount, a\nnew zero): zero checks pool only the groups shot since.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The reset's id, unique among zero resets.",
+          "type": "string"
+        },
+        "rifle_id": {
+          "description": "The rifle (one of the file's `rifles`).",
+          "type": "string"
+        },
+        "barrel_id": {
+          "description": "The barrel (one of the file's `barrels`) the zero is for; `null` for\nthe rifle whatever its barrel.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "at": {
+          "description": "When, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "note": {
+          "description": "The hunter's note, e.g. why.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "rifle_id",
+        "barrel_id",
+        "at",
+        "note",
+        "updated_at"
+      ]
+    },
+    "Session": {
+      "description": "A day or an outing at the range. Groups name the session they were shot\nin and take its conditions unless they have their own.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The session's id, unique among sessions.",
+          "type": "string"
+        },
+        "place": {
+          "description": "Where, in the hunter's words (a range's name, not a position).",
+          "type": "string",
+          "default": ""
+        },
+        "started_at": {
+          "description": "When it began, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "temperature_c": {
+          "description": "Air temperature.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "powder_temperature_c": {
+          "description": "The cartridges' (powder's) temperature, when it differs from the\nair's.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "pressure_hpa": {
+          "description": "Air pressure as a barometer at the range reads it (not reduced to sea\nlevel).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "humidity_percent": {
+          "description": "Relative humidity.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "wind_speed_mps": {
+          "description": "The wind's speed.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "wind_clock": {
+          "description": "Where the wind came from, on a clock: 12 head-on, 3 from the right.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string",
+          "default": ""
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "place",
+        "started_at",
+        "notes",
+        "updated_at"
+      ]
+    },
+    "Photo": {
+      "description": "A photo of a target that groups are marked on. Only its description is\nin the file; the photo itself is kept on the device beside the data.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The lowercase hexadecimal SHA-256 of the kept photo's bytes, which\nalso names it where it is kept.",
+          "type": "string"
+        },
+        "width_px": {
+          "description": "Its width as kept: upright, after any reduction.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "height_px": {
+          "description": "Its height as kept.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "mime": {
+          "description": "The type of the kept bytes, `image/jpeg`.",
+          "type": "string",
+          "default": "image/jpeg"
+        },
+        "taken_at": {
+          "description": "When the camera says it was taken, in milliseconds since 1970 (UTC);\n`null` when it doesn't say.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64",
+          "default": null
+        },
+        "calibration": {
+          "description": "How its pixels map to millimetres on the target, for every group\nmarked on it; `null` until the scale is set.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Calibration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "width_px",
+        "height_px",
+        "mime",
+        "taken_at",
+        "calibration",
+        "updated_at"
+      ]
+    },
+    "Calibration": {
+      "description": "How a photo's pixels map to millimetres on the target. Points are in the\nphoto's pixels: x to the right and y down from the photo's top-left\ncorner, so the middle of the top-left pixel is `[0.5, 0.5]`.",
+      "oneOf": [
+        {
+          "description": "Two points a known distance apart on the target, such as lines of\nits grid: gives the scale, the photo taken to face the target\nsquarely.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "two_point"
+            },
+            "a_px": {
+              "description": "The first point, `[x, y]`.",
+              "type": "array",
+              "items": {
+                "type": "number",
+                "format": "double"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "b_px": {
+              "description": "The second point, `[x, y]`.",
+              "type": "array",
+              "items": {
+                "type": "number",
+                "format": "double"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "distance_mm": {
+              "description": "How far apart the two points are on the target.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "kind",
+            "a_px",
+            "b_px",
+            "distance_mm"
+          ]
+        },
+        {
+          "description": "The corners of a rectangle of known size on the target, such as the\nsheet's edges: gives the scale and straightens a photo taken at an\nangle.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "four_corner"
+            },
+            "corners_px": {
+              "description": "The rectangle's corners as `[x, y]`: its top left, top right,\nbottom right and bottom left.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "format": "double"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "width_mm": {
+              "description": "The rectangle's width: from its top-left to its top-right corner.",
+              "type": "number",
+              "format": "double"
+            },
+            "height_mm": {
+              "description": "The rectangle's height: from its top-right to its bottom-right\ncorner.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "kind",
+            "corners_px",
+            "width_mm",
+            "height_mm"
+          ]
+        }
+      ]
+    },
+    "Group": {
+      "description": "A group of shots: where they went, and what, where and how they were\nshot.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The group's id, unique among groups.",
+          "type": "string"
+        },
+        "taken_at": {
+          "description": "When it was shot, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "marks": {
+          "description": "Where its shots are marked.",
+          "$ref": "#/$defs/Marks"
+        },
+        "rifle_id": {
+          "description": "The rifle shot (one of the file's `rifles`), if given.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "barrel_id": {
+          "description": "The rifle's barrel (one of the file's `barrels`), if given.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "bullet_id": {
+          "description": "The bullet or load shot (one of the file's `bullets`), if given.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "ladder_id": {
+          "description": "The ladder (one of the file's `ladders`) this group is a rung of.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "rung_value": {
+          "description": "The rung's value, in the unit the ladder's `variable` names: the\ncharge in grams, or the seating's CBTO in mm.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "distance_m": {
+          "description": "The distance to the target; `null` when not given, which leaves out\nsizes as angles.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        },
+        "session_id": {
+          "description": "The session (one of the file's `sessions`) it was shot in.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "conditions": {
+          "description": "Conditions that differ from the session's; what is `null` here is\nthe session's.",
+          "$ref": "#/$defs/Conditions",
+          "default": {}
+        },
+        "extra_velocities_mps": {
+          "description": "Muzzle velocities measured for rounds that match no marked shot\n(foulers, shots off the paper), in the order they came.",
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "default": []
+        },
+        "dialled_offset_mrad": {
+          "description": "What was dialled on the scope, right and up positive, compared with\nthe zero. Zero checks take it off the group's impact.",
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [
+            0.0,
+            0.0
+          ]
+        },
+        "include_in_zero": {
+          "description": "Whether zero checks count this group.",
+          "type": "boolean",
+          "default": true
+        },
+        "count_rounds": {
+          "description": "Whether saving the group logs its shots as rounds fired (an entry of\n`round_log` naming the group).",
+          "type": "boolean",
+          "default": true
+        },
+        "tags": {
+          "description": "The hunter's tags, e.g. `practice`.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string",
+          "default": ""
+        },
+        "archived": {
+          "description": "Kept, but out of the library's lists.",
+          "type": "boolean",
+          "default": false
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "taken_at",
+        "marks",
+        "rifle_id",
+        "barrel_id",
+        "bullet_id",
+        "ladder_id",
+        "rung_value",
+        "distance_m",
+        "session_id",
+        "conditions",
+        "extra_velocities_mps",
+        "dialled_offset_mrad",
+        "include_in_zero",
+        "count_rounds",
+        "tags",
+        "notes",
+        "archived",
+        "updated_at"
+      ]
+    },
+    "Marks": {
+      "description": "Where a group's shots are marked.",
+      "oneOf": [
+        {
+          "description": "On a photo of the target.",
+          "type": "object",
+          "properties": {
+            "on": {
+              "type": "string",
+              "const": "photo"
+            }
+          },
+          "$ref": "#/$defs/PhotoMarks",
+          "required": [
+            "on"
+          ]
+        },
+        {
+          "description": "On a blank grid.",
+          "type": "object",
+          "properties": {
+            "on": {
+              "type": "string",
+              "const": "grid"
+            }
+          },
+          "$ref": "#/$defs/GridMarks",
+          "required": [
+            "on"
+          ]
+        }
+      ]
+    },
+    "PhotoShot": {
+      "description": "A shot marked on a photo.",
+      "type": "object",
+      "properties": {
+        "x_px": {
+          "description": "The hole's centre: pixels from the photo's left edge.",
+          "type": "number",
+          "format": "double"
+        },
+        "y_px": {
+          "description": "The hole's centre: pixels down from the photo's top edge.",
+          "type": "number",
+          "format": "double"
+        },
+        "cold_bore": {
+          "description": "The first shot from a cold, clean barrel.",
+          "type": "boolean",
+          "default": false
+        },
+        "called_flier": {
+          "description": "The shooter knew the shot was bad as it broke; statistics can leave\nit out.",
+          "type": "boolean",
+          "default": false
+        },
+        "velocity_mps": {
+          "description": "Its muzzle velocity, if measured.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        }
+      },
+      "required": [
+        "x_px",
+        "y_px",
+        "cold_bore",
+        "called_flier",
+        "velocity_mps"
+      ]
+    },
+    "PhotoMarks": {
+      "description": "Shots marked on a photo of the target, in its pixels.",
+      "type": "object",
+      "properties": {
+        "photo_id": {
+          "description": "The photo (one of the file's `photos`), whose `calibration` gives the\nscale.",
+          "type": "string"
+        },
+        "aim_px": {
+          "description": "The point aimed at, `[x, y]` in pixels; `null` without one, which\nleaves out the group's correction and zero checks.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": null
+        },
+        "shots": {
+          "description": "The shots, in the order they were marked.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PhotoShot"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "photo_id",
+        "aim_px",
+        "shots"
+      ]
+    },
+    "GridShot": {
+      "description": "A shot placed on a blank grid.",
+      "type": "object",
+      "properties": {
+        "x_mm": {
+          "description": "Millimetres right (positive) or left of the grid's centre.",
+          "type": "number",
+          "format": "double"
+        },
+        "y_mm": {
+          "description": "Millimetres up (positive) or down from the grid's centre.",
+          "type": "number",
+          "format": "double"
+        },
+        "cold_bore": {
+          "description": "The first shot from a cold, clean barrel.",
+          "type": "boolean",
+          "default": false
+        },
+        "called_flier": {
+          "description": "The shooter knew the shot was bad as it broke; statistics can leave\nit out.",
+          "type": "boolean",
+          "default": false
+        },
+        "velocity_mps": {
+          "description": "Its muzzle velocity, if measured.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "default": null
+        }
+      },
+      "required": [
+        "x_mm",
+        "y_mm",
+        "cold_bore",
+        "called_flier",
+        "velocity_mps"
+      ]
+    },
+    "GridMarks": {
+      "description": "Shots placed on a blank grid at true scale, in millimetres from its\ncentre: x to the right, y up. For targets that weren't photographed:\nscored paper, or positions from an electronic target.",
+      "type": "object",
+      "properties": {
+        "width_mm": {
+          "description": "The grid's width.",
+          "type": "number",
+          "format": "double"
+        },
+        "height_mm": {
+          "description": "The grid's height.",
+          "type": "number",
+          "format": "double"
+        },
+        "aim_mm": {
+          "description": "The point aimed at, `[x, y]` in mm; `null` without one. Usually the\ncentre, `[0, 0]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": null
+        },
+        "shots": {
+          "description": "The shots, in the order they were placed.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GridShot"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "width_mm",
+        "height_mm",
+        "aim_mm",
+        "shots"
+      ]
+    },
+    "Conditions": {
+      "description": "The weather at the range. Every part may be unknown, and is then left\nout.",
+      "type": "object",
+      "properties": {
+        "temperature_c": {
+          "description": "Air temperature.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "powder_temperature_c": {
+          "description": "The cartridges' (powder's) temperature, when it differs from the\nair's.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "pressure_hpa": {
+          "description": "Air pressure as a barometer at the range reads it (not reduced to sea\nlevel).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "humidity_percent": {
+          "description": "Relative humidity.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "wind_speed_mps": {
+          "description": "The wind's speed.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "wind_clock": {
+          "description": "Where the wind came from, on a clock: 12 head-on, 3 from the right.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "Ladder": {
+      "description": "A load development: groups of one bullet in one rifle, each a rung at a\ndifferent charge or seating depth (the groups' `ladder_id` and\n`rung_value`). Zero checks and trends leave its groups out unless the\nhunter adds them.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The ladder's id, unique among ladders.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The hunter's name for it; may be empty.",
+          "type": "string",
+          "default": ""
+        },
+        "rifle_id": {
+          "description": "The rifle (one of the file's `rifles`).",
+          "type": "string"
+        },
+        "bullet_id": {
+          "description": "The bullet loaded (one of the file's `bullets`), whose recipe the\nrungs vary.",
+          "type": "string"
+        },
+        "variable": {
+          "description": "What changes from rung to rung.",
+          "$ref": "#/$defs/LadderVariable"
+        },
+        "notes": {
+          "description": "The hunter's notes.",
+          "type": "string",
+          "default": ""
+        },
+        "promoted_bullet_id": {
+          "description": "The load (one of the file's `bullets`) made from the rung the hunter\nkept, once there is one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "rifle_id",
+        "bullet_id",
+        "variable",
+        "notes",
+        "promoted_bullet_id",
+        "updated_at"
+      ]
+    },
+    "LadderVariable": {
+      "description": "What a ladder varies from rung to rung.",
+      "oneOf": [
+        {
+          "description": "The powder charge; rung values are grams.",
+          "type": "string",
+          "const": "charge"
+        },
+        {
+          "description": "The seating depth; rung values are the cartridge's base-to-ogive\nlength (CBTO), mm.",
+          "type": "string",
+          "const": "seating"
+        }
+      ]
+    },
+    "Analysis": {
+      "description": "An analysis of several groups the hunter saved, worked out again from\nthe groups whenever it is opened.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The analysis's id, unique among analyses.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "What it does.",
+          "$ref": "#/$defs/AnalysisKind"
+        },
+        "name": {
+          "description": "The hunter's name for it.",
+          "type": "string",
+          "default": ""
+        },
+        "group_ids": {
+          "description": "Its groups (of the file's `groups`), in the hunter's order; ones\ndeleted since are skipped.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "settings": {
+          "description": "How the app shows it, as the app's own JSON object; a reader may\nignore it.",
+          "default": {}
+        },
+        "updated_at": {
+          "description": "When the record was last changed, in milliseconds since 1970 (UTC).",
+          "type": "integer",
+          "format": "int64",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "group_ids",
+        "settings",
+        "updated_at"
+      ]
+    },
+    "AnalysisKind": {
+      "description": "What a saved analysis does with its groups.",
+      "oneOf": [
+        {
+          "description": "Groups side by side, tested against each other.",
+          "type": "string",
+          "const": "compare"
+        },
+        {
+          "description": "The groups' shots pooled into one group.",
+          "type": "string",
+          "const": "composite"
+        },
+        {
+          "description": "A ladder's rungs, ranked.",
+          "type": "string",
+          "const": "ladder"
+        }
+      ]
+    },
     "Deletion": {
       "description": "A record that was deleted.",
       "type": "object",
@@ -1715,7 +2920,16 @@
         "rifle_load",
         "scope",
         "target",
-        "shot"
+        "shot",
+        "barrel",
+        "round_log_entry",
+        "clean",
+        "zero_reset",
+        "session",
+        "photo",
+        "group",
+        "ladder",
+        "analysis"
       ]
     },
     "CatalogDetails": {

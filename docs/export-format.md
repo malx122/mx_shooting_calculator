@@ -2,8 +2,10 @@
 
 MX Shooting Calculator saves the hunter's own data as one JSON file:
 **Export backup** in the app's menu writes it, **Import backup…** reads it,
-and the AI tools (`mxsc-mcp`) and sync use the same format. This page
-describes the file so other programs can read and write it.
+and the AI tools (`mxsc-mcp`) and sync use the same format (on the sync
+server it is compressed with deflate and encrypted on the device; in
+Google Drive it is the plain file). This page describes the file so other
+programs can read and write it.
 
 - **Schema:** [`export-format.schema.json`](export-format.schema.json)
   (JSON Schema 2020-12), also published at
@@ -20,7 +22,7 @@ stands and named label designs stay on the device and are not synced.
 ```json
 {
   "format": "mxsc/personal-data",
-  "version": 7,
+  "version": 8,
   "exported_at": 1792473562000,
   "rifles": [ { "id": "…", "name": "Browning X-Bolt", "caliber": "308-win", "twist_in": 10.0, … } ],
   "bullets": [ { "id": "…", "manufacturer": "Federal", "name": "Terminal Ascent", "mass_g": 11.34, … } ],
@@ -28,6 +30,15 @@ stands and named label designs stay on the device and are not synced.
   "scopes": [],
   "targets": [],
   "shots": [ { "id": "…", "taken_at": 1792473562000, "rifle_id": "…", "range_m": 150.0, "outcome": "hit", … } ],
+  "barrels": [ { "id": "…", "rifle_id": "…", "name": "Factory", "length_mm": 510.0, … } ],
+  "round_log": [ { "id": "…", "rifle_id": "…", "barrel_id": "…", "rounds": 5, "at": 1792473562000, … } ],
+  "cleans": [],
+  "zero_resets": [],
+  "sessions": [ { "id": "…", "place": "Boden", "started_at": 1792470000000, "temperature_c": 6.0, … } ],
+  "photos": [ { "id": "9f86d0…", "width_px": 4032, "height_px": 3024, "mime": "image/jpeg", "calibration": { "kind": "two_point", … }, … } ],
+  "groups": [ { "id": "…", "taken_at": 1792473562000, "marks": { "on": "photo", "photo_id": "9f86d0…", "shots": [ … ] }, "distance_m": 100.0, … } ],
+  "ladders": [],
+  "analyses": [],
   "deleted": [],
   "catalog": { "calibers": [ … ], "scopes": [ … ], "reticles": [ … ] }
 }
@@ -54,17 +65,25 @@ stands and named label designs stay on the device and are not synced.
   - angles: `_mrad`, `_degrees`;
   - places: `latitude_degrees` and `longitude_degrees` (WGS84, as GPS gives
     them; north and east positive);
-  - times: `_ms` (milliseconds since 1 January 1970, UTC), and `_s` for
-    seconds of flight.
+  - times: `_at` and `_ms` (milliseconds since 1 January 1970, UTC), and
+    `_s` for seconds of flight;
+  - points in a photo: `_px`, pixels of the photo as the app keeps it.
 
   Twist is the one exception: `twist_in` is the inches of barrel per turn
   of the rifling, as the trade gives it.
 - **Signs:** heights are positive above the line of sight; angles and
   offsets are positive up and to the right; a shot angle is positive uphill.
+  Points on a target are the same: in millimetres, x to the right and y up.
+  Points in a photo are as images are stored: x to the right and y down
+  from the photo's top-left corner.
+- **Points** are arrays of two numbers, `[x, y]`.
 - **Ids** are strings, unique within each kind of record. Records refer to
   each other by id: a rifle load names its `rifle_id` and `bullet_id`; a
   rifle's `scope_id` names one of the file's `scopes`, or else a scope in the
-  app's catalog.
+  app's catalog. A photo's id is the SHA-256 of its bytes, in lowercase
+  hexadecimal. Apart from a rifle load's, a reference may name a record that
+  has since been deleted: a group keeps naming its rifle, and a reader should
+  skip what it can't find.
 - **References to the app's catalog:** a `caliber` is a key such as
   `308-win`, a `scope_id` may name a catalog scope, a `reticle_id` a catalog
   reticle, and an animal target's `silhouette` one of the app's drawings. The
@@ -75,7 +94,15 @@ stands and named label designs stay on the device and are not synced.
   record by record: a new record is added, an identical one is left alone,
   and otherwise the copy changed last wins.
 - **`deleted`** lists records deleted since, so a merge deletes them on the
-  other side too.
+  other side too. Records that belong to another aren't listed when it is
+  deleted: they follow it. A rifle's or bullet's `rifle_loads`, and a
+  rifle's `barrels`, `round_log`, `cleans` and `zero_resets`, go when the
+  rifle is listed as deleted and isn't in the data (round log entries,
+  cleans and zero resets naming a barrel that is still there stay with the
+  barrel); a barrel's `cleans` and `zero_resets` go when the barrel is
+  listed and isn't there. So if a rifle is deleted on one device and edited
+  later on another, it comes back with everything that belongs to it.
+  Photo records are never listed: see [Shot groups](#shot-groups).
 
 ## Calculating with it
 
@@ -130,10 +157,76 @@ on the hunter's devices, in their sync copy (encrypted on the sync server,
 or in the app's own folder of their Google Drive) and in the files they
 export, and sends them nowhere else.
 
+## Shot groups
+
+Each of `groups` is a group of shots on a target, with what was shot and
+where. Its `marks` say where the shots are:
+
+- **On a photo** (`"on": "photo"`): the photo is one of `photos`, named by
+  `photo_id`. Shots, the aim point and the calibration's points are in the
+  photo's pixels (`x_px`, `y_px`), so a better scale later never moves a
+  shot. The photo's `calibration`, one for every group marked on it, turns
+  pixels into millimetres on the target:
+  - `two_point`: two points `distance_mm` apart give the scale; the photo is
+    taken to face the target squarely, its x to the right and y down;
+  - `four_corner`: the corners of a rectangle `width_mm` × `height_mm`,
+    from its top left clockwise, map the photo onto the target's plane (a
+    homography), which also straightens a photo taken at an angle.
+  Until its photo has a calibration a group has no sizes. Several groups
+  may be marked on one photo, each with its own aim point.
+- **On a grid** (`"on": "grid"`): a blank grid at true scale, for targets
+  that weren't photographed. Shots and the aim point are in millimetres from
+  the grid's centre (`x_mm`, `y_mm`), x to the right and y up.
+
+Sizes as angles need `distance_m`. Without an aim point (`aim_px` or
+`aim_mm`) a group has no impact or correction. `dialled_offset_mrad` is what
+was dialled on the scope compared with the zero; zero checks subtract it
+from the group's impact. Shots carry their own `velocity_mps`;
+`extra_velocities_mps` are readings that match no marked shot, such as
+foulers. How a group was last zoomed and panned is kept on each device and
+is not in the file.
+
+A group may name the session it was shot in (`session_id`); the session's
+weather applies unless the group's own `conditions` give a value. A ladder's rungs
+are groups naming the `ladder_id`, each at its `rung_value`: grams of
+powder for a `charge` ladder, the cartridge's base-to-ogive length (CBTO)
+in millimetres for a `seating` one. `analyses` are saved comparisons and
+composites; the app works them out again from their groups.
+
+**Photos** are not in the file: `photos` describes them (size, type, when
+taken, calibration). The app keeps the photos themselves, and a thumbnail
+of each, on the device, as JPEG named by their id: on a computer in a
+folder beside the database file named after it (`mxsc-photos` beside
+`mxsc.sqlite`), in the browser in the site's storage. The kept JPEGs carry
+no camera metadata: no time or place, no camera or owner.
+
+A photo record is never listed in `deleted`. A device drops its record
+when no group there is marked on it any more, and a merge brings in a
+photo record only for a group that is marked on it (or when the device has
+the record already). So deleting a photo on one device never takes it from
+a group made on another.
+
+**Round counts** are worked out, never stored:
+- the action's count is the rifle's `rounds_before_logging` plus every
+  entry of `round_log` for the rifle, whatever its barrel;
+- a barrel's count is its own `rounds_before_logging` plus the entries
+  naming it, on whichever rifle they were fired, so a barrel keeps its
+  count when it moves to another rifle;
+- the count since the last clean adds the entries for the barrel made
+  after its latest entry in `cleans` naming it; with no clean logged it is
+  unknown. Entries and cleans with `barrel_id` `null` count only for a
+  rifle without barrels: where a rifle has barrels, the app always names
+  the one fitted.
+
+The round log entry the app makes when a group is saved names the group
+(`group_id`) and has an id made from it (a version 5 UUID of the group's
+id, in the namespace `6d787363-726f-756e-6473-8f2a41c6d903`), so a group
+saved on two devices is counted once.
+
 ## Writing a file for the app
 
 The app reads files written by other programs:
-- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (7).
+- `format` must be `mxsc/personal-data`, and `version` no higher than the app knows (8).
 - Fields marked "may be left out" can be omitted.
 - Unknown fields are ignored, and the `catalog` section is never imported.
 - Every record is checked before anything is saved. Numbers must be finite and within what rifles and bullets can be. If any record fails, nothing from the file is imported, and the app says which record failed.
@@ -148,6 +241,8 @@ The app reads files written by other programs:
 | 4 | The hunter's own targets. |
 | 5 | Deleted records. Later, still version 5: the `catalog` section (ignored by imports), truing, shot statistics on velocities, a zero height. |
 | 6 | The shot log (`shots`). |
+| 7 | Attribution for bullet data copied from separately licensed collections (`data_attribution`). |
+| 8 | Shot groups (`groups`) on photos (`photos`) or grids, with barrels, the round log, cleans, zero resets, range sessions, ladders and analyses; rifles name their fitted barrel and rounds fired before logging; handloads keep a `recipe`. |
 
 ## Field reference
 
@@ -160,7 +255,7 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | string | Always `mxsc/personal-data`. Files from the app's earlier names say `mhc/personal-data` or `ballistic-calculator/personal-data`. |
-| `version` | integer | The format's version; this description is of version 7. A reader should refuse versions newer than it knows. |
+| `version` | integer | The format's version; this description is of version 8. A reader should refuse versions newer than it knows. |
 | `exported_at` | integer | When the file was written, in milliseconds since 1970 (UTC). |
 | `rifles` | array of [Rifle](#rifle) | The hunter's rifles. |
 | `bullets` | array of [Bullet](#bullet) | The hunter's bullets: factory ammunition and handloads. |
@@ -168,6 +263,15 @@ A file of the hunter's own records: an export, a backup or a sync copy.
 | `scopes` | array of [UserScope](#userscope) | Scopes the hunter entered (catalog scopes are only named by id). |
 | `targets` | array of [Target](#target) | Targets the hunter made or copied (catalog targets aren't included). |
 | `shots` | array of [Shot](#shot) | The shot log: shots the hunter took, with the solution the app gave and, after a shot at game, where the hunter and the animal stood. |
+| `barrels` | array of [Barrel](#barrel) | Barrels of the hunter's rifles, fitted or not. |
+| `round_log` | array of [RoundLogEntry](#roundlogentry) | Rounds fired, for the round counts of actions and barrels. |
+| `cleans` | array of [Clean](#clean) | When barrels were cleaned. |
+| `zero_resets` | array of [ZeroReset](#zeroreset) | When rifles' zeros were set again. |
+| `sessions` | array of [Session](#session) | Days at the range, with their weather. |
+| `photos` | array of [Photo](#photo) | What is known about the target photos groups are marked on. The photos themselves are not in the file. |
+| `groups` | array of [Group](#group) | Shot groups: shots marked on a photo or a grid, with what, where and how they were shot. |
+| `ladders` | array of [Ladder](#ladder) | Load developments over several groups. |
+| `analyses` | array of [Analysis](#analysis) | Saved comparisons and composites of groups. |
 | `deleted` | array of [Deletion](#deletion) | Records deleted, so merging the file deletes them elsewhere too. |
 | `catalog` | [CatalogDetails](#catalogdetails) | The catalog entries the records refer to by id, written out so the file can be read without the app. Only in exported files; importing ignores it. May be left out. |
 
@@ -195,6 +299,8 @@ A rifle: its caliber, barrel, scope and zero.
 | `click_value` | number | One click of the turrets, in `click_unit`: 0.1 for 0.1 mil, 0.25 for 1/4 MOA. |
 | `scope_id` | string or null | The mounted scope: the id of one of the file's `scopes`, or of a scope in the app's catalog (see `catalog`); `null` for none. |
 | `reticle_id` | string or null | The scope's reticle: the id of a reticle in the app's catalog. |
+| `fitted_barrel_id` | string or null | The barrel on the rifle now: one of the file's `barrels`; `null` when the hunter keeps no barrels for it. |
+| `rounds_before_logging` | integer | Rounds fired through the action before the hunter began the round log (`round_log`); the logged rounds add to it. |
 | `notes` | string | The hunter's notes. |
 | `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). Merging keeps the copy changed last. |
 
@@ -265,6 +371,7 @@ A bullet in the hunter's own collection: either factory ammunition or a handload
 | `min_expansion_mps` | number or null | The least impact speed at which it expands, as the maker gives it. |
 | `catalog_id` | string or null | The catalog entry this was copied from, if any. |
 | `data_attribution` | [DataAttribution](#dataattribution) or null | Attribution for copied data. Preserve it when sharing or adapting the record, even if the catalog entry is no longer available. May be left out. |
+| `recipe` | [Recipe](#recipe) or null | How a handload is loaded, if the hunter wrote it down. May be left out. |
 | `notes` | string | The hunter's notes. |
 | `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). Merging keeps the copy changed last. |
 
@@ -334,6 +441,20 @@ Attribution and license terms for data copied from another collection. These des
 | `license` | string | SPDX license identifier for the copied data, e.g. `CC-BY-SA-4.0`. |
 | `license_url` | string | HTTPS URL of the license text or canonical license page. Other URL schemes are rejected when storing or importing the record. |
 | `changes` | string | Changes made in the initial catalog adaptation. Personal copies may contain later user edits. |
+
+### Recipe
+
+How a handload is put together. Every part may be left blank.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `powder` | string | The powder, e.g. `Vihtavuori N150`. |
+| `charge_g` | number or null | The powder charge, in grams (1 grain = 0.0648 g). |
+| `primer` | string | The primer, e.g. `CCI BR-2`. |
+| `brass` | string | The cases, e.g. `Lapua, 3rd firing`. |
+| `coal_mm` | number or null | Cartridge overall length (COAL), mm. |
+| `cbto_mm` | number or null | Cartridge base to ogive (CBTO), mm: the length that sets how far the bullet jumps to the rifling. |
+| `notes` | string | The hunter's notes on the recipe. |
 
 ### RifleLoad
 
@@ -600,6 +721,247 @@ Where the animal stood, worked out from the hunter's position, the bearing and t
 | `longitude_degrees` | number | East positive, west negative. |
 | `search_radius_m` | number | How far around the spot to search: the bearing's, the range's and the position's possible errors together. |
 
+### Barrel
+
+A barrel that is or was on one of the hunter's rifles.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The barrel's id, unique among barrels. |
+| `rifle_id` | string | The rifle (one of the file's `rifles`) the barrel belongs to. |
+| `name` | string | The hunter's name for it, e.g. `Factory` or `Bartlein 26"`. |
+| `length_mm` | number or null | Its length; `null` when not known. |
+| `twist_in` | number or null | Barrel length for one turn of the rifling, in inches; `null` when not known. |
+| `right_hand_twist` | boolean | Whether the rifling turns to the right, as most do. |
+| `maker` | string | Who made it. |
+| `fitted_at` | integer or null | When it was fitted to the rifle, in milliseconds since 1970 (UTC), if known. |
+| `retired_at` | integer or null | When it came off for good; `null` while it is still in use. |
+| `rounds_before_logging` | integer | Rounds fired through it before the hunter began the round log; the logged rounds add to it. |
+| `notes` | string | The hunter's notes. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### RoundLogEntry
+
+Rounds fired through a rifle at one time, for the round counts.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The entry's id, unique among round log entries. |
+| `rifle_id` | string | The rifle fired (one of the file's `rifles`). |
+| `barrel_id` | string or null | The barrel they went through (one of the file's `barrels`); `null` when the hunter keeps no barrels for the rifle or didn't say: then they count for the action only. |
+| `rounds` | integer | How many rounds, 1 to 10 000. |
+| `at` | integer | When they were fired, in milliseconds since 1970 (UTC). |
+| `note` | string | The hunter's note. |
+| `group_id` | string or null | The group (one of the file's `groups`) these rounds were, when the entry was made by saving one. Such an entry's id is the UUID (version 5) of the group's id in the namespace `6d787363-726f-756e-6473-8f2a41c6d903`, so every device makes the same one. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Clean
+
+A cleaning of a rifle's barrel.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The clean's id, unique among cleans. |
+| `rifle_id` | string | The rifle cleaned (one of the file's `rifles`). |
+| `barrel_id` | string or null | The barrel cleaned (one of the file's `barrels`); `null` for a rifle whose barrels the hunter doesn't keep apart. |
+| `at` | integer | When, in milliseconds since 1970 (UTC). |
+| `note` | string | The hunter's note, e.g. what was used. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### ZeroReset
+
+The moment a rifle's zero was set again (a new scope, a new mount, a new zero): zero checks pool only the groups shot since.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The reset's id, unique among zero resets. |
+| `rifle_id` | string | The rifle (one of the file's `rifles`). |
+| `barrel_id` | string or null | The barrel (one of the file's `barrels`) the zero is for; `null` for the rifle whatever its barrel. |
+| `at` | integer | When, in milliseconds since 1970 (UTC). |
+| `note` | string | The hunter's note, e.g. why. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Session
+
+A day or an outing at the range. Groups name the session they were shot in and take its conditions unless they have their own.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The session's id, unique among sessions. |
+| `place` | string | Where, in the hunter's words (a range's name, not a position). |
+| `started_at` | integer | When it began, in milliseconds since 1970 (UTC). |
+| `temperature_c` | number or null | Air temperature. May be left out. |
+| `powder_temperature_c` | number or null | The cartridges' (powder's) temperature, when it differs from the air's. May be left out. |
+| `pressure_hpa` | number or null | Air pressure as a barometer at the range reads it (not reduced to sea level). May be left out. |
+| `humidity_percent` | number or null | Relative humidity. May be left out. |
+| `wind_speed_mps` | number or null | The wind's speed. May be left out. |
+| `wind_clock` | number or null | Where the wind came from, on a clock: 12 head-on, 3 from the right. May be left out. |
+| `notes` | string | The hunter's notes. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Photo
+
+A photo of a target that groups are marked on. Only its description is in the file; the photo itself is kept on the device beside the data.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The lowercase hexadecimal SHA-256 of the kept photo's bytes, which also names it where it is kept. |
+| `width_px` | integer | Its width as kept: upright, after any reduction. |
+| `height_px` | integer | Its height as kept. |
+| `mime` | string | The type of the kept bytes, `image/jpeg`. |
+| `taken_at` | integer or null | When the camera says it was taken, in milliseconds since 1970 (UTC); `null` when it doesn't say. |
+| `calibration` | [Calibration](#calibration) or null | How its pixels map to millimetres on the target, for every group marked on it; `null` until the scale is set. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Calibration
+
+How a photo's pixels map to millimetres on the target. Points are in the photo's pixels: x to the right and y down from the photo's top-left corner, so the middle of the top-left pixel is `[0.5, 0.5]`.
+
+One of:
+
+- `kind`: `"two_point"`, with `a_px` (array of 2 × number), `b_px` (array of 2 × number), `distance_mm` (number): Two points a known distance apart on the target, such as lines of its grid: gives the scale, the photo taken to face the target squarely.
+- `kind`: `"four_corner"`, with `corners_px` (array of 4 × array of 2 × number), `width_mm` (number), `height_mm` (number): The corners of a rectangle of known size on the target, such as the sheet's edges: gives the scale and straightens a photo taken at an angle.
+
+### Group
+
+A group of shots: where they went, and what, where and how they were shot.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The group's id, unique among groups. |
+| `taken_at` | integer | When it was shot, in milliseconds since 1970 (UTC). |
+| `marks` | [Marks](#marks) | Where its shots are marked. |
+| `rifle_id` | string or null | The rifle shot (one of the file's `rifles`), if given. |
+| `barrel_id` | string or null | The rifle's barrel (one of the file's `barrels`), if given. |
+| `bullet_id` | string or null | The bullet or load shot (one of the file's `bullets`), if given. |
+| `ladder_id` | string or null | The ladder (one of the file's `ladders`) this group is a rung of. |
+| `rung_value` | number or null | The rung's value, in the unit the ladder's `variable` names: the charge in grams, or the seating's CBTO in mm. |
+| `distance_m` | number or null | The distance to the target; `null` when not given, which leaves out sizes as angles. |
+| `session_id` | string or null | The session (one of the file's `sessions`) it was shot in. |
+| `conditions` | [Conditions](#conditions) | Conditions that differ from the session's; what is `null` here is the session's. |
+| `extra_velocities_mps` | array of number | Muzzle velocities measured for rounds that match no marked shot (foulers, shots off the paper), in the order they came. |
+| `dialled_offset_mrad` | array of 2 × number | What was dialled on the scope, right and up positive, compared with the zero. Zero checks take it off the group's impact. |
+| `include_in_zero` | boolean | Whether zero checks count this group. |
+| `count_rounds` | boolean | Whether saving the group logs its shots as rounds fired (an entry of `round_log` naming the group). |
+| `tags` | array of string | The hunter's tags, e.g. `practice`. |
+| `notes` | string | The hunter's notes. |
+| `archived` | boolean | Kept, but out of the library's lists. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### Marks
+
+Where a group's shots are marked.
+
+One of:
+
+- `on`: `"photo"`, with the fields of [PhotoMarks](#photomarks): On a photo of the target.
+- `on`: `"grid"`, with the fields of [GridMarks](#gridmarks): On a blank grid.
+
+### PhotoShot
+
+A shot marked on a photo.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x_px` | number | The hole's centre: pixels from the photo's left edge. |
+| `y_px` | number | The hole's centre: pixels down from the photo's top edge. |
+| `cold_bore` | boolean | The first shot from a cold, clean barrel. |
+| `called_flier` | boolean | The shooter knew the shot was bad as it broke; statistics can leave it out. |
+| `velocity_mps` | number or null | Its muzzle velocity, if measured. |
+
+### PhotoMarks
+
+Shots marked on a photo of the target, in its pixels.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `photo_id` | string | The photo (one of the file's `photos`), whose `calibration` gives the scale. |
+| `aim_px` | array of 2 × number or null | The point aimed at, `[x, y]` in pixels; `null` without one, which leaves out the group's correction and zero checks. |
+| `shots` | array of [PhotoShot](#photoshot) | The shots, in the order they were marked. |
+
+### GridShot
+
+A shot placed on a blank grid.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x_mm` | number | Millimetres right (positive) or left of the grid's centre. |
+| `y_mm` | number | Millimetres up (positive) or down from the grid's centre. |
+| `cold_bore` | boolean | The first shot from a cold, clean barrel. |
+| `called_flier` | boolean | The shooter knew the shot was bad as it broke; statistics can leave it out. |
+| `velocity_mps` | number or null | Its muzzle velocity, if measured. |
+
+### GridMarks
+
+Shots placed on a blank grid at true scale, in millimetres from its centre: x to the right, y up. For targets that weren't photographed: scored paper, or positions from an electronic target.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `width_mm` | number | The grid's width. |
+| `height_mm` | number | The grid's height. |
+| `aim_mm` | array of 2 × number or null | The point aimed at, `[x, y]` in mm; `null` without one. Usually the centre, `[0, 0]`. |
+| `shots` | array of [GridShot](#gridshot) | The shots, in the order they were placed. |
+
+### Conditions
+
+The weather at the range. Every part may be unknown, and is then left out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `temperature_c` | number or null | Air temperature. May be left out. |
+| `powder_temperature_c` | number or null | The cartridges' (powder's) temperature, when it differs from the air's. May be left out. |
+| `pressure_hpa` | number or null | Air pressure as a barometer at the range reads it (not reduced to sea level). May be left out. |
+| `humidity_percent` | number or null | Relative humidity. May be left out. |
+| `wind_speed_mps` | number or null | The wind's speed. May be left out. |
+| `wind_clock` | number or null | Where the wind came from, on a clock: 12 head-on, 3 from the right. May be left out. |
+
+### Ladder
+
+A load development: groups of one bullet in one rifle, each a rung at a different charge or seating depth (the groups' `ladder_id` and `rung_value`). Zero checks and trends leave its groups out unless the hunter adds them.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The ladder's id, unique among ladders. |
+| `name` | string | The hunter's name for it; may be empty. |
+| `rifle_id` | string | The rifle (one of the file's `rifles`). |
+| `bullet_id` | string | The bullet loaded (one of the file's `bullets`), whose recipe the rungs vary. |
+| `variable` | [LadderVariable](#laddervariable) | What changes from rung to rung. |
+| `notes` | string | The hunter's notes. |
+| `promoted_bullet_id` | string or null | The load (one of the file's `bullets`) made from the rung the hunter kept, once there is one. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### LadderVariable
+
+What a ladder varies from rung to rung.
+
+One of:
+
+- `"charge"`: The powder charge; rung values are grams.
+- `"seating"`: The seating depth; rung values are the cartridge's base-to-ogive length (CBTO), mm.
+
+### Analysis
+
+An analysis of several groups the hunter saved, worked out again from the groups whenever it is opened.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | The analysis's id, unique among analyses. |
+| `kind` | [AnalysisKind](#analysiskind) | What it does. |
+| `name` | string | The hunter's name for it. |
+| `group_ids` | array of string | Its groups (of the file's `groups`), in the hunter's order; ones deleted since are skipped. |
+| `settings` |  | How the app shows it, as the app's own JSON object; a reader may ignore it. |
+| `updated_at` | integer | When the record was last changed, in milliseconds since 1970 (UTC). |
+
+### AnalysisKind
+
+What a saved analysis does with its groups.
+
+One of:
+
+- `"compare"`: Groups side by side, tested against each other.
+- `"composite"`: The groups' shots pooled into one group.
+- `"ladder"`: A ladder's rungs, ranked.
+
 ### Deletion
 
 A record that was deleted.
@@ -622,6 +984,15 @@ One of:
 - `"scope"`
 - `"target"`
 - `"shot"`
+- `"barrel"`
+- `"round_log_entry"`
+- `"clean"`
+- `"zero_reset"`
+- `"session"`
+- `"photo"`
+- `"group"`
+- `"ladder"`
+- `"analysis"`
 
 ### CatalogDetails
 

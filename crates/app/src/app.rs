@@ -83,7 +83,7 @@ pub enum Action {
     /// Save a rifle whose range table changed, without a message.
     SaveTable(Rifle),
     DeleteRifle(String),
-    SaveBullet(Bullet),
+    SaveBullet(Box<Bullet>),
     DeleteBullet(String),
     SaveLoad(RifleLoad),
     DeleteLoad(String),

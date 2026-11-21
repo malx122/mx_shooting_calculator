@@ -14,6 +14,15 @@ pub enum RecordKind {
     Scope,
     Target,
     Shot,
+    Barrel,
+    RoundLogEntry,
+    Clean,
+    ZeroReset,
+    Session,
+    Photo,
+    Group,
+    Ladder,
+    Analysis,
 }
 
 impl RecordKind {
@@ -25,20 +34,40 @@ impl RecordKind {
             RecordKind::Scope => "scope",
             RecordKind::Target => "target",
             RecordKind::Shot => "shot",
+            RecordKind::Barrel => "barrel",
+            RecordKind::RoundLogEntry => "round_log_entry",
+            RecordKind::Clean => "clean",
+            RecordKind::ZeroReset => "zero_reset",
+            RecordKind::Session => "session",
+            RecordKind::Photo => "photo",
+            RecordKind::Group => "group",
+            RecordKind::Ladder => "ladder",
+            RecordKind::Analysis => "analysis",
         }
     }
 
+    pub const ALL: [RecordKind; 15] = [
+        RecordKind::Rifle,
+        RecordKind::Bullet,
+        RecordKind::RifleLoad,
+        RecordKind::Scope,
+        RecordKind::Target,
+        RecordKind::Shot,
+        RecordKind::Barrel,
+        RecordKind::RoundLogEntry,
+        RecordKind::Clean,
+        RecordKind::ZeroReset,
+        RecordKind::Session,
+        RecordKind::Photo,
+        RecordKind::Group,
+        RecordKind::Ladder,
+        RecordKind::Analysis,
+    ];
+
     pub fn parse(text: &str) -> Option<RecordKind> {
-        [
-            RecordKind::Rifle,
-            RecordKind::Bullet,
-            RecordKind::RifleLoad,
-            RecordKind::Scope,
-            RecordKind::Target,
-            RecordKind::Shot,
-        ]
-        .into_iter()
-        .find(|kind| kind.as_str() == text)
+        RecordKind::ALL
+            .into_iter()
+            .find(|kind| kind.as_str() == text)
     }
 
     /// The table holding records of this kind.
@@ -50,6 +79,15 @@ impl RecordKind {
             RecordKind::Scope => "scopes",
             RecordKind::Target => "targets",
             RecordKind::Shot => "shots",
+            RecordKind::Barrel => "barrels",
+            RecordKind::RoundLogEntry => "round_log",
+            RecordKind::Clean => "cleans",
+            RecordKind::ZeroReset => "zero_resets",
+            RecordKind::Session => "sessions",
+            RecordKind::Photo => "photos",
+            RecordKind::Group => "shot_groups",
+            RecordKind::Ladder => "ladders",
+            RecordKind::Analysis => "analyses",
         }
     }
 }

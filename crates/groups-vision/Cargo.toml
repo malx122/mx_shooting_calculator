@@ -1,0 +1,16 @@
+[package]
+name = "groups-vision"
+description = "Target photos for shot-group analysis: import, orientation and reduction."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Decoding JPEG, PNG and WebP, and writing JPEG; no threads (the browser
+# has one) and no other formats.
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+# The capture time from a photo's EXIF data.
+kamadak-exif = "0.6.2"
+# Photo ids, as the store names photos.
+ballistics-store.workspace = true

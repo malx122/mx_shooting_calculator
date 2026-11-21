@@ -14,18 +14,24 @@
 //! (Strelok) build the same `PersonalData` and go through `import_data`.
 
 use std::cmp::Ordering;
+use std::collections::BTreeSet;
 
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use serde::{Deserialize, Serialize};
 
 use crate::StoreError;
+use crate::barrels::{Barrel, Clean, RoundLogEntry, ZeroReset};
 use crate::db::{
-    Store, bullet_from_row, from_json_column, load_from_row, observe_on, put_bullet, put_load,
-    put_rifle, put_scope, put_shot, put_target, record_deletion, rifle_from_row, stamp_on,
+    Blob, Store, blob_by_id, bullet_from_row, from_json_column, load_from_row, observe_on,
+    put_blob, put_bullet, put_load, put_rifle, put_scope, put_shot, put_target, record_deletion,
+    rifle_from_row, stamp_on, sweep_orphans,
 };
 use crate::deletions::{Deletion, RecordKind};
+use crate::groups::{Analysis, Group, Ladder};
 use crate::model::{Bullet, Rifle, RifleLoad, now_ms};
 use crate::optics::UserScope;
+use crate::photos::Photo;
+use crate::sessions::Session;
 use crate::shots::Shot;
 use crate::targets::Target;
 
@@ -43,7 +49,10 @@ const LEGACY_FORMATS: [&str; 2] = ["mhc/personal-data", "ballistic-calculator/pe
 /// 6: the shot log.
 /// 7: attribution for separately licensed bullet data. Older readers must not
 /// silently discard it when importing and re-exporting records.
-pub const VERSION: u32 = 7;
+/// 8: shot groups and what goes with them: barrels, the round log, cleans,
+/// zero resets, range sessions, photos, ladders and analyses; rifles name
+/// their barrel and rounds before logging; handloads have a recipe.
+pub const VERSION: u32 = 8;
 
 // This and the types in it are the documented export format: changing
 // them changes docs/export-format.schema.json and the field reference in
@@ -59,7 +68,7 @@ pub struct PersonalData {
     /// Always `mxsc/personal-data`. Files from the app's earlier names say
     /// `mhc/personal-data` or `ballistic-calculator/personal-data`.
     pub format: String,
-    /// The format's version; this description is of version 7. A reader
+    /// The format's version; this description is of version 8. A reader
     /// should refuse versions newer than it knows.
     pub version: u32,
     /// When the file was written, in milliseconds since 1970 (UTC).
@@ -81,6 +90,35 @@ pub struct PersonalData {
     /// and, after a shot at game, where the hunter and the animal stood.
     #[serde(default)]
     pub shots: Vec<Shot>,
+    /// Barrels of the hunter's rifles, fitted or not.
+    #[serde(default)]
+    pub barrels: Vec<Barrel>,
+    /// Rounds fired, for the round counts of actions and barrels.
+    #[serde(default)]
+    pub round_log: Vec<RoundLogEntry>,
+    /// When barrels were cleaned.
+    #[serde(default)]
+    pub cleans: Vec<Clean>,
+    /// When rifles' zeros were set again.
+    #[serde(default)]
+    pub zero_resets: Vec<ZeroReset>,
+    /// Days at the range, with their weather.
+    #[serde(default)]
+    pub sessions: Vec<Session>,
+    /// What is known about the target photos groups are marked on. The
+    /// photos themselves are not in the file.
+    #[serde(default)]
+    pub photos: Vec<Photo>,
+    /// Shot groups: shots marked on a photo or a grid, with what, where and
+    /// how they were shot.
+    #[serde(default)]
+    pub groups: Vec<Group>,
+    /// Load developments over several groups.
+    #[serde(default)]
+    pub ladders: Vec<Ladder>,
+    /// Saved comparisons and composites of groups.
+    #[serde(default)]
+    pub analyses: Vec<Analysis>,
     /// Records deleted, so merging the file deletes them elsewhere too.
     #[serde(default)]
     pub deleted: Vec<Deletion>,
@@ -308,7 +346,7 @@ enum Mode {
 }
 
 /// What every kind of record has for merging.
-trait Record: Serialize + Clone {
+pub(crate) trait Record: Serialize + Clone {
     const KIND: RecordKind;
     fn id(&self) -> &str;
     fn updated_at(&self) -> i64;
@@ -338,10 +376,20 @@ record!(RifleLoad, RecordKind::RifleLoad);
 record!(UserScope, RecordKind::Scope);
 record!(Target, RecordKind::Target);
 record!(Shot, RecordKind::Shot);
+record!(Barrel, RecordKind::Barrel);
+record!(RoundLogEntry, RecordKind::RoundLogEntry);
+record!(Clean, RecordKind::Clean);
+record!(ZeroReset, RecordKind::ZeroReset);
+record!(Session, RecordKind::Session);
+record!(Photo, RecordKind::Photo);
+record!(Group, RecordKind::Group);
+record!(Ladder, RecordKind::Ladder);
+record!(Analysis, RecordKind::Analysis);
 
 impl Store {
     /// Everything the hunter has made, with the deletions, as one export.
     pub fn export_data(&self) -> Result<PersonalData, StoreError> {
+        let groups = self.groups_data()?;
         Ok(PersonalData {
             format: FORMAT.to_owned(),
             version: VERSION,
@@ -352,6 +400,15 @@ impl Store {
             scopes: self.scopes()?,
             targets: self.targets()?,
             shots: self.shots()?,
+            barrels: groups.barrels,
+            round_log: groups.round_log,
+            cleans: groups.cleans,
+            zero_resets: groups.zero_resets,
+            sessions: groups.sessions,
+            photos: groups.photos,
+            groups: groups.groups,
+            ladders: groups.ladders,
+            analyses: groups.analyses,
             deleted: self.deletions()?,
             // Sync copies stay small: only exported files carry it.
             catalog: CatalogDetails::default(),
@@ -403,6 +460,7 @@ impl Store {
     ) -> Result<ImportReport, StoreError> {
         let data = &without_future(data);
         let transaction = self.connection().transaction()?;
+        let marked_before = marked_photos(&transaction)?;
         let mut report = ImportReport::default();
         let mut latest = 0;
         for deletion in &data.deleted {
@@ -501,6 +559,27 @@ impl Store {
             latest = latest.max(load.updated_at);
             import_load(&transaction, load, mode, &mut report)?;
         }
+        let mut blobs = Blobs {
+            transaction: &transaction,
+            mode,
+            report: &mut report,
+            latest: &mut latest,
+        };
+        blobs.merge(&data.barrels)?;
+        blobs.merge(&data.round_log)?;
+        blobs.merge(&data.cleans)?;
+        blobs.merge(&data.zero_resets)?;
+        blobs.merge(&data.sessions)?;
+        blobs.merge(&data.groups)?;
+        blobs.merge(&data.ladders)?;
+        blobs.merge(&data.analyses)?;
+        let photos = wanted_photos(blobs.transaction, &data.photos, blobs.report)?;
+        blobs.merge(&photos)?;
+        report.deleted += sweep_orphans(&transaction)?;
+        let marked = marked_photos(&transaction)?;
+        for id in marked_before.difference(&marked) {
+            report.deleted += transaction.execute("DELETE FROM photos WHERE id = ?1", [id])?;
+        }
         observe_on(&transaction, latest)?;
         if dry_run {
             transaction.rollback()?;
@@ -509,6 +588,67 @@ impl Store {
         }
         Ok(report)
     }
+}
+
+/// Merges records kept as JSON in tables of their own.
+struct Blobs<'a, 'b> {
+    transaction: &'a Transaction<'b>,
+    mode: Mode,
+    report: &'a mut ImportReport,
+    latest: &'a mut i64,
+}
+
+impl Blobs<'_, '_> {
+    fn merge<T: Blob>(&mut self, records: &[T]) -> Result<(), StoreError> {
+        for record in records {
+            record.check().map_err(StoreError::Invalid)?;
+            *self.latest = (*self.latest).max(record.updated_at());
+            merge_record(
+                self.transaction,
+                record,
+                self.mode,
+                self.report,
+                put_blob::<T>,
+                |transaction, record| blob_by_id(transaction, record.id()),
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// The photos groups here are marked on.
+fn marked_photos(transaction: &Transaction<'_>) -> Result<BTreeSet<String>, StoreError> {
+    let mut statement = transaction
+        .prepare("SELECT DISTINCT photo_id FROM shot_groups WHERE photo_id IS NOT NULL")?;
+    let ids = statement.query_map([], |row| row.get(0))?;
+    Ok(ids.collect::<rusqlite::Result<_>>()?)
+}
+
+/// The photo records worth merging, once the groups are merged: those this
+/// device has, and those a group here is marked on. Photo records are never
+/// remembered as deleted, so one forgotten here for want of groups would
+/// otherwise come back from every other copy.
+fn wanted_photos(
+    transaction: &Transaction<'_>,
+    photos: &[Photo],
+    report: &mut ImportReport,
+) -> Result<Vec<Photo>, StoreError> {
+    let mut wanted = Vec::new();
+    for photo in photos {
+        photo.validate().map_err(StoreError::Invalid)?;
+        let here: bool = transaction.query_row(
+            "SELECT EXISTS (SELECT 1 FROM photos WHERE id = ?1)
+                 OR EXISTS (SELECT 1 FROM shot_groups WHERE photo_id = ?1)",
+            [&photo.id],
+            |row| row.get(0),
+        )?;
+        if here {
+            wanted.push(photo.clone());
+        } else {
+            report.kept_local += 1;
+        }
+    }
+    Ok(wanted)
 }
 
 /// When this device deleted the record, if it did.
@@ -569,33 +709,34 @@ fn apply_deletion(
 /// edits made since.
 fn without_future(data: &PersonalData) -> PersonalData {
     let limit = crate::model::now_ms() + 7 * 24 * 60 * 60 * 1000;
-    let fix = |at: &mut i64| {
-        if *at > limit {
-            *at = 0;
+    fn fix<T: Record>(records: &mut [T], limit: i64) {
+        for record in records {
+            if record.updated_at() > limit {
+                record.set_updated_at(0);
+            }
         }
-    };
+    }
     let mut data = data.clone();
-    data.rifles
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.bullets
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.rifle_loads
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.scopes
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.targets
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.shots
-        .iter_mut()
-        .for_each(|record| fix(&mut record.updated_at));
-    data.deleted
-        .iter_mut()
-        .for_each(|deletion| fix(&mut deletion.deleted_at));
+    fix(&mut data.rifles, limit);
+    fix(&mut data.bullets, limit);
+    fix(&mut data.rifle_loads, limit);
+    fix(&mut data.scopes, limit);
+    fix(&mut data.targets, limit);
+    fix(&mut data.shots, limit);
+    fix(&mut data.barrels, limit);
+    fix(&mut data.round_log, limit);
+    fix(&mut data.cleans, limit);
+    fix(&mut data.zero_resets, limit);
+    fix(&mut data.sessions, limit);
+    fix(&mut data.photos, limit);
+    fix(&mut data.groups, limit);
+    fix(&mut data.ladders, limit);
+    fix(&mut data.analyses, limit);
+    for deletion in &mut data.deleted {
+        if deletion.deleted_at > limit {
+            deletion.deleted_at = 0;
+        }
+    }
     data
 }
 
@@ -646,24 +787,32 @@ fn merge_record<T: Record>(
 }
 
 /// Whether two records hold the same data, ignoring when they were saved.
-/// Reads one of this app's exports, upgrading older formats.
+/// Reads one of this app's exports, upgrading older formats. The format
+/// and its version are checked before the records, so a file from a newer
+/// version is refused as such rather than for what it holds.
 pub fn read_export(json: &str) -> Result<PersonalData, StoreError> {
+    #[derive(Deserialize)]
+    struct Header {
+        format: String,
+        version: u32,
+    }
+    let header: Header = serde_json::from_str(json)?;
+    if header.format != FORMAT && !LEGACY_FORMATS.contains(&header.format.as_str()) {
+        return Err(StoreError::Invalid(
+            "this is not an MX Shooting Calculator export".into(),
+        ));
+    }
+    if header.version > VERSION {
+        return Err(StoreError::Invalid(format!(
+            "the file comes from a newer version of the app (format {})",
+            header.version
+        )));
+    }
     let mut data: PersonalData = serde_json::from_str(json)?;
     data.rifle_loads
         .iter_mut()
         .for_each(RifleLoad::upgrade_legacy);
     data.targets.iter_mut().for_each(Target::upgrade_legacy);
-    if data.format != FORMAT && !LEGACY_FORMATS.contains(&data.format.as_str()) {
-        return Err(StoreError::Invalid(
-            "this is not an MX Shooting Calculator export".into(),
-        ));
-    }
-    if data.version > VERSION {
-        return Err(StoreError::Invalid(format!(
-            "the file comes from a newer version of the app (format {})",
-            data.version
-        )));
-    }
     Ok(data)
 }
 

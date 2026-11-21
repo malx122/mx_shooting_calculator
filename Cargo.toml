@@ -6,6 +6,8 @@ members = [
     "crates/ballistics-shot",
     "crates/app",
     "crates/mxsc-mcp",
+    "crates/groups-core",
+    "crates/groups-vision",
 ]
 default-members = ["crates/app"]
 
@@ -19,3 +21,5 @@ authors = ["David Rosendahl"]
 ballistics-core = { path = "crates/ballistics-core" }
 ballistics-store = { path = "crates/ballistics-store" }
 ballistics-shot = { path = "crates/ballistics-shot" }
+groups-core = { path = "crates/groups-core" }
+groups-vision = { path = "crates/groups-vision" }

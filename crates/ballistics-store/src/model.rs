@@ -94,6 +94,14 @@ pub struct Rifle {
     /// The scope's reticle: the id of a reticle in the app's catalog.
     #[serde(default)]
     pub reticle_id: Option<String>,
+    /// The barrel on the rifle now: one of the file's `barrels`; `null`
+    /// when the hunter keeps no barrels for it.
+    #[serde(default)]
+    pub fitted_barrel_id: Option<String>,
+    /// Rounds fired through the action before the hunter began the round
+    /// log (`round_log`); the logged rounds add to it.
+    #[serde(default)]
+    pub rounds_before_logging: u32,
     /// The hunter's notes.
     pub notes: String,
     /// When the record was last changed, in milliseconds since 1970 (UTC).
@@ -137,6 +145,8 @@ impl Rifle {
             click_value: 0.1,
             scope_id: None,
             reticle_id: None,
+            fitted_barrel_id: None,
+            rounds_before_logging: 0,
             notes: String::new(),
             updated_at: 0,
         }
@@ -145,6 +155,10 @@ impl Rifle {
     pub fn validate(&self) -> Result<(), String> {
         let checks = [
             (!self.name.trim().is_empty(), "the rifle needs a name"),
+            (
+                self.rounds_before_logging <= MAX_ROUNDS,
+                "the rounds fired before the log must be at most 1 000 000",
+            ),
             (
                 self.name.chars().count() <= NAME_MAX,
                 "the name is too long",
@@ -507,6 +521,9 @@ pub struct Bullet {
     /// record, even if the catalog entry is no longer available.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data_attribution: Option<DataAttribution>,
+    /// How a handload is loaded, if the hunter wrote it down.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipe: Option<Recipe>,
     /// The hunter's notes.
     pub notes: String,
     /// When the record was last changed, in milliseconds since 1970 (UTC).
@@ -540,6 +557,7 @@ impl Bullet {
             min_expansion_mps: None,
             catalog_id: None,
             data_attribution: None,
+            recipe: None,
             notes: String::new(),
             updated_at: 0,
         }
@@ -651,8 +669,64 @@ impl Bullet {
                 within(self.test_barrel_mm, 50.0..=1500.0),
                 "test barrel length must be 50 to 1500 mm",
             ),
+            (
+                self.recipe
+                    .as_ref()
+                    .is_none_or(|recipe| recipe.problem().is_none()),
+                self.recipe
+                    .as_ref()
+                    .and_then(Recipe::problem)
+                    .unwrap_or_default(),
+            ),
         ];
         first_failure(&checks, &self.name)
+    }
+}
+
+/// How a handload is put together. Every part may be left blank.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct Recipe {
+    /// The powder, e.g. `Vihtavuori N150`.
+    #[serde(default)]
+    pub powder: String,
+    /// The powder charge, in grams (1 grain = 0.0648 g).
+    #[serde(default)]
+    pub charge_g: Option<f64>,
+    /// The primer, e.g. `CCI BR-2`.
+    #[serde(default)]
+    pub primer: String,
+    /// The cases, e.g. `Lapua, 3rd firing`.
+    #[serde(default)]
+    pub brass: String,
+    /// Cartridge overall length (COAL), mm.
+    #[serde(default)]
+    pub coal_mm: Option<f64>,
+    /// Cartridge base to ogive (CBTO), mm: the length that sets how far the
+    /// bullet jumps to the rifling.
+    #[serde(default)]
+    pub cbto_mm: Option<f64>,
+    /// The hunter's notes on the recipe.
+    #[serde(default)]
+    pub notes: String,
+}
+
+impl Recipe {
+    fn problem(&self) -> Option<&'static str> {
+        let within = |value: Option<f64>, range: std::ops::RangeInclusive<f64>| {
+            value.is_none_or(|v| range.contains(&v))
+        };
+        if [&self.powder, &self.primer, &self.brass]
+            .iter()
+            .any(|text| text.chars().count() > NAME_MAX)
+        {
+            Some("the recipe's powder, primer and brass must be shorter")
+        } else if !within(self.charge_g, 0.01..=30.0) {
+            Some("the powder charge must be 0.01 to 30 g")
+        } else if !within(self.coal_mm, 5.0..=200.0) || !within(self.cbto_mm, 5.0..=200.0) {
+            Some("cartridge lengths must be 5 to 200 mm")
+        } else {
+            None
+        }
     }
 }
 
@@ -949,8 +1023,10 @@ pub const MAX_PER_DEGREE: f64 = 5.0;
 
 /// The longest name a record may have.
 pub const NAME_MAX: usize = 120;
+/// The most rounds a count may hold: more than any barrel or action fires.
+pub const MAX_ROUNDS: u32 = 1_000_000;
 
-fn first_failure(checks: &[(bool, &str)], record: &str) -> Result<(), String> {
+pub(crate) fn first_failure(checks: &[(bool, &str)], record: &str) -> Result<(), String> {
     match checks.iter().find(|(ok, _)| !ok) {
         Some((_, problem)) if record.trim().is_empty() => Err((*problem).to_owned()),
         Some((_, problem)) => Err(format!("{}: {problem}", record.trim())),
