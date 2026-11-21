@@ -599,6 +599,16 @@ impl GroupStats {
         self.scatter.sigma()
     }
 
+    /// σ̂ as an angle at the group's distance, mrad, with its degrees of
+    /// freedom. `None` without a distance or for one shot.
+    pub fn sigma_mrad(&self) -> Option<Sigma> {
+        let sigma = self.sigma()?;
+        Some(Sigma {
+            value: self.mrad(sigma.value)?,
+            ..sigma
+        })
+    }
+
     /// `mm` on the target as an angle at the group's distance, mrad.
     pub fn mrad(&self, mm: f64) -> Option<f64> {
         self.options
