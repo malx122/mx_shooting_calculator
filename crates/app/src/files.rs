@@ -20,6 +20,28 @@ impl Picked {
         self.0.borrow_mut().take()
     }
 
+    /// A file that came another way, such as dropped on the window.
+    pub fn put(&self, file: File) {
+        *self.0.borrow_mut() = Some(file);
+    }
+
+    /// Opens the picker for a photo. In the browser it takes any image, and
+    /// with `camera` asks for the phone's camera; neither asks for a
+    /// permission. On a computer `camera` makes no difference.
+    pub fn pick_photo(&self, context: &egui::Context, camera: bool) {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = camera;
+            self.pick(
+                context,
+                crate::i18n::tr("Photos"),
+                &["jpg", "jpeg", "png", "webp", "heic", "heif"],
+            );
+        }
+        #[cfg(target_arch = "wasm32")]
+        crate::web::pick_photo(self.0.clone(), context.clone(), camera);
+    }
+
     /// Opens the picker for files with these extensions.
     pub fn pick(&self, context: &egui::Context, kind: &str, extensions: &[&str]) {
         #[cfg(not(target_arch = "wasm32"))]

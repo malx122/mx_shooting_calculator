@@ -401,7 +401,9 @@ impl Store {
     pub fn save_rifle(&self, rifle: &mut Rifle) -> Result<(), StoreError> {
         rifle.validate().map_err(StoreError::Invalid)?;
         rifle.updated_at = self.stamp(rifle.updated_at)?;
-        put_rifle(&self.connection, rifle)
+        self.put_undeleted(RecordKind::Rifle, &rifle.id, |connection| {
+            put_rifle(connection, rifle)
+        })
     }
 
     /// Deletes the rifle, remembering the deletion so a sync deletes it on
@@ -447,7 +449,9 @@ impl Store {
     pub fn save_bullet(&self, bullet: &mut Bullet) -> Result<(), StoreError> {
         bullet.validate().map_err(StoreError::Invalid)?;
         bullet.updated_at = self.stamp(bullet.updated_at)?;
-        put_bullet(&self.connection, bullet)
+        self.put_undeleted(RecordKind::Bullet, &bullet.id, |connection| {
+            put_bullet(connection, bullet)
+        })
     }
 
     /// Deletes the bullet and the loads measured with it; as with a rifle,
@@ -473,7 +477,9 @@ impl Store {
     pub fn save_scope(&self, scope: &mut UserScope) -> Result<(), StoreError> {
         scope.validate().map_err(StoreError::Invalid)?;
         scope.updated_at = self.stamp(scope.updated_at)?;
-        put_scope(&self.connection, scope)
+        self.put_undeleted(RecordKind::Scope, &scope.id, |connection| {
+            put_scope(connection, scope)
+        })
     }
 
     /// Deletes a custom scope and takes it off the rifles that had it.
@@ -506,7 +512,9 @@ impl Store {
         target.upgrade_legacy();
         target.validate().map_err(StoreError::Invalid)?;
         target.updated_at = self.stamp(target.updated_at)?;
-        put_target(&self.connection, target)
+        self.put_undeleted(RecordKind::Target, &target.id, |connection| {
+            put_target(connection, target)
+        })
     }
 
     pub fn delete_target(&self, id: &str) -> Result<(), StoreError> {
@@ -540,7 +548,9 @@ impl Store {
         shot.update_spot();
         shot.validate().map_err(StoreError::Invalid)?;
         shot.updated_at = self.stamp(shot.updated_at)?;
-        put_shot(&self.connection, shot)
+        self.put_undeleted(RecordKind::Shot, &shot.id, |connection| {
+            put_shot(connection, shot)
+        })
     }
 
     pub fn delete_shot(&self, id: &str) -> Result<(), StoreError> {
@@ -577,7 +587,9 @@ impl Store {
             load.id = existing.id;
         }
         load.updated_at = self.stamp(load.updated_at)?;
-        put_load(&self.connection, load)
+        self.put_undeleted(RecordKind::RifleLoad, &load.id, |connection| {
+            put_load(connection, load)
+        })
     }
 
     pub fn delete_rifle_load(&self, id: &str) -> Result<(), StoreError> {
@@ -898,7 +910,29 @@ impl Store {
         record.check().map_err(StoreError::Invalid)?;
         let at = self.stamp(record.updated_at())?;
         record.set_updated_at(at);
-        put_blob(&self.connection, record)
+        self.put_undeleted(T::KIND, record.id(), |connection| {
+            put_blob(connection, record)
+        })
+    }
+
+    /// Writes a record with `put` and forgets that this device deleted it,
+    /// together: a record saved after its deletion (an undone delete, an id
+    /// made again) is a live record, and a merge must not set the old
+    /// deletion against it.
+    fn put_undeleted(
+        &self,
+        kind: RecordKind,
+        id: &str,
+        put: impl FnOnce(&Connection) -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        transaction.execute(
+            "DELETE FROM deleted WHERE kind = ?1 AND id = ?2",
+            params![kind.as_str(), id],
+        )?;
+        put(&transaction)?;
+        transaction.commit()?;
+        Ok(())
     }
 
     fn delete_blob(&self, kind: RecordKind, id: &str) -> Result<(), StoreError> {

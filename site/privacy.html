@@ -86,10 +86,11 @@
   <main>
     <div class="wrap">
       <h1>Privacy</h1>
-      <p class="updated">MX Shooting Calculator · in effect from 13 November 2026</p>
+      <p class="updated">MX Shooting Calculator · in effect from 21 November 2026</p>
 
       <div class="summary">
-        <p>Your rifles, bullets, targets, shot log and settings are kept on your own devices. The app
+        <p>Your rifles, bullets, targets, shot log, groups, target photos and settings are kept on
+          your own devices. The app
           has no accounts, no analytics and no advertising, and it sells nothing about you.
           It only sends something elsewhere when you use a feature that needs it: the
           weather, sync, a Garmin watch, or updates on a computer.</p>
@@ -97,7 +98,7 @@
 
       <h2>What the app keeps on your device</h2>
       <p>Everything you enter: rifles, bullets, loads and velocity measurements, scopes,
-        targets, stands, the shot log, and the calculator's settings, including the place you
+        targets, stands, the shot log, your groups and range sessions, and the calculator's settings, including the place you
         last looked up and your county. On a computer it is a database file in your user's app-data folder;
         in the browser it is the browser's storage for this site. Deleting the app's data, or
         the browser's data for the site, deletes it. <strong>Export backup</strong> in the menu
@@ -105,6 +106,27 @@
       <p>Card settings, including stands and named label designs with their fonts,
         colours, marker styles and print choices, stay on this device. They are not included in
         exported backups or sync copies.</p>
+
+      <h2>Groups and target photos</h2>
+      <p>When you start a group, you take a photo of the target or choose one; the browser
+        opens the camera or the photo library through its usual file picker, so the app asks
+        for no camera or photo permission. On a computer you open a photo or drop it on the
+        window. The photo is turned upright and, unless you choose <strong>Keep original
+        photos</strong>, made smaller; either way its metadata is taken out as it comes in,
+        with the location and the camera's details in it. Only the time it was taken is read
+        first, for the group's date.</p>
+      <p>Photos stay on the device they were brought in on: on a computer in a folder beside the
+        database (<code>mxsc-photos</code> beside <code>mxsc.sqlite</code>), in the browser in
+        the browser's storage for this site. They are not in exported backups or sync copies.
+        What you mark on them is: the groups with their shots, scale and aim point, the range
+        sessions (place, date and weather), the record of each photo a group is
+        marked on (named by a code worked out from the photo, with its size, the time it was
+        taken and its scale) and the rounds counted on a barrel go into your backups and, if you
+        sync, into your sync copy, encrypted like the rest. Another device then shows the
+        group's drawing and numbers, but not the photo. A photo no group is marked on (one you
+        brought in but saved no group on, or whose groups you deleted) is deleted from the
+        device the next time the app starts. How a group was framed while
+        marking is kept on each device only.</p>
 
       <h2>Weather and your position</h2>
       <p>When you ask for the weather, the app sends the place name you typed, or your
@@ -148,8 +170,8 @@
         for one permission: <strong>its own folder in your Drive</strong>
         (<code>drive.appdata</code>), a hidden folder only this app can see. The app keeps one
         file there, <code>mxsc-sync.json</code>, holding your rifles, bullets, loads, scopes,
-        targets and shot log (with the positions you marked for your shots), so your devices
-        share them. It cannot see or change any other file in
+        targets, shot log (with the positions you marked for your shots), groups and range
+        sessions (without the photos), so your devices share them. It cannot see or change any other file in
         your Drive, and it doesn't ask for your name or e-mail address.</p>
       <p>The sign-in passes through the app's sync server, because Google requires a secret
         that can't be kept in the app. The server hands the sign-in only to the device that

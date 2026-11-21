@@ -2520,3 +2520,48 @@ fn the_released_database_upgrades_with_its_data_intact() {
     drop(store);
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn a_record_saved_again_after_its_deletion_keeps_later_edits_against_an_old_backup() {
+    let mut store = Store::open_in_memory().unwrap();
+    let mut rifle = rifle("Tikka", "308-win");
+    store.save_rifle(&mut rifle).unwrap();
+    let mut group = Group::on_grid(200.0, 200.0, 1_000);
+    group.rifle_id = Some(rifle.id.clone());
+    group.notes = "first".into();
+    store.save_group(&mut group).unwrap();
+    let mut entry = RoundLogEntry::for_group(&group, 5).unwrap();
+    store.save_round_log_entry(&mut entry).unwrap();
+    let old_backup = store.export_json().unwrap();
+
+    // Deleted, then saved again (Undo, or rounds counted again).
+    store.delete_group(&group.id).unwrap();
+    store.delete_round_log_entry(&entry.id).unwrap();
+    store.delete_rifle(&rifle.id).unwrap();
+    store.save_rifle(&mut rifle).unwrap();
+    store.save_group(&mut group).unwrap();
+    store.save_round_log_entry(&mut entry).unwrap();
+
+    rifle.name = "Tikka T3x".into();
+    store.save_rifle(&mut rifle).unwrap();
+    group.notes = "edited".into();
+    store.save_group(&mut group).unwrap();
+    entry.rounds = 7;
+    store.save_round_log_entry(&mut entry).unwrap();
+
+    store.import_json(&old_backup).unwrap();
+    assert_eq!(store.rifle(&rifle.id).unwrap().unwrap().name, "Tikka T3x");
+    assert_eq!(store.group(&group.id).unwrap().unwrap().notes, "edited");
+    assert_eq!(
+        store
+            .round_log_entry_for_group(&group.id)
+            .unwrap()
+            .unwrap()
+            .rounds,
+        7
+    );
+    assert!(
+        store.deletions().unwrap().is_empty(),
+        "saving took back the deletions"
+    );
+}

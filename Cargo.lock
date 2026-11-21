@@ -2192,6 +2192,8 @@ dependencies = [
  "egui_extras",
  "egui_plot",
  "egui_system_font_provider",
+ "groups-core",
+ "groups-vision",
  "hmac",
  "indexed_db_futures",
  "js-sys",

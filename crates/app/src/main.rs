@@ -13,6 +13,7 @@ mod figure;
 mod files;
 mod flags;
 mod google;
+mod groups;
 mod hits;
 mod http;
 mod hunting;
@@ -147,6 +148,7 @@ fn app_creator(store: Result<Store, StartupError>) -> eframe::AppCreator<'static
         cards::fonts::install(&creation_context.egui_ctx);
         match store {
             Ok(store) => {
+                groups::forget_unmarked_photos(&store);
                 photos::forget_unused(&store, &creation_context.egui_ctx);
                 let mut app = app::App::new(store);
                 app.show_theme(&creation_context.egui_ctx);

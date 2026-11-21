@@ -575,3 +575,18 @@ fn a_twelve_megapixel_phone_photo_is_not_reduced() {
     assert_eq!(reduced(4032, 3024, DEFAULT_MAX_LONG_EDGE_PX), (4032, 3024));
     assert_eq!(reduced(5712, 4284, DEFAULT_MAX_LONG_EDGE_PX), (4096, 3072));
 }
+
+#[test]
+fn the_pixels_to_show_come_with_the_import_upright_and_reduced() {
+    let bytes = jpeg(&quarters(300, 200), exif_block(Some(6), None, None).into());
+    let options = ImportOptions::default();
+    let (photo, shown) = import_photo_with_pixels(&bytes, options, 120).unwrap();
+    assert_eq!(photo, import_photo(&bytes, options).unwrap());
+    assert_eq!(
+        (photo.width_px, photo.height_px),
+        (200, 300),
+        "turned upright"
+    );
+    assert_eq!((shown.width_px, shown.height_px), (80, 120));
+    assert_eq!(shown.rgba.len(), 80 * 120 * 4);
+}

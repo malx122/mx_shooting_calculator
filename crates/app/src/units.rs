@@ -43,6 +43,10 @@ pub enum Quantity {
     BarrelLength,
     /// Barrel length per turn of rifling; base inches.
     Twist,
+    /// A group's size or offset as an angle; base mrad.
+    GroupAngle,
+    /// A group's size on the target; base millimetres.
+    GroupSize,
 }
 
 /// A display unit: `shown = base × scale + offset`.
@@ -68,7 +72,7 @@ const FEET_PER_METRE: f64 = 3.280_84;
 const MM_PER_INCH: f64 = 25.4;
 
 impl Quantity {
-    pub const ALL: [Quantity; 15] = [
+    pub const ALL: [Quantity; 17] = [
         Quantity::Distance,
         Quantity::ShortLength,
         Quantity::SightHeight,
@@ -84,6 +88,8 @@ impl Quantity {
         Quantity::BulletDiameter,
         Quantity::BarrelLength,
         Quantity::Twist,
+        Quantity::GroupAngle,
+        Quantity::GroupSize,
     ];
 
     pub fn name(self) -> &'static str {
@@ -103,6 +109,8 @@ impl Quantity {
             Quantity::BulletDiameter => tr("Bullet diameter"),
             Quantity::BarrelLength => tr("Barrel length"),
             Quantity::Twist => tr("Twist"),
+            Quantity::GroupAngle => tr("Group size, as an angle"),
+            Quantity::GroupSize => tr("Group size, on the target"),
         }
     }
 
@@ -123,6 +131,8 @@ impl Quantity {
                 &MILLIMETRES
             }
             Quantity::Twist => &TWIST,
+            Quantity::GroupAngle => &GROUP_ANGLE,
+            Quantity::GroupSize => &GROUP_SIZE,
         }
     }
 }
@@ -158,6 +168,18 @@ const ENERGY: [Unit; 2] = [unit("J", 1.0, 0), unit("ft·lbf", 0.737_562, 0)];
 const BULLET_MASS: [Unit; 2] = [unit("g", 1.0, 2), unit("gr", 15.432_358, 1)];
 const MILLIMETRES: [Unit; 2] = [unit("mm", 1.0, 2), unit("in", 1.0 / MM_PER_INCH, 3)];
 const TWIST: [Unit; 2] = [unit("in", 1.0, 2), unit("mm", MM_PER_INCH, 0)];
+/// From mrad.
+const GROUP_ANGLE: [Unit; 3] = [
+    unit("mil", 1.0, 2),
+    unit("MOA", groups_core::angles::MOA_PER_MRAD, 2),
+    unit("cm/100 m", groups_core::angles::CM_PER_100M_PER_MRAD, 1),
+];
+/// From mm.
+const GROUP_SIZE: [Unit; 3] = [
+    unit("mm", 1.0, 1),
+    unit("cm", 0.1, 2),
+    unit("in", 1.0 / MM_PER_INCH, 3),
+];
 
 impl Quantity {
     /// Units a hunter may type in this quantity's fields besides those on
@@ -239,11 +261,11 @@ impl UnitPrefs {
                 .into_iter()
                 .map(|quantity| {
                     let units = quantity.units();
-                    // Hunters using imperial units still mostly give twist in inches.
-                    let choice = if quantity == Quantity::Twist {
-                        units[0]
-                    } else {
-                        units[units.len() - 1]
+                    let choice = match quantity {
+                        // Hunters using imperial units still mostly give twist in inches.
+                        Quantity::Twist => units[0],
+                        Quantity::GroupAngle => units[1],
+                        _ => units[units.len() - 1],
                     };
                     (quantity, choice.label.to_owned())
                 })
@@ -251,10 +273,19 @@ impl UnitPrefs {
         )
     }
 
+    /// The unit chosen for `quantity`. Group sizes not chosen yet follow
+    /// the short lengths: MOA and inches for someone who sees drops in
+    /// inches.
     pub fn unit(&self, quantity: Quantity) -> Unit {
         let units = quantity.units();
-        self.0
-            .get(&quantity)
+        let imperial = || self.unit(Quantity::ShortLength).label == "in";
+        let label = match (self.0.get(&quantity), quantity) {
+            (Some(label), _) => Some(label.as_str()),
+            (None, Quantity::GroupAngle) if imperial() => Some("MOA"),
+            (None, Quantity::GroupSize) if imperial() => Some("in"),
+            (None, _) => None,
+        };
+        label
             .and_then(|label| units.iter().find(|unit| unit.label == label))
             .copied()
             .unwrap_or(units[0])
@@ -445,6 +476,38 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn group_units_show_mrad_and_mm_in_the_shooters_units() {
+        let close = |a: f64, b: f64| (a - b).abs() <= 1e-4 * b.abs().max(1.0);
+        let metric = UnitPrefs::metric();
+        assert_eq!(metric.label(Quantity::GroupAngle), "mil");
+        assert_eq!(metric.label(Quantity::GroupSize), "mm");
+        assert_eq!(metric.format(Quantity::GroupAngle, 0.254), "0.25 mil");
+        assert_eq!(metric.format(Quantity::GroupSize, 24.66), "24.7 mm");
+        let imperial = UnitPrefs::imperial();
+        assert_eq!(imperial.label(Quantity::GroupAngle), "MOA");
+        assert_eq!(imperial.label(Quantity::GroupSize), "in");
+        assert!(close(imperial.show(Quantity::GroupAngle, 1.0), 3.437_747));
+        assert!(close(imperial.show(Quantity::GroupSize, 25.4), 1.0));
+        let mut prefs = UnitPrefs::metric();
+        prefs.set(Quantity::GroupAngle, Quantity::GroupAngle.units()[2]);
+        prefs.set(Quantity::GroupSize, Quantity::GroupSize.units()[1]);
+        assert_eq!(prefs.format(Quantity::GroupAngle, 0.3), "3.0 cm/100 m");
+        assert_eq!(prefs.format(Quantity::GroupSize, 24.66), "2.47 cm");
+        let saved = serde_json::to_string(&prefs).unwrap();
+        let back: UnitPrefs = serde_json::from_str(&saved).unwrap();
+        assert_eq!(
+            back, prefs,
+            "kept as the unit's label; the values stay metric"
+        );
+        // Chosen before group sizes existed: they follow the short lengths.
+        let older: UnitPrefs = serde_json::from_str(r#"{"ShortLength":"in"}"#).unwrap();
+        assert_eq!(older.label(Quantity::GroupAngle), "MOA");
+        assert_eq!(older.label(Quantity::GroupSize), "in");
+        let metric_before: UnitPrefs = serde_json::from_str(r#"{"Distance":"yd"}"#).unwrap();
+        assert_eq!(metric_before.label(Quantity::GroupAngle), "mil");
     }
 
     #[test]

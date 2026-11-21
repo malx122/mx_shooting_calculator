@@ -2,9 +2,13 @@
 //! applying what the pages ask for. Pages never touch the store directly;
 //! they return `Action`s, which keeps them easy to reuse on mobile.
 
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use ballistics_store::{
-    Bullet, Catalog, Country, PLAIN_CROSSHAIR, Reticle, Rifle, RifleLoad, Scope, Shot, Store,
-    StoreError, Target, UserScope,
+    Bullet, Catalog, Country, Group, GroupView, GroupsData, PLAIN_CROSSHAIR, Pending, Photo,
+    PhotoStore, Reticle, Rifle, RifleLoad, RoundLogEntry, Scope, Shot, Store, StoreError, Target,
+    UserScope,
 };
 use eframe::egui::{self, RichText};
 use serde::{Deserialize, Serialize};
@@ -12,6 +16,8 @@ use serde::{Deserialize, Serialize};
 use crate::bullets::BulletsPage;
 use crate::calculator::{CalculatorPage, Inputs};
 use crate::cards::{CardSettings, CardsPage};
+use crate::groups::rounds::RoundSync;
+use crate::groups::{GroupSave, GroupSettings, GroupsPage};
 use crate::i18n::{self, Language, tr, trf};
 use crate::import::{self, Decision, ImportPreview};
 use crate::mobile;
@@ -66,9 +72,11 @@ impl Purpose {
 #[derive(Clone, Copy, PartialEq)]
 pub enum Page {
     Calculate,
+    Groups,
     Rifles,
     Bullets,
     Targets,
+    /// Reached from the menu on a phone, from a tab on a computer.
     Cards,
     /// Reached from the menu and from Calculate, not from a tab.
     ShotLog,
@@ -97,8 +105,17 @@ pub enum Action {
     LogShot(Box<Shot>),
     SaveShot(Box<Shot>),
     DeleteShot(String),
-    /// Load the built-in demo rifles, bullets, scope and target.
+    /// Load the built-in demo rifles, bullets, scope, target and groups.
     LoadDemo,
+    /// Keep a photo just brought in: its bytes and thumbnail in the photo
+    /// store. Its record is saved with the first group on it; until then
+    /// the bytes go when the app next starts.
+    KeepPhoto(Box<groups_vision::ImportedPhoto>),
+    /// Save a group, then what goes with it: its session, its photo's
+    /// record, its round log entry and its framing.
+    SaveGroup(Box<GroupSave>),
+    /// Delete a group with its round log entry, offering Undo.
+    DeleteGroup(String),
 }
 
 /// The hunter's records, reloaded from the store after every change.
@@ -119,6 +136,10 @@ pub struct Data {
     pub region: Option<String>,
     /// The weather and shot set on Calculate: a truing shot's weather.
     pub today: ballistics_shot::Conditions,
+    /// Groups, sessions, photos, barrels and the round log.
+    pub groups: GroupsData,
+    /// How each group was last framed while marking, on this device.
+    pub group_views: HashMap<String, GroupView>,
 }
 
 impl Data {
@@ -170,6 +191,7 @@ enum MenuSheet {
 
 /// What a tap in the phone menu asked for, done once the sheet is drawn.
 enum MenuChoice {
+    Cards,
     Units,
     Language,
     Theme,
@@ -188,13 +210,44 @@ enum MenuChoice {
     Updates,
 }
 
+/// A photo or thumbnail being written to the photo store.
+enum PhotoWrite {
+    Photo(Pending<String>),
+    Thumbnail(Pending<()>),
+}
+
+impl PhotoWrite {
+    /// How the write went, once the store answers.
+    fn take(&self) -> Option<Result<(), ballistics_store::PhotoError>> {
+        match self {
+            PhotoWrite::Photo(pending) => pending.take().map(|answer| answer.map(|_| ())),
+            PhotoWrite::Thumbnail(pending) => pending.take(),
+        }
+    }
+}
+
 struct Status {
     text: String,
     error: bool,
+    /// A deleted group Undo puts back.
+    undo: Option<Box<DeletedGroup>>,
+}
+
+/// A deleted group, with what went with it.
+struct DeletedGroup {
+    group: Group,
+    rounds: Option<RoundLogEntry>,
+    view: Option<GroupView>,
+    /// Its photo's record, when no other group was marked on it.
+    photo: Option<Photo>,
 }
 
 /// How long a message that isn't an error stays, seconds.
 const STATUS_SECONDS: f64 = 10.0;
+/// How long Undo is offered after a group is deleted, seconds.
+const UNDO_SECONDS: f64 = 10.0;
+/// The phone's Undo button in the status bar.
+const UNDO_BUTTON_WIDTH: f32 = 72.0;
 
 pub struct App {
     store: Store,
@@ -205,6 +258,13 @@ pub struct App {
     bullets: BulletsPage,
     targets: TargetsPage,
     shot_log: ShotLogPage,
+    groups: GroupsPage,
+    saved_group_settings: GroupSettings,
+    /// Where photos are kept; made on the first frame (the browser's needs
+    /// the context).
+    photos: Option<Rc<dyn PhotoStore>>,
+    /// Photo writes the store hasn't answered yet.
+    photo_writes: Vec<PhotoWrite>,
     cards: CardsPage,
     saved_cards: CardSettings,
     saved_inputs: Inputs,
@@ -260,7 +320,11 @@ impl App {
     /// A message that stays until the hunter closes it.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn keep_message(&mut self, text: String) {
-        self.status = Some(Status { text, error: true });
+        self.status = Some(Status {
+            text,
+            error: true,
+            undo: None,
+        });
     }
 
     pub fn new(store: Store) -> Self {
@@ -276,6 +340,11 @@ impl App {
             .unwrap_or_default();
         let cards: CardSettings = store
             .setting(CARD_SETTINGS)
+            .ok()
+            .flatten()
+            .unwrap_or_default();
+        let group_settings: GroupSettings = store
+            .setting(crate::groups::SETTINGS)
             .ok()
             .flatten()
             .unwrap_or_default();
@@ -323,6 +392,10 @@ impl App {
             bullets: BulletsPage::default(),
             targets: TargetsPage::default(),
             shot_log: ShotLogPage::default(),
+            groups: GroupsPage::new(group_settings.clone()),
+            saved_group_settings: group_settings,
+            photos: None,
+            photo_writes: Vec::new(),
             cards: CardsPage::new(cards.clone()),
             saved_cards: cards,
             saved_inputs: inputs,
@@ -376,6 +449,7 @@ impl App {
                     crate::VERSION
                 ),
                 error: false,
+                undo: None,
             });
         }
         let _ = self.store.set_setting(SEEN_VERSION, &crate::VERSION);
@@ -383,7 +457,16 @@ impl App {
 
     fn reload(&mut self) {
         let loaded = (|| {
+            let groups = self.store.groups_data()?;
+            let mut group_views = HashMap::new();
+            for group in &groups.groups {
+                if let Some(view) = self.store.group_view(&group.id)? {
+                    group_views.insert(group.id.clone(), view);
+                }
+            }
             Ok::<_, StoreError>(Data {
+                groups,
+                group_views,
                 rifles: self.store.rifles()?,
                 bullets: self.store.bullets()?,
                 loads: self.store.rifle_loads()?,
@@ -422,12 +505,230 @@ impl App {
 
     fn report(&mut self, result: Result<String, StoreError>) {
         self.status = Some(match result {
-            Ok(text) => Status { text, error: false },
+            Ok(text) => Status {
+                text,
+                error: false,
+                undo: None,
+            },
             Err(error) => Status {
                 text: error.to_string(),
                 error: true,
+                undo: None,
             },
         });
+    }
+
+    /// Deletes a group with its round log entry, and its photo's record when
+    /// no other group is marked on it, offering Undo for a while. Once the
+    /// group is gone Undo is offered even if what goes with it couldn't be.
+    fn delete_group(&mut self, id: &str) {
+        let Some(group) = self.data.groups.groups.iter().find(|g| g.id == id).cloned() else {
+            return;
+        };
+        let rounds = crate::groups::rounds::entry_for(&self.data.groups.round_log, id).cloned();
+        let view = self.data.group_views.get(id).copied();
+        let photo = crate::groups::photo_of(&group, &self.data).cloned();
+        if let Err(error) = self.store.delete_group(id) {
+            self.report(Err(error));
+            return;
+        }
+        let rest = (|| {
+            if let Some(entry) = &rounds {
+                self.store.delete_round_log_entry(&entry.id)?;
+            }
+            Ok::<_, StoreError>(match &photo {
+                Some(photo) if self.store.delete_photo(&photo.id)? => Some(photo.clone()),
+                _ => None,
+            })
+        })();
+        let (photo, text, error) = match rest {
+            Ok(photo) => (photo, tr("Group deleted").to_owned(), false),
+            Err(error) => (
+                photo,
+                trf!("Group deleted, but not all that went with it: {}", error),
+                true,
+            ),
+        };
+        self.groups.deleted(id);
+        self.data_changed = true;
+        self.status = Some(Status {
+            text,
+            error,
+            undo: Some(Box::new(DeletedGroup {
+                group,
+                rounds,
+                view,
+                photo,
+            })),
+        });
+        self.reload();
+    }
+
+    /// Puts a deleted group back as it was.
+    fn undo_delete(&mut self, deleted: DeletedGroup) {
+        let DeletedGroup {
+            mut group,
+            rounds,
+            view,
+            photo,
+        } = deleted;
+        let result = (|| {
+            if let Some(mut photo) = photo {
+                self.store.save_photo(&mut photo)?;
+            }
+            self.store.save_group(&mut group)?;
+            if let Some(mut entry) = rounds {
+                self.store.save_round_log_entry(&mut entry)?;
+            }
+            if let Some(view) = view {
+                self.store.set_group_view(&group.id, &view)?;
+            }
+            Ok::<_, StoreError>(())
+        })();
+        self.data_changed |= result.is_ok();
+        self.report(result.map(|()| tr("The group is back").to_owned()));
+        self.reload();
+        if let Some(group) = self.data.groups.groups.iter().find(|g| g.id == group.id) {
+            self.groups.open(group);
+            self.page = Page::Groups;
+        }
+    }
+
+    /// Keeps a photo just brought in, in the photo store; the browser's
+    /// answers later.
+    fn keep_photo(&mut self, imported: groups_vision::ImportedPhoto) {
+        let Some(photos) = &self.photos else {
+            return;
+        };
+        let groups_vision::ImportedPhoto {
+            id,
+            jpeg,
+            thumbnail,
+            ..
+        } = imported;
+        self.photo_writes.push(PhotoWrite::Photo(photos.put(jpeg)));
+        self.photo_writes
+            .push(PhotoWrite::Thumbnail(photos.put_thumbnail(&id, thumbnail)));
+        self.collect_photo_writes();
+    }
+
+    /// Says plainly when a photo couldn't be kept, as the store answers.
+    fn collect_photo_writes(&mut self) {
+        let mut failed = None;
+        self.photo_writes.retain(|write| match write.take() {
+            Some(Err(error)) => {
+                failed = Some(error);
+                false
+            }
+            Some(Ok(())) => false,
+            None => true,
+        });
+        if let Some(error) = failed {
+            self.report(Err(StoreError::Invalid(trf!(
+                "The photo couldn't be kept on this device ({}). The storage may be full, or \
+                 the browser in a private window that keeps nothing: free some space or use a \
+                 normal window, then bring the photo in again.",
+                error
+            ))));
+        }
+    }
+
+    /// Saves a group, then what goes with it, which is skipped if the group
+    /// couldn't be saved.
+    fn save_group(&mut self, save: GroupSave) {
+        let GroupSave {
+            mut group,
+            session,
+            photo,
+            rounds,
+            view,
+        } = save;
+        let new = !self.data.groups.groups.iter().any(|g| g.id == group.id);
+        if let Err(error) = self.store.save_group(&mut group) {
+            self.report(Err(error));
+            return;
+        }
+        let rest = (|| {
+            if let Some(mut session) = session {
+                self.store.save_session(&mut session)?;
+            }
+            if let Some(mut photo) = photo {
+                self.store.save_photo(&mut photo)?;
+            }
+            match rounds {
+                RoundSync::Save(mut entry) => self.store.save_round_log_entry(&mut entry)?,
+                RoundSync::Delete(id) => self.store.delete_round_log_entry(&id)?,
+                RoundSync::Nothing => {}
+            }
+            if let Some(view) = view {
+                self.store.set_group_view(&group.id, &view)?;
+            }
+            Ok::<_, StoreError>(())
+        })();
+        self.data_changed = true;
+        self.reload();
+        self.groups.saved(&group);
+        self.report(rest.map(|()| {
+            if new {
+                tr("Saved the group").to_owned()
+            } else {
+                tr("Saved").to_owned()
+            }
+        }));
+    }
+
+    /// Where photos are kept: beside the database on a computer, in the
+    /// browser's storage on the web, in memory for a database in memory.
+    fn photo_store(&mut self, context: &egui::Context) -> Rc<dyn PhotoStore> {
+        if let Some(photos) = &self.photos {
+            return photos.clone();
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        let photos: Rc<dyn PhotoStore> = match self.store.file_path() {
+            Some(database) => Rc::new(crate::photos::desktop::FilePhotos::beside(&database)),
+            None => Rc::new(ballistics_store::MemoryPhotos::default()),
+        };
+        #[cfg(target_arch = "wasm32")]
+        let photos: Rc<dyn PhotoStore> =
+            Rc::new(crate::photos::web::BrowserPhotos::new(context.clone()));
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = context;
+        self.photos = Some(photos.clone());
+        photos
+    }
+
+    /// A photo dropped on the window starts a group.
+    fn take_dropped_files(&mut self, context: &egui::Context) {
+        let dropped = context.input(|input| input.raw.dropped_files.clone());
+        for file in dropped {
+            let name = file
+                .path()
+                .file_name()
+                .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
+            if !crate::groups::import::is_photo_name(&name) {
+                continue;
+            }
+            self.page = Page::Groups;
+            #[cfg(not(target_arch = "wasm32"))]
+            match file.bytes() {
+                Ok(bytes) => {
+                    self.groups.drop_file((name, bytes));
+                }
+                Err(error) => self.report(Err(StoreError::Invalid(error))),
+            }
+            #[cfg(target_arch = "wasm32")]
+            {
+                let slot = self.groups.photo_slot();
+                let context = context.clone();
+                wasm_bindgen_futures::spawn_local(async move {
+                    if let Ok(bytes) = file.bytes_async().await {
+                        slot.put((name, bytes));
+                        context.request_repaint();
+                    }
+                });
+            }
+            break;
+        }
     }
 
     fn apply(&mut self, action: Action) {
@@ -518,14 +819,27 @@ impl App {
                 self.shot_log.deleted(&id);
                 tr("Shot deleted").to_owned()
             }),
-            Action::LoadDemo => self.store.load_demo().map(|report| {
+            Action::LoadDemo => self.store.load_demo().and_then(|report| {
+                crate::groups::demo::load(&self.store)?;
                 self.page = Page::Calculate;
-                trf!("Demo data: {}", import::summary(&report))
+                Ok(trf!("Demo data: {}", import::summary(&report)))
             }),
             Action::DeleteLoad(id) => self.store.delete_rifle_load(&id).map(|()| {
                 self.rifles.forget_load_draft();
                 tr("Using the bullet's own data again").to_owned()
             }),
+            Action::SaveGroup(save) => {
+                self.save_group(*save);
+                return;
+            }
+            Action::DeleteGroup(id) => {
+                self.delete_group(&id);
+                return;
+            }
+            Action::KeepPhoto(imported) => {
+                self.keep_photo(*imported);
+                return;
+            }
         };
         self.data_changed |= result.is_ok();
         self.report(result);
@@ -637,6 +951,13 @@ impl App {
                 Err(error) => self.report(Err(error)),
             }
         }
+        let groups = &self.groups.settings;
+        if *groups != self.saved_group_settings && !dragging {
+            match self.store.set_setting(crate::groups::SETTINGS, groups) {
+                Ok(()) => self.saved_group_settings = groups.clone(),
+                Err(error) => self.report(Err(error)),
+            }
+        }
         let cards = &self.cards.settings;
         if *cards != self.saved_cards && !dragging {
             match self.store.set_setting(CARD_SETTINGS, cards) {
@@ -676,8 +997,12 @@ impl eframe::App for App {
 
         self.data.region = self.calculator.inputs.region.clone();
         self.data.today = self.calculator.inputs.conditions();
+        let photos = self.photo_store(context);
+        self.take_dropped_files(context);
+        self.collect_photo_writes();
         let actions = match self.page {
             Page::Calculate => self.calculator.show(ui, &self.data),
+            Page::Groups => self.groups.show(ui, &self.data, photos.as_ref()),
             Page::Rifles => self.rifles.show(ui, &self.data),
             Page::Bullets => self.bullets.show(ui, &self.data),
             Page::Targets => self.targets.show(ui, &self.data),
@@ -696,6 +1021,10 @@ impl eframe::App for App {
         if self.page != Page::ShotLog {
             self.shot_log.leave();
         }
+        if self.page != Page::Groups {
+            self.groups.leave();
+        }
+        crate::groups::drop_hint(context);
         // The phone menu's sheets; on wider screens the desktop menu opens
         // the ones it has no room for.
         self.menu_sheet(context);
@@ -725,10 +1054,12 @@ impl App {
         overlays
             + match self.page {
                 Page::Calculate => self.calculator.depth(),
+                Page::Groups => self.groups.depth(),
                 Page::Rifles => self.rifles.depth(),
                 Page::Bullets => self.bullets.depth(),
                 Page::Targets => self.targets.depth(),
-                Page::Cards => 0,
+                // Over Calculate, from the menu.
+                Page::Cards => 1,
                 // Over Calculate, where its ‹ link goes.
                 Page::ShotLog => 1 + self.shot_log.depth(),
             }
@@ -751,6 +1082,7 @@ impl App {
             return;
         }
         let unsaved = match self.page {
+            Page::Groups => self.groups.unsaved(&self.data),
             Page::Rifles => self.rifles.unsaved(&self.data),
             Page::Bullets => self.bullets.unsaved(&self.data),
             Page::Targets => self.targets.unsaved(&self.data),
@@ -767,10 +1099,11 @@ impl App {
     fn go_back(&mut self) {
         match self.page {
             Page::Calculate => self.calculator.back(),
+            Page::Groups => self.groups.back(&self.data),
             Page::Rifles => self.rifles.back(),
             Page::Bullets => self.bullets.back(),
             Page::Targets => self.targets.back(),
-            Page::Cards => {}
+            Page::Cards => self.page = Page::Calculate,
             Page::ShotLog if self.shot_log.depth() > 0 => self.shot_log.back(),
             Page::ShotLog => self.page = Page::Calculate,
         }
@@ -779,7 +1112,8 @@ impl App {
     #[cfg(target_arch = "wasm32")]
     /// Some editor has changes that aren't saved.
     fn unsaved(&self) -> bool {
-        self.rifles.unsaved(&self.data)
+        self.groups.has_unsaved(&self.data)
+            || self.rifles.unsaved(&self.data)
             || self.bullets.unsaved(&self.data)
             || self.targets.unsaved(&self.data)
             || self.shot_log.unsaved(&self.data)
@@ -930,6 +1264,7 @@ impl App {
                 ui.add_space(28.0);
                 for (page, label) in [
                     (Page::Calculate, tr("Calculate")),
+                    (Page::Groups, tr("Groups")),
                     (Page::Rifles, tr("Rifles")),
                     (Page::Bullets, tr("Bullets")),
                     (Page::Targets, tr("Targets")),
@@ -1072,7 +1407,9 @@ impl App {
             }
             if ui
                 .button(tr("Load demo data"))
-                .on_hover_text(tr("Three rifles with bullets, a scope and a target"))
+                .on_hover_text(tr(
+                    "Three rifles with bullets, a scope, a target and groups",
+                ))
                 .clicked()
             {
                 demo = true;
@@ -1230,7 +1567,12 @@ impl App {
                     self.status_seen = Some((status.text.clone(), now));
                 }
                 let since = self.status_seen.as_ref().map_or(now, |(_, since)| *since);
-                if now - since > STATUS_SECONDS {
+                let shown_for = if status.undo.is_some() {
+                    UNDO_SECONDS
+                } else {
+                    STATUS_SECONDS
+                };
+                if now - since > shown_for {
                     self.status = None;
                 } else {
                     context.request_repaint_after(std::time::Duration::from_secs(1));
@@ -1240,12 +1582,19 @@ impl App {
         }
         if let Some(status) = &self.status {
             let mut dismiss = false;
+            let mut undo = false;
             if mobile::is_narrow(&context) {
                 let frame = egui::Frame::side_top_panel(ui.style());
+                let undo_width = if status.undo.is_some() {
+                    UNDO_BUTTON_WIDTH + ui.spacing().item_spacing.x
+                } else {
+                    0.0
+                };
                 let text_width = (ui.available_width()
                     - frame.total_margin().sum().x
                     - mobile::TOUCH
-                    - ui.spacing().item_spacing.x)
+                    - ui.spacing().item_spacing.x
+                    - undo_width)
                     .max(1.0);
                 let colour = if status.error {
                     ui.visuals().error_fg_color
@@ -1276,6 +1625,14 @@ impl App {
                                         egui::Button::new("✖").small(),
                                     )
                                     .clicked();
+                                if status.undo.is_some() {
+                                    undo =
+                                        ui.add(egui::Button::new(tr("Undo")).min_size(egui::vec2(
+                                            UNDO_BUTTON_WIDTH,
+                                            mobile::TOUCH,
+                                        )))
+                                        .clicked();
+                                }
                             });
                         });
                     });
@@ -1288,11 +1645,16 @@ impl App {
                         } else {
                             ui.label(text);
                         }
+                        if status.undo.is_some() {
+                            undo = ui.button(tr("Undo")).clicked();
+                        }
                         dismiss = ui.small_button("✖").clicked();
                     });
                 });
             }
-            if dismiss {
+            if undo && let Some(deleted) = self.status.take().and_then(|status| status.undo) {
+                self.undo_delete(*deleted);
+            } else if dismiss {
                 self.status = None;
             }
         }
@@ -1353,10 +1715,10 @@ impl App {
         panel.show(ui, |ui| {
             let tabs = [
                 (Page::Calculate, tr("Calculate")),
+                (Page::Groups, tr("Groups")),
                 (Page::Rifles, tr("Rifles")),
                 (Page::Bullets, tr("Bullets")),
                 (Page::Targets, tr("Targets")),
-                (Page::Cards, tr("Cards")),
             ];
             let width = ui.available_width() / tabs.len() as f32;
             ui.horizontal(|ui| {
@@ -1407,6 +1769,11 @@ impl App {
                     };
                     if mobile::list_row(ui, tr("Shot log"), &logged, false).clicked() {
                         choice = Some(MenuChoice::ShotLog);
+                    }
+                    if mobile::list_row(ui, tr("Cards"), tr("Range cards to print"), false)
+                        .clicked()
+                    {
+                        choice = Some(MenuChoice::Cards);
                     }
                     if mobile::list_row(
                         ui,
@@ -1491,7 +1858,7 @@ impl App {
                     if mobile::list_row(
                         ui,
                         tr("Load demo data"),
-                        tr("Three rifles with bullets, a scope and a target"),
+                        tr("Three rifles with bullets, a scope, a target and groups"),
                         false,
                     )
                     .clicked()
@@ -1547,6 +1914,10 @@ impl App {
                     Some(MenuChoice::ShotLog) => {
                         self.menu = None;
                         self.page = Page::ShotLog;
+                    }
+                    Some(MenuChoice::Cards) => {
+                        self.menu = None;
+                        self.page = Page::Cards;
                     }
                     Some(MenuChoice::Import) => {
                         self.menu = None;
@@ -1842,6 +2213,19 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
             painter.circle_stroke(center, 5.0, stroke);
             painter.circle_filled(center, 1.5, colour);
         }
+        Page::Groups => {
+            // A sheet of paper with a group of holes on it.
+            painter.add(line(&[
+                (4.0, 3.0),
+                (20.0, 3.0),
+                (20.0, 21.0),
+                (4.0, 21.0),
+                (4.0, 3.0),
+            ]));
+            for (x, y) in [(9.5, 10.0), (13.5, 8.5), (14.5, 13.5), (10.0, 15.0)] {
+                painter.circle_filled(at(x, y), 1.7, colour);
+            }
+        }
         Page::Cards => {
             // A card with a table's lines.
             painter.add(line(&[
@@ -2014,6 +2398,7 @@ mod tests {
                 let mut frame = eframe::Frame::_new_kittest();
                 let views = [
                     (Page::Calculate, None),
+                    (Page::Groups, None),
                     (Page::Rifles, None),
                     (Page::Bullets, None),
                     (Page::Targets, None),
@@ -2069,6 +2454,119 @@ mod tests {
     }
 
     #[test]
+    fn a_deleted_group_comes_back_with_undo_and_its_rounds_follow_it() {
+        use crate::groups::rounds::{self, RoundSync};
+        let mut app = App::new(Store::open_in_memory().unwrap());
+        app.apply(Action::LoadDemo);
+        assert_eq!(app.data.groups.groups.len(), 5, "the demo groups");
+        let mut group = app.data.groups.groups[0].clone();
+        group.count_rounds = true;
+        let entry = rounds::sync(&group, None, true);
+        assert!(
+            matches!(entry, RoundSync::Save(_)),
+            "a counted group logs its rounds"
+        );
+        app.apply(Action::SaveGroup(Box::new(GroupSave {
+            group: group.clone(),
+            session: None,
+            photo: None,
+            rounds: entry,
+            view: None,
+        })));
+        let logged = rounds::entry_for(&app.data.groups.round_log, &group.id).cloned();
+        assert_eq!(
+            logged.as_ref().map(|entry| entry.rounds as usize),
+            Some(group.shot_count())
+        );
+
+        app.apply(Action::DeleteGroup(group.id.clone()));
+        assert!(app.data.groups.groups.iter().all(|g| g.id != group.id));
+        assert!(rounds::entry_for(&app.data.groups.round_log, &group.id).is_none());
+        let status = app.status.take().expect("Undo is offered");
+        assert!(!status.error);
+        app.undo_delete(*status.undo.expect("with the group"));
+        let back = app.data.groups.groups.iter().find(|g| g.id == group.id);
+        assert_eq!(back.map(|g| &g.marks), Some(&group.marks));
+        assert_eq!(
+            rounds::entry_for(&app.data.groups.round_log, &group.id).map(|e| e.rounds),
+            logged.map(|entry| entry.rounds)
+        );
+        assert!(app.page == Page::Groups, "the group is shown again");
+    }
+
+    #[test]
+    fn a_failed_group_save_saves_nothing_that_goes_with_it() {
+        use crate::groups::rounds;
+        let mut app = App::new(Store::open_in_memory().unwrap());
+        app.apply(Action::LoadDemo);
+        let mut group = app.data.groups.groups[0].clone();
+        group.id = String::new();
+        group.count_rounds = true;
+        let entry = rounds::sync(&group, None, true);
+        app.apply(Action::SaveGroup(Box::new(GroupSave {
+            group,
+            session: Some(ballistics_store::Session::new(1_000)),
+            photo: None,
+            rounds: entry,
+            view: None,
+        })));
+        assert!(app.status.as_ref().is_some_and(|status| status.error));
+        assert!(
+            app.data.groups.round_log.is_empty(),
+            "no orphan round log entry"
+        );
+        assert_eq!(app.data.groups.sessions.len(), 1, "only the demo's session");
+    }
+
+    #[test]
+    fn a_photo_keeps_its_record_only_with_a_group_on_it() {
+        let context = egui::Context::default();
+        let mut app = App::new(Store::open_in_memory().unwrap());
+        let photos = app.photo_store(&context);
+        let jpeg = b"not really a jpeg".to_vec();
+        let id = ballistics_store::photo_id(&jpeg);
+        app.apply(Action::KeepPhoto(Box::new(groups_vision::ImportedPhoto {
+            id: id.clone(),
+            jpeg: jpeg.clone(),
+            width_px: 40,
+            height_px: 30,
+            thumbnail: b"small".to_vec(),
+            taken: None,
+        })));
+        assert!(app.data.groups.photos.is_empty(), "no record while marking");
+        assert_eq!(photos.get(&id).take(), Some(Ok(Some(jpeg))));
+        assert_eq!(
+            photos.get_thumbnail(&id).take(),
+            Some(Ok(Some(b"small".to_vec())))
+        );
+
+        let mut photo = Photo::new(id.clone(), 40, 30);
+        photo.taken_at = Some(1_000);
+        app.apply(Action::SaveGroup(Box::new(GroupSave {
+            group: Group::on_photo(&id, 1_000),
+            session: None,
+            photo: Some(photo),
+            rounds: RoundSync::Nothing,
+            view: None,
+        })));
+        let kept = app.data.groups.photos.iter().find(|photo| photo.id == id);
+        assert_eq!(kept.map(|photo| photo.taken_at), Some(Some(1_000)));
+
+        // A record left without a group goes at the next start.
+        let mut orphan = Photo::new(ballistics_store::photo_id(b"other"), 10, 10);
+        app.store.save_photo(&mut orphan).unwrap();
+        crate::groups::forget_unmarked_photos(&app.store);
+        let left: Vec<String> = app
+            .store
+            .photos()
+            .unwrap()
+            .into_iter()
+            .map(|p| p.id)
+            .collect();
+        assert_eq!(left, [id]);
+    }
+
+    #[test]
     fn mobile_errors_stay_visible_after_the_notice_timeout() {
         let context = egui::Context::default();
         theme::apply(&context);
@@ -2076,6 +2574,7 @@ mod tests {
         app.status = Some(Status {
             text: "An error that needs attention".into(),
             error: true,
+            undo: None,
         });
         for time in [0.0, STATUS_SECONDS + 1.0] {
             let mut output = context.run_ui(

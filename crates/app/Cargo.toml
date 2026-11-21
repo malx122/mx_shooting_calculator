@@ -21,6 +21,8 @@ rfd = { version = "0.17", features = ["file-handle-inner"] }
 qrcode = { version = "0.14", default-features = false }
 serde_json = "1"
 ballistics-shot.workspace = true
+groups-core.workspace = true
+groups-vision.workspace = true
 sys-locale = { version = "0.3", features = ["js"] }
 # Font metrics for the cards' embedded fonts (egui already uses it).
 ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
@@ -64,7 +66,9 @@ web-sys = { version = "0.3", features = [
     "Document",
     "Element",
     "File",
+    "FileList",
     "HtmlAnchorElement",
+    "HtmlInputElement",
     "Headers",
     "History",
     "HtmlCanvasElement",

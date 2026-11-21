@@ -181,6 +181,37 @@ pub fn is_heif(bytes: &[u8]) -> bool {
 /// JPEG that is already upright and small enough keeps its picture data
 /// unchanged.
 pub fn import_photo(bytes: &[u8], options: ImportOptions) -> Result<ImportedPhoto, ImportError> {
+    import_upright(bytes, options).map(|(photo, _)| photo)
+}
+
+/// [`import_photo`], and the upright picture as RGBA at most `long_edge_px`
+/// on its longest side, to show at once without decoding the JPEG again.
+pub fn import_photo_with_pixels(
+    bytes: &[u8],
+    options: ImportOptions,
+    long_edge_px: u32,
+) -> Result<(ImportedPhoto, Thumbnail), ImportError> {
+    let (photo, upright) = import_upright(bytes, options)?;
+    let (width, height) = reduced(upright.width(), upright.height(), long_edge_px.max(1));
+    let shown = if (width, height) == upright.dimensions() {
+        DynamicImage::ImageRgb8(upright).into_rgba8()
+    } else {
+        DynamicImage::ImageRgb8(image::imageops::thumbnail(&upright, width, height)).into_rgba8()
+    };
+    Ok((
+        photo,
+        Thumbnail {
+            width_px: shown.width(),
+            height_px: shown.height(),
+            rgba: shown.into_raw(),
+        },
+    ))
+}
+
+fn import_upright(
+    bytes: &[u8],
+    options: ImportOptions,
+) -> Result<(ImportedPhoto, RgbImage), ImportError> {
     let (format, mut decoder) = open(bytes)?;
     let exif = decoder.exif_metadata().ok().flatten();
     let orientation = exif
@@ -225,14 +256,17 @@ pub fn import_photo(bytes: &[u8], options: ImportOptions) -> Result<ImportedPhot
         Some(kept) => kept,
         None => encode_jpeg(&upright, options.jpeg_quality)?,
     };
-    Ok(ImportedPhoto {
-        id: photo_id(&jpeg),
-        width_px: upright.width(),
-        height_px: upright.height(),
-        jpeg,
-        thumbnail,
-        taken,
-    })
+    Ok((
+        ImportedPhoto {
+            id: photo_id(&jpeg),
+            width_px: upright.width(),
+            height_px: upright.height(),
+            jpeg,
+            thumbnail,
+            taken,
+        },
+        upright,
+    ))
 }
 
 /// An upright copy of a photo with its longest side `long_edge_px`

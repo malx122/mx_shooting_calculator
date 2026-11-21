@@ -8,6 +8,33 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Groups:** a new tab for shot groups. Photograph the target (or choose a
+  photo; on a computer open one or drop it on the window), set the scale,
+  the aim point and the shots, and the app works out the group: extreme
+  spread (also edge to edge), mean radius with its 95% range, σ, CEP and
+  R90 (by Grubbs's method when the group is clearly elliptical), SD across
+  and up, width × height, and the chance of a hit in a circle you size.
+  Results come first: the impact from the aim and the correction to dial in
+  the rifle's own clicks ("2 clicks left, 1 click up"). A shot that pulls the
+  group is suggested as a flier, never left out until you call it; a
+  cold-bore shot is kept apart with its distance from the aim and the group.
+  Groups of fewer than 5 shots say their numbers are rough.
+  - **The library** lists the groups newest first under their range session
+    or day, each with a small drawing of the group and its size by mean
+    radius or extreme spread (your choice), filtered by rifle, load, tags
+    and notes. Archive a group, or delete it with Undo.
+  - **Saving** asks what was shot: the rifle (and its fitted barrel), the
+    bullet, the distance, the session (today's, or a new one by place and
+    date), tags and notes, and whether to count the rounds on the barrel.
+  - **Blank grid** for a target you didn't photograph, at true scale.
+  - **Photos stay on the device:** reduced to 4096 pixels unless you keep
+    the originals, with their location and other metadata taken out. Groups,
+    sessions and photo records go into backups and sync; the photos don't.
+  - **Units:** group sizes as mil, MOA or cm per 100 m, and on the target in
+    mm, cm or inches, in the Units settings.
+  - **Demo data** now includes a few groups.
+- **Phone tabs:** Calculate · Groups · Rifles · Bullets · Targets. Cards
+  moved into the ••• menu beside the shot log.
 - **Sun theme:** a light, high-contrast look for reading the app in bright
   sunlight at the range, on paper-coloured pages with dark text and deeper
   orange, green and red. Choose **Theme** in the menu: Dark (as before),
