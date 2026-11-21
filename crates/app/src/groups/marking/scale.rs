@@ -1,5 +1,5 @@
-//! The scale step: two points a known distance apart, or the four corners
-//! of a rectangle of known size.
+//! The scale step: four crossings of the target's grid, two points a known
+//! distance apart, or the four corners of a rectangle of known size.
 
 use ballistics_store::Calibration;
 use eframe::egui::{self, RichText};
@@ -12,12 +12,15 @@ use crate::theme;
 /// How the photo is scaled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScaleMode {
+    /// Four crossings of the target's grid, a counted number of squares apart.
+    GridSquares,
     TwoPoints,
     FourCorners,
 }
 
-/// The scale as it is being set, in photo pixels. Both ways are kept, so
-/// switching between them loses nothing.
+/// The scale as it is being set, in photo pixels. Every way is kept, so
+/// switching between them loses nothing; grid squares and four corners share
+/// their four taps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScaleDraft {
     pub mode: ScaleMode,
@@ -31,6 +34,12 @@ pub struct ScaleDraft {
     pub width_mm: f64,
     /// Along its left edge.
     pub height_mm: f64,
+    /// The side of one grid square.
+    pub square_mm: f64,
+    /// Squares between the crossings along the top edge as the photo shows it.
+    pub squares_across: u32,
+    /// Squares between the crossings along the left edge.
+    pub squares_down: u32,
 }
 
 /// Lengths offered for two points, mm.
@@ -43,6 +52,20 @@ pub fn distance_presets() -> [(f64, &'static str); 5] {
         (100.0, "100 mm"),
     ]
 }
+
+/// Grid squares offered, mm.
+pub fn square_presets() -> [(f64, &'static str); 5] {
+    [
+        (5.0, "5 mm"),
+        (10.0, "10 mm"),
+        (12.7, tr("½ inch")),
+        (25.0, "25 mm"),
+        (25.4, tr("1 inch")),
+    ]
+}
+
+/// The most squares a side may count.
+const MAX_SQUARES: u32 = 200;
 
 /// Sheets offered for four corners: name, width, height (mm, portrait).
 pub fn sheet_presets() -> [(&'static str, f64, f64); 3] {
@@ -83,12 +106,15 @@ pub enum ScaleNote {
 impl Default for ScaleDraft {
     fn default() -> Self {
         ScaleDraft {
-            mode: ScaleMode::FourCorners,
+            mode: ScaleMode::GridSquares,
             points: [None, None],
             distance_mm: 0.0,
             corners: Vec::new(),
             width_mm: 210.0,
             height_mm: 297.0,
+            square_mm: 25.4,
+            squares_across: 4,
+            squares_down: 4,
         }
     }
 }
@@ -113,13 +139,37 @@ impl ScaleDraft {
                 corners_px,
                 width_mm,
                 height_mm,
-            }) => ScaleDraft {
-                mode: ScaleMode::FourCorners,
-                corners: corners_px.to_vec(),
-                width_mm: *width_mm,
-                height_mm: *height_mm,
-                ..blank
-            },
+            }) => {
+                let rectangle = ScaleDraft {
+                    mode: ScaleMode::FourCorners,
+                    corners: corners_px.to_vec(),
+                    width_mm: *width_mm,
+                    height_mm: *height_mm,
+                    ..blank
+                };
+                match grid_of(*width_mm, *height_mm) {
+                    Some((square_mm, across, down)) => ScaleDraft {
+                        mode: ScaleMode::GridSquares,
+                        square_mm,
+                        squares_across: across,
+                        squares_down: down,
+                        ..rectangle
+                    },
+                    None => rectangle,
+                }
+            }
+        }
+    }
+
+    /// The rectangle's width and height: counted squares on a grid, typed on
+    /// a sheet.
+    pub fn sides_mm(&self) -> (f64, f64) {
+        match self.mode {
+            ScaleMode::GridSquares => (
+                f64::from(self.squares_across) * self.square_mm,
+                f64::from(self.squares_down) * self.square_mm,
+            ),
+            _ => (self.width_mm, self.height_mm),
         }
     }
 
@@ -132,14 +182,16 @@ impl ScaleDraft {
                 .enumerate()
                 .filter_map(|(i, p)| p.map(|p| (i, p)))
                 .collect(),
-            ScaleMode::FourCorners => self.corners.iter().copied().enumerate().collect(),
+            ScaleMode::GridSquares | ScaleMode::FourCorners => {
+                self.corners.iter().copied().enumerate().collect()
+            }
         }
     }
 
     pub fn handle(&self, index: usize) -> Option<[f64; 2]> {
         match self.mode {
             ScaleMode::TwoPoints => self.points.get(index).copied().flatten(),
-            ScaleMode::FourCorners => self.corners.get(index).copied(),
+            ScaleMode::GridSquares | ScaleMode::FourCorners => self.corners.get(index).copied(),
         }
     }
 
@@ -150,7 +202,7 @@ impl ScaleDraft {
                     *point = Some(at);
                 }
             }
-            ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners => {
                 if let Some(corner) = self.corners.get_mut(index) {
                     *corner = at;
                 }
@@ -166,7 +218,7 @@ impl ScaleDraft {
                 self.points[index] = Some(at);
                 Some(index)
             }
-            ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners => {
                 if self.corners.len() >= 4 {
                     return None;
                 }
@@ -183,7 +235,7 @@ impl ScaleDraft {
                     *point = None;
                 }
             }
-            ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners => {
                 if index < self.corners.len() {
                     self.corners.remove(index);
                 }
@@ -200,12 +252,13 @@ impl ScaleDraft {
                 }
                 points => return ScaleState::ToTap(points.iter().filter(|p| p.is_none()).count()),
             },
-            ScaleMode::FourCorners => {
+            ScaleMode::GridSquares | ScaleMode::FourCorners => {
                 if self.corners.len() < 4 {
                     return ScaleState::ToTap(4 - self.corners.len());
                 }
                 let corners = [0, 1, 2, 3].map(|i| point(self.corners[i]));
-                groups_core::Calibration::four_corners(corners, self.width_mm, self.height_mm)
+                let (width_mm, height_mm) = self.sides_mm();
+                groups_core::Calibration::four_corners(corners, width_mm, height_mm)
             }
         };
         match result {
@@ -267,8 +320,34 @@ impl ScaleDraft {
     }
 
     pub fn swap_sides(&mut self) {
-        std::mem::swap(&mut self.width_mm, &mut self.height_mm);
+        match self.mode {
+            ScaleMode::GridSquares => {
+                std::mem::swap(&mut self.squares_across, &mut self.squares_down)
+            }
+            _ => std::mem::swap(&mut self.width_mm, &mut self.height_mm),
+        }
     }
+}
+
+/// The grid a stored rectangle was set from: square side and counts, when
+/// it isn't one of the offered sheets and both sides are a whole number of
+/// one of the offered squares (the largest that fits).
+fn grid_of(width_mm: f64, height_mm: f64) -> Option<(f64, u32, u32)> {
+    let sheet = sheet_presets().into_iter().any(|(_, width, height)| {
+        (same(width, width_mm) && same(height, height_mm))
+            || (same(width, height_mm) && same(height, width_mm))
+    });
+    if sheet {
+        return None;
+    }
+    square_presets().into_iter().rev().find_map(|(square, _)| {
+        let count = |side: f64| {
+            let squares = (side / square).round();
+            (squares >= 1.0 && squares <= f64::from(MAX_SQUARES) && same(squares * square, side))
+                .then_some(squares as u32)
+        };
+        Some((square, count(width_mm)?, count(height_mm)?))
+    })
 }
 
 /// The line telling what to do now.
@@ -292,6 +371,15 @@ pub fn instruction(draft: &ScaleDraft) -> String {
         (ScaleMode::FourCorners, _) => {
             tr("Drag a corner to move it, and give the sheet's size.").to_owned()
         }
+        (ScaleMode::GridSquares, ScaleState::ToTap(4)) => {
+            tr("Tap four grid crossings that make a rectangle, far apart. Any order.").to_owned()
+        }
+        (ScaleMode::GridSquares, ScaleState::ToTap(left)) => {
+            trf!("Tap four grid crossings: {} to go.", left)
+        }
+        (ScaleMode::GridSquares, _) => {
+            tr("Drag a crossing to move it, and count the squares between them.").to_owned()
+        }
     }
 }
 
@@ -301,6 +389,12 @@ pub fn refusal(mode: ScaleMode, error: CalibrationError) -> &'static str {
         (CalibrationError::TooClose, _) => {
             tr("The points are too close together. Place them further apart.")
         }
+        (CalibrationError::Collinear, ScaleMode::GridSquares) => {
+            tr("Three of the crossings are on one line. Tap four that make a rectangle.")
+        }
+        (CalibrationError::NotConvex, ScaleMode::GridSquares) => {
+            tr("The crossings don't make a rectangle. Check that each sits on a crossing.")
+        }
         (CalibrationError::Collinear, _) => {
             tr("Three of the corners are on one line. Tap the four corners of a rectangle.")
         }
@@ -309,6 +403,9 @@ pub fn refusal(mode: ScaleMode, error: CalibrationError) -> &'static str {
         }
         (_, ScaleMode::TwoPoints) => tr("Give the distance between the two points."),
         (_, ScaleMode::FourCorners) => tr("Give the sheet's width and height."),
+        (_, ScaleMode::GridSquares) => {
+            tr("Give the square's size and how many squares across and down.")
+        }
     }
 }
 
@@ -323,11 +420,21 @@ pub fn note_text(mode: ScaleMode, note: ScaleNote) -> String {
             "Points are close together: the scale may be off by {:.0}%. Use points further apart.",
             (100.0 * fraction).max(1.0)
         ),
+        (ScaleNote::Uncertain(fraction), ScaleMode::GridSquares) => trf!(
+            "The crossings are close together: the scale may be off by {:.0}%. Use crossings \
+             further apart.",
+            (100.0 * fraction).max(1.0)
+        ),
         (ScaleNote::Uncertain(fraction), ScaleMode::FourCorners) => trf!(
             "The corners are close together: the scale may be off by {:.0}%. Use a bigger \
              rectangle.",
             (100.0 * fraction).max(1.0)
         ),
+        (ScaleNote::LooksTurned, ScaleMode::GridSquares) => tr(
+            "The rectangle looks turned: squares across run along the top edge as shown. Swap \
+             across and down?",
+        )
+        .to_owned(),
         (ScaleNote::LooksTurned, _) => tr(
             "The sheet looks turned: the width runs along the top edge as shown. Swap width and \
              height?",
@@ -360,14 +467,48 @@ fn length_field(value: &mut f64) -> NumberField<'_> {
         .units(length_units())
 }
 
+fn count_field(value: &mut u32) -> NumberField<'_> {
+    NumberField::new(value)
+        .range(1..=MAX_SQUARES)
+        .max_decimals(0)
+}
+
 /// The scale step's choices: the way, the size, and what the draft gives.
 pub fn controls(ui: &mut egui::Ui, draft: &mut ScaleDraft) {
     let palette = theme::palette(ui.ctx());
     ui.horizontal_wrapped(|ui| {
-        ui.selectable_value(&mut draft.mode, ScaleMode::TwoPoints, tr("2 points"));
+        ui.selectable_value(&mut draft.mode, ScaleMode::GridSquares, tr("Grid squares"));
         ui.selectable_value(&mut draft.mode, ScaleMode::FourCorners, tr("4 corners"));
+        ui.selectable_value(&mut draft.mode, ScaleMode::TwoPoints, tr("2 points"));
     });
     match draft.mode {
+        ScaleMode::GridSquares => {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(tr("Square"));
+                for (mm, name) in square_presets() {
+                    if ui
+                        .selectable_label(same(draft.square_mm, mm), name)
+                        .clicked()
+                    {
+                        draft.square_mm = mm;
+                    }
+                }
+                ui.add(length_field(&mut draft.square_mm));
+            });
+            ui.horizontal_wrapped(|ui| {
+                ui.label(tr("Squares across the top"));
+                ui.add(count_field(&mut draft.squares_across));
+                ui.label(tr("× down"));
+                ui.add(count_field(&mut draft.squares_down));
+                if ui
+                    .button(tr("Swap"))
+                    .on_hover_text(tr("Swap across and down"))
+                    .clicked()
+                {
+                    draft.swap_sides();
+                }
+            });
+        }
         ScaleMode::TwoPoints => {
             ui.horizontal_wrapped(|ui| {
                 ui.label(tr("Distance"));

@@ -1257,7 +1257,7 @@ impl Marking {
                     }
                 }
             }
-            scale::ScaleMode::FourCorners => {
+            scale::ScaleMode::GridSquares | scale::ScaleMode::FourCorners => {
                 if let ScaleState::Ready(calibration) = state
                     && let Reference::Rectangle {
                         corners,
@@ -1271,16 +1271,27 @@ impl Marking {
                 {
                     paint::outlined_line(painter, &quad, paint::STATS, false, true);
                     paint::outlined_line(painter, &quad[0..2], theme::BLAZE, false, false);
+                    let (width, height) = if self.scale.mode == scale::ScaleMode::GridSquares {
+                        (
+                            trf!("{} squares · {} mm", self.scale.squares_across, width_mm),
+                            trf!("{} squares · {} mm", self.scale.squares_down, height_mm),
+                        )
+                    } else {
+                        (
+                            trf!("width {} mm", width_mm),
+                            trf!("height {} mm", height_mm),
+                        )
+                    };
                     paint::label_pill(
                         painter,
                         quad[0] + 0.5 * (quad[1] - quad[0]) + vec2(0.0, 10.0),
-                        &trf!("width {} mm", width_mm),
+                        &width,
                         egui::Align2::CENTER_TOP,
                     );
                     paint::label_pill(
                         painter,
                         quad[0] + 0.5 * (quad[3] - quad[0]) + vec2(10.0, 0.0),
-                        &trf!("height {} mm", height_mm),
+                        &height,
                         egui::Align2::LEFT_CENTER,
                     );
                 }
@@ -1290,7 +1301,9 @@ impl Marking {
             if let Some(screen) = at(mark) {
                 let label = match self.scale.mode {
                     scale::ScaleMode::TwoPoints => ["A", "B"][index.min(1)].to_owned(),
-                    scale::ScaleMode::FourCorners => (index + 1).to_string(),
+                    scale::ScaleMode::GridSquares | scale::ScaleMode::FourCorners => {
+                        (index + 1).to_string()
+                    }
                 };
                 paint::handle(
                     painter,

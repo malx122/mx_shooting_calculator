@@ -654,7 +654,10 @@ fn group_template() -> Group {
 
 #[test]
 fn four_corners_keep_their_sorted_order_and_say_when_they_look_turned() {
-    let mut draft = ScaleDraft::default();
+    let mut draft = ScaleDraft {
+        mode: ScaleMode::FourCorners,
+        ..ScaleDraft::default()
+    };
     for corner in [
         [900.0, 700.0],
         [100.0, 100.0],
@@ -691,6 +694,79 @@ fn four_corners_keep_their_sorted_order_and_say_when_they_look_turned() {
         ]
     );
     assert_eq!((width_mm, height_mm), (297.0, 210.0));
+}
+
+#[test]
+fn grid_squares_scale_and_straighten_from_four_crossings() {
+    let mut draft = ScaleDraft::default();
+    assert_eq!(
+        draft.mode,
+        ScaleMode::GridSquares,
+        "grid squares come first"
+    );
+    draft.square_mm = 25.4;
+    draft.squares_across = 4;
+    draft.squares_down = 2;
+    for crossing in [
+        [500.0, 300.0],
+        [100.0, 100.0],
+        [100.0, 300.0],
+        [500.0, 100.0],
+    ] {
+        draft.place(crossing);
+    }
+    let ScaleState::Ready(calibration) = draft.state() else {
+        panic!("four crossings scale the photo");
+    };
+    assert!(!draft.notes(&calibration).contains(&ScaleNote::LooksTurned));
+    // 4 squares of 1 inch over 400 px across, 2 over 200 px down.
+    let mm_per_px = calibration
+        .mm_per_px_at(groups_core::Point::new(300.0, 200.0))
+        .expect("inside the rectangle");
+    assert!((mm_per_px - 101.6 / 400.0).abs() < 1e-6, "{mm_per_px}");
+    let stored = draft.to_store();
+    let Some(Calibration::FourCorner {
+        width_mm,
+        height_mm,
+        ..
+    }) = stored
+    else {
+        panic!("kept as a four-corner scale");
+    };
+    assert!((width_mm - 101.6).abs() < 1e-9 && (height_mm - 50.8).abs() < 1e-9);
+    // Reopened, it is the grid again, counts and all.
+    let again = ScaleDraft::from_store(stored.as_ref());
+    assert_eq!(again.mode, ScaleMode::GridSquares);
+    assert_eq!((again.squares_across, again.squares_down), (4, 2));
+    assert_eq!(again.square_mm, 25.4);
+
+    draft.swap_sides();
+    assert_eq!((draft.squares_across, draft.squares_down), (2, 4));
+    let ScaleState::Ready(calibration) = draft.state() else {
+        panic!("still a scale");
+    };
+    assert!(draft.notes(&calibration).contains(&ScaleNote::LooksTurned));
+}
+
+#[test]
+fn a_sheet_reopens_as_a_sheet() {
+    let rectangle = |width_mm: f64, height_mm: f64| Calibration::FourCorner {
+        corners_px: [[0.0, 0.0], [400.0, 0.0], [400.0, 560.0], [0.0, 560.0]],
+        width_mm,
+        height_mm,
+    };
+    // Letter is a whole 17 × 22 half-inch squares, but it is a sheet.
+    for (width, height) in [(210.0, 297.0), (215.9, 279.4), (420.0, 297.0)] {
+        let draft = ScaleDraft::from_store(Some(&rectangle(width, height)));
+        assert_eq!(draft.mode, ScaleMode::FourCorners, "{width} × {height}");
+        assert_eq!((draft.width_mm, draft.height_mm), (width, height));
+    }
+    let draft = ScaleDraft::from_store(Some(&rectangle(100.0, 140.0)));
+    assert_eq!(draft.mode, ScaleMode::GridSquares);
+    assert_eq!(
+        (draft.square_mm, draft.squares_across, draft.squares_down),
+        (10.0, 10, 14)
+    );
 }
 
 #[test]

@@ -26,6 +26,11 @@ any release may still change things noticeably.
   - **Saving** asks what was shot: the rifle (and its fitted barrel), the
     bullet, the distance, the session (today's, or a new one by place and
     date), tags and notes, and whether to count the rounds on the barrel.
+  - **Scale from the target's grid:** tap four grid crossings anywhere on
+    the photo, say the square size (5 mm, 10 mm, ½ inch, 25 mm, 1 inch or
+    your own) and how many squares across and down, and the photo is scaled
+    and straightened without the whole sheet in view. A sheet's four corners
+    and two points a known distance apart work too.
   - **Blank grid** for a target you didn't photograph, at true scale.
   - **Photos stay on the device:** reduced to 4096 pixels unless you keep
     the originals, with their location and other metadata taken out. Groups,
