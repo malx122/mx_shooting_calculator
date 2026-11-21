@@ -497,7 +497,7 @@ pub fn slug_table(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ballistics_store::{Barrel, PatternTest};
+    use ballistics_store::{PatternTest, ShotgunBarrel};
 
     fn calm() -> Conditions {
         Conditions {
@@ -596,7 +596,7 @@ mod tests {
         // A 20 bore's constriction counts for more than a 12's.
         let mut twenty = gun.clone();
         twenty.caliber = "20-76".to_owned();
-        twenty.barrels = vec![Barrel {
+        twenty.barrels = vec![ShotgunBarrel {
             name: String::new(),
             choke: Choke::Constriction { mm: 0.42 },
         }];

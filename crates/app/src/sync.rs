@@ -649,13 +649,13 @@ impl Sync {
     }
 
     /// The colour of the header's sync dot.
-    pub fn colour(&self) -> egui::Color32 {
+    pub fn colour(&self, palette: &theme::Palette) -> egui::Color32 {
         if !self.is_on() {
-            theme::BONE_MUTED
+            palette.text_muted
         } else if self.error.is_some() {
-            theme::BLAZE
+            palette.accent
         } else {
-            theme::MEADOW
+            palette.good
         }
     }
 
@@ -753,7 +753,7 @@ impl Sync {
         if self.error.is_some() {
             ui.colored_label(ui.visuals().error_fg_color, status);
         } else {
-            ui.label(RichText::new(status).color(theme::MEADOW));
+            ui.label(RichText::new(status).color(theme::palette(ui.ctx()).good));
         }
         ui.add_space(8.0);
     }

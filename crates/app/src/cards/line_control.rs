@@ -42,6 +42,7 @@ pub(super) fn show(ui: &mut egui::Ui, start: &mut f32, end: &mut f32) -> egui::R
         .inner_margin(egui::Margin::symmetric(16, 0))
         .show(ui, |ui| {
             ui.spacing_mut().slider_width = ui.available_width();
+            crate::theme::rails(ui);
             ui.add(
                 egui::RangeSlider::new(&mut low, &mut high, 0.0..=100.0)
                     .show_value(false)

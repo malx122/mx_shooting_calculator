@@ -70,6 +70,8 @@ pub struct Weather {
     found: Vec<Place>,
     /// The phone's compass is being read to set the shot direction.
     compass: bool,
+    /// A place search fetches the weather at its first place found.
+    first_found: bool,
     sender: Sender<Reply>,
     receiver: Receiver<Reply>,
 }
@@ -84,6 +86,7 @@ impl Default for Weather {
             search: String::new(),
             found: Vec::new(),
             compass: false,
+            first_found: false,
             sender,
             receiver,
         }
@@ -237,6 +240,11 @@ impl Weather {
                     if places.is_empty() {
                         self.error = Some(tr("no place by that name").into());
                     }
+                    if std::mem::take(&mut self.first_found)
+                        && let Some(first) = places.first()
+                    {
+                        self.fetch(context, first.clone());
+                    }
                     self.found = places;
                 }
                 Reply::Located(Err(error))
@@ -248,6 +256,37 @@ impl Weather {
             }
         }
         fresh
+    }
+
+    /// Searches places named `name` and fetches the weather at the first
+    /// one found.
+    pub fn fetch_named(
+        &mut self,
+        context: &egui::Context,
+        name: &str,
+        country: Option<ballistics_store::Country>,
+    ) {
+        self.busy = Some(tr("Searching…"));
+        self.error = None;
+        self.found.clear();
+        self.first_found = true;
+        let reply = self.send(context);
+        let name = name.to_owned();
+        let home = country.map(|country| match country {
+            ballistics_store::Country::Sweden => "SE",
+            ballistics_store::Country::Finland => "FI",
+        });
+        http::spawn(async move { reply(Reply::Places(search(name, home).await)) });
+    }
+
+    /// What is being done, while a request is out.
+    pub fn busy(&self) -> Option<&'static str> {
+        self.busy
+    }
+
+    /// Why the last request failed.
+    pub fn error(&self) -> Option<&str> {
+        self.error.as_deref()
     }
 
     /// The panel above the weather inputs: where to get the weather, what

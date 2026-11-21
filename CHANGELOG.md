@@ -6,6 +6,145 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Added
+
+- **Groups:** a new tab for shot groups. Photograph the target (or choose a
+  photo; on a computer open one or drop it on the window), set the scale,
+  the aim point and the shots, and the app works out the group: extreme
+  spread (also edge to edge), mean radius with its 95% range, σ, CEP and
+  R90 (by Grubbs's method when the group is clearly elliptical), SD across
+  and up, width × height, and the chance of a hit in a circle you size.
+  Results come first: the impact from the aim and the correction to dial in
+  the rifle's own clicks ("2 clicks left, 1 click up"). A shot that pulls the
+  group is suggested as a flier, never left out until you call it; a
+  cold-bore shot is kept apart with its distance from the aim and the group.
+  Groups of fewer than 5 shots say their numbers are rough.
+  - **The library** lists the groups newest first under their range session
+    or day, each with a small drawing of the group and its size by mean
+    radius or extreme spread (your choice), filtered by rifle, load, tags
+    and notes. Archive a group, or delete it with Undo.
+  - **Saving** asks what was shot: the rifle (and its fitted barrel), the
+    bullet, the distance, the session (today's, or a new one by place and
+    date), tags and notes, and whether to count the rounds on the barrel.
+  - **Scale from the target's grid:** tap four grid crossings anywhere on
+    the photo, say the square size (5 mm, 10 mm, ½ inch, 25 mm, 1 inch or
+    your own) and how many squares across and down, and the photo is scaled
+    and straightened without the whole sheet in view. A sheet's four corners
+    and two points a known distance apart work too.
+  - **Find the grid:** the app looks for the target's printed grid itself,
+    once on a new photo and again on the part on screen when you press
+    **Find the grid**: it places four crossings as far apart as it can vouch
+    for and counts the squares between them, after checking the count on
+    the pixels along every edge. The scale counts once you confirm the
+    square size with one tap; the app remembers it. On paper with heavier
+    lines every few (1 inch over ¼ inch, 10 mm over 1 mm) you choose the
+    big squares or the small ones, each with its own size.
+  - **Detect** (⌖, or D on a computer) on the shots step looks for bullet
+    holes in the part of the photo on screen, sized by the scale and the
+    calibre, dark on paper and light in the black, touching pairs split.
+    They show as dashed rings to check, never added by themselves: tap a
+    ring to tick or untick it, then **Add** the ticked ones as shots in one
+    undo step, numbered from the top left. Holes already marked, and doubtful
+    ones, start unticked.
+  - **MX targets** are recognised on a photo by their corner marks: the
+    scale and straightening are set by themselves, with the sheet's top up
+    however the photo is turned, and a warning when a mark was only
+    estimated or the sheet doesn't lie flat. The app asks once what the
+    sheet's 100 mm ruler measures, to allow for the printer's scaling. The
+    aim step offers the sheet's aim points; another group on the same
+    photo starts at the next free one.
+  - **Later photo:** photograph an MX target again after more shots and
+    the holes not yet marked are suggested, found through the sheet's own
+    marks however the photo was taken. A later photo that doesn't line up
+    with the marked shots is flagged as maybe another sheet, and a hole
+    that grew or split as a likely shot through an earlier one.
+  - **Blank grid** for a target you didn't photograph, at true scale.
+  - **Photos stay on the device:** reduced to 4096 pixels unless you keep
+    the originals, with their location and other metadata taken out. Groups,
+    sessions and photo records go into backups and sync; the photos don't.
+  - **Units:** group sizes as mil, MOA or cm per 100 m, and on the target in
+    mm, cm or inches, in the Units settings.
+  - **Demo data** now includes groups, a zero series and a load ladder.
+  - **Analyse** (from the Groups header on phones, Library | Analyse on
+    computers):
+    - **Zero check:** whether the zero is holding, drifting or can't tell
+      yet from the groups shot since the last zero reset, net of what was
+      dialled, with the correction in your clicks. Mark a zero reset, or
+      write the load's point of impact for the calculator. It counts only
+      groups shot at the rifle's zero range, measured from where the
+      bullet flies at that exact distance, and offers the correction only
+      with a verdict, showing its 95% range.
+    - **Trend:** group size, σ, velocity or the cold-bore shot against date,
+      charge, seating, temperature, pressure or barrel rounds, one line per
+      load, with 95% bars and box plots. From velocity against temperature
+      it fits the powder's temperature sensitivity and can write it to the
+      bullet.
+    - **Compare** groups side by side, best and worst, with an honest test
+      of two groups ("can't tell yet: about 14 shots each would settle
+      it"), and save the comparison.
+    - **Composites** pool groups into one, about their aims, about their own
+      centres or as a cold-bore series, in angle and in mm at any distance.
+    - **Load ladders:** rungs by charge or seating, the flattest runs with
+      their noise, and "Make 45.5 gr my load".
+  - **Powder charges** show in grains by default, also with metric units;
+    grams can be chosen in Units. Groups keep the handload's charge and CBTO
+    as they were when saved, so a later recipe change doesn't move them on a
+    trend.
+  - **Library:** pick several groups to compare, pool, archive or delete
+    them; saved analyses are listed with the groups.
+  - **Group details:** part of a ladder, what was dialled for the group, and
+    whether it counts in the zero check.
+  - **Velocities on a group's page:** paste, type or read a chronograph file
+    (Garmin Xero, LabRadar, MagnetoSpeed), pair the readings with the
+    shots, see the average, SD with its range, ES and warnings, how the
+    vertical follows velocity against what the solver expects, and save the
+    string as the load's velocity.
+  - **Share a group** as a picture (PNG), and save groups or shots as CSV.
+- **Cards:** MX targets, printable targets for Groups: A4, A3 or Letter,
+  portrait or landscape, with 1, 2, 4 or 6 diamond or square aim marks sized
+  for 100–300 m, a light 10 mm or 1-inch grid and a 100 mm check ruler. A
+  coded mark near each corner tells the app the sheet's layout, so a photo
+  of the sheet can set its own scale, straighten itself and place the aim
+  points, even when one mark is covered or holed. The format is open and
+  documented in docs/mx-targets.md.
+- **Calculator:** "Use my groups" sets "Your precision" from your measured
+  groups.
+- **Rifles** show their round counts (action, barrel, since clean), turning
+  amber when a clean is due at your own "clean after" count; log rounds and
+  cleans, see and delete recent rounds, and set the rounds fired before
+  logging.
+  - **Barrels:** add one (it is fitted at once), fit an earlier one, retire
+    or remove one; when the fitted barrel's length or twist differ from the
+    rifle's ballistics, copy them across.
+  - Each barrel and load shows the precision measured from its groups.
+- **Handloads** keep their recipe: powder, charge (grains or grams), primer,
+  brass, COAL, CBTO and notes.
+- **Sessions,** in the menu: days at the range with place, time and weather
+  (filled in from Open-Meteo when you ask), and the groups shot there.
+  Deleting a session leaves its weather on its groups.
+- **Backup with photos:** one ZIP with the backup and your groups' photos;
+  importing it brings the photos back.
+- **Phone tabs:** Calculate · Groups · Guns · Ammunition · Targets. Cards
+  moved into the ••• menu beside the shot log.
+- **Sun theme:** a light, high-contrast look for reading the app in bright
+  sunlight at the range, on paper-coloured pages with dark text and deeper
+  orange, green and red. Choose **Theme** in the menu: Dark (as before),
+  Sun, or Follow the system, which switches with the device's light or dark
+  setting. The choice is kept on each device and takes effect at once; in
+  the browser the loading screen follows it too.
+- **Backups and sync** use export format 9 (docs/export-format.md), which
+  adds the Groups records; earlier versions of the app refuse its files and
+  sync copies rather than lose them.
+
+### Fixed
+
+- **Dark on light-mode devices:** a computer set to light mode could show
+  the app with egui's light defaults mixed in with the forest-green
+  headers. Dark now looks the same everywhere, and on the desktop the
+  window's title bar follows the chosen theme.
+- **Target editor on phones:** the fields no longer overlap the animal
+  preview.
+
 ## [0.11.1] - 2026-11-21
 
 ### Fixed

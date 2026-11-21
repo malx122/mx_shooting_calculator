@@ -16,8 +16,8 @@ use ballistics_store::rules::shotgun::{
     self as law, HUNTING_TEST_RANGE_M, ShotVerdict, SlugVerdict,
 };
 use ballistics_store::{
-    Barrel, Catalog, Choke, ChokeName, Country, PatternTest, Payload, Shell, ShotMaterial, Shotgun,
-    ShotgunLoad, Target, TargetGroup, VelocityAt,
+    Catalog, Choke, ChokeName, Country, PatternTest, Payload, Shell, ShotMaterial, Shotgun,
+    ShotgunBarrel, ShotgunLoad, Target, TargetGroup, VelocityAt,
 };
 use eframe::egui::{self, Color32, Pos2, RichText, Stroke, pos2, vec2};
 
@@ -673,7 +673,7 @@ fn gun_fields(ui: &mut egui::Ui, shotgun: &mut Shotgun) -> Option<usize> {
         if shotgun.barrels.len() < ballistics_store::shotguns::MAX_BARRELS
             && ui.button(tr("➕ Barrel")).clicked()
         {
-            shotgun.barrels.push(Barrel {
+            shotgun.barrels.push(ShotgunBarrel {
                 name: String::new(),
                 choke: Choke::Name {
                     name: ChokeName::Modified,

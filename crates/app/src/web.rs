@@ -16,7 +16,7 @@ const DATABASE: &str = "mxsc.sqlite";
 /// A file the hunter picked, read in the background.
 pub struct PickedFile {
     pub name: String,
-    pub text: String,
+    pub bytes: Vec<u8>,
     /// The file's modification time (ms since the epoch).
     pub modified_ms: i64,
 }
@@ -58,7 +58,7 @@ pub fn download_bytes(file_name: &str, bytes: &[u8], mime: &str) -> Result<(), S
 pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
     wasm_bindgen_futures::spawn_local(async move {
         let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter(tr("Backups"), &["json", "srl"])
+            .add_filter(tr("Backups"), &["json", "zip", "srl"])
             .pick_file()
             .await
         else {
@@ -67,10 +67,275 @@ pub fn pick_backup(slot: PickedSlot, context: egui::Context) {
         let bytes = handle.read().await;
         *slot.borrow_mut() = Some(PickedFile {
             name: handle.file_name(),
-            text: String::from_utf8_lossy(&bytes).into_owned(),
+            bytes,
             modified_ms: handle.inner().last_modified() as i64,
         });
         context.request_repaint();
+    });
+}
+
+thread_local! {
+    /// The photo picker open now; its listeners live until the next one
+    /// opens, as a listener can't be dropped while it runs.
+    static PICKER: RefCell<Option<Picker>> = const { RefCell::new(None) };
+}
+
+/// A photo picker on the page: the hidden file input, the page's own button
+/// when one more tap is needed, and their listeners.
+struct Picker {
+    input: web_sys::HtmlInputElement,
+    overlay: Option<web_sys::Element>,
+    /// Listeners on the window, taken off when the picker is done.
+    on_window: Vec<(&'static str, js_sys::Function)>,
+    listeners: Vec<wasm_bindgen::closure::Closure<dyn FnMut(web_sys::Event)>>,
+}
+
+impl Picker {
+    /// Takes the picker off the page.
+    fn close(&mut self) {
+        self.input.remove();
+        if let Some(overlay) = self.overlay.take() {
+            overlay.remove();
+        }
+        if let Some(window) = web_sys::window() {
+            for (event, function) in self.on_window.drain(..) {
+                let _ = window.remove_event_listener_with_callback(event, &function);
+            }
+        }
+    }
+
+    fn listen(
+        &mut self,
+        target: &web_sys::EventTarget,
+        event: &'static str,
+        handler: impl FnMut(web_sys::Event) + 'static,
+    ) {
+        let listener = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::Event)>::new(handler);
+        let function: js_sys::Function = listener
+            .as_ref()
+            .unchecked_ref::<js_sys::Function>()
+            .clone();
+        let _ = target.add_event_listener_with_callback(event, &function);
+        if target.dyn_ref::<web_sys::Window>().is_some() {
+            self.on_window.push((event, function));
+        }
+        self.listeners.push(listener);
+    }
+}
+
+fn close_picker() {
+    PICKER.with(|picker| {
+        if let Some(picker) = picker.borrow_mut().as_mut() {
+            picker.close();
+        }
+    });
+}
+
+/// Opens the browser's picker for a photo: any image, and with `camera` the
+/// phone's camera first (`capture="environment"`). Neither asks for a
+/// permission. The photo is read in the background and put in `slot`.
+/// Browsers open a picker only straight after a tap; when the tap has
+/// passed, or the picker didn't open, a button on the page asks for one
+/// more.
+pub fn pick_photo(
+    slot: Rc<RefCell<Option<crate::files::File>>>,
+    context: egui::Context,
+    camera: bool,
+) {
+    if let Some(mut previous) = PICKER.with(|picker| picker.borrow_mut().take()) {
+        previous.close();
+    }
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = window.document() else {
+        return;
+    };
+    let Some(body) = document.body() else {
+        return;
+    };
+    let Ok(input) = document
+        .create_element("input")
+        .map(|element| element.unchecked_into::<web_sys::HtmlInputElement>())
+    else {
+        return;
+    };
+    input.set_type("file");
+    input.set_accept("image/*");
+    if camera {
+        let _ = input.set_attribute("capture", "environment");
+    }
+    let _ = input.set_attribute(
+        "style",
+        "position:fixed;left:-1000px;top:0;width:1px;height:1px;opacity:0",
+    );
+    let _ = body.append_child(&input);
+    let mut picker = Picker {
+        input: input.clone(),
+        overlay: None,
+        on_window: Vec::new(),
+        listeners: Vec::new(),
+    };
+    let picked = input.clone();
+    let repaint = context.clone();
+    picker.listen(&input, "change", move |_| {
+        let file = picked.files().and_then(|files| files.get(0));
+        close_picker();
+        let Some(file) = file else {
+            return;
+        };
+        let slot = slot.clone();
+        let repaint = repaint.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            let Ok(buffer) = wasm_bindgen_futures::JsFuture::from(file.array_buffer()).await else {
+                return;
+            };
+            let bytes = js_sys::Uint8Array::new(&buffer).to_vec();
+            *slot.borrow_mut() = Some((file.name(), bytes));
+            repaint.request_repaint();
+        });
+    });
+    picker.listen(&input, "cancel", |_| close_picker());
+    let opened = Rc::new(Cell::new(false));
+    let blurred = opened.clone();
+    picker.listen(&window, "blur", move |_| blurred.set(true));
+    PICKER.with(|cell| *cell.borrow_mut() = Some(picker));
+
+    let activation = js_sys::Reflect::get(&window.navigator(), &"userActivation".into())
+        .ok()
+        .filter(|activation| !activation.is_undefined())
+        .and_then(|activation| js_sys::Reflect::get(&activation, &"isActive".into()).ok())
+        .and_then(|active| active.as_bool());
+    match activation {
+        Some(false) => show_picker_button(&context, camera),
+        Some(true) => input.click(),
+        None => {
+            // Without the activation API: a picker that opened takes the
+            // focus from the window; one that didn't leaves it.
+            input.click();
+            let check = wasm_bindgen::closure::Closure::once_into_js(move || {
+                let waiting = PICKER.with(|cell| {
+                    cell.borrow()
+                        .as_ref()
+                        .is_some_and(|picker| picker.input.is_connected())
+                });
+                if waiting && !opened.get() {
+                    show_picker_button(&context, camera);
+                }
+            });
+            let _ = window
+                .set_timeout_with_callback_and_timeout_and_arguments_0(check.unchecked_ref(), 700);
+        }
+    }
+}
+
+/// The page's own button for the picker, for the tap the browser asks for.
+/// Cancel, Escape and Back close it.
+fn show_picker_button(context: &egui::Context, camera: bool) {
+    let palette = crate::theme::palette(context);
+    let (Some(window), Some(document)) = (
+        web_sys::window(),
+        web_sys::window().and_then(|window| window.document()),
+    ) else {
+        return;
+    };
+    let Some(body) = document.body() else {
+        return;
+    };
+    PICKER.with(|cell| {
+        let mut cell = cell.borrow_mut();
+        let Some(picker) = cell.as_mut() else {
+            return;
+        };
+        if picker.overlay.is_some() {
+            return;
+        }
+        let element = |tag: &str, style: String, text: Option<&str>| {
+            let element = document.create_element(tag).ok()?;
+            let _ = element.set_attribute("style", &style);
+            element.set_text_content(text);
+            Some(element)
+        };
+        let font = "font:15px/1.4 system-ui,sans-serif;letter-spacing:0.02em";
+        let button = |background: String, colour: String| {
+            format!(
+                "{font};font-weight:600;padding:12px 20px;border-radius:12px;border:0;\
+                 background:{background};color:{colour}"
+            )
+        };
+        let (Some(overlay), Some(card), Some(note), Some(open), Some(cancel)) = (
+            element(
+                "div",
+                "position:fixed;inset:0;z-index:1000;display:flex;align-items:center;\
+                 justify-content:center;background:rgba(0,0,0,0.6)"
+                    .to_owned(),
+                None,
+            ),
+            element(
+                "div",
+                format!(
+                    "{font};max-width:300px;margin:16px;padding:20px;border-radius:14px;\
+                     text-align:center;background:{};color:{}",
+                    palette.background.to_hex(),
+                    palette.text.to_hex()
+                ),
+                None,
+            ),
+            element(
+                "p",
+                "margin:0 0 16px".to_owned(),
+                Some(if camera {
+                    tr("The browser asks for one more tap before it opens the camera.")
+                } else {
+                    tr("The browser asks for one more tap before it opens your photos.")
+                }),
+            ),
+            element(
+                "button",
+                button(palette.accent.to_hex(), palette.on_accent.to_hex()),
+                Some(if camera {
+                    tr("Take photo")
+                } else {
+                    tr("Choose photo")
+                }),
+            ),
+            element(
+                "button",
+                format!(
+                    "{};margin-left:10px",
+                    button(palette.raised.to_hex(), palette.text.to_hex())
+                ),
+                Some(tr("Cancel")),
+            ),
+        ) else {
+            return;
+        };
+        let _ = card.append_child(&note);
+        let _ = card.append_child(&open);
+        let _ = card.append_child(&cancel);
+        let _ = overlay.append_child(&card);
+        let _ = body.append_child(&overlay);
+        picker.listen(&open, "click", |_| {
+            PICKER.with(|cell| {
+                if let Some(picker) = cell.borrow_mut().as_mut() {
+                    if let Some(overlay) = picker.overlay.take() {
+                        overlay.remove();
+                    }
+                    picker.input.click();
+                }
+            });
+        });
+        picker.listen(&cancel, "click", |_| close_picker());
+        picker.listen(&window, "keydown", |event| {
+            let key = js_sys::Reflect::get(&event, &"key".into())
+                .ok()
+                .and_then(|key| key.as_string());
+            if key.as_deref() == Some("Escape") {
+                close_picker();
+            }
+        });
+        picker.listen(&window, "popstate", |_| close_picker());
+        picker.overlay = Some(overlay);
     });
 }
 
@@ -544,6 +809,33 @@ pub fn keep_storage() {
     };
     if let Ok(storage) = js_sys::Reflect::get(&window.navigator(), &"storage".into()) {
         let _ = call(&storage, "persist", None);
+    }
+}
+
+/// The theme choice in the page's own storage, read by index.html for
+/// the loading screen.
+const THEME_KEY: &str = "mxsc-theme";
+
+/// Tells the page around the app its theme: the browser's bar takes the
+/// header's colour, and the next loading screen the chosen theme.
+pub fn show_theme(choice: crate::theme::ThemeChoice, palette: &crate::theme::Palette) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    if let (Ok(Some(storage)), Ok(serde_json::Value::String(name))) =
+        (window.local_storage(), serde_json::to_value(choice))
+    {
+        let _ = storage.set_item(THEME_KEY, &name);
+    }
+    let Some(document) = window.document() else {
+        return;
+    };
+    let [r, g, b, _] = palette.chrome.to_array();
+    if let Ok(Some(meta)) = document.query_selector("meta[name=theme-color]") {
+        let _ = meta.set_attribute("content", &format!("#{r:02X}{g:02X}{b:02X}"));
+    }
+    if let Some(root) = document.document_element() {
+        let _ = root.set_attribute("class", if palette.dark { "" } else { "sun" });
     }
 }
 

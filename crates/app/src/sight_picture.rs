@@ -317,35 +317,36 @@ pub fn magnification_slider(
     }
 
     let painter = ui.painter_at(rect.expand(4.0));
+    let palette = theme::palette(ui.ctx());
     let handle = x_of(*value);
     painter.line_segment(
         [pos2(left, rail_y), pos2(right, rail_y)],
-        Stroke::new(4.0_f32, theme::FOREST_600),
+        Stroke::new(4.0_f32, palette.stroke),
     );
     painter.line_segment(
         [pos2(left, rail_y), pos2(handle, rail_y)],
-        Stroke::new(4.0_f32, theme::BLAZE_DEEP),
+        Stroke::new(4.0_f32, palette.selection),
     );
     if let Some(reference) = true_at {
         let x = x_of(reference);
         painter.line_segment(
             [pos2(x, rail_y - 8.0), pos2(x, rail_y + 8.0)],
-            Stroke::new(2.0_f32, theme::AMBER),
+            Stroke::new(2.0_f32, palette.warning),
         );
     }
     let hovered = response.hovered() || response.dragged();
     painter.circle(
         pos2(handle, rail_y),
         if hovered { 8.0 } else { 7.0 },
-        theme::BONE,
-        Stroke::new(2.0_f32, theme::BLAZE),
+        palette.text,
+        Stroke::new(2.0_f32, palette.accent),
     );
 
     // Labels under the rail: the ends, and where the marks are true. A mark
     // at an end shares that end's label.
     let font = egui::FontId::proportional(11.5);
     let label_y = rail_y + 12.0;
-    let muted = theme::BONE_MUTED;
+    let muted = palette.text_muted;
     let at_low = true_at.is_some_and(|reference| x_of(reference) - left < 36.0);
     let at_high = true_at.is_some_and(|reference| right - x_of(reference) < 36.0);
     let end_label = |magnification: f64, marks_true: bool| {
@@ -355,8 +356,8 @@ pub fn magnification_slider(
             if marks_true { tr(" · true") } else { "" }
         )
     };
-    let low_colour = if at_low { theme::AMBER } else { muted };
-    let high_colour = if at_high { theme::AMBER } else { muted };
+    let low_colour = if at_low { palette.warning } else { muted };
+    let high_colour = if at_high { palette.warning } else { muted };
     if span > 0.0 {
         painter.text(
             pos2(left - 6.0, label_y),
@@ -383,7 +384,7 @@ pub fn magnification_slider(
             egui::Align2::CENTER_TOP,
             text,
             font,
-            theme::AMBER,
+            palette.warning,
         );
     }
 

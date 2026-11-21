@@ -347,11 +347,7 @@ fn pack(labels: &mut [Label], width: f32, floor: f32) -> usize {
 /// Draws the cartridge's measurements in `width` × `height` points.
 pub fn show(ui: &mut egui::Ui, cartridge: &Cartridge, width: f32, height: f32) {
     let painter = ui.painter().clone();
-    let dim = if ui.visuals().dark_mode {
-        Color32::from_rgb(0x8c, 0xc0, 0xe0)
-    } else {
-        Color32::from_rgb(0x2f, 0x6b, 0x8f)
-    };
+    let dim = crate::theme::palette(ui.ctx()).measure;
     let ink = ui.visuals().text_color();
     let font = FontId::proportional(TEXT);
     let labels = |measures: &[Measure]| -> Vec<Label> {

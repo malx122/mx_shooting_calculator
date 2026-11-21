@@ -373,6 +373,8 @@ pub struct CalculatorPage {
     hits: Option<(HitsKey, Option<Hits>)>,
     /// The hit chance at each of the range table's ranges.
     row_chances: Option<(RowChancesKey, Vec<Option<f64>>)>,
+    /// The rifle and bullet's groups pooled, for "Use my groups".
+    precision: crate::groups::analyse::Memo<Option<crate::groups::analyse::pool::Precision>>,
     /// A shotgun's results, when one is chosen.
     shotgun: crate::shotguns::ShotgunResults,
 }
@@ -407,6 +409,7 @@ impl CalculatorPage {
             generation: 0,
             hits: None,
             row_chances: None,
+            precision: crate::groups::analyse::Memo::default(),
             shotgun: crate::shotguns::ShotgunResults::default(),
         }
     }
@@ -1194,6 +1197,7 @@ impl CalculatorPage {
         let u = units::prefs(ui.ctx());
         let inputs = &mut self.inputs;
         let weather = &mut self.weather;
+        let precision_memo = &mut self.precision;
         ui.horizontal(|ui| {
             ui.label(if data.hunting {
                 tr("Animal crossing at")
@@ -1431,6 +1435,46 @@ impl CalculatorPage {
                         "5 shots at 100 m from the position you shoot from, edge to edge",
                     ));
                     ui.end_row();
+                    if let (Some(rifle_id), Some(bullet_id)) =
+                        (inputs.rifle_id.clone(), inputs.bullet_id.clone())
+                    {
+                        let key = crate::groups::analyse::key_of(
+                            crate::groups::analyse::stamp(data),
+                            (&rifle_id, &bullet_id),
+                        );
+                        let precision = *precision_memo.get(key, || {
+                            crate::groups::analyse::pool::precision(data, &rifle_id, &bullet_id)
+                        });
+                        if let Some(precision) = precision {
+                            ui.label("");
+                            ui.horizontal(|ui| {
+                                ui.weak(trf!(
+                                    "Your groups: {}",
+                                    u.format(Quantity::ShortLength, precision.group_cm)
+                                ));
+                                if precision.enough()
+                                    && ui
+                                        .small_button(tr("Use my groups"))
+                                        .on_hover_text(tr(
+                                            "The spread of this rifle and bullet's groups, each \
+                                             about its own centre, as the 5-shot group at 100 m \
+                                             it would give on average",
+                                        ))
+                                        .clicked()
+                                {
+                                    use_my_groups(inputs, &precision);
+                                }
+                            });
+                            ui.end_row();
+                            ui.label("");
+                            ui.weak(trf!(
+                                "from {} groups, {} shots",
+                                precision.groups,
+                                precision.shots
+                            ));
+                            ui.end_row();
+                        }
+                    }
                     ui.label(tr("Velocity spread"));
                     ui.horizontal(|ui| match inputs.velocity_sd_mps.as_mut() {
                         Some(sd) => {
@@ -2530,6 +2574,7 @@ impl ResultsView<'_> {
         ethical: Option<f64>,
     ) {
         let u = units::prefs(ui.ctx());
+        let palette = theme::palette(ui.ctx());
         let x = |metres: f64| u.show(Quantity::Distance, metres);
         let y = |metres: f64| u.show(Quantity::ShortLength, metres * 100.0);
         let max_range = self.table.end_m.max(self.inputs.target_range_m);
@@ -2622,18 +2667,18 @@ impl ResultsView<'_> {
 
                 if let Some(zone) = zone {
                     let zone_name = capitalised(self.aim.zone_name());
-                    plot_ui.hline(HLine::new(&zone_name, zone).color(theme::MEADOW));
-                    plot_ui.hline(HLine::new(&zone_name, -zone).color(theme::MEADOW));
+                    plot_ui.hline(HLine::new(&zone_name, zone).color(palette.good));
+                    plot_ui.hline(HLine::new(&zone_name, -zone).color(palette.good));
                 }
-                plot_ui.hline(HLine::new(tr("Line of sight"), 0.0).color(theme::BONE_MUTED));
+                plot_ui.hline(HLine::new(tr("Line of sight"), 0.0).color(palette.text_muted));
                 plot_ui.line(
                     Line::new(tr("Bullet"), PlotPoints::from(path))
                         .width(2.0_f32)
-                        .color(theme::BLAZE),
+                        .color(palette.accent),
                 );
-                plot_ui.vline(VLine::new(tr("Target"), target).color(theme::BONE));
+                plot_ui.vline(VLine::new(tr("Target"), target).color(palette.text));
                 if let Some(limit) = ethical.filter(|limit| *limit <= max_range) {
-                    plot_ui.vline(VLine::new(tr("Ethical limit"), x(limit)).color(theme::ALARM));
+                    plot_ui.vline(VLine::new(tr("Ethical limit"), x(limit)).color(palette.alarm));
                 }
             });
     }
@@ -2864,6 +2909,7 @@ impl ResultsView<'_> {
     ) {
         let prefs = units::prefs(ui.ctx());
         let u = &prefs;
+        let palette = theme::palette(ui.ctx());
         let show = self.table.columns;
         let unit = self.unit();
         let (other_unit, unit_name, other_name) = match unit {
@@ -3018,7 +3064,7 @@ impl ResultsView<'_> {
         let painter = ui.painter().clone();
         let measure = |text: &str, font: egui::FontId| {
             painter
-                .layout_no_wrap(text.to_owned(), font, theme::BONE)
+                .layout_no_wrap(text.to_owned(), font, palette.text)
                 .size()
                 .x
         };
@@ -3064,7 +3110,7 @@ impl ResultsView<'_> {
                 align,
                 header,
                 header_font.clone(),
-                theme::BONE_MUTED,
+                palette.text_muted,
             );
             x += width;
         }
@@ -3080,14 +3126,14 @@ impl ResultsView<'_> {
                 egui::Align2::LEFT_TOP,
                 title,
                 egui::FontId::proportional(13.0),
-                theme::BONE,
+                palette.text,
             );
             painter.line_segment(
                 [
                     egui::pos2(from, rect.top() + 18.0),
                     egui::pos2(to - 18.0, rect.top() + 18.0),
                 ],
-                egui::Stroke::new(1.0_f32, theme::FOREST_600),
+                egui::Stroke::new(1.0_f32, palette.stroke),
             );
         }
 
@@ -3110,11 +3156,11 @@ impl ResultsView<'_> {
             }
             let is_current = current == Some(index);
             let fill = if is_current {
-                theme::FOREST_700
+                palette.raised
             } else if response.hovered() {
-                theme::FOREST_600
+                palette.hover
             } else if index % 2 == 1 {
-                theme::FOREST_800
+                palette.background
             } else {
                 egui::Color32::TRANSPARENT
             };
@@ -3123,7 +3169,7 @@ impl ResultsView<'_> {
                 painter.rect_stroke(
                     rect.shrink(1.0),
                     5.0,
-                    egui::Stroke::new(2.0_f32, theme::BLAZE),
+                    egui::Stroke::new(2.0_f32, palette.accent),
                     egui::StrokeKind::Inside,
                 );
             }
@@ -3134,7 +3180,7 @@ impl ResultsView<'_> {
                         egui::vec2(4.0, rect.height() - 8.0),
                     ),
                     2.0,
-                    theme::MEADOW,
+                    palette.good,
                 );
             }
             let beyond = ethical.is_some_and(|limit| *range > limit);
@@ -3146,10 +3192,10 @@ impl ResultsView<'_> {
                     cell(row, index)
                 };
                 let colour = match (beyond, weight) {
-                    (true, Weight::Other) => theme::ALARM.gamma_multiply(0.8),
-                    (true, _) => theme::ALARM,
-                    (false, Weight::Other) => theme::BONE_MUTED,
-                    (false, _) => theme::BONE,
+                    (true, Weight::Other) if palette.dark => palette.alarm.gamma_multiply(0.8),
+                    (true, _) => palette.alarm,
+                    (false, Weight::Other) => palette.text_muted,
+                    (false, _) => palette.text,
                 };
                 let (align, at) = if *weight == Weight::Range {
                     (egui::Align2::LEFT_CENTER, x)
@@ -3171,7 +3217,7 @@ impl ResultsView<'_> {
             let y = (bottom + top) / 2.0;
             painter.line_segment(
                 [egui::pos2(left, y), egui::pos2(left + total, y)],
-                egui::Stroke::new(2.0_f32, theme::BLAZE),
+                egui::Stroke::new(2.0_f32, palette.accent),
             );
             painter.add(egui::Shape::convex_polygon(
                 vec![
@@ -3179,7 +3225,7 @@ impl ResultsView<'_> {
                     egui::pos2(left + 7.0, y),
                     egui::pos2(left, y + 5.0),
                 ],
-                theme::BLAZE,
+                palette.accent,
                 egui::Stroke::NONE,
             ));
         }
@@ -3204,14 +3250,15 @@ impl ResultsView<'_> {
 /// A quiet panel in the results' right rail: darker than the page, unlike
 /// the input tiles, which are buttons.
 fn rail_panel(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
+    let chrome = theme::palette(ui.ctx()).chrome;
     egui::Frame::new()
-        .fill(theme::FOREST_900)
+        .fill(chrome)
         .corner_radius(6)
         .inner_margin(12)
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             // The scope view masks its corners in the panel's colour.
-            ui.visuals_mut().panel_fill = theme::FOREST_900;
+            ui.visuals_mut().panel_fill = chrome;
             add(ui);
         });
 }
@@ -3285,6 +3332,12 @@ fn clamp_view(view: PlotBounds, world: PlotBounds) -> PlotBounds {
     };
     let (x, y) = (axis(0), axis(1));
     PlotBounds::from_min_max([x.0, y.0], [x.1, y.1])
+}
+
+/// "Use my groups": the measured groups' expected 5-shot group at 100 m,
+/// edge to edge, as "Your group".
+fn use_my_groups(inputs: &mut Inputs, precision: &crate::groups::analyse::pool::Precision) {
+    inputs.group_cm = precision.group_cm.clamp(0.5, 40.0);
 }
 
 fn capitalised(text: &str) -> String {
@@ -3680,5 +3733,24 @@ mod tests {
             "only the click rounding remains: {dialled:?}"
         );
         assert_eq!(dialled[0], held[0]);
+    }
+
+    #[test]
+    fn use_my_groups_sets_the_five_shot_group_at_100_m_edge_to_edge() {
+        use crate::groups::analyse::pool::{Precision, five_shot_group_cm};
+        // σ 0.1 mrad with a .308: 3.07 cm centre to centre, plus 0.782 cm.
+        let precision = Precision {
+            sigma_mrad: 0.1,
+            groups: 2,
+            shots: 10,
+            group_cm: five_shot_group_cm(0.1, Some(7.82)),
+        };
+        let mut inputs = Inputs::default();
+        use_my_groups(&mut inputs, &precision);
+        assert!(
+            (inputs.group_cm - 3.852).abs() < 1e-9,
+            "{}",
+            inputs.group_cm
+        );
     }
 }

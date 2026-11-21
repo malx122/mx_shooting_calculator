@@ -166,7 +166,7 @@ Shotguns are kept and calculated as rifles are.
   gauge, as a bullet is for a caliber: shot or a slug, with the velocity as
   the box gives it and where it is measured. A `ShotgunLoad` is a shell in
   a gun, as a `RifleLoad` is a bullet in a rifle, and holds the pattern
-  boards counted with it. All travel in backups and sync (export format 8).
+  boards counted with it. All travel in backups and sync (export format 8 and later).
 - **Pages:** shotguns are in the Guns list with the rifles; shells are on
   the Ammunition page with the bullets, by gauge; Calculate takes a shotgun
   as it takes a rifle, with its shell and barrel, and the same range, wind,

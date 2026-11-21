@@ -16,8 +16,13 @@ roxmltree = "0.21"
 web-time = "1"
 sha2 = "0.11"
 chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc"] }
+# Sync copies are deflated before they are encrypted.
+miniz_oxide = { version = "0.9", default-features = false, features = ["with-alloc"] }
 # The export file's JSON Schema, generated from these types (docs/export-format.*).
 schemars = "1"
+# The backup with photos (bundle.rs): a zip of the backup and the photos.
+zip = { version = "9", default-features = false, features = ["deflate-flate2"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 # The letters cut into a printed cartridge (print.rs).
 ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
 

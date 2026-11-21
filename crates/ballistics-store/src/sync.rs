@@ -2,8 +2,9 @@
 //! (a small server, or a file in the hunter's cloud storage).
 //!
 //! With the sync server, the devices share a secret **sync key**. The copy
-//! is the usual export (`PersonalData`, with deletions), encrypted with a
-//! key derived from the sync key, so whoever stores it can't read it. It is
+//! is the usual export (`PersonalData`, with deletions), compressed
+//! (deflate) and encrypted with a key derived from the sync key, so
+//! whoever stores it can't read it. It is
 //! stored under an id that is also derived from the sync key (a hash), so
 //! the server never learns the key itself. In the hunter's own Google Drive
 //! the copy is the plain export, in the app's hidden folder.
@@ -24,8 +25,14 @@ use crate::StoreError;
 use crate::db::Store;
 use crate::transfer::{ImportReport, PersonalData, read_export};
 
-/// Marks an encrypted copy and its format: "MXS" and version 1.
-const MAGIC: &[u8; 4] = b"MXS1";
+/// Marks an encrypted copy and its format: "MXS" and version 2, deflated
+/// before it is encrypted. Version 1 copies, encrypted as they are, still
+/// open.
+const MAGIC: &[u8; 4] = b"MXS2";
+const MAGIC_UNCOMPRESSED: &[u8; 4] = b"MXS1";
+/// The most a copy may inflate to: far more than any hunter's data, far
+/// less than would trouble a phone.
+const MAX_COPY_BYTES: usize = 64 << 20;
 const NONCE_LEN: usize = 24;
 /// Crockford's base32: no I, L, O or U, so a key read aloud or typed
 /// survives (I and L read as 1, O as 0).
@@ -99,31 +106,48 @@ impl SyncKey {
         XChaCha20Poly1305::new(&key)
     }
 
-    /// Encrypts a copy for storing.
+    /// Compresses and encrypts a copy for storing.
     pub fn seal(&self, plaintext: &[u8]) -> Vec<u8> {
+        let compressed = miniz_oxide::deflate::compress_to_vec(plaintext, 6);
         let mut nonce = [0; NONCE_LEN];
         nonce[..16].copy_from_slice(uuid::Uuid::new_v4().as_bytes());
         nonce[16..].copy_from_slice(&uuid::Uuid::new_v4().as_bytes()[..8]);
         let ciphertext = self
             .cipher()
-            .encrypt(&XNonce::from(nonce), plaintext)
+            .encrypt(&XNonce::from(nonce), compressed.as_slice())
             .expect("encrypting in memory cannot fail");
         [MAGIC.as_slice(), &nonce, &ciphertext].concat()
     }
 
-    /// Decrypts a stored copy; fails if it was made with another key or
-    /// changed on the way.
+    /// Decrypts (and inflates) a stored copy; fails if it was made with
+    /// another key, changed on the way, or made by a newer app.
     pub fn open(&self, sealed: &[u8]) -> Result<Vec<u8>, StoreError> {
         let wrong = || StoreError::Invalid("the synced copy can't be read with this key".into());
-        let rest = sealed.strip_prefix(MAGIC.as_slice()).ok_or_else(wrong)?;
+        let (compressed, rest) = if let Some(rest) = sealed.strip_prefix(MAGIC.as_slice()) {
+            (true, rest)
+        } else if let Some(rest) = sealed.strip_prefix(MAGIC_UNCOMPRESSED.as_slice()) {
+            (false, rest)
+        } else if sealed.starts_with(b"MXS") {
+            return Err(StoreError::Invalid(
+                "the synced copy comes from a newer version of the app: update this program".into(),
+            ));
+        } else {
+            return Err(wrong());
+        };
         if rest.len() < NONCE_LEN {
             return Err(wrong());
         }
         let (nonce, ciphertext) = rest.split_at(NONCE_LEN);
         let nonce = XNonce::try_from(nonce).map_err(|_| wrong())?;
-        self.cipher()
+        let plaintext = self
+            .cipher()
             .decrypt(&nonce, ciphertext)
-            .map_err(|_| wrong())
+            .map_err(|_| wrong())?;
+        if !compressed {
+            return Ok(plaintext);
+        }
+        miniz_oxide::inflate::decompress_to_vec_with_limit(&plaintext, MAX_COPY_BYTES)
+            .map_err(|_| StoreError::Invalid("the synced copy is damaged".into()))
     }
 }
 

@@ -233,15 +233,16 @@ impl BulletsPage {
     /// The hunter's bullets by caliber, with ways to add more. On a phone
     /// each is a big row.
     fn collection_list(&mut self, ui: &mut egui::Ui, data: &Data, phone: bool) {
+        let palette = theme::palette(ui.ctx());
         ui.horizontal_wrapped(|ui| {
             if ui
                 .add(
                     egui::Button::new(
                         RichText::new(tr("+ Add from the catalog"))
                             .strong()
-                            .color(theme::FOREST_900),
+                            .color(palette.on_accent),
                     )
-                    .fill(theme::BLAZE),
+                    .fill(palette.accent),
                 )
                 .on_hover_text(tr(
                     "Factory ammunition and component bullets, with their data",
@@ -414,7 +415,7 @@ impl BulletsPage {
                         egui::Button::new(RichText::new(tr("Save")).strong()),
                     );
                     if save.clicked() {
-                        actions.push(Action::SaveBullet(bullet.clone()));
+                        actions.push(Action::SaveBullet(Box::new(bullet.clone())));
                     }
                     if let Some(stored) = stored {
                         if changed && ui.button(tr("Undo changes")).clicked() {
@@ -1154,6 +1155,9 @@ fn editor(
             |ui| construction(ui, bullet),
         );
     }
+    if bullet.kind == BulletKind::Handload {
+        recipe(ui, bullet, &u);
+    }
     let notes = bullet.notes.lines().next().unwrap_or_default().to_owned();
     fold(
         ui,
@@ -1164,6 +1168,81 @@ fn editor(
             ui.text_edit_multiline(&mut bullet.notes);
         },
     );
+}
+
+/// "41.3 gr H4350 · CBTO 56.10 mm": a handload's recipe in one line.
+pub fn recipe_summary(recipe: &ballistics_store::Recipe, u: &units::UnitPrefs) -> String {
+    let mut parts = Vec::new();
+    let powder = recipe.powder.trim();
+    match (recipe.charge_g, powder.is_empty()) {
+        (Some(charge), false) => parts.push(format!(
+            "{} {powder}",
+            u.format(Quantity::PowderCharge, charge)
+        )),
+        (Some(charge), true) => parts.push(u.format(Quantity::PowderCharge, charge)),
+        (None, false) => parts.push(powder.to_owned()),
+        (None, true) => {}
+    }
+    if let Some(cbto) = recipe.cbto_mm {
+        parts.push(format!("CBTO {}", u.format(Quantity::BulletLength, cbto)));
+    } else if let Some(coal) = recipe.coal_mm {
+        parts.push(format!("COAL {}", u.format(Quantity::BulletLength, coal)));
+    }
+    parts.join(" · ")
+}
+
+/// How a handload is put together: powder and charge, primer, brass and
+/// the cartridge's lengths.
+fn recipe(ui: &mut egui::Ui, bullet: &mut Bullet, u: &units::UnitPrefs) {
+    let summary = bullet
+        .recipe
+        .as_ref()
+        .map(|recipe| recipe_summary(recipe, u))
+        .unwrap_or_default();
+    fold(ui, "bullet-recipe", tr("Recipe"), &summary, |ui| {
+        let recipe = bullet.recipe.get_or_insert_with(Default::default);
+        grid(ui, "bullet-recipe-grid", |ui| {
+            text(ui, tr("Powder"), &mut recipe.powder);
+            optional_quantity(
+                ui,
+                tr("Charge"),
+                &mut recipe.charge_g,
+                2.5,
+                Quantity::PowderCharge,
+                0.01..=30.0,
+                0.005,
+            );
+            text(ui, tr("Primer"), &mut recipe.primer);
+            text(ui, tr("Brass"), &mut recipe.brass);
+            optional_quantity(
+                ui,
+                tr("COAL"),
+                &mut recipe.coal_mm,
+                70.0,
+                Quantity::BulletLength,
+                5.0..=200.0,
+                0.01,
+            );
+            optional_quantity(
+                ui,
+                tr("CBTO"),
+                &mut recipe.cbto_mm,
+                55.0,
+                Quantity::BulletLength,
+                5.0..=200.0,
+                0.01,
+            );
+        });
+        ui.weak(tr(
+            "COAL: cartridge overall length. CBTO: case base to the bullet's ogive, which sets \
+             the jump to the rifling.",
+        ));
+        ui.label(tr("Recipe notes"));
+        ui.text_edit_multiline(&mut recipe.notes);
+        if *recipe == ballistics_store::Recipe::default() {
+            bullet.recipe = None;
+        }
+    });
 }
 
 /// Optional BCs by velocity for the selected drag model, as some makers
@@ -1230,6 +1309,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
         ));
         if bullet.drag_curve.len() >= 2 {
             let points: PlotPoints<'_> = bullet.drag_curve.iter().map(|point| [point.mach, point.cd]).collect();
+            let accent = theme::palette(ui.ctx()).accent;
             Plot::new("drag-curve")
                 .height(140.0)
                 .width(360.0)
@@ -1239,7 +1319,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
                 .allow_boxed_zoom(false)
                 .x_axis_label("Mach")
                 .y_axis_label("Cd")
-                .show(ui, |plot_ui| plot_ui.line(Line::new("Cd", points).color(theme::BLAZE)));
+                .show(ui, |plot_ui| plot_ui.line(Line::new("Cd", points).color(accent)));
         }
         egui::CollapsingHeader::new(tr("Points")).id_salt("drag-curve-points").show(ui, |ui| {
             egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {

@@ -2,6 +2,7 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 mod app;
+mod backup;
 mod body3d;
 mod bullets;
 mod calculator;
@@ -13,6 +14,7 @@ mod figure;
 mod files;
 mod flags;
 mod google;
+mod groups;
 mod hits;
 mod http;
 mod hunting;
@@ -21,10 +23,14 @@ mod import;
 mod loads;
 mod mobile;
 mod number_field;
+mod photos;
+mod records;
 #[cfg(target_arch = "wasm32")]
 mod relaxed_idb;
+mod rifle_history;
 mod rifles;
 mod sensors;
+mod sessions;
 mod shot_log;
 mod shotguns;
 mod sight_picture;
@@ -146,7 +152,13 @@ fn app_creator(store: Result<Store, StartupError>) -> eframe::AppCreator<'static
         theme::apply(&creation_context.egui_ctx);
         cards::fonts::install(&creation_context.egui_ctx);
         match store {
-            Ok(store) => Ok(Box::new(app::App::new(store)) as Box<dyn eframe::App>),
+            Ok(store) => {
+                groups::forget_unmarked_photos(&store);
+                photos::forget_unused(&store, &creation_context.egui_ctx);
+                let mut app = app::App::new(store);
+                app.show_theme(&creation_context.egui_ctx);
+                Ok(Box::new(app) as Box<dyn eframe::App>)
+            }
             Err(error) => Ok(Box::new(error)),
         }
     })

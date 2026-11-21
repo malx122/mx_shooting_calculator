@@ -70,8 +70,9 @@ pub fn apply_style(context: &egui::Context) {
 
 /// "‹ Label": back to the previous view. Returns true when tapped.
 pub fn back_button(ui: &mut Ui, label: &str) -> bool {
+    let accent = theme::palette(ui.ctx()).accent;
     ui.add(
-        egui::Button::new(RichText::new(format!("‹ {label}")).color(theme::BLAZE))
+        egui::Button::new(RichText::new(format!("‹ {label}")).color(accent))
             .frame(false)
             .min_size(vec2(TOUCH, TOUCH)),
     )
@@ -85,12 +86,24 @@ pub fn list_row(ui: &mut Ui, title: &str, detail: &str, selected: bool) -> egui:
     let height = if detail.is_empty() { 48.0 } else { 60.0 };
     let (rect, response) = ui.allocate_exact_size(vec2(width, height), Sense::click());
     let painter = ui.painter();
+    let palette = theme::palette(ui.ctx());
     let fill = if selected || response.is_pointer_button_down_on() {
-        theme::FOREST_600
+        palette.hover
     } else {
-        theme::FOREST_700
+        palette.raised
     };
-    painter.rect_filled(rect, CornerRadius::same(10), fill);
+    let edge = if selected && !palette.dark {
+        Stroke::new(1.5_f32, palette.accent)
+    } else {
+        palette.edge
+    };
+    painter.rect(
+        rect,
+        CornerRadius::same(10),
+        fill,
+        edge,
+        egui::StrokeKind::Inside,
+    );
     let text_x = rect.left() + 14.0;
     // Text stops before the chevron, cut with "…" when too long.
     let text_width = rect.width() - 14.0 - 34.0;
@@ -102,22 +115,22 @@ pub fn list_row(ui: &mut Ui, title: &str, detail: &str, selected: bool) -> egui:
         ui.painter().layout_job(job)
     };
     if detail.is_empty() {
-        let galley = line(title, body, theme::BONE);
+        let galley = line(title, body, palette.text);
         let at = pos2(text_x, rect.center().y - galley.size().y / 2.0);
-        painter.galley(at, galley, theme::BONE);
+        painter.galley(at, galley, palette.text);
     } else {
-        let galley = line(title, body, theme::BONE);
-        painter.galley(pos2(text_x, rect.top() + 9.0), galley, theme::BONE);
-        let galley = line(detail, small, theme::BONE_MUTED);
+        let galley = line(title, body, palette.text);
+        painter.galley(pos2(text_x, rect.top() + 9.0), galley, palette.text);
+        let galley = line(detail, small, palette.text_muted);
         let at = pos2(text_x, rect.bottom() - 9.0 - galley.size().y);
-        painter.galley(at, galley, theme::BONE_MUTED);
+        painter.galley(at, galley, palette.text_muted);
     }
     painter.text(
         pos2(rect.right() - 14.0, rect.center().y),
         Align2::RIGHT_CENTER,
         "›",
         egui::FontId::proportional(22.0),
-        theme::BONE_MUTED,
+        palette.text_muted,
     );
     response
 }
@@ -139,6 +152,7 @@ pub fn sheet<R>(
     contents: impl FnOnce(&mut Ui) -> R,
 ) -> Sheet<R> {
     let screen = context.content_rect();
+    let palette = theme::palette(context);
     let mut closed = false;
     egui::Area::new(Id::unique(id).with("dim"))
         .order(Order::Middle)
@@ -181,8 +195,8 @@ pub fn sheet<R>(
             // the tab bar too.
             ui.set_max_height(screen.height());
             egui::Frame::new()
-                .fill(theme::FOREST_800)
-                .stroke(Stroke::new(1.0_f32, theme::FOREST_600))
+                .fill(palette.background)
+                .stroke(Stroke::new(1.0_f32, palette.stroke))
                 .corner_radius(if wide {
                     CornerRadius::same(14)
                 } else {
@@ -208,7 +222,7 @@ pub fn sheet<R>(
                         ui.painter().rect_filled(
                             egui::Rect::from_center_size(handle.center(), vec2(40.0, 5.0)),
                             CornerRadius::same(3),
-                            theme::FOREST_600,
+                            palette.stroke,
                         );
                     }
                     ui.horizontal(|ui| {
@@ -216,9 +230,9 @@ pub fn sheet<R>(
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let done = ui.add(
                                 egui::Button::new(
-                                    RichText::new(tr("Done")).color(theme::FOREST_900).strong(),
+                                    RichText::new(tr("Done")).color(palette.on_accent).strong(),
                                 )
-                                .fill(theme::BLAZE)
+                                .fill(palette.accent)
                                 .min_size(vec2(72.0, TOUCH)),
                             );
                             closed |= done.clicked();
