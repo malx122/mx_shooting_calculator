@@ -31,6 +31,14 @@ any release may still change things noticeably.
     your own) and how many squares across and down, and the photo is scaled
     and straightened without the whole sheet in view. A sheet's four corners
     and two points a known distance apart work too.
+  - **Find the grid:** the app looks for the target's printed grid itself,
+    once on a new photo and again on the part on screen when you press
+    **Find the grid**: it places four crossings as far apart as it can vouch
+    for and counts the squares between them, after checking the count on
+    the pixels along every edge. The scale counts once you confirm the
+    square size with one tap; the app remembers it. On paper with heavier
+    lines every few (1 inch over ¼ inch, 10 mm over 1 mm) you choose the
+    big squares or the small ones, each with its own size.
   - **Blank grid** for a target you didn't photograph, at true scale.
   - **Photos stay on the device:** reduced to 4096 pixels unless you keep
     the originals, with their location and other metadata taken out. Groups,

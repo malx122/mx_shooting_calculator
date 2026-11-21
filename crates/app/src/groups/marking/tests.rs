@@ -853,6 +853,7 @@ fn photo(context: &egui::Context) -> PhotoImage {
             egui::TextureOptions::LINEAR,
         ),
         size_px: [1280, 960],
+        ink: None,
     }
 }
 
@@ -1278,4 +1279,217 @@ fn the_discard_question_shows_and_blocks_the_keys() {
     assert_eq!(outcome, MarkingOutcome::Working);
     assert_eq!(marking.shot_count(), 1, "keys wait for the answer");
     assert!(marking.discard_asked.is_some());
+}
+
+// --- Finding the grid ---
+
+/// A photo of a plain grid, its pixels half the photo's size: lines every
+/// 40 px, 2 px wide, centred at x = 28 and y = 14 (+ 40 n).
+fn grid_photo(context: &egui::Context, lines: bool) -> PhotoImage {
+    grid_photo_with(context, lines, None)
+}
+
+/// The same, with lines 4 px wide every `heavy` lines when given.
+fn grid_photo_with(context: &egui::Context, lines: bool, heavy: Option<u32>) -> PhotoImage {
+    let (width, height) = (800u32, 600u32);
+    let on = |v: u32, shift: u32| {
+        let n = (v + shift + 1) / 40;
+        let wide = heavy.is_some_and(|k| n.is_multiple_of(k));
+        let at = (v + shift) % 40;
+        if wide {
+            !(3..=38).contains(&at)
+        } else {
+            at < 2
+        }
+    };
+    let pixels = (0..width * height)
+        .map(|i| {
+            let (x, y) = (i % width, i / width);
+            if lines && (on(x, 13) || on(y, 27)) {
+                50
+            } else {
+                235
+            }
+        })
+        .collect();
+    let mut image = photo(context);
+    image.size_px = [1600, 1200];
+    image.ink = Some(groups_vision::grid::InkImage {
+        width,
+        height,
+        pixels,
+    });
+    image
+}
+
+#[test]
+fn a_new_photo_finds_its_grid_by_itself_and_undo_takes_it_back() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let image = grid_photo(&run.context, true);
+    let mut marking = Marking::new_photo("photo".into(), None).with_grid_sizes(GridSizes {
+        last_mm: Some(5.0),
+        ..GridSizes::default()
+    });
+    assert!(!marking.unsaved());
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&image), vec![]);
+    }
+    assert!(matches!(marking.finder.search, grid::Search::Found(_)));
+    assert!(
+        marking.finder.counted(&marking.scale),
+        "Swap is not offered"
+    );
+    let corners = marking.scale.corners.clone();
+    assert_eq!(corners.len(), 4);
+    for [x, y] in &corners {
+        let off =
+            |v: f64, at: f64| ((v / 2.0 - at).rem_euclid(40.0) + 20.0).rem_euclid(40.0) - 20.0;
+        assert!(
+            off(*x, 28.0).abs() < 0.2 && off(*y, 14.0).abs() < 0.2,
+            "{corners:?}"
+        );
+    }
+    let across = ((corners[1][0] - corners[0][0]) / 80.0).round() as u32;
+    let down = ((corners[3][1] - corners[0][1]) / 80.0).round() as u32;
+    assert_eq!(
+        (marking.scale.squares_across, marking.scale.squares_down),
+        (across, down)
+    );
+    assert!(across >= 15 && down >= 10, "{across} × {down}");
+    assert_eq!(marking.scale.square_mm, 5.0);
+    assert!(matches!(marking.scale.state(), ScaleState::Ready(_)));
+    // The scale counts only once the square size is confirmed.
+    assert!(marking.finder.awaits_size(&marking.scale));
+    marking.apply(Command::Next, None);
+    assert_eq!(marking.step, Step::Scale);
+    marking.finder.confirm(&marking.scale);
+    assert!(!marking.finder.awaits_size(&marking.scale));
+    assert_eq!(marking.grid_sizes().last_mm, Some(5.0));
+    // It looks once by itself; asked again, it looks at the part on screen.
+    marking.finder.ask(false);
+    for _ in 0..2 {
+        run.frame(&mut marking, Some(&image), vec![]);
+    }
+    assert!(matches!(marking.finder.search, grid::Search::Found(_)));
+    marking.undo();
+    assert!(marking.scale.corners.is_empty());
+}
+
+#[test]
+fn a_photo_without_a_grid_says_so_and_leaves_the_taps_to_the_shooter() {
+    let mut run = Run::new(ThemeChoice::Sun, 390.0);
+    let image = grid_photo(&run.context, false);
+    let mut marking = Marking::new_photo("photo".into(), None);
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&image), vec![]);
+    }
+    assert_eq!(
+        marking.finder.search,
+        grid::Search::Failed {
+            reason: groups_vision::grid::NoGrid::NoLines,
+            corners: Vec::new(),
+        }
+    );
+    assert!(marking.scale.corners.is_empty());
+    assert!(!marking.unsaved());
+}
+
+#[test]
+fn the_last_square_size_is_kept_only_for_a_blank_scale() {
+    let sizes = GridSizes {
+        last_mm: Some(12.7),
+        ..GridSizes::default()
+    };
+    let blank = Marking::new_photo("photo".into(), None).with_grid_sizes(sizes);
+    assert_eq!(blank.scale.square_mm, 12.7);
+    let scaled = Calibration::FourCorner {
+        corners_px: [
+            [100.0, 100.0],
+            [500.0, 100.0],
+            [500.0, 400.0],
+            [100.0, 400.0],
+        ],
+        width_mm: 100.0,
+        height_mm: 75.0,
+    };
+    let kept = Marking::new_photo("photo".into(), Some(scaled)).with_grid_sizes(sizes);
+    assert_eq!(kept.scale.square_mm, 25.0);
+    assert_eq!(kept.grid_sizes().last_mm, Some(25.0));
+}
+
+#[test]
+fn edge_labels_give_lengths_to_a_tenth() {
+    assert_eq!(tenths(46.0 * 25.4), "1168.4");
+    assert_eq!(tenths(254.0), "254");
+    assert_eq!(tenths(12.7), "12.7");
+}
+
+#[test]
+fn big_and_small_squares_each_keep_their_size() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let image = grid_photo_with(&run.context, true, Some(4));
+    let mut marking = Marking::new_photo("photo".into(), None);
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&image), vec![]);
+    }
+    let grid::Search::Found(found) = &marking.finder.search else {
+        panic!("{:?}", marking.finder.search);
+    };
+    assert_eq!(found.every, 4);
+    assert_eq!(found.level, grid::Level::Big);
+    // Nothing remembered: a grid heavier every 4 is taken for inches.
+    assert_eq!(marking.scale.square_mm, 25.4);
+    let big = (marking.scale.squares_across, marking.scale.squares_down);
+    marking
+        .finder
+        .choose(grid::Level::Small, &mut marking.scale);
+    assert_eq!(marking.scale.square_mm, 25.4 / 4.0);
+    assert_eq!(
+        (marking.scale.squares_across, marking.scale.squares_down),
+        (big.0 * 4, big.1 * 4)
+    );
+    // The shooter says the small squares are 5 mm: the big ones are 20.
+    marking.scale.square_mm = 5.0;
+    marking.finder.confirm(&marking.scale);
+    marking.finder.choose(grid::Level::Big, &mut marking.scale);
+    assert_eq!(marking.scale.square_mm, 20.0);
+    let sizes = marking.finder.sizes;
+    assert_eq!(
+        (sizes.big_mm, sizes.small_mm, sizes.every),
+        (Some(20.0), Some(5.0), Some(4))
+    );
+}
+
+#[test]
+fn sizes_no_target_has_are_warned_about() {
+    let mut draft = ScaleDraft::default();
+    for corner in [
+        [100.0, 100.0],
+        [1100.0, 100.0],
+        [1100.0, 900.0],
+        [100.0, 900.0],
+    ] {
+        draft.place(corner);
+    }
+    let sight = scale::Sight {
+        can_search: true,
+        calibre_mm: Some(6.5),
+        photo_short_px: Some(1000.0),
+    };
+    let warnings = |draft: &ScaleDraft| {
+        let ScaleState::Ready(calibration) = draft.state() else {
+            panic!("a scale");
+        };
+        scale::implausible(draft, &calibration, sight)
+    };
+    // 4 × 4 inch squares: 101.6 mm, a hole 64 px across.
+    (draft.squares_across, draft.squares_down) = (4, 4);
+    assert!(warnings(&draft).is_empty(), "{:?}", warnings(&draft));
+    // 40 inches across: no target.
+    (draft.squares_across, draft.squares_down) = (40, 32);
+    assert_eq!(warnings(&draft).len(), 1, "{:?}", warnings(&draft));
+    // 1 mm squares: a sheet 4 mm wide, and a hole a fifth of the photo.
+    draft.square_mm = 1.0;
+    (draft.squares_across, draft.squares_down) = (4, 4);
+    assert_eq!(warnings(&draft).len(), 2, "{:?}", warnings(&draft));
 }

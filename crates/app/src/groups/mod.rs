@@ -63,6 +63,8 @@ pub struct GroupSettings {
     pub count_rounds: bool,
     /// The last blank grid's width and height, mm.
     pub grid_mm: [f64; 2],
+    /// The grid square sizes photos were last scaled by.
+    pub grid_sizes: marking::GridSizes,
 }
 
 impl Default for GroupSettings {
@@ -72,6 +74,7 @@ impl Default for GroupSettings {
             rank_by: RankBy::MeanRadius,
             count_rounds: true,
             grid_mm: [200.0, 200.0],
+            grid_sizes: marking::GridSizes::default(),
         }
     }
 }
@@ -590,6 +593,7 @@ impl GroupsPage {
             &imported.id,
             &pixels,
             size_px,
+            true,
         ));
         let known = data
             .groups
@@ -611,7 +615,8 @@ impl GroupsPage {
         let marking = Marking::new_photo(
             imported.id.clone(),
             known.and_then(|photo| photo.calibration),
-        );
+        )
+        .with_grid_sizes(self.settings.grid_sizes);
         actions.push(Action::KeepPhoto(Box::new(imported)));
         self.start_marking(
             marking,
@@ -936,7 +941,7 @@ impl GroupsPage {
         };
         let state = flow
             .photo(data)
-            .map(|record| self.textures.photo(ui.ctx(), photos, record));
+            .map(|record| self.textures.photo(ui.ctx(), photos, record, true));
         let image = match &state {
             Some(textures::State::Ready(image)) => Some(*image),
             Some(textures::State::Missing) => {
@@ -1003,6 +1008,7 @@ impl GroupsPage {
         save.photo = photo;
         save.view = flow.marking.view();
         self.settings.count_rounds = flow.form.count_rounds;
+        self.settings.grid_sizes = flow.marking.grid_sizes();
         flow.pending = Some(save.group.id.clone());
         actions.push(Action::SaveGroup(Box::new(save)));
     }
@@ -1760,7 +1766,7 @@ fn photo_view(
     photos: &dyn PhotoStore,
     photo: &Photo,
 ) {
-    match textures.photo(ui.ctx(), photos, photo) {
+    match textures.photo(ui.ctx(), photos, photo, false) {
         textures::State::Ready(image) => {
             let size = egui::vec2(image.size_px[0] as f32, image.size_px[1] as f32);
             let room = ui.available_size();

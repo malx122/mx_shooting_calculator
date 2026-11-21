@@ -7,6 +7,8 @@
 //! known by its id, the lowercase hex SHA-256 of the kept bytes, so the
 //! same photo imported twice is kept once.
 
+pub mod grid;
+pub mod holes;
 mod jpeg;
 mod resample;
 

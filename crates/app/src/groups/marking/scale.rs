@@ -54,9 +54,11 @@ pub fn distance_presets() -> [(f64, &'static str); 5] {
 }
 
 /// Grid squares offered, mm.
-pub fn square_presets() -> [(f64, &'static str); 5] {
+pub fn square_presets() -> [(f64, &'static str); 7] {
     [
+        (1.0, "1 mm"),
         (5.0, "5 mm"),
+        (6.35, tr("¼ inch")),
         (10.0, "10 mm"),
         (12.7, tr("½ inch")),
         (25.0, "25 mm"),
@@ -65,7 +67,7 @@ pub fn square_presets() -> [(f64, &'static str); 5] {
 }
 
 /// The most squares a side may count.
-const MAX_SQUARES: u32 = 200;
+pub const MAX_SQUARES: u32 = 200;
 
 /// Sheets offered for four corners: name, width, height (mm, portrait).
 pub fn sheet_presets() -> [(&'static str, f64, f64); 3] {
@@ -340,14 +342,21 @@ fn grid_of(width_mm: f64, height_mm: f64) -> Option<(f64, u32, u32)> {
     if sheet {
         return None;
     }
-    square_presets().into_iter().rev().find_map(|(square, _)| {
-        let count = |side: f64| {
-            let squares = (side / square).round();
-            (squares >= 1.0 && squares <= f64::from(MAX_SQUARES) && same(squares * square, side))
+    // Millimetre squares would read almost any rectangle as a grid.
+    square_presets()
+        .into_iter()
+        .rev()
+        .filter(|(square, _)| *square >= 5.0)
+        .find_map(|(square, _)| {
+            let count = |side: f64| {
+                let squares = (side / square).round();
+                (squares >= 1.0
+                    && squares <= f64::from(MAX_SQUARES)
+                    && same(squares * square, side))
                 .then_some(squares as u32)
-        };
-        Some((square, count(width_mm)?, count(height_mm)?))
-    })
+            };
+            Some((square, count(width_mm)?, count(height_mm)?))
+        })
 }
 
 /// The line telling what to do now.
@@ -473,8 +482,71 @@ fn count_field(value: &mut u32) -> NumberField<'_> {
         .max_decimals(0)
 }
 
-/// The scale step's choices: the way, the size, and what the draft gives.
-pub fn controls(ui: &mut egui::Ui, draft: &mut ScaleDraft) {
+/// The scale step's choices: the way, the size, "Find the grid" (when the
+/// photo's pixels are ready), and what the draft gives.
+/// What the scale step knows besides the draft, for its warnings.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Sight {
+    /// The photo's pixels are there to search.
+    pub can_search: bool,
+    pub calibre_mm: Option<f64>,
+    /// The photo's shorter side, px.
+    pub photo_short_px: Option<f64>,
+}
+
+/// A square size by its preset's name, else in millimetres.
+pub fn square_name(mm: f64) -> String {
+    square_presets()
+        .into_iter()
+        .find(|(preset, _)| same(*preset, mm))
+        .map_or_else(
+            || format!("{} mm", super::tenths(mm)),
+            |(_, name)| name.to_owned(),
+        )
+}
+
+/// Warnings that the scale may be off by a wrong size: a rectangle no
+/// target has, or bullet holes too small or too big to be real.
+pub fn implausible(
+    draft: &ScaleDraft,
+    calibration: &groups_core::Calibration,
+    sight: Sight,
+) -> Vec<String> {
+    let mut warnings = Vec::new();
+    let (width, height) = draft.sides_mm();
+    if width.max(height) > 600.0 || width.min(height) < 15.0 {
+        warnings.push(trf!(
+            "The rectangle comes to {} × {} mm: check the size.",
+            super::tenths(width),
+            super::tenths(height)
+        ));
+    }
+    if let Some(calibre) = sight.calibre_mm.filter(|c| *c > 0.0) {
+        let hole_px = calibre * calibration.resolution().px_per_mm();
+        if hole_px < 4.0 {
+            warnings.push(
+                tr("At this scale a bullet hole would be under 4 pixels: check the size.")
+                    .to_owned(),
+            );
+        } else if sight
+            .photo_short_px
+            .is_some_and(|short| hole_px > 0.2 * short)
+        {
+            warnings.push(
+                tr("At this scale a bullet hole would fill a fifth of the photo: check the size.")
+                    .to_owned(),
+            );
+        }
+    }
+    warnings
+}
+
+pub fn controls(
+    ui: &mut egui::Ui,
+    draft: &mut ScaleDraft,
+    finder: &mut super::grid::Finder,
+    sight: Sight,
+) {
     let palette = theme::palette(ui.ctx());
     ui.horizontal_wrapped(|ui| {
         ui.selectable_value(&mut draft.mode, ScaleMode::GridSquares, tr("Grid squares"));
@@ -485,29 +557,41 @@ pub fn controls(ui: &mut egui::Ui, draft: &mut ScaleDraft) {
         ScaleMode::GridSquares => {
             ui.horizontal_wrapped(|ui| {
                 ui.label(tr("Square"));
+                let mut chosen = false;
                 for (mm, name) in square_presets() {
                     if ui
                         .selectable_label(same(draft.square_mm, mm), name)
                         .clicked()
                     {
                         draft.square_mm = mm;
+                        chosen = true;
                     }
                 }
-                ui.add(length_field(&mut draft.square_mm));
+                chosen |= ui.add(length_field(&mut draft.square_mm)).changed();
+                if chosen {
+                    finder.confirm(draft);
+                }
             });
+            // A found count runs along the true top edge; Swap only when the
+            // rectangle looks turned.
+            let looks_turned = matches!(draft.state(), ScaleState::Ready(calibration)
+                if draft.notes(&calibration).contains(&ScaleNote::LooksTurned));
+            let offer_swap = !finder.counted(draft) || looks_turned;
             ui.horizontal_wrapped(|ui| {
                 ui.label(tr("Squares across the top"));
                 ui.add(count_field(&mut draft.squares_across));
                 ui.label(tr("× down"));
                 ui.add(count_field(&mut draft.squares_down));
-                if ui
-                    .button(tr("Swap"))
-                    .on_hover_text(tr("Swap across and down"))
-                    .clicked()
+                if offer_swap
+                    && ui
+                        .button(tr("Swap"))
+                        .on_hover_text(tr("Swap across and down"))
+                        .clicked()
                 {
                     draft.swap_sides();
                 }
             });
+            finder.ui(ui, draft, sight.can_search);
         }
         ScaleMode::TwoPoints => {
             ui.horizontal_wrapped(|ui| {
@@ -566,7 +650,11 @@ pub fn controls(ui: &mut egui::Ui, draft: &mut ScaleDraft) {
             for note in &notes {
                 ui.label(RichText::new(note_text(draft.mode, *note)).color(palette.warning));
             }
-            if notes.is_empty() {
+            let warnings = implausible(draft, &calibration, sight);
+            for warning in &warnings {
+                ui.label(RichText::new(warning).color(palette.warning));
+            }
+            if notes.is_empty() && warnings.is_empty() && !finder.awaits_size(draft) {
                 ui.label(
                     RichText::new(trf!(
                         "Scale set: {:.1} pixels per mm.",

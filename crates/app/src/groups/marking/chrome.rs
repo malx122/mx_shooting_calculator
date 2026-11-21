@@ -418,7 +418,8 @@ impl Marking {
         let narrow = mobile::is_narrow(ui.ctx());
         match self.step {
             Step::Scale => {
-                let ready = matches!(self.scale.state(), ScaleState::Ready(_));
+                let ready = matches!(self.scale.state(), ScaleState::Ready(_))
+                    && !self.finder.awaits_size(&self.scale);
                 let next = if narrow {
                     tr("Next")
                 } else {
@@ -510,7 +511,7 @@ impl Marking {
             });
             child.label(RichText::new(self.instruction(false)).color(palette.text_muted));
             if self.step == Step::Scale {
-                scale::controls(&mut child, &mut self.scale);
+                scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
             }
         }
         child.add_space(if narrow { 4.0 } else { 6.0 });
@@ -559,7 +560,7 @@ impl Marking {
                 .wrap(),
         );
         if self.step == Step::Scale {
-            scale::controls(&mut child, &mut self.scale);
+            scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
         }
         let row = child.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;

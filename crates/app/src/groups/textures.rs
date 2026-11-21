@@ -45,12 +45,14 @@ pub fn display_long_edge(context: &egui::Context) -> u32 {
     (context.input(|input| input.max_texture_side) as u32).clamp(512, most)
 }
 
-/// A texture of pixels already decoded; `size_px` is the photo's own.
+/// A texture of pixels already decoded; `size_px` is the photo's own. With
+/// `ink` it keeps the pixels for the grid search too.
 pub fn from_pixels(
     context: &egui::Context,
     id: &str,
     picture: &groups_vision::Thumbnail,
     size_px: [u32; 2],
+    ink: bool,
 ) -> PhotoImage {
     let image = egui::ColorImage::from_rgba_unmultiplied(
         [picture.width_px as usize, picture.height_px as usize],
@@ -60,6 +62,13 @@ pub fn from_pixels(
         id: id.to_owned(),
         texture: context.load_texture(format!("photo-{id}"), image, egui::TextureOptions::LINEAR),
         size_px,
+        ink: ink.then(|| {
+            groups_vision::grid::InkImage::from_rgba(
+                picture.width_px,
+                picture.height_px,
+                &picture.rgba,
+            )
+        }),
     }
 }
 
@@ -71,17 +80,25 @@ pub fn decode(
     bytes: &[u8],
     size_px: [u32; 2],
     long_edge: u32,
+    ink: bool,
 ) -> Result<PhotoImage, String> {
     let picture = groups_vision::thumbnail(bytes, long_edge).map_err(|error| error.to_string())?;
-    Ok(from_pixels(context, id, &picture, size_px))
+    Ok(from_pixels(context, id, &picture, size_px, ink))
 }
 
-fn poll(load: &mut Load, context: &egui::Context, id: &str, size_px: [u32; 2], long_edge: u32) {
+fn poll(
+    load: &mut Load,
+    context: &egui::Context,
+    id: &str,
+    size_px: [u32; 2],
+    long_edge: u32,
+    ink: bool,
+) {
     if let Load::Waiting(pending) = load
         && let Some(answer) = pending.take()
     {
         *load = match answer {
-            Ok(Some(bytes)) => match decode(context, id, &bytes, size_px, long_edge) {
+            Ok(Some(bytes)) => match decode(context, id, &bytes, size_px, long_edge, ink) {
                 Ok(image) => Load::Ready(image),
                 Err(error) => Load::Failed(error),
             },
@@ -103,13 +120,23 @@ fn state(load: &Load) -> State<'_> {
 impl Textures {
     /// The photo, at the size the device can show, asked of the store the
     /// first time.
+    /// With `ink` (while marking) it also keeps the pixels for the grid
+    /// search, reading the photo again if it was opened without them.
     pub fn photo(
         &mut self,
         context: &egui::Context,
         store: &dyn PhotoStore,
         photo: &Photo,
+        ink: bool,
     ) -> State<'_> {
-        if self.full.as_ref().is_none_or(|(id, _)| *id != photo.id) {
+        let stale = match &self.full {
+            None => true,
+            Some((id, load)) => {
+                *id != photo.id
+                    || (ink && matches!(load, Load::Ready(image) if image.ink.is_none()))
+            }
+        };
+        if stale {
             self.full = Some((photo.id.clone(), Load::Waiting(store.get(&photo.id))));
         }
         let long_edge = display_long_edge(context);
@@ -120,6 +147,7 @@ impl Textures {
             id,
             [photo.width_px, photo.height_px],
             long_edge,
+            ink,
         );
         if matches!(load, Load::Waiting(_)) {
             context.request_repaint_after(std::time::Duration::from_millis(50));
@@ -160,6 +188,7 @@ impl Textures {
             &photo.id,
             [photo.width_px, photo.height_px],
             groups_vision::THUMBNAIL_LONG_EDGE_PX,
+            false,
         );
         if matches!(load, Load::Waiting(_)) {
             context.request_repaint_after(std::time::Duration::from_millis(50));

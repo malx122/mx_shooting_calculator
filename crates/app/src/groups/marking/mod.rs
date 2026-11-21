@@ -8,6 +8,8 @@
 mod chrome;
 mod geometry;
 mod gesture;
+mod grid;
+pub use grid::GridSizes;
 mod history;
 mod live;
 mod paint;
@@ -36,6 +38,9 @@ pub struct PhotoImage {
     pub id: String,
     pub texture: egui::TextureHandle,
     pub size_px: [u32; 2],
+    /// The texture's pixels as ink for the grid search: only for a photo
+    /// opened for marking (`Textures::photo` with `ink`).
+    pub ink: Option<groups_vision::grid::InkImage>,
 }
 
 /// What marking needs to know besides the marks.
@@ -174,6 +179,12 @@ pub struct Marking {
     discard_asked: Option<f64>,
     /// The time of the frame being shown, seconds.
     now: f64,
+    finder: grid::Finder,
+    /// What the scale step's warnings need: the photo's pixels, the calibre
+    /// and the photo's size.
+    sight: scale::Sight,
+    /// The part of the photo on screen last frame, photo px.
+    visible_px: Option<[f64; 4]>,
 }
 
 /// How far (points) round a mark a press still takes it.
@@ -205,6 +216,12 @@ fn mark_bounds(space: &Space) -> Bounds {
             Bounds::new(Point::new(-0.5 * w, -0.5 * h), Point::new(0.5 * w, 0.5 * h))
         }
     }
+}
+
+/// A length to a tenth, without a trailing ".0".
+pub(super) fn tenths(mm: f64) -> String {
+    let text = format!("{mm:.1}");
+    text.strip_suffix(".0").map_or(text.clone(), str::to_owned)
 }
 
 fn xy(p: Point) -> [f64; 2] {
@@ -245,6 +262,9 @@ impl Marking {
             fit: false,
             discard_asked: None,
             now: 0.0,
+            finder: grid::Finder::new(false),
+            sight: scale::Sight::default(),
+            visible_px: None,
         }
     }
 
@@ -256,7 +276,7 @@ impl Marking {
             ScaleState::Ready(_) => Step::Aim,
             _ => Step::Scale,
         };
-        Marking::start(
+        let mut marking = Marking::start(
             scale,
             calibration,
             Marks::Photo(ballistics_store::PhotoMarks {
@@ -266,7 +286,33 @@ impl Marking {
             }),
             None,
             step,
-        )
+        );
+        marking.finder.auto = step == Step::Scale && calibration.is_none();
+        marking
+    }
+
+    /// Starts with the grid square sizes remembered on this device; a blank
+    /// scale takes the last square used.
+    pub fn with_grid_sizes(mut self, sizes: grid::GridSizes) -> Self {
+        self.finder.sizes = sizes;
+        if let Some(mm) = sizes.last_mm.filter(|mm| mm.is_finite() && *mm > 0.0)
+            && self.calibration.is_none()
+        {
+            self.scale.square_mm = mm;
+            self.committed.scale.square_mm = mm;
+            self.initial.scale.square_mm = mm;
+        }
+        self
+    }
+
+    /// The grid square sizes to remember: as confirmed, and the square the
+    /// scale was set with when it was set from grid squares.
+    pub fn grid_sizes(&self) -> grid::GridSizes {
+        let mut sizes = self.finder.sizes;
+        if self.scale.mode == scale::ScaleMode::GridSquares && self.calibration.is_some() {
+            sizes.last_mm = Some(self.scale.square_mm);
+        }
+        sizes
     }
 
     /// Starts a new group on a blank grid of this size, at the aim point.
@@ -303,6 +349,14 @@ impl Marking {
     pub fn show(&mut self, ui: &mut egui::Ui, context: &MarkingContext) -> MarkingOutcome {
         self.now = ui.input(|input| input.time);
         self.refresh_calibration();
+        self.sight = scale::Sight {
+            can_search: context.photo.is_some_and(|photo| photo.ink.is_some()),
+            calibre_mm: context.calibre_mm,
+            photo_short_px: context
+                .photo
+                .map(|photo| f64::from(photo.size_px[0].min(photo.size_px[1]))),
+        };
+        self.find_grid(context);
         let narrow = mobile::is_narrow(ui.ctx());
         let full = ui.available_rect_before_wrap();
         let live = self.live_view(&crate::units::prefs(ui.ctx()), context);
@@ -335,8 +389,55 @@ impl Marking {
         if !pointer_down && self.press.is_none() {
             self.commit();
         }
+        self.finder.after_frame(ui.ctx());
         ui.advance_cursor_after_rect(full);
         outcome
+    }
+
+    /// Runs the grid search when it is due, or once by itself on a new
+    /// photo, and places the crossings it finds.
+    fn find_grid(&mut self, context: &MarkingContext) {
+        let Some(photo) = context.photo else {
+            return;
+        };
+        let Some(ink) = photo.ink.as_ref() else {
+            return;
+        };
+        if self.step != Step::Scale || self.scale.mode != scale::ScaleMode::GridSquares {
+            if self.finder.due().is_some() {
+                self.finder.search = grid::Search::Idle;
+            }
+            return;
+        }
+        if self.finder.auto && self.scale.corners.is_empty() {
+            self.finder.auto = false;
+            self.finder.ask(true);
+            return;
+        }
+        let Some(whole) = self.finder.due() else {
+            return;
+        };
+        let to_ink = [
+            f64::from(ink.width) / f64::from(photo.size_px[0].max(1)),
+            f64::from(ink.height) / f64::from(photo.size_px[1].max(1)),
+        ];
+        let region = match (whole, self.visible_px) {
+            (false, Some([x0, y0, x1, y1])) => [
+                x0 * to_ink[0],
+                y0 * to_ink[1],
+                x1 * to_ink[0],
+                y1 * to_ink[1],
+            ],
+            _ => [0.0, 0.0, f64::from(ink.width), f64::from(ink.height)],
+        };
+        let result =
+            groups_vision::grid::find_grid(ink, region, &groups_vision::grid::Hints::default());
+        self.finder.finish(
+            result,
+            |[x, y]| [x / to_ink[0], y / to_ink[1]],
+            &mut self.scale,
+        );
+        self.selected = None;
     }
 
     /// The photo's scale, to keep on the photo record.
@@ -723,7 +824,9 @@ impl Marking {
             }
             Command::Next => match self.step {
                 Step::Scale => {
-                    if matches!(self.scale.state(), ScaleState::Ready(_)) {
+                    if matches!(self.scale.state(), ScaleState::Ready(_))
+                        && !self.finder.awaits_size(&self.scale)
+                    {
                         self.go_to(Step::Aim);
                     }
                 }
@@ -989,6 +1092,12 @@ impl Marking {
             }
         }
         let camera = geometry::clamped(camera, &extent, fit, max_scale);
+        self.visible_px = match space {
+            Space::Photo { .. } => extent
+                .intersect(&camera.visible(rect))
+                .map(|seen| [seen.min.x, seen.min.y, seen.max.x, seen.max.y]),
+            _ => None,
+        };
         self.view = Some(GroupView {
             zoom: camera.scale / fit,
             centre: space
@@ -1273,13 +1382,21 @@ impl Marking {
                     paint::outlined_line(painter, &quad[0..2], theme::BLAZE, false, false);
                     let (width, height) = if self.scale.mode == scale::ScaleMode::GridSquares {
                         (
-                            trf!("{} squares · {} mm", self.scale.squares_across, width_mm),
-                            trf!("{} squares · {} mm", self.scale.squares_down, height_mm),
+                            trf!(
+                                "{} squares · {} mm",
+                                self.scale.squares_across,
+                                tenths(width_mm)
+                            ),
+                            trf!(
+                                "{} squares · {} mm",
+                                self.scale.squares_down,
+                                tenths(height_mm)
+                            ),
                         )
                     } else {
                         (
-                            trf!("width {} mm", width_mm),
-                            trf!("height {} mm", height_mm),
+                            trf!("width {} mm", tenths(width_mm)),
+                            trf!("height {} mm", tenths(height_mm)),
                         )
                     };
                     paint::label_pill(

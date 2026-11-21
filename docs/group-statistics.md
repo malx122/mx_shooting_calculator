@@ -106,6 +106,12 @@ order, also straighten a photo taken at an angle:
     in pixels. Above **1%** it is worth a warning (two points 141 px
     apart are at 1%).
 
+### Found by the app
+
+The four grid crossings can also be found in the photo by the app rather
+than tapped; [grid-detection.md](grid-detection.md) describes how, and
+what it can't do. They are then used exactly as if tapped.
+
 ### What is refused
 
 A calibration is refused when a point or size is not a number, a size is
