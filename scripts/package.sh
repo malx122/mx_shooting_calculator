@@ -45,8 +45,12 @@ Darwin)
     codesign --force --deep --sign - "$app"
     COPYFILE_DISABLE=1 tar -czf "$out/$file-macos-update.tar.gz" -C "$work/dmg" "$name.app"
     ln -s /Applications "$work/dmg/Applications"
+    # hdiutil guesses the image's size from the folder and can guess too
+    # small ("No space left on device", as for 0.11.0 on the runner), so
+    # give it the size with room to spare; the compressed image is smaller.
+    megabytes=$(du -sm "$work/dmg" | cut -f1)
     hdiutil create -volname "$name" -srcfolder "$work/dmg" -ov -format UDZO \
-        "$out/$file-macos.dmg"
+        -size "$((megabytes * 3 / 2 + 20))m" "$out/$file-macos.dmg"
     ;;
 MINGW* | MSYS* | CYGWIN*)
     MXSC_ICO="$(cygpath -w "$PWD/$work/icons/mxsc.ico")" cargo build --release -p mxsc
