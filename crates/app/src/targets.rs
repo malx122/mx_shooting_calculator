@@ -742,7 +742,7 @@ fn preview(ui: &mut egui::Ui, target: &Target, size: egui::Vec2) {
         // to see.
         let button =
             egui::Rect::from_min_size(rect.right_top() + vec2(-112.0, 6.0), vec2(106.0, 22.0));
-        let side = ui.put(
+        let side = ui.place(
             button,
             egui::Button::new(RichText::new(tr("From the side")).small()).selected(turn.is_side()),
         );

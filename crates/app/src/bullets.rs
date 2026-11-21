@@ -170,15 +170,16 @@ impl BulletsPage {
     /// The hunter's bullets by caliber, with ways to add more. On a phone
     /// each is a big row.
     fn collection_list(&mut self, ui: &mut egui::Ui, data: &Data, phone: bool) {
+        let palette = theme::palette(ui.ctx());
         ui.horizontal_wrapped(|ui| {
             if ui
                 .add(
                     egui::Button::new(
                         RichText::new(tr("+ Add from the catalog"))
                             .strong()
-                            .color(theme::FOREST_900),
+                            .color(palette.on_accent),
                     )
-                    .fill(theme::BLAZE),
+                    .fill(palette.accent),
                 )
                 .on_hover_text(tr(
                     "Factory ammunition and component bullets, with their data",
@@ -820,6 +821,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
         ));
         if bullet.drag_curve.len() >= 2 {
             let points: PlotPoints<'_> = bullet.drag_curve.iter().map(|point| [point.mach, point.cd]).collect();
+            let accent = theme::palette(ui.ctx()).accent;
             Plot::new("drag-curve")
                 .height(140.0)
                 .width(360.0)
@@ -829,7 +831,7 @@ fn drag_curve_rows(ui: &mut egui::Ui, bullet: &mut Bullet, paste: &mut String) {
                 .allow_boxed_zoom(false)
                 .x_axis_label("Mach")
                 .y_axis_label("Cd")
-                .show(ui, |plot_ui| plot_ui.line(Line::new("Cd", points).color(theme::BLAZE)));
+                .show(ui, |plot_ui| plot_ui.line(Line::new("Cd", points).color(accent)));
         }
         egui::CollapsingHeader::new(tr("Points")).id_salt("drag-curve-points").show(ui, |ui| {
             egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {

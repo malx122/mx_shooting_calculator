@@ -816,8 +816,10 @@ fn guide(ui: &mut egui::Ui, spot: AnimalSpot, sensing: &mut Sensing) {
     let u = units::prefs(ui.ctx());
     ui.ctx()
         .request_repaint_after(std::time::Duration::from_secs(1));
+    let palette = theme::palette(ui.ctx());
     egui::Frame::new()
-        .fill(theme::FOREST_700)
+        .fill(palette.raised)
+        .stroke(palette.edge)
         .corner_radius(12)
         .inner_margin(12)
         .show(ui, |ui| {
@@ -850,7 +852,7 @@ fn guide(ui: &mut egui::Ui, spot: AnimalSpot, sensing: &mut Sensing) {
                     );
                     if distance <= spot.search_radius_m {
                         ui.colored_label(
-                            theme::MEADOW,
+                            palette.good,
                             tr("Within the search area: look around you."),
                         );
                     }
@@ -877,19 +879,16 @@ fn arrow(ui: &mut egui::Ui, degrees: f64) {
     let size = 120.0;
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), size), egui::Sense::hover());
     let painter = ui.painter_at(rect);
+    let palette = theme::palette(ui.ctx());
     let center = rect.center();
     let radius = size / 2.0 - 4.0;
-    painter.circle_stroke(
-        center,
-        radius,
-        egui::Stroke::new(1.5_f32, theme::FOREST_500),
-    );
+    painter.circle_stroke(center, radius, egui::Stroke::new(1.5_f32, palette.line));
     let angle = degrees.to_radians() as f32;
     let way = vec2(angle.sin(), -angle.cos());
     let side = vec2(-way.y, way.x);
     let tip = center + way * (radius - 6.0);
     let tail = center - way * (radius - 18.0);
-    let stroke = egui::Stroke::new(5.0_f32, theme::BLAZE);
+    let stroke = egui::Stroke::new(5.0_f32, palette.accent);
     painter.line_segment([tail, tip - way * 14.0], stroke);
     painter.add(egui::Shape::convex_polygon(
         vec![
@@ -897,7 +896,7 @@ fn arrow(ui: &mut egui::Ui, degrees: f64) {
             tip - way * 22.0 + side * 12.0,
             tip - way * 22.0 - side * 12.0,
         ],
-        theme::BLAZE,
+        palette.accent,
         egui::Stroke::NONE,
     ));
 }
@@ -905,6 +904,7 @@ fn arrow(ui: &mut egui::Ui, degrees: f64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::theme::ThemeChoice;
 
     #[test]
     fn clock_directions_read_as_hunters_say_them() {
@@ -982,8 +982,15 @@ mod tests {
             shots: vec![shot.clone()],
             ..Data::default()
         };
-        for width in [1200.0, 390.0] {
+        for (choice, width) in [
+            (ThemeChoice::Dark, 1200.0),
+            (ThemeChoice::Dark, 390.0),
+            (ThemeChoice::Sun, 1200.0),
+            (ThemeChoice::Sun, 390.0),
+        ] {
             let context = egui::Context::default();
+            crate::theme::apply(&context);
+            crate::theme::choose(&context, choice);
             let mut page = ShotLogPage::default();
             page.open(&shot);
             let input = egui::RawInput {

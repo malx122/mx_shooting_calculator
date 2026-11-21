@@ -237,7 +237,7 @@ pub enum Tone {
 fn coloured(ui: &egui::Ui, text: &str, tone: Tone) -> RichText {
     let text = RichText::new(text);
     match tone {
-        Tone::Open => text.color(crate::theme::MEADOW),
+        Tone::Open => text.color(crate::theme::palette(ui.ctx()).good),
         Tone::Closed => text.color(ui.visuals().weak_text_color()),
         Tone::Warn => text.color(ui.visuals().warn_fg_color),
         Tone::Plain => text,
@@ -484,19 +484,12 @@ pub fn pills(
 
 /// A pill: ✔ for open, ✖ for closed, ! for a warning.
 pub fn pill(ui: &mut egui::Ui, text: &str, tone: Tone, detail: &str) -> egui::Response {
+    let palette = crate::theme::palette(ui.ctx());
     let (mark, fill, colour) = match tone {
-        Tone::Open => ("✔", crate::theme::FOREST_700, crate::theme::MEADOW),
-        Tone::Closed => (
-            "✖",
-            egui::Color32::from_rgb(0x4A, 0x20, 0x20),
-            egui::Color32::from_rgb(0xF0, 0x8A, 0x7A),
-        ),
-        Tone::Warn => (
-            "!",
-            egui::Color32::from_rgb(0x4A, 0x3A, 0x17),
-            ui.visuals().warn_fg_color,
-        ),
-        Tone::Plain => ("", crate::theme::FOREST_700, ui.visuals().text_color()),
+        Tone::Open => ("✔", palette.raised, palette.good),
+        Tone::Closed => ("✖", palette.alarm_tint, palette.alarm_on_tint),
+        Tone::Warn => ("!", palette.warning_tint, ui.visuals().warn_fg_color),
+        Tone::Plain => ("", palette.raised, ui.visuals().text_color()),
     };
     let text = if mark.is_empty() {
         text.to_owned()

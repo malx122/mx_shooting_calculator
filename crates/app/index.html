@@ -18,6 +18,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="MXSC">
   <script>
+    // The theme chosen in the app (web.rs keeps it), for the loading screen
+    // and the browser's bar: Dark unless Sun was chosen, or the system's.
+    try {
+      const theme = localStorage.getItem('mxsc-theme');
+      if (theme === 'sun' || (theme === 'system' && matchMedia('(prefers-color-scheme: light)').matches)) {
+        document.documentElement.className = 'sun';
+        document.querySelector('meta[name=theme-color]').content = '#ECE5D2';
+      }
+    } catch (error) {}
     // Keep the install prompt (Chrome, Android) until the app asks for it.
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
@@ -34,6 +43,8 @@
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       color: #F1EADB; font: 15px/1.4 system-ui, sans-serif; letter-spacing: 0.04em; padding: 16px; text-align: center;
     }
+    html.sun, html.sun body { background: #ECE5D2; }
+    html.sun #loading { color: #12261A; }
   </style>
 </head>
 <body>

@@ -145,7 +145,11 @@ fn app_creator(store: Result<Store, StartupError>) -> eframe::AppCreator<'static
         theme::apply(&creation_context.egui_ctx);
         cards::fonts::install(&creation_context.egui_ctx);
         match store {
-            Ok(store) => Ok(Box::new(app::App::new(store)) as Box<dyn eframe::App>),
+            Ok(store) => {
+                let mut app = app::App::new(store);
+                app.show_theme(&creation_context.egui_ctx);
+                Ok(Box::new(app) as Box<dyn eframe::App>)
+            }
             Err(error) => Ok(Box::new(error)),
         }
     })

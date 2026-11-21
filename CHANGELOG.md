@@ -8,6 +8,12 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Sun theme:** a light, high-contrast look for reading the app in bright
+  sunlight at the range, on paper-coloured pages with dark text and deeper
+  orange, green and red. Choose **Theme** in the menu: Dark (as before),
+  Sun, or Follow the system, which switches with the device's light or dark
+  setting. The choice is kept on each device and takes effect at once; in
+  the browser the loading screen follows it too.
 - **AI assistants (MCP)** can look up a caliber's cartridge measurements,
   tolerances and how common it is, list the most popular calibers for a kind
   of hunting or competition, and save a cartridge as an STL for a
@@ -55,6 +61,12 @@ any release may still change things noticeably.
 
 ### Fixed
 
+- **Dark on light-mode devices:** a computer set to light mode could show
+  the app with egui's light defaults mixed in with the forest-green
+  headers. Dark now looks the same everywhere, and on the desktop the
+  window's title bar follows the chosen theme.
+- **Target editor on phones:** the fields no longer overlap the animal
+  preview.
 - **Updating when the data won't open:** the desktop app's page for a
   database it can't open now checks for updates (at once if you turned
   updates on) and can install one, so data saved by a newer version can be

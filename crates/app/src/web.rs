@@ -547,6 +547,33 @@ pub fn keep_storage() {
     }
 }
 
+/// The theme choice in the page's own storage, read by index.html for
+/// the loading screen.
+const THEME_KEY: &str = "mxsc-theme";
+
+/// Tells the page around the app its theme: the browser's bar takes the
+/// header's colour, and the next loading screen the chosen theme.
+pub fn show_theme(choice: crate::theme::ThemeChoice, palette: &crate::theme::Palette) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    if let (Ok(Some(storage)), Ok(serde_json::Value::String(name))) =
+        (window.local_storage(), serde_json::to_value(choice))
+    {
+        let _ = storage.set_item(THEME_KEY, &name);
+    }
+    let Some(document) = window.document() else {
+        return;
+    };
+    let [r, g, b, _] = palette.chrome.to_array();
+    if let Ok(Some(meta)) = document.query_selector("meta[name=theme-color]") {
+        let _ = meta.set_attribute("content", &format!("#{r:02X}{g:02X}{b:02X}"));
+    }
+    if let Some(root) = document.document_element() {
+        let _ = root.set_attribute("class", if palette.dark { "" } else { "sun" });
+    }
+}
+
 /// How the app can be put on the home screen.
 #[derive(Clone, Copy, PartialEq)]
 pub enum Install {

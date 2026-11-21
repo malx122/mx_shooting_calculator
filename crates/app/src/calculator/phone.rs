@@ -282,7 +282,7 @@ impl CalculatorPage {
                     let colour = if beyond {
                         ui.visuals().warn_fg_color
                     } else {
-                        theme::MEADOW
+                        theme::palette(ui.ctx()).good
                     };
                     ui.colored_label(colour, note);
                 }
@@ -376,12 +376,13 @@ impl CalculatorPage {
                         );
                     });
                     let angle = inputs.inclination_degrees;
+                    let palette = theme::palette(ui.ctx());
                     let (text, colour) = if angle > 0.5 {
-                        (tr("uphill"), theme::AMBER)
+                        (tr("uphill"), palette.warning)
                     } else if angle < -0.5 {
-                        (tr("downhill"), theme::AMBER)
+                        (tr("downhill"), palette.warning)
                     } else {
-                        (tr("level"), theme::BONE_MUTED)
+                        (tr("level"), palette.text_muted)
                     };
                     ui.colored_label(colour, text);
                     ui.weak(tr("The holds take the angle into account."));
@@ -634,12 +635,13 @@ impl ResultsView<'_> {
         if let Some(statuses) = self.statuses() {
             // One line; open it for the pills and the region.
             let mut job = egui::text::LayoutJob::default();
+            let palette = theme::palette(ui.ctx());
             for (index, pill) in statuses.pills.iter().enumerate() {
                 let (mark, colour) = match pill.tone {
-                    crate::hunting::Tone::Open => ("✔", theme::MEADOW),
-                    crate::hunting::Tone::Closed => ("✖", theme::ALARM),
+                    crate::hunting::Tone::Open => ("✔", palette.good),
+                    crate::hunting::Tone::Closed => ("✖", palette.alarm),
                     crate::hunting::Tone::Warn => ("!", ui.visuals().warn_fg_color),
-                    crate::hunting::Tone::Plain => ("·", theme::BONE_MUTED),
+                    crate::hunting::Tone::Plain => ("·", palette.text_muted),
                 };
                 job.append(
                     &format!("{mark} {}", pill.what_text()),
@@ -772,8 +774,10 @@ impl ResultsView<'_> {
         let elevation = from_radians(unit, row.elevation_correction);
         let windage = from_radians(unit, row.windage_correction);
         let u = units::prefs(ui.ctx());
+        let palette = theme::palette(ui.ctx());
         egui::Frame::new()
-            .fill(theme::FOREST_700)
+            .fill(palette.raised)
+            .stroke(palette.edge)
             .corner_radius(12)
             .inner_margin(12)
             .show(ui, |ui| {
@@ -960,8 +964,9 @@ impl Glyph<'_> {
     }
 
     fn paint(&self, painter: &egui::Painter, rect: egui::Rect) {
-        let thin = Stroke::new(1.5_f32, theme::FOREST_500);
-        let accent = Stroke::new(2.5_f32, theme::BLAZE);
+        let palette = theme::palette(painter.ctx());
+        let thin = Stroke::new(1.5_f32, palette.line);
+        let accent = Stroke::new(2.5_f32, palette.accent);
         match *self {
             Glyph::Range(share) => {
                 let y = rect.center().y + 6.0;
@@ -974,8 +979,8 @@ impl Glyph<'_> {
                 }
                 let x = x0 + (x1 - x0) * share.clamp(0.0, 1.0);
                 painter.line_segment([egui::pos2(x0, y), egui::pos2(x, y)], accent);
-                painter.circle_filled(egui::pos2(x, y), 4.0, theme::BLAZE);
-                painter.circle_filled(egui::pos2(x, y), 1.5, theme::FOREST_700);
+                painter.circle_filled(egui::pos2(x, y), 4.0, palette.accent);
+                painter.circle_filled(egui::pos2(x, y), 1.5, palette.raised);
             }
             Glyph::Angle(degrees) => {
                 let pivot = egui::pos2(rect.left() + 3.0, rect.center().y + 8.0);
@@ -984,7 +989,7 @@ impl Glyph<'_> {
                 let angle = degrees.clamp(-60.0, 60.0).to_radians();
                 let tip = pivot + vec2(angle.cos(), -angle.sin()) * reach;
                 painter.line_segment([pivot, tip], accent);
-                painter.circle_filled(pivot, 2.5, theme::BLAZE);
+                painter.circle_filled(pivot, 2.5, palette.accent);
             }
             Glyph::Wind { clock, strength } => {
                 let centre = rect.center();
@@ -995,7 +1000,7 @@ impl Glyph<'_> {
                     let dir = vec2(a.sin(), -a.cos());
                     let inner = if hour % 3 == 0 { 5.0 } else { 2.5 };
                     let stroke = if hour % 3 == 0 {
-                        Stroke::new(1.5_f32, theme::BONE_MUTED)
+                        Stroke::new(1.5_f32, palette.text_muted)
                     } else {
                         thin
                     };
@@ -1015,10 +1020,10 @@ impl Glyph<'_> {
                 let back = from * 4.5;
                 painter.add(egui::Shape::convex_polygon(
                     vec![head, head + back + side, head + back - side],
-                    theme::BLAZE,
+                    palette.accent,
                     Stroke::NONE,
                 ));
-                painter.circle_filled(centre, 2.0, theme::BONE);
+                painter.circle_filled(centre, 2.0, palette.text);
             }
             Glyph::Figure(figure) => {
                 let Some(figure) = figure else { return };
@@ -1076,17 +1081,18 @@ pub(super) fn quick_field(
     let height = if strip { 84.0 } else { 58.0 };
     let (rect, response) = ui.allocate_exact_size(vec2(width, height), Sense::click());
     let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+    let palette = theme::palette(ui.ctx());
     let fill = if response.is_pointer_button_down_on() {
-        theme::FOREST_500
+        palette.active
     } else if response.hovered() {
-        theme::FOREST_600
+        palette.hover
     } else {
-        theme::FOREST_700
+        palette.raised
     };
     let stroke = if response.hovered() || response.is_pointer_button_down_on() {
-        theme::BLAZE
+        palette.accent
     } else {
-        theme::FOREST_600
+        palette.stroke
     };
     let painter = ui.painter();
     painter.rect(
@@ -1098,7 +1104,7 @@ pub(super) fn quick_field(
     );
     let text_width = |text: &str, size: f32| {
         painter
-            .layout_no_wrap(text.to_owned(), FontId::proportional(size), theme::BONE)
+            .layout_no_wrap(text.to_owned(), FontId::proportional(size), palette.text)
             .size()
             .x
     };
@@ -1138,7 +1144,7 @@ pub(super) fn quick_field(
         Align2::LEFT_TOP,
         label,
         FontId::proportional(12.0),
-        theme::BONE_MUTED,
+        palette.text_muted,
     );
     let value_bottom = if strip {
         rect.bottom() - 9.0 - 22.0 - 4.0
@@ -1150,7 +1156,7 @@ pub(super) fn quick_field(
         Align2::LEFT_BOTTOM,
         value,
         FontId::proportional(19.0),
-        theme::BONE,
+        palette.text,
     );
     response
 }
@@ -1201,7 +1207,8 @@ fn ruler(ui: &mut Ui, metres: &mut f64, unit: units::Unit) {
         *metres = unit.base((value / 5.0).round() * 5.0);
     }
     let painter = ui.painter_at(rect);
-    painter.rect_filled(rect, 12, theme::FOREST_900);
+    let palette = theme::palette(ui.ctx());
+    painter.rect_filled(rect, 12, palette.chrome);
     let shown = unit.show(*metres);
     let center = rect.center().x;
     let first = ((shown - 80.0) / 5.0).floor() as i64;
@@ -1216,9 +1223,9 @@ fn ruler(ui: &mut Ui, metres: &mut f64, unit: units::Unit) {
         }
         let major = index % 5 == 0;
         let (top, colour, width) = if major {
-            (rect.top() + 26.0, theme::BONE, 2.0_f32)
+            (rect.top() + 26.0, palette.text, 2.0_f32)
         } else {
-            (rect.top() + 34.0, theme::BONE_MUTED, 1.2_f32)
+            (rect.top() + 34.0, palette.text_muted, 1.2_f32)
         };
         painter.line_segment(
             [pos2(x, top), pos2(x, rect.top() + 46.0)],
@@ -1230,7 +1237,7 @@ fn ruler(ui: &mut Ui, metres: &mut f64, unit: units::Unit) {
                 Align2::CENTER_BOTTOM,
                 format!("{value:.0}"),
                 FontId::proportional(12.0),
-                theme::BONE_MUTED,
+                palette.text_muted,
             );
         }
     }
@@ -1239,7 +1246,7 @@ fn ruler(ui: &mut Ui, metres: &mut f64, unit: units::Unit) {
             pos2(center, rect.top() + 6.0),
             pos2(center, rect.top() + 48.0),
         ],
-        Stroke::new(2.5_f32, theme::BLAZE),
+        Stroke::new(2.5_f32, palette.accent),
     );
     painter.add(Shape::convex_polygon(
         vec![
@@ -1247,17 +1254,17 @@ fn ruler(ui: &mut Ui, metres: &mut f64, unit: units::Unit) {
             pos2(center + 7.0, rect.top() + 6.0),
             pos2(center, rect.top() + 16.0),
         ],
-        theme::BLAZE,
+        palette.accent,
         Stroke::NONE,
     ));
     let badge = Rect::from_center_size(pos2(center, rect.bottom() - 17.0), vec2(40.0, 20.0));
-    painter.rect_filled(badge, 4, theme::BLAZE);
+    painter.rect_filled(badge, 4, palette.accent);
     painter.text(
         badge.center(),
         Align2::CENTER_CENTER,
         format!("{shown:.0}"),
         FontId::proportional(13.0),
-        theme::FOREST_900,
+        palette.on_accent,
     );
 }
 
@@ -1276,6 +1283,7 @@ fn inclinometer(ui: &mut Ui, degrees: &mut f64) {
         *degrees = degrees.clamp(-60.0, 60.0);
     }
     let painter = ui.painter_at(rect.expand(4.0));
+    let palette = theme::palette(ui.ctx());
     let at = |angle: f32, r: f32| {
         let radians = angle.to_radians();
         center + vec2(radians.cos(), -radians.sin()) * r
@@ -1286,14 +1294,14 @@ fn inclinometer(ui: &mut Ui, degrees: &mut f64) {
     }
     painter.add(Shape::convex_polygon(
         fan,
-        theme::FOREST_900,
-        Stroke::new(1.5_f32, theme::FOREST_600),
+        palette.chrome,
+        Stroke::new(1.5_f32, palette.stroke),
     ));
     for step in -6..=6 {
         let angle = step as f32 * 10.0;
         painter.line_segment(
             [at(angle, radius - 12.0), at(angle, radius)],
-            Stroke::new(1.5_f32, theme::BONE_MUTED),
+            Stroke::new(1.5_f32, palette.text_muted),
         );
         if step % 2 == 0 {
             painter.text(
@@ -1301,18 +1309,18 @@ fn inclinometer(ui: &mut Ui, degrees: &mut f64) {
                 Align2::CENTER_CENTER,
                 format!("{angle:+.0}"),
                 FontId::proportional(11.0),
-                theme::BONE_MUTED,
+                palette.text_muted,
             );
         }
     }
     painter.line_segment(
         [center, at(0.0, radius)],
-        Stroke::new(1.0_f32, theme::FOREST_600),
+        Stroke::new(1.0_f32, palette.stroke),
     );
     let tip = at(*degrees as f32, radius - 6.0);
-    painter.line_segment([center, tip], Stroke::new(4.0_f32, theme::BLAZE));
-    painter.circle(tip, 9.0, theme::BONE, Stroke::new(2.5_f32, theme::BLAZE));
-    painter.circle_filled(center, 7.0, theme::BONE);
+    painter.line_segment([center, tip], Stroke::new(4.0_f32, palette.accent));
+    painter.circle(tip, 9.0, palette.text, Stroke::new(2.5_f32, palette.accent));
+    painter.circle_filled(center, 7.0, palette.text);
 }
 
 /// Measure the angle with the phone's tilt sensor: hold the phone flat,
@@ -1335,9 +1343,13 @@ fn measure_with_phone(ui: &mut Ui, degrees: &mut f64) {
         }
         Some(tilt) => {
             let tilt = (tilt * 2.0).round() / 2.0;
-            let button = egui::Button::new(trf!("Use {tilt:+.1}° (measured now)", tilt = tilt))
-                .fill(theme::BLAZE_DEEP)
-                .min_size(vec2(ui.available_width(), 56.0));
+            let palette = theme::palette(ui.ctx());
+            let button = egui::Button::new(
+                RichText::new(trf!("Use {tilt:+.1}° (measured now)", tilt = tilt))
+                    .color(palette.on_selection),
+            )
+            .fill(palette.selection)
+            .min_size(vec2(ui.available_width(), 56.0));
             if ui.add(button).clicked() {
                 *degrees = tilt.clamp(-80.0, 80.0);
             }
@@ -1364,11 +1376,12 @@ fn wind_clock(ui: &mut Ui, clock: &mut f64) {
         }
     }
     let painter = ui.painter_at(rect.expand(2.0));
+    let palette = theme::palette(ui.ctx());
     painter.circle(
         center,
         radius,
-        theme::FOREST_900,
-        Stroke::new(2.0_f32, theme::FOREST_600),
+        palette.chrome,
+        Stroke::new(2.0_f32, palette.stroke),
     );
     let at = |hours: f64, r: f32| {
         let angle = (hours * 30.0).to_radians() as f32;
@@ -1381,11 +1394,11 @@ fn wind_clock(ui: &mut Ui, clock: &mut f64) {
         let selected =
             (wind - f64::from(hour % 12)).abs() < 0.01 || (hour == 12 && wind.abs() < 0.01);
         let (fill, text) = if selected {
-            (theme::BLAZE, theme::FOREST_900)
+            (palette.accent, palette.on_accent)
         } else if hour == 12 {
-            (theme::FOREST_800, theme::MEADOW)
+            (palette.background, palette.good)
         } else {
-            (theme::FOREST_800, theme::BONE)
+            (palette.background, palette.text)
         };
         painter.circle_filled(position, 17.0, fill);
         painter.text(
@@ -1397,14 +1410,14 @@ fn wind_clock(ui: &mut Ui, clock: &mut f64) {
         );
     }
     // The shooter in the middle, facing 12.
-    painter.circle_filled(center, 8.0, theme::BONE);
+    painter.circle_filled(center, 8.0, palette.text);
     painter.arrow(
         center - vec2(0.0, 10.0),
         vec2(0.0, -26.0),
-        Stroke::new(2.5_f32, theme::BONE),
+        Stroke::new(2.5_f32, palette.text),
     );
     // The wind, blowing in from its hour.
     let from = at(*clock, number_radius - 24.0);
     let to = at(*clock, 18.0);
-    painter.arrow(from, to - from, Stroke::new(4.0_f32, theme::BLAZE));
+    painter.arrow(from, to - from, Stroke::new(4.0_f32, palette.accent));
 }
