@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-21
+
+### Fixed
+
+- **The Mac app is built again:** 0.11.0's Mac disk image failed to build,
+  so 0.11.0 came out only on the web. 0.11.1 is the same app for all
+  systems.
+
 ## [0.11.0] - 2026-11-21
 
 ### Added
@@ -756,7 +764,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.9.2...v0.10.0
