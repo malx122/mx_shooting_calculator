@@ -1129,6 +1129,11 @@ fn choke_names_constrictions_steel_and_the_nordic_test_convert() {
         assert!((back - p40).abs() < 1e-6, "{p40}: {back}");
     }
     assert!(pellets::percent_from_nordic(100.0).is_err());
+    // A board at 30 m with a 1 m circle, and back.
+    let share = pellets::share_inside(62.0, 0.5, 30.0).unwrap() * 100.0;
+    assert!((pellets::percent_from_test(share, 0.5, 30.0).unwrap() - 62.0).abs() < 1e-6);
+    assert!(pellets::percent_from_test(50.0, 0.5, 0.0).is_err());
+    assert!(pellets::percent_from_test(50.0, -0.5, 30.0).is_err());
     assert!(pellets::sigma_at(60.0, -1.0).is_err());
     assert!(pellets::sigma_at(60.0, 1000.0).is_err());
     assert!(pellets::spread_diameter(60.0, 1.0, 30.0).is_err());

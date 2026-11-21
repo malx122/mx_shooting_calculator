@@ -8,6 +8,57 @@ any release may still change things noticeably.
 
 ### Added
 
+- **Shotguns, treated as rifles are:** a shotgun is a gun among your rifles
+  (the Rifles page is now Guns), its shells are ammunition beside your
+  bullets (the Bullets page is now Ammunition), and Calculate works with it.
+  - **Shotgun calibers in the catalog:** 20 of them, from 10/89 to .410/76,
+    with C.I.P.'s bore, chamber, pressures and steel-shot limits. A gun and a
+    shell each have a caliber; a shell fits a gun of its gauge with as long a
+    chamber or longer (a 12/70 shell in a 12/76), never the other way round.
+  - **Shells in the catalog:** Gamebore's range (186 loads and sizes) and
+    Norma's 12/70 range, formerly Gyttorp (27), from the makers' pages, on
+    the Ammunition page's catalog under Shotgun, with **Add** as for
+    bullets.
+  - **The gun:** each barrel's choke, by name or constriction (each name
+    with its stars, fraction, notches, letters and the names other countries
+    use, so you can find it by what is stamped on the tube), and for each
+    shell the pattern boards you counted with it in this gun, which replace
+    the choke's nominal pattern (as measured velocities do for a rifle).
+  - **The shell:** shot or a slug, with the velocity as the box gives it (V0,
+    V2.5, 3 ft or the British observed velocity).
+  - **On Calculate:** pick the shotgun, its shell and barrel; the range,
+    wind, target and weather are the same as for a rifle (and the angle, for
+    slugs; shot is worked out level). The shell
+    range by range: velocity, each pellet's energy, the pattern's spread,
+    the share in the Nordic test's 75 cm circle, pellets per dm², drop and
+    wind drift, with your range highlighted. Slugs get their path against
+    the sights.
+  - **The pattern on the target at true size:** a shot's pellets on the
+    animal's 3D body at your range, with those on the hit area counted. In
+    Sweden, the hunting test's circle is drawn beside it for reference.
+  - **What the law says,** per species, for Sweden (NFS 2023:8) and Finland
+    (metsästysasetus): shot or slug, gauge, Sweden's 4.1 mm limit, lead in
+    wetlands, Finland's lead ban for waterfowl and the EU's ban from 2033.
+  - **Advice, each named with its source:** Svenska Jägareförbundet's shot
+    sizes per species, Riistakeskus' and Metsästäjäliitto's ranges, and
+    the step from lead to steel. The app shows what a pattern does; it
+    doesn't judge how many pellets an animal needs.
+  - **How far shot carries,** worked out for the load, with the Swedish
+    range-safety figures beside it.
+  - **The swarm in three dimensions:** each pellet flies on its own, some
+    starting slower and the dented ones dragging more, so the shot arrives
+    as a string 1–4 m long, as measured. The table gives the string's length
+    and the energy at its back; the pattern on the target varies from shot
+    to shot as real patterns do; a side view shows the swarm as it reaches
+    the target; and with **Animal crossing at** the pattern lands on a
+    moving animal, with the lead to give it.
+  - **Shells in 3D, with their measurements:** every shotgun caliber has a
+    3D shell with a star crimp and a drawing of its C.I.P. measurements, in
+    the shotgun editor and the shell catalog, and saves as an STL for a
+    3D-printed dummy like a rifle cartridge.
+  - Researched and tested against published pellet, pattern and slug tables
+    (docs/shotgun.md). Backups, sync and the export format (version 8) carry
+    the shotguns.
 - **AI assistants (MCP)** can look up a caliber's cartridge measurements,
   tolerances and how common it is, list the most popular calibers for a kind
   of hunting or competition, and save a cartridge as an STL for a

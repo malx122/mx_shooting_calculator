@@ -7,7 +7,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-use ballistics_store::{Catalog, Construction, Country, TargetGroup};
+use ballistics_store::{
+    Catalog, ChokeName, Construction, Country, ShotMaterial, TargetGroup, VelocityAt,
+};
 
 use super::*;
 
@@ -117,8 +119,8 @@ fn string_literal(code: &str) -> Option<String> {
 }
 
 /// Texts the app shows from its data through `tr_data`: the catalog's
-/// target names, groups and hit zones, bullet constructions, the countries
-/// and their rules' levels.
+/// target names, groups and hit zones, bullet constructions, chokes, shot
+/// and where its velocity is measured, the countries and their rules' levels.
 fn data_strings() -> BTreeSet<String> {
     let catalog = Catalog::builtin();
     let mut found: BTreeSet<String> = catalog
@@ -135,6 +137,10 @@ fn data_strings() -> BTreeSet<String> {
     );
     found.extend(TargetGroup::ALL.map(|group| group.label().to_owned()));
     found.extend(Construction::ALL.map(|construction| construction.label().to_owned()));
+    found.extend(ChokeName::ALL.map(|choke| choke.label().to_owned()));
+    found.extend(ChokeName::ALL.map(|choke| choke.other_names().to_owned()));
+    found.extend(ShotMaterial::ALL.map(|material| material.label().to_owned()));
+    found.extend(VelocityAt::ALL.map(|at| at.label().to_owned()));
     for country in Country::ALL {
         found.insert(country.name().to_owned());
         found.insert(country.adjective().to_owned());

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use ballistics_store::{
     BcBand, BcModel, BcSource, Bullet, BulletKind, Catalog, CatalogBullet, CatalogKind,
-    Construction, Country, DragPoint, GRAMS_PER_GRAIN,
+    CatalogShell, Construction, Country, DragPoint, GRAMS_PER_GRAIN, Payload, Shell, VelocityAt,
 };
 use eframe::egui::{self, RichText};
 use egui_plot::{Line, Plot, PlotPoints};
@@ -26,6 +26,13 @@ enum View {
     Catalog,
 }
 
+/// What the catalog shows: rifle ammunition and bullets, or shotgun shells.
+#[derive(Clone, Copy, PartialEq)]
+enum CatalogFor {
+    Rifle,
+    Shotgun,
+}
+
 pub struct BulletsPage {
     view: View,
     /// Caliber shown in the collection list and the catalog; empty for all.
@@ -38,6 +45,14 @@ pub struct BulletsPage {
     /// A bullet added by hand as it was opened, so an untouched one isn't
     /// taken for unsaved changes.
     blank: Option<Bullet>,
+    /// A shotgun shell open in the editor instead of a bullet, and as it
+    /// was opened when new.
+    shell: Option<Shell>,
+    blank_shell: Option<Shell>,
+    /// The shotgun caliber whose shells are shown alone, as `caliber` for
+    /// bullets; in the catalog, the one its shells are shown for.
+    shotgun_caliber: Option<String>,
+    catalog_for: CatalogFor,
     catalog_text: String,
     catalog_kind: Option<CatalogKind>,
     lead_free_only: bool,
@@ -60,6 +75,10 @@ impl Default for BulletsPage {
             curve_paste: String::new(),
             editing: None,
             blank: None,
+            shell: None,
+            blank_shell: None,
+            shotgun_caliber: None,
+            catalog_for: CatalogFor::Rifle,
             catalog_text: String::new(),
             catalog_kind: None,
             lead_free_only: false,
@@ -74,16 +93,25 @@ impl BulletsPage {
     #[cfg(target_arch = "wasm32")]
     /// Views open over the list on a phone: the editor.
     pub fn depth(&self) -> usize {
-        usize::from(self.view == View::Collection && self.editing.is_some())
+        usize::from(
+            self.view == View::Collection && (self.editing.is_some() || self.shell.is_some()),
+        )
     }
 
     /// Back to the list, dropping the open editor's unsaved changes.
     pub fn back(&mut self) {
         self.editing = None;
+        self.shell = None;
     }
 
     /// The open editor has changes that aren't saved.
     pub fn unsaved(&self, data: &Data) -> bool {
+        if let Some(shell) = &self.shell {
+            return match data.shells.iter().find(|stored| stored.id == shell.id) {
+                Some(stored) => stored != shell,
+                None => self.blank_shell.as_ref() != Some(shell),
+            };
+        }
         let Some(bullet) = &self.editing else {
             return false;
         };
@@ -95,7 +123,28 @@ impl BulletsPage {
 
     pub fn show_caliber(&mut self, caliber: &str) {
         self.caliber = caliber.to_owned();
+        self.shotgun_caliber = None;
         self.view = View::Collection;
+    }
+
+    /// The collection with the shells that fit a shotgun caliber alone.
+    pub fn show_shells_for(&mut self, caliber: &str) {
+        self.shotgun_caliber = Some(caliber.to_owned());
+        self.catalog_for = CatalogFor::Shotgun;
+        self.caliber.clear();
+        self.view = View::Collection;
+    }
+
+    pub fn shell_saved(&mut self, shell: &Shell) {
+        if self.shell.as_ref().is_some_and(|open| open.id == shell.id) {
+            self.shell = Some(shell.clone());
+        }
+    }
+
+    pub fn shell_deleted(&mut self, id: &str) {
+        if self.shell.as_ref().is_some_and(|open| open.id == id) {
+            self.shell = None;
+        }
     }
 
     pub fn saved(&mut self, bullet: &Bullet) {
@@ -122,25 +171,39 @@ impl BulletsPage {
         let mut actions = Vec::new();
         egui::Panel::top("bullets-toolbar").show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
-                ui.selectable_value(&mut self.view, View::Collection, tr("My bullets"));
+                ui.selectable_value(&mut self.view, View::Collection, tr("My ammunition"));
                 ui.selectable_value(&mut self.view, View::Catalog, tr("Catalog"));
                 if self.view == View::Catalog {
                     ui.separator();
+                    ui.selectable_value(&mut self.catalog_for, CatalogFor::Rifle, tr("Rifle"));
+                    ui.selectable_value(&mut self.catalog_for, CatalogFor::Shotgun, tr("Shotgun"));
                     ui.label(tr("Caliber"));
-                    if let Some(caliber) = caliber_picker(
-                        ui,
-                        "bullets-caliber",
-                        &self.caliber,
-                        &mut self.caliber_search,
-                    ) {
-                        self.caliber = caliber.key.clone();
+                    match self.catalog_for {
+                        CatalogFor::Rifle => {
+                            if let Some(caliber) = caliber_picker(
+                                ui,
+                                "bullets-caliber",
+                                &self.caliber,
+                                &mut self.caliber_search,
+                            ) {
+                                self.caliber = caliber.key.clone();
+                            }
+                        }
+                        CatalogFor::Shotgun => {
+                            let mut key = self.shotgun_caliber.clone().unwrap_or_default();
+                            crate::widgets::shotgun_caliber_picker(ui, "shells-caliber", &mut key);
+                            if !key.is_empty() {
+                                self.shotgun_caliber = Some(key);
+                            }
+                        }
                     }
                 }
             });
         });
-        match self.view {
-            View::Collection => self.collection(ui, data, &mut actions),
-            View::Catalog => self.catalog(ui, data),
+        match (self.view, self.catalog_for) {
+            (View::Collection, _) => self.collection(ui, data, &mut actions),
+            (View::Catalog, CatalogFor::Rifle) => self.catalog(ui, data),
+            (View::Catalog, CatalogFor::Shotgun) => self.shell_catalog(ui, data),
         }
         actions
     }
@@ -150,9 +213,9 @@ impl BulletsPage {
         if mobile::is_narrow(context) {
             // On a phone: the list, or one bullet with a way back.
             egui::CentralPanel::default().show(ui, |ui| {
-                if self.editing.is_none() {
+                if self.editing.is_none() && self.shell.is_none() {
                     self.collection_list(ui, data, true);
-                } else if mobile::back_button(ui, tr("My bullets")) {
+                } else if mobile::back_button(ui, tr("My ammunition")) {
                     actions.push(Action::Back);
                 } else {
                     self.collection_editor(ui, data, actions);
@@ -187,21 +250,36 @@ impl BulletsPage {
             {
                 self.view = View::Catalog;
             }
-            if ui.button(tr("Add by hand")).clicked() {
+            if ui.button(tr("Add a bullet by hand")).clicked() {
                 let caliber = Catalog::builtin().caliber(&self.caliber);
                 let bullet = match caliber {
                     Some(caliber) => Bullet::new_manual(&caliber.key, caliber.bullet_diameter_mm),
                     None => Bullet::new_manual("", 0.0),
                 };
                 self.blank = Some(bullet.clone());
+                self.shell = None;
                 self.editing = Some(bullet);
             }
+            if ui.button(tr("Add a shotgun shell")).clicked() {
+                let shell = Shell::new(self.shotgun_caliber.as_deref().unwrap_or("12-70"));
+                self.blank_shell = Some(shell.clone());
+                self.editing = None;
+                self.shell = Some(shell);
+            }
         });
-        if !self.caliber.is_empty() {
+        let only = match &self.shotgun_caliber {
+            Some(caliber) => Some(trf!(
+                "shells for {}",
+                crate::widgets::shotgun_caliber_name(caliber)
+            )),
+            None => (!self.caliber.is_empty()).then(|| caliber_name(&self.caliber)),
+        };
+        if let Some(only) = only {
             ui.horizontal_wrapped(|ui| {
-                ui.weak(trf!("Showing {} only", caliber_name(&self.caliber)));
+                ui.weak(trf!("Showing {} only", only));
                 if ui.small_button(tr("Show all")).clicked() {
                     self.caliber.clear();
+                    self.shotgun_caliber = None;
                 }
             });
         }
@@ -212,7 +290,10 @@ impl BulletsPage {
             let mut bullets: Vec<&Bullet> = data
                 .bullets
                 .iter()
-                .filter(|bullet| self.caliber.is_empty() || bullet.caliber == self.caliber)
+                .filter(|bullet| {
+                    self.shotgun_caliber.is_none()
+                        && (self.caliber.is_empty() || bullet.caliber == self.caliber)
+                })
                 .collect();
             bullets.sort_by_key(|bullet| caliber_name(&bullet.caliber));
             for bullet in bullets {
@@ -237,13 +318,59 @@ impl BulletsPage {
                         .clicked()
                 };
                 if clicked {
+                    self.shell = None;
                     self.editing = Some(bullet.clone());
+                }
+                shown += 1;
+            }
+            let mut shells: Vec<&Shell> = data
+                .shells
+                .iter()
+                .filter(|shell| {
+                    let gun = self
+                        .shotgun_caliber
+                        .as_deref()
+                        .and_then(|key| Catalog::builtin().shotgun_caliber(key));
+                    self.caliber.is_empty()
+                        && gun.is_none_or(|gun| shell.caliber().is_some_and(|own| own.fits(gun)))
+                })
+                .collect();
+            let order = |shell: &&Shell| {
+                Catalog::builtin()
+                    .shotgun_calibers
+                    .iter()
+                    .position(|caliber| caliber.key == shell.caliber)
+            };
+            shells.sort_by_key(order);
+            for shell in shells {
+                let caliber = crate::widgets::shotgun_caliber_name(&shell.caliber);
+                if caliber != heading {
+                    ui.add_space(4.0);
+                    ui.strong(&caliber);
+                    heading = caliber;
+                }
+                let selected = self.shell.as_ref().is_some_and(|open| open.id == shell.id);
+                let clicked = if phone {
+                    let detail = if shell.is_slug() {
+                        tr("Slug")
+                    } else {
+                        tr("Shot")
+                    };
+                    mobile::list_row(ui, &shell.display_name(), detail, selected).clicked()
+                } else {
+                    ui.selectable_label(selected, shell.display_name())
+                        .clicked()
+                };
+                if clicked {
+                    self.editing = None;
+                    self.shell = Some(shell.clone());
                 }
                 shown += 1;
             }
             if shown == 0 {
                 ui.weak(tr(
-                    "No bullets here yet. Add one from the catalog or by hand.",
+                    "No ammunition here yet. Add bullets from the catalog or by hand, or a \
+                     shotgun shell.",
                 ));
             }
         });
@@ -251,8 +378,12 @@ impl BulletsPage {
 
     /// The open bullet's editor, with save, undo and delete.
     fn collection_editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        if self.shell.is_some() {
+            self.shell_editor(ui, data, actions);
+            return;
+        }
         let Some(bullet) = &mut self.editing else {
-            ui.weak(tr("Choose a bullet, or add one."));
+            ui.weak(tr("Choose a bullet or shell, or add one."));
             return;
         };
         let stored = data.bullets.iter().find(|stored| stored.id == bullet.id);
@@ -346,6 +477,279 @@ impl BulletsPage {
         }
     }
 
+    /// The open shell's editor, with save, undo and delete.
+    fn shell_editor(&mut self, ui: &mut egui::Ui, data: &Data, actions: &mut Vec<Action>) {
+        let Some(shell) = &mut self.shell else {
+            return;
+        };
+        let stored = data.shells.iter().find(|stored| stored.id == shell.id);
+        let mut cancel = false;
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                ui.heading(if stored.is_some() {
+                    tr("Edit shotgun shell")
+                } else {
+                    tr("New shotgun shell")
+                });
+                ui.add_space(4.0);
+                crate::shotguns::shell_fields(ui, shell, data.country);
+                ui.add_space(8.0);
+                let problem = shell.validate().err();
+                let changed = stored != Some(&*shell);
+                ui.horizontal_wrapped(|ui| {
+                    let save = ui.add_enabled(
+                        problem.is_none() && changed,
+                        egui::Button::new(RichText::new(tr("Save")).strong()),
+                    );
+                    if save.clicked() {
+                        actions.push(Action::SaveShell(Box::new(shell.clone())));
+                    }
+                    if let Some(stored) = stored {
+                        if changed && ui.button(tr("Undo changes")).clicked() {
+                            *shell = stored.clone();
+                        }
+                        if confirm_button(ui, "delete-shell", tr("Delete")) {
+                            actions.push(Action::DeleteShell(stored.id.clone()));
+                        }
+                    } else if ui.button(tr("Cancel")).clicked() {
+                        cancel = true;
+                    }
+                });
+                if let Some(problem) = problem {
+                    ui.colored_label(ui.visuals().warn_fg_color, problem);
+                } else if changed {
+                    ui.weak(tr("Unsaved changes"));
+                }
+                if let Some(source) = shell
+                    .catalog_id
+                    .as_deref()
+                    .and_then(|id| Catalog::builtin().shell(id))
+                {
+                    ui.separator();
+                    ui.horizontal_wrapped(|ui| {
+                        ui.weak(trf!(
+                            "Copied from the catalog (data checked {}).",
+                            source.verified_on
+                        ));
+                        ui.hyperlink_to(tr("Source"), &source.source_url)
+                            .on_hover_text(&source.source_url);
+                    });
+                    if !source.purpose.is_empty() {
+                        ui.label(&source.purpose);
+                    }
+                    if !source.notes.is_empty() {
+                        egui::CollapsingHeader::new(tr("Catalog source notes")).show(ui, |ui| {
+                            ui.label(&source.notes);
+                        });
+                    }
+                }
+                let boards = data
+                    .shotgun_loads
+                    .iter()
+                    .filter(|load| load.shell_id == shell.id && !load.patterns.is_empty())
+                    .count();
+                if stored.is_some() && boards > 0 {
+                    ui.weak(trf!(
+                        "Deleting it also deletes its pattern boards in {} guns.",
+                        boards
+                    ));
+                }
+            });
+        if cancel {
+            self.shell = None;
+        }
+    }
+
+    /// The makers' shells that fit a shotgun caliber, to add to the
+    /// collection.
+    fn shell_catalog(&mut self, ui: &mut egui::Ui, data: &Data) {
+        let catalog = Catalog::builtin();
+        let u = units::prefs(ui.ctx());
+        egui::CentralPanel::default().show(ui, |ui| {
+            let Some(caliber) = self
+                .shotgun_caliber
+                .as_deref()
+                .and_then(|key| catalog.shotgun_caliber(key))
+            else {
+                ui.heading(tr("Choose a shotgun caliber"));
+                ui.label(tr(
+                    "The catalog shows the makers' shells that fit a gun of that caliber.",
+                ));
+                let mut own: Vec<&str> = data
+                    .shotguns
+                    .iter()
+                    .map(|shotgun| shotgun.caliber.as_str())
+                    .collect();
+                own.sort_unstable();
+                own.dedup();
+                if !own.is_empty() {
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(tr("Your shotguns:"));
+                        for key in own {
+                            if ui
+                                .button(crate::widgets::shotgun_caliber_name(key))
+                                .clicked()
+                            {
+                                self.shotgun_caliber = Some(key.to_owned());
+                            }
+                        }
+                    });
+                }
+                return;
+            };
+            if let Some(printable) = caliber.printed() {
+                // The shell in 3D with its printing under it, as for rifles.
+                let (engrave, printed) = (&mut self.engrave, &mut self.printed);
+                let width = ui.available_width();
+                crate::cartridge_drawing::with_3d(ui, printable.cartridge, width, 200.0, 110.0, "shell-catalog", |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.weak(format!("{} · {}", caliber.name, printable.cartridge.source));
+                        if ui
+                            .button(tr("Save for 3D printing (STL)"))
+                            .on_hover_text(tr("The shell as large as its drawing allows, in millimetres, standing on its head"))
+                            .clicked()
+                        {
+                            let (message, failed) = crate::cartridge3d::save_stl(printable, *engrave);
+                            *printed = Some((caliber.key.clone(), message, failed));
+                        }
+                        ui.checkbox(engrave, tr("Cut the caliber's name into the side"));
+                        if let Some((key, message, failed)) = &*printed
+                            && *key == caliber.key
+                        {
+                            if *failed {
+                                ui.colored_label(ui.visuals().error_fg_color, message);
+                            } else {
+                                ui.weak(message);
+                            }
+                        }
+                    });
+                });
+                ui.separator();
+            }
+            ui.horizontal_wrapped(|ui| {
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_text)
+                        .hint_text(tr("Search maker or product")),
+                );
+                ui.checkbox(&mut self.lead_free_only, tr("Lead-free only"));
+            });
+            ui.weak(trf!(
+                "Shells that fit a {} chamber: its own and shorter ones of the same gauge.",
+                caliber.name
+            ));
+            ui.separator();
+            let query = self.catalog_text.to_lowercase();
+            let entries: Vec<&CatalogShell> = catalog
+                .shells_for(caliber)
+                .filter(|entry| !self.lead_free_only || !entry.to_collection().has_lead())
+                .filter(|entry| {
+                    query.is_empty()
+                        || format!("{} {} {}", entry.manufacturer, entry.product, entry.purpose)
+                            .to_lowercase()
+                            .contains(&query)
+                })
+                .collect();
+            if entries.is_empty() {
+                ui.weak(trf!(
+                    "Nothing in the catalog for {} with these filters.",
+                    caliber.name
+                ));
+                return;
+            }
+            let mut chosen = None;
+            egui::ScrollArea::both().show(ui, |ui| {
+                egui::Grid::new("shell-catalog")
+                    .striped(true)
+                    .spacing([12.0, 4.0])
+                    .show(ui, |ui| {
+                        for header in [
+                            "",
+                            tr("Maker"),
+                            tr("Product"),
+                            tr("Caliber"),
+                            tr("Shot"),
+                            tr("Size"),
+                            tr("Load"),
+                            tr("Velocity"),
+                            tr("Wad"),
+                            tr("Source"),
+                        ] {
+                            ui.strong(header);
+                        }
+                        ui.end_row();
+                        for entry in entries {
+                            let owned = data.shells.iter().any(|shell| {
+                                shell.catalog_id.as_deref() == Some(entry.id.as_str())
+                            });
+                            if owned {
+                                ui.weak(tr("✔ added"));
+                            } else if ui.button(tr("Add")).clicked() {
+                                chosen = Some(entry);
+                            }
+                            ui.label(&entry.manufacturer);
+                            ui.label(&entry.product).on_hover_text(&entry.purpose);
+                            ui.label(format!(
+                                "{}/{}",
+                                crate::widgets::shotgun_caliber_name(&entry.caliber)
+                                    .split('/')
+                                    .next()
+                                    .unwrap_or_default(),
+                                entry.length_mm
+                            ));
+                            match entry.payload {
+                                Payload::Shot {
+                                    material,
+                                    pellet_mm,
+                                    load_g,
+                                } => {
+                                    ui.label(tr_data(material.label()));
+                                    ui.label(format!(
+                                        "{} · {pellet_mm:.2} mm",
+                                        entry.size_label.as_deref().unwrap_or("–")
+                                    ));
+                                    ui.label(u.format(Quantity::BulletMass, load_g));
+                                }
+                                Payload::Slug { mass_g, .. } => {
+                                    ui.label(tr("Slug"));
+                                    ui.label("–");
+                                    ui.label(u.format(Quantity::BulletMass, mass_g));
+                                }
+                            }
+                            ui.label(format!(
+                                "{} {}",
+                                u.format(Quantity::Speed, entry.velocity_mps),
+                                match entry.velocity_at {
+                                    VelocityAt::Muzzle => "V0",
+                                    VelocityAt::V1 => "V1",
+                                    VelocityAt::V2_5 => "V2.5",
+                                    VelocityAt::ThreeFeet => "3 ft",
+                                    VelocityAt::Observed => "OV",
+                                }
+                            ));
+                            ui.label(entry.wad.as_deref().map_or("–", |wad| match wad {
+                                "fibre" => tr("fibre"),
+                                "plastic" => tr("plastic"),
+                                "bio" => tr("bio"),
+                                other => other,
+                            }));
+                            ui.hyperlink_to(tr("page"), &entry.source_url)
+                                .on_hover_text(&entry.source_url);
+                            ui.end_row();
+                        }
+                    });
+            });
+            if let Some(entry) = chosen {
+                let shell = entry.to_collection();
+                // Only looked at, it isn't an unsaved change.
+                self.blank_shell = Some(shell.clone());
+                self.editing = None;
+                self.shell = Some(shell);
+                self.view = View::Collection;
+            }
+        });
+    }
+
     fn catalog(&mut self, ui: &mut egui::Ui, data: &Data) {
         let context = &ui.ctx().clone();
         let catalog = Catalog::builtin();
@@ -375,13 +779,19 @@ impl BulletsPage {
                 let width = ui.available_width();
                 crate::cartridge_drawing::with_3d(ui, cartridge, width, 200.0, 110.0, "catalog", |ui| {
                     ui.vertical_centered(|ui| {
-                        ui.weak(format!("{} · {} · {}", caliber.name, cartridge.bullet.name, cartridge.source));
+                        ui.weak(match &cartridge.bullet {
+                            Some(bullet) => format!("{} · {} · {}", caliber.name, bullet.name, cartridge.source),
+                            None => format!("{} · {}", caliber.name, cartridge.source),
+                        });
                         if ui
                             .button(tr("Save for 3D printing (STL)"))
                             .on_hover_text(tr("The case as large as its drawing allows, in millimetres, standing on its head: to try magazines and feeding"))
                             .clicked()
                         {
-                            let (message, failed) = crate::cartridge3d::save_stl(caliber, *engrave);
+                            let (message, failed) = match caliber.printed() {
+                                Some(printed) => crate::cartridge3d::save_stl(printed, *engrave),
+                                None => (String::new(), true),
+                            };
                             *printed = Some((caliber.key.clone(), message, failed));
                         }
                         ui.checkbox(engrave, tr("Cut the caliber's name into the side"))

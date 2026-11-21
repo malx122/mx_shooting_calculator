@@ -1,0 +1,1250 @@
+[
+ {
+  "key": "10-89",
+  "name": "10/89",
+  "gauge": "10",
+  "length_mm": 89.0,
+  "chamber_mm": 88.9,
+  "bore_mm": 19.3,
+  "bore_range_mm": [
+   19.3,
+   20.0
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 440,
+   "max_momentum_ns": 19.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 4.0
+  },
+  "nordic_use": "rare",
+  "aliases": [
+   "10 ga 3½\"",
+   "10/89 Magnum",
+   "kal. 10/89"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page3.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf",
+   "https://ljv-sh.de/wp-content/uploads/VF_504_M_Info-Verwendung-Bleifreie-Schrote_19-02-2017.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 88.90 mm (+2.00), case max l = 88.70 mm (-2.50); bore B = 19.30 mm (+0.70). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .775+.020 in (19.69-20.19 mm). SAAMI 10 ga 3½\": chamber min 3.500 in (88.90 mm), MAP 11,000 psi. Not allowed for hunting in Sweden (NFS 2023:8 3 kap. 4 § lists no 10 gauge); allowed in Finland (metsästysasetus 17 §: gauge 10-20 for all game). Always a high-performance length (>= 73 mm), so only the high-performance steel class exists; larger than 4 mm steel needs choke <= 0.5 mm. Nordic use rating is a judgement (unverified), based on the Swedish ban and its absence from Finnish shop guides.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 10, revision 2006-09-19: cartridge maximum; crimped length SAAMI Z299.2 (10 Gauge 3½\" Smooth Bore, folded maximum)",
+   "overall_length": 78.99,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.64,
+    "t": -0.4,
+    "d": -0.24,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 23.65,
+    "rim_thickness": 1.9,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.9,
+    "body_diameter": 21.7,
+    "shoulder": null,
+    "mouth_diameter": 21.3,
+    "length": 78.99
+   },
+   "hull": {
+    "head_height": 20,
+    "open_length": 88.7,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "12-65",
+  "name": "12/65",
+  "gauge": "12",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 18.2,
+  "bore_range_mm": [
+   18.2,
+   18.9
+  ],
+  "pmax_bar": 740,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 425,
+   "max_momentum_ns": 12.0,
+   "max_shot_mm": 3.25,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": null,
+  "nordic_use": "uncommon",
+  "aliases": [
+   "12 ga 2½\"",
+   "12/65 mm",
+   "kal. 12/65"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/12-55-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 18.20 mm (+0.70). Pmax 740 bar, PK 850 bar, proof PE 930 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .725+.020 in (18.42-18.92 mm). Older and British game guns are chambered 65 mm (2½\"). CIP allows lead-loaded 67.5 mm cases (12/67) in 65 mm chambers, but never 12/70 shells. Standard steel applies (cal. 12, < 73 mm). C.I.P. sets no high-performance steel class for 12/65 (Table II starts at 12/70). Nordic use rating is a judgement (unverified): Finnish and Swedish shop guides name 70/76/89 as today's lengths and 60/65 only for old guns.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 12, revision 2018-10-17: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 56.0,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.48,
+    "t": -0.3,
+    "d": -0.28,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 22.45,
+    "rim_thickness": 1.85,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.85,
+    "body_diameter": 20.6,
+    "shoulder": null,
+    "mouth_diameter": 20.2,
+    "length": 56.0
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "12-67",
+  "name": "12/67",
+  "gauge": "12",
+  "length_mm": 67.0,
+  "chamber_mm": 67.6,
+  "bore_mm": 18.2,
+  "bore_range_mm": [
+   18.2,
+   18.9
+  ],
+  "pmax_bar": 740,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 425,
+   "max_momentum_ns": 12.0,
+   "max_shot_mm": 3.25,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   "12/67,5",
+   "12/67.5"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/12-55-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://rws-ammunition.com/en/infotainment/glossary/C/case-length"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 67.60 mm (+2.00), case max l = 67.50 mm (-2.50); bore B = 18.20 mm (+0.70). Pmax 740 bar, PK 850 bar, proof PE 930 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .725+.020 in (18.42-18.92 mm). Extra entry. 67.5 mm case made to fit both 65 and 70 mm chambers: C.I.P. Table VII notice says lead-loaded cases of 67.5 mm maximum length may be fired in 65 mm chambers. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 12, revision 2018-10-17: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 58.5,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.48,
+    "t": -0.3,
+    "d": -0.28,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 22.45,
+    "rim_thickness": 1.85,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.85,
+    "body_diameter": 20.6,
+    "shoulder": null,
+    "mouth_diameter": 20.2,
+    "length": 58.5
+   },
+   "hull": {
+    "head_height": 12,
+    "open_length": 67.5,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "12-70",
+  "name": "12/70",
+  "gauge": "12",
+  "length_mm": 70.0,
+  "chamber_mm": 69.9,
+  "bore_mm": 18.2,
+  "bore_range_mm": [
+   18.2,
+   18.9
+  ],
+  "pmax_bar": 740,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 425,
+   "max_momentum_ns": 12.0,
+   "max_shot_mm": 3.25,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 13.5,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 4.0
+  },
+  "nordic_use": "common",
+  "aliases": [
+   "12 ga 2¾\"",
+   "kal. 12/70",
+   "12/70 normalpatron",
+   "12/70 normal"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/12-55-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://www.naturvardsverket.se/vagledning-och-stod/jakt-och-vilt/jaga-blyfritt-med-hagel/",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://www.motonet.fi/artikkelit/haulikon-patruunoiden-valintaopas",
+   "https://www.gwct.org.uk/media/1106151/Proofing.pdf",
+   "https://ljv-sh.de/wp-content/uploads/VF_504_M_Info-Verwendung-Bleifreie-Schrote_19-02-2017.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 69.90 mm (+2.00), case max l = 69.80 mm (-2.50); bore B = 18.20 mm (+0.70). Pmax 740 bar, PK 850 bar, proof PE 930 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .725+.020 in (18.42-18.92 mm). SAAMI 12 ga 2¾\": chamber min 2.750 in (69.85 mm), shell 2.760 in (70.10 mm) uncrimped, MAP 11,500 psi. Naturvårdsverket calls 12 'vår vanligaste hagelkaliber' and 12/70 'en vanlig kaliber i Sverige'. Standard steel: 425 m/s, 12 Ns, steel <= 3.25 mm (+2%). High-performance steel (only from steel-proved guns, fleur-de-lys): 430 m/s, 13.5 Ns, steel > 4 mm only with choke <= 0.5 mm. Standard proof 930 bar, superior proof 1320 bar.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 12, revision 2018-10-17: cartridge maximum; crimped length SAAMI Z299.2 (12 Gauge 2¾\" Smooth Bore, folded maximum)",
+   "overall_length": 61.09,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.48,
+    "t": -0.3,
+    "d": -0.28,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 22.45,
+    "rim_thickness": 1.85,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.85,
+    "body_diameter": 20.6,
+    "shoulder": null,
+    "mouth_diameter": 20.2,
+    "length": 61.09
+   },
+   "hull": {
+    "head_height": 12,
+    "open_length": 69.8,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "12-76",
+  "name": "12/76",
+  "gauge": "12",
+  "length_mm": 76.0,
+  "chamber_mm": 76.2,
+  "bore_mm": 18.2,
+  "bore_range_mm": [
+   18.2,
+   18.9
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 15.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 4.0
+  },
+  "nordic_use": "common",
+  "aliases": [
+   "12/76 Magnum",
+   "kal. 12/76",
+   "12 ga 3\"",
+   "Magnum"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/12-55-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://www.naturvardsverket.se/vagledning-och-stod/jakt-och-vilt/jaga-blyfritt-med-hagel/",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://www.motonet.fi/artikkelit/haulikon-patruunoiden-valintaopas"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 76.20 mm (+2.00), case max l = 76.00 mm (-2.50); bore B = 18.20 mm (+0.70). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .725+.020 in (18.42-18.92 mm). SAAMI 12 ga 3\": chamber min 3.000 in (76.20 mm), MAP 11,500 psi. C.I.P. Pmax 1050 bar: every 12/76 shell is a high-performance load and needs a superior-proof (1320 bar) gun; steel 12/76 needs a steel-proved (fleur-de-lys) gun. No standard-steel 12/76 exists (standard class is < 73 mm only), but a 12/76 gun may fire 12/70 standard steel. Same limits as 12/73. Finnish shops: '12/76 (ns. Magnum)'.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 12, revision 2018-10-17: cartridge maximum; crimped length SAAMI Z299.2 (12 Gauge 3\" Smooth Bore, folded maximum)",
+   "overall_length": 67.44,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.48,
+    "t": -0.3,
+    "d": -0.28,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 22.45,
+    "rim_thickness": 1.85,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.85,
+    "body_diameter": 20.6,
+    "shoulder": null,
+    "mouth_diameter": 20.2,
+    "length": 67.44
+   },
+   "hull": {
+    "head_height": 16,
+    "open_length": 76.0,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "12-89",
+  "name": "12/89",
+  "gauge": "12",
+  "length_mm": 89.0,
+  "chamber_mm": 88.9,
+  "bore_mm": 18.2,
+  "bore_range_mm": [
+   18.2,
+   18.9
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 19.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 4.0
+  },
+  "nordic_use": "uncommon",
+  "aliases": [
+   "12/89 Super Magnum",
+   "12 ga 3½\"",
+   "3½\" Magnum",
+   "kal. 12/89"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/12-55-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://www.motonet.fi/artikkelit/haulikon-patruunoiden-valintaopas"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 88.90 mm (+2.00), case max l = 88.70 mm (-2.50); bore B = 18.20 mm (+0.70). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .725+.020 in (18.42-18.92 mm). SAAMI 12 ga 3½\": chamber min 3.500 in (88.90 mm), MAP 14,000 psi. Finnish shop guides list 89 ('ns. Supermagnum') among today's common lengths, mostly for semi-autos and goose/waterfowl. Nordic use rating is a judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 12, revision 2018-10-17: cartridge maximum; crimped length SAAMI Z299.2 (12 Gauge 3½\" Smooth Bore, folded maximum)",
+   "overall_length": 80.14,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.48,
+    "t": -0.3,
+    "d": -0.28,
+    "h": -0.47,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 22.45,
+    "rim_thickness": 1.85,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.85,
+    "body_diameter": 20.6,
+    "shoulder": null,
+    "mouth_diameter": 20.2,
+    "length": 80.14
+   },
+   "hull": {
+    "head_height": 16,
+    "open_length": 88.7,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "16-65",
+  "name": "16/65",
+  "gauge": "16",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 16.8,
+  "bore_range_mm": [
+   16.8,
+   17.3
+  ],
+  "pmax_bar": 780,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 390,
+   "max_momentum_ns": 9.5,
+   "max_shot_mm": 3.0,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": null,
+  "nordic_use": "uncommon",
+  "aliases": [
+   "16 ga 2½\"",
+   "kal. 16/65"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page6.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 16.80 mm (+0.50). Pmax 780 bar, PK 900 bar, proof PE 980 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .665+.020 in (16.89-17.40 mm). Older continental and British 16-bore guns. Standard steel applies (cal. 16, < 73 mm); C.I.P. Table II has no 16/65 high-performance steel class. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 16, revision 2010-05-26: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 56.9,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.33,
+    "t": -0.35,
+    "d": -0.23,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 20.65,
+    "rim_thickness": 1.65,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.65,
+    "body_diameter": 18.9,
+    "shoulder": null,
+    "mouth_diameter": 18.55,
+    "length": 56.9
+   },
+   "hull": {
+    "head_height": 10,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "16-67",
+  "name": "16/67",
+  "gauge": "16",
+  "length_mm": 67.0,
+  "chamber_mm": 67.6,
+  "bore_mm": 16.8,
+  "bore_range_mm": [
+   16.8,
+   17.3
+  ],
+  "pmax_bar": 780,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 390,
+   "max_momentum_ns": 9.5,
+   "max_shot_mm": 3.0,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": null,
+  "nordic_use": "uncommon",
+  "aliases": [
+   "16/67,5",
+   "16/67.5"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page6.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://www.finn.no/179358307"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 67.60 mm (+2.00), case max l = 67.50 mm (-2.50); bore B = 16.80 mm (+0.50). Pmax 780 bar, PK 900 bar, proof PE 980 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .665+.020 in (16.89-17.40 mm). Extra entry. A Norwegian shop listing names 16/67 next to 16/70 among the shells it stocks. Lead 67.5 mm cases may be fired in 65 mm chambers (C.I.P. notice). Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 16, revision 2010-05-26: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 59.4,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.33,
+    "t": -0.35,
+    "d": -0.23,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 20.65,
+    "rim_thickness": 1.65,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.65,
+    "body_diameter": 18.9,
+    "shoulder": null,
+    "mouth_diameter": 18.55,
+    "length": 59.4
+   },
+   "hull": {
+    "head_height": 10,
+    "open_length": 67.5,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "16-70",
+  "name": "16/70",
+  "gauge": "16",
+  "length_mm": 70.0,
+  "chamber_mm": 69.9,
+  "bore_mm": 16.8,
+  "bore_range_mm": [
+   16.8,
+   17.3
+  ],
+  "pmax_bar": 780,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 390,
+   "max_momentum_ns": 9.5,
+   "max_shot_mm": 3.0,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": {
+   "max_velocity_mps": 420,
+   "max_momentum_ns": 12.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 3.5
+  },
+  "nordic_use": "common",
+  "aliases": [
+   "16 ga 2¾\"",
+   "kal. 16/70"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page6.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 69.90 mm (+2.00), case max l = 69.80 mm (-2.50); bore B = 16.80 mm (+0.50). Pmax 780 bar, PK 900 bar, proof PE 980 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .665+.020 in (16.89-17.40 mm). SAAMI 16 ga 2¾\": bore .665 in, chamber min 2.750 in, MAP 11,500 psi. Varuste.net (Finland): 'Tavallisimmat haulikot tänä päivänä käsittävät 12-, 16- ja 20 kaliiperiset'. Standard steel 390 m/s, 9.5 Ns, <= 3.00 mm; high-performance steel 420 m/s, 12 Ns, steel > 3.5 mm only with choke <= 0.5 mm. Standard proof 980 bar. C.I.P. also lists 16/76 (1050 bar).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 16, revision 2010-05-26: cartridge maximum; crimped length SAAMI Z299.2 (16-Gauge 2¾\" Smooth Bore (REVISED), folded maximum)",
+   "overall_length": 61.98,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.33,
+    "t": -0.35,
+    "d": -0.23,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 20.65,
+    "rim_thickness": 1.65,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.65,
+    "body_diameter": 18.9,
+    "shoulder": null,
+    "mouth_diameter": 18.55,
+    "length": 61.98
+   },
+   "hull": {
+    "head_height": 10,
+    "open_length": 69.8,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "20-65",
+  "name": "20/65",
+  "gauge": "20",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 15.7,
+  "bore_range_mm": [
+   15.7,
+   16.2
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 410,
+   "max_momentum_ns": 9.3,
+   "max_shot_mm": 3.0,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": null,
+  "nordic_use": "uncommon",
+  "aliases": [
+   "20 ga 2½\"",
+   "kal. 20/65"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-20-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 15.70 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .615+.020 in (15.62-16.13 mm). Older guns. Standard steel applies (cal. 20, < 73 mm); no high-performance steel class for 20/65. C.I.P. requires 20-gauge cases to be yellow. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 20, revision 2020-11-10: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 57.0,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.22,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 19.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 17.7,
+    "shoulder": null,
+    "mouth_diameter": 17.35,
+    "length": 57.0
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "20-70",
+  "name": "20/70",
+  "gauge": "20",
+  "length_mm": 70.0,
+  "chamber_mm": 69.9,
+  "bore_mm": 15.7,
+  "bore_range_mm": [
+   15.7,
+   16.2
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": {
+   "max_velocity_mps": 410,
+   "max_momentum_ns": 9.3,
+   "max_shot_mm": 3.0,
+   "max_shot_any_choke_mm": null
+  },
+  "high_performance_steel": {
+   "max_velocity_mps": 410,
+   "max_momentum_ns": 11.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 3.25
+  },
+  "nordic_use": "common",
+  "aliases": [
+   "20 ga 2¾\"",
+   "kal. 20/70"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-20-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://ljv-sh.de/wp-content/uploads/VF_504_M_Info-Verwendung-Bleifreie-Schrote_19-02-2017.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 69.90 mm (+2.00), case max l = 69.80 mm (-2.50); bore B = 15.70 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .615+.020 in (15.62-16.13 mm). SAAMI 20 ga 2¾\": bore .615 in, chamber min 2.750 in, MAP 12,000 psi. Standard steel 410 m/s, 9.3 Ns, <= 3.00 mm (C.I.P. XXXII-45, 2014; the 2007 rule was 390 m/s and 2.60 mm, still printed in the 2017 Munich proof-house sheet). High-performance steel 410 m/s, 11 Ns, steel > 3.25 mm only with choke <= 0.5 mm. Standard proof 1040 bar.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 20, revision 2020-11-10: cartridge maximum; crimped length SAAMI Z299.2 (20 Gauge 2¾\" Smooth Bore, folded maximum)",
+   "overall_length": 62.1,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.22,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 19.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 17.7,
+    "shoulder": null,
+    "mouth_diameter": 17.35,
+    "length": 62.1
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 69.8,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "20-76",
+  "name": "20/76",
+  "gauge": "20",
+  "length_mm": 76.0,
+  "chamber_mm": 76.2,
+  "bore_mm": 15.7,
+  "bore_range_mm": [
+   15.7,
+   16.2
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 12.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 3.25
+  },
+  "nordic_use": "common",
+  "aliases": [
+   "20/76 Magnum",
+   "20 ga 3\"",
+   "kal. 20/76"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-20-en.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 76.20 mm (+2.00), case max l = 76.00 mm (-2.50); bore B = 15.70 mm (+0.50). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .615+.020 in (15.62-16.13 mm). SAAMI 20 ga 3\": chamber min 3.000 in (76.20 mm), MAP 12,000 psi. Always high-performance (>= 73 mm, 1050 bar). Finnish shops sell it as '20/76 Magnum'. Nordic use rating is a judgement (unverified). C.I.P. also lists 20/58 and 20/89.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 20, revision 2020-11-10: cartridge maximum; crimped length SAAMI Z299.2 (20 Gauge 3\" Smooth Bore, folded maximum)",
+   "overall_length": 68.45,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.22,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 19.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 17.7,
+    "shoulder": null,
+    "mouth_diameter": 17.35,
+    "length": 68.45
+   },
+   "hull": {
+    "head_height": 16,
+    "open_length": 76.0,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "24-65",
+  "name": "24/65",
+  "gauge": "24",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 14.7,
+  "bore_range_mm": [
+   14.7,
+   15.2
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   "24 ga 2½\"",
+   "kal. 24"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page8.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 14.70 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). No SAAMI standard. C.I.P. also lists 24/63,5 and 24/70. C.I.P. sets no steel classes (standard or high-performance) for 24 gauge. Sweden: allowed only for the small game listed in NFS 2023:8 3 kap. 14 §; Finland: gauges smaller than 20 only for the small game in metsästysasetus 17 §. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 24, revision 2006-09-19: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 57.8,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.2,
+    "h": -0.5,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 18.45,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 16.75,
+    "shoulder": null,
+    "mouth_diameter": 16.45,
+    "length": 57.8
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "28-65",
+  "name": "28/65",
+  "gauge": "28",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 13.8,
+  "bore_range_mm": [
+   13.8,
+   14.3
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   "28 ga 2½\"",
+   "kal. 28/65"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-28-eng-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 13.80 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .545+.020 in (13.84-14.35 mm). C.I.P. also lists 28/58,5 and 28/63,5. No standard-steel class for 28 gauge. Sweden and Finland restrict 28 gauge to listed small game. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 28, revision 2017-05-17: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 58.4,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.38,
+    "t": -0.35,
+    "d": -0.18,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 17.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 15.85,
+    "shoulder": null,
+    "mouth_diameter": 15.55,
+    "length": 58.4
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "28-70",
+  "name": "28/70",
+  "gauge": "28",
+  "length_mm": 70.0,
+  "chamber_mm": 69.9,
+  "bore_mm": 13.8,
+  "bore_range_mm": [
+   13.8,
+   14.3
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 400,
+   "max_momentum_ns": 7.0,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 3.0
+  },
+  "nordic_use": "uncommon",
+  "aliases": [
+   "28 ga 2¾\"",
+   "kal. 28/70"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-28-eng-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 69.90 mm (+2.00), case max l = 69.80 mm (-2.50); bore B = 13.80 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .545+.020 in (13.84-14.35 mm). SAAMI 28 ga 2¾\": bore .545 in, chamber min 2.750 in, MAP 12,500 psi. Varuste.net calls 28 and .410 'erikoisuuksia' (specialities) in its range. High-performance steel 400 m/s, 7.0 Ns, steel > 3 mm only with choke <= 0.5 mm; no standard-steel class. Restricted to listed small game in Sweden and Finland.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 28, revision 2017-05-17: cartridge maximum; crimped length SAAMI Z299.2 (28 Gauge 2¾\" Smooth Bore, folded maximum)",
+   "overall_length": 63.5,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.38,
+    "t": -0.35,
+    "d": -0.18,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 17.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 15.85,
+    "shoulder": null,
+    "mouth_diameter": 15.55,
+    "length": 63.5
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 69.8,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "28-76",
+  "name": "28/76",
+  "gauge": "28",
+  "length_mm": 76.0,
+  "chamber_mm": 76.2,
+  "bore_mm": 13.8,
+  "bore_range_mm": [
+   13.8,
+   14.3
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 8.5,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 3.0
+  },
+  "nordic_use": "rare",
+  "aliases": [
+   "28 ga 3\"",
+   "28/76 Magnum"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabvii-28-eng-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 76.20 mm (+2.00), case max l = 76.00 mm (-2.50); bore B = 13.80 mm (+0.50). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .545+.020 in (13.84-14.35 mm). Extra entry (C.I.P. since 2010). Always high-performance (1050 bar). No SAAMI equivalent. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 28, revision 2017-05-17: cartridge maximum; crimped length SAAMI Z299.2 (28-Gauge 3\" Smooth Bore (new cartridge, public introduction), folded maximum)",
+   "overall_length": 69.85,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.38,
+    "t": -0.35,
+    "d": -0.18,
+    "h": -0.49,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 17.4,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 15.85,
+    "shoulder": null,
+    "mouth_diameter": 15.55,
+    "length": 69.85
+   },
+   "hull": {
+    "head_height": 16,
+    "open_length": 76.0,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "32-65",
+  "name": "32/65",
+  "gauge": "32",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 12.7,
+  "bore_range_mm": [
+   12.7,
+   13.2
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   "32 ga 2½\"",
+   "kal. 32"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/tabviical-en-page10.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 12.70 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). No SAAMI standard. C.I.P. also lists 32/50,7, 32/60, 32/63,5, 32/70 and Russian 32/65 RUS, 32/70 RUS. No steel classes. Restricted to listed small game in Sweden and Finland. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 32, revision 2006-09-19: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 58.7,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.15,
+    "h": -0.35,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 16.1,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 14.55,
+    "shoulder": null,
+    "mouth_diameter": 14.25,
+    "length": 58.7
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "410-63.5",
+  "name": ".410/63.5",
+  "gauge": ".410",
+  "length_mm": 63.5,
+  "chamber_mm": 63.6,
+  "bore_mm": 10.2,
+  "bore_range_mm": [
+   10.2,
+   10.7
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   ".410 2½\"",
+   "410/63,5",
+   "36",
+   "36/63.5",
+   "kal. 36"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/410-en-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf",
+   "https://fiocchi.com/en/870883.html"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 63.60 mm (+2.00), case max l = 63.50 mm (-2.50); bore B = 10.20 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .410+.020 in (10.41-10.92 mm). SAAMI .410 2½\": bore .410 in, chamber min 2.500 in (63.50 mm), MAP 12,500 psi. The C.I.P. sheet gives '36' as the alternative name for .410; in Italy and Europe '36' is used mainly for the shorter .410 shells (Fiocchi markets e.g. 36/63,5). C.I.P. lists 410/63,5 and 410/65 separately (see 410-65). No steel classes below 76 mm. Finland: nothing smaller than 36 allowed at all, .410/36 only for listed small game; Sweden: listed small game only. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 410, revision 2016-05-18: cartridge maximum; crimped length SAAMI Z299.2 (410 Bore 2½\" Smooth Bore, folded maximum)",
+   "overall_length": 59.94,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.11,
+    "h": -0.38,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 13.6,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 12.0,
+    "shoulder": null,
+    "mouth_diameter": 11.75,
+    "length": 59.94
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 63.5,
+    "crimped_length_estimated": false
+   }
+  }
+ },
+ {
+  "key": "410-65",
+  "name": ".410/65",
+  "gauge": ".410",
+  "length_mm": 65.0,
+  "chamber_mm": 65.1,
+  "bore_mm": 10.2,
+  "bore_range_mm": [
+   10.2,
+   10.7
+  ],
+  "pmax_bar": 830,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": null,
+  "nordic_use": "rare",
+  "aliases": [
+   "36/65",
+   "410/65",
+   "kal. 36/65"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/410-en-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.a-alvarez.com/en/53682-trust-smalls-cartridges"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 65.10 mm (+2.00), case max l = 65.00 mm (-2.50); bore B = 10.20 mm (+0.50). Pmax 830 bar, PK 950 bar, proof PE 1040 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .410+.020 in (10.41-10.92 mm). Extra entry. C.I.P. 410/65 is distinct from 410/63,5; a Spanish shop sells Trust 'Start Small 36/65'. Do not merge with 410/63.5 when matching chambers: a 65 mm shell is 1.5 mm longer than a 63.5 mm chamber's nominal length. Nordic use: judgement (unverified).",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 410, revision 2016-05-18: cartridge maximum; crimped length estimated from the open length",
+   "overall_length": 60.7,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.11,
+    "h": -0.38,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 13.6,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 12.0,
+    "shoulder": null,
+    "mouth_diameter": 11.75,
+    "length": 60.7
+   },
+   "hull": {
+    "head_height": 8,
+    "open_length": 65.0,
+    "crimped_length_estimated": true
+   }
+  }
+ },
+ {
+  "key": "410-76",
+  "name": ".410/76",
+  "gauge": ".410",
+  "length_mm": 76.0,
+  "chamber_mm": 76.2,
+  "bore_mm": 10.2,
+  "bore_range_mm": [
+   10.2,
+   10.7
+  ],
+  "pmax_bar": 1050,
+  "pmax_high_performance_bar": 1050,
+  "standard_steel": null,
+  "high_performance_steel": {
+   "max_velocity_mps": 430,
+   "max_momentum_ns": 4.2,
+   "max_shot_mm": null,
+   "max_shot_any_choke_mm": 2.5
+  },
+  "nordic_use": "uncommon",
+  "aliases": [
+   ".410 3\"",
+   "36/76",
+   ".410 Magnum",
+   "36 Magnum",
+   "kal. .410"
+  ],
+  "sources": [
+   "http://bobp.cip-bobp.org/uploads/tdcc/tab-vii/410-en-2.pdf",
+   "http://bobp.cip-bobp.org/en/tdcc_public?page=1&cartridge_type_id=7",
+   "https://www.boe.es/boe/dias/2015/09/09/pdfs/BOE-A-2015-9720.pdf",
+   "https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf",
+   "https://varuste.net/haulikonpatruunan-valinta",
+   "https://www.naturvardsverket.se/4ace7f/globalassets/nfs/2023/nfs-2023-8.pdf",
+   "https://data.finlex.fi/api/media/statute/40667/mainPdf/main.pdf"
+  ],
+  "notes": "C.I.P. TDCC Table VII: chamber min L = 76.20 mm (+2.00), case max l = 76.00 mm (-2.50); bore B = 10.20 mm (+0.50). Pmax 1050 bar, PK 1200 bar, proof PE 1320 bar; high-performance loads (1050 bar) need a gun with superior proof (1320 bar). SAAMI bore .410+.020 in (10.41-10.92 mm). SAAMI .410 3\": chamber min 3.000 in (76.20 mm), MAP 13,500 psi. Always high-performance (1050 bar). High-performance steel 430 m/s, 4.2 Ns, steel > 2.5 mm only with choke <= 0.5 mm. The commonest .410 length in shops; varuste.net lists .410 among its specialities. Restricted to listed small game in Sweden and Finland.",
+  "cartridge": {
+   "source": "C.I.P. TDCC Table VII, Cal. 410, revision 2016-05-18: cartridge maximum; crimped length SAAMI Z299.2 (410 Bore 3\" Smooth Bore, folded maximum)",
+   "overall_length": 72.14,
+   "primer_diameter": 6.15,
+   "tolerances": {
+    "g": -0.4,
+    "t": -0.35,
+    "d": -0.11,
+    "h": -0.38,
+    "l": -2.5
+   },
+   "case": {
+    "rim_diameter": 13.6,
+    "rim_thickness": 1.55,
+    "head_bevel": null,
+    "groove": null,
+    "body_start": 1.55,
+    "body_diameter": 12.0,
+    "shoulder": null,
+    "mouth_diameter": 11.75,
+    "length": 72.14
+   },
+   "hull": {
+    "head_height": 16,
+    "open_length": 76.0,
+    "crimped_length_estimated": false
+   }
+  }
+ }
+]

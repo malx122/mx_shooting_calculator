@@ -119,6 +119,43 @@ and still be within the standard.
 - **SAAMI prints one on almost every value,** and gives the overall length
   as a range. For SAAMI cases, `"L6"` is the minimum less the maximum.
 
+## Shotgun shells
+
+Every caliber in `catalog/shotgun-calibers.json` has a `cartridge` too,
+shown in the shotgun editor and the Ammunition page's shell catalog and
+saved as an STL the same way. A shell has no bullet; it has a `hull`
+instead.
+
+- **Measurements:** the rim (g), its thickness (t), the body ahead of the
+  rim (d) and the mouth (h) are the cartridge maximums of C.I.P.'s TDCC
+  table VII, with its tolerances. The body tapers evenly from d to h.
+- **Lengths:** C.I.P. gives the shell's length opened, as fired (l, the
+  length in the caliber's name; `hull.open_length`). The model is the
+  loaded shell, crimped, so `case.length` and `overall_length` are the
+  crimped length: SAAMI Z299.2's folded maximum where SAAMI has the shell,
+  otherwise estimated from the open length, shortened about as much as
+  SAAMI's shells of that gauge (`hull.crimped_length_estimated`; the
+  source says so). Real shells vary by a few millimetres with their crimp.
+- **The brass head** (`hull.head_height`) is not standardised: makers use
+  low and high heads. The value is a typical one, and the drawing says so.
+- **Primer:** 6.15 mm, the usual shotshell (209) primer.
+- **The crimp:** every shell gets the same 8-fold star crimp, because a
+  shell's crimp can't be told from its caliber. The top's rounded edge
+  folds down into a shallow dip, and the folds are pressed in along eight
+  lines (`StarFolds`).
+
+| Letter | What it is | Field in `cartridge` |
+|---|---|---|
+| g | rim diameter | `case.rim_diameter` |
+| t | rim thickness | `case.rim_thickness` (and `body_start`) |
+| d | body diameter ahead of the rim | `case.body_diameter` |
+| h | diameter at the mouth | `case.mouth_diameter` |
+| l | length opened (fired) | `hull.open_length` |
+| L | length crimped, as loaded | `case.length`, `overall_length` |
+
+The tests check that each shell's open length is its caliber's, that the
+crimp shortens it by 3–11.5 mm, and that the printed solid is closed.
+
 ## Adding a caliber
 
 1. Find its sheet in the C.I.P. lists above (or the SAAMI standard).

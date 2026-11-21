@@ -28,6 +28,7 @@ use crate::units::{self, Quantity, UnitPrefs, quantity};
 use crate::widgets::{caliber_name, fold, grid, number};
 
 mod phone;
+mod shotgun;
 
 const RAD_PER_MOA: f64 = std::f64::consts::PI / (180.0 * 60.0);
 /// Shortest range the engine flies, so the ethical limit can be found even
@@ -124,6 +125,8 @@ pub struct Inputs {
     pub trajectory_3d: bool,
     /// The desktop's view under the results.
     pub lower_view: LowerView,
+    /// For a shotgun: which of its barrels, counted from 0.
+    pub barrel: usize,
 }
 
 impl Default for Inputs {
@@ -169,6 +172,7 @@ impl Default for Inputs {
             illumination: false,
             trajectory_3d: false,
             lower_view: LowerView::Table,
+            barrel: 0,
         }
     }
 }
@@ -369,6 +373,8 @@ pub struct CalculatorPage {
     hits: Option<(HitsKey, Option<Hits>)>,
     /// The hit chance at each of the range table's ranges.
     row_chances: Option<(RowChancesKey, Vec<Option<f64>>)>,
+    /// A shotgun's results, when one is chosen.
+    shotgun: crate::shotguns::ShotgunResults,
 }
 
 impl CalculatorPage {
@@ -401,6 +407,7 @@ impl CalculatorPage {
             generation: 0,
             hits: None,
             row_chances: None,
+            shotgun: crate::shotguns::ShotgunResults::default(),
         }
     }
 
@@ -589,6 +596,10 @@ impl CalculatorPage {
             crate::weather::apply(&report, &mut self.inputs);
         }
         let mut actions = Vec::new();
+        if let Some(shotgun) = self.selected_shotgun(data) {
+            self.show_shotgun(ui, data, &shotgun, &mut actions);
+            return actions;
+        }
         let rifle = self.selected_rifle(data).cloned();
         let bullets: Vec<&Bullet> = rifle
             .as_ref()
@@ -671,7 +682,7 @@ impl CalculatorPage {
                     "Rifles and the bullets you shoot in them are kept in your own database.",
                 ));
                 ui.horizontal(|ui| {
-                    if ui.button(tr("Go to Rifles")).clicked() {
+                    if ui.button(tr("Go to Guns")).clicked() {
                         actions.push(Action::Goto(Page::Rifles));
                     }
                     if ui
@@ -693,7 +704,7 @@ impl CalculatorPage {
                 ui.label(tr(
                     "Add factory ammunition or a handload from the catalog, or enter one by hand.",
                 ));
-                if ui.button(tr("Go to Bullets")).clicked() {
+                if ui.button(tr("Go to Ammunition")).clicked() {
                     actions.push(Action::ShowBulletsFor(rifle.caliber.clone()));
                 }
             }
@@ -940,7 +951,7 @@ impl CalculatorPage {
     }
 
     /// The rifle and bullet, and a line on the bullet in this rifle with a
-    /// way to its setup on the Rifles page.
+    /// way to its setup on the Guns page.
     #[allow(clippy::too_many_arguments)]
     fn equipment(
         &mut self,
@@ -956,23 +967,13 @@ impl CalculatorPage {
         ui.heading(tr("Calculate"));
         ui.add_space(4.0);
         grid(ui, "equipment", |ui| {
-            ui.label(tr("Rifle"));
+            ui.label(tr("Gun"));
             let combo = egui::ComboBox::from_id_salt("rifle")
                 .width(240.0)
                 .selected_text(
                     rifle.map_or(tr("None").to_owned(), |rifle| shortened(&rifle.name, 40)),
                 )
-                .show_ui(ui, |ui| {
-                    for candidate in &data.rifles {
-                        let text =
-                            format!("{} ({})", candidate.name, caliber_name(&candidate.caliber));
-                        let selected = rifle.is_some_and(|rifle| rifle.id == candidate.id);
-                        if ui.selectable_label(selected, text).clicked() {
-                            self.inputs.rifle_id = Some(candidate.id.clone());
-                            self.inputs.bullet_id = None;
-                        }
-                    }
-                });
+                .show_ui(ui, |ui| self.gun_choices(ui, data));
             if let Some(rifle) = rifle {
                 combo.response.on_hover_text(trf!(
                     "{} · zero {} · sight {} · 1:{} {} · clicks {} {}",
@@ -1053,6 +1054,61 @@ impl CalculatorPage {
         });
     }
 
+    /// The guns to choose from, rifles and shotguns together.
+    fn gun_choices(&mut self, ui: &mut egui::Ui, data: &Data) {
+        let mut guns: Vec<(String, String, String)> = data
+            .rifles
+            .iter()
+            .map(|rifle| {
+                (
+                    rifle.id.clone(),
+                    rifle.name.clone(),
+                    caliber_name(&rifle.caliber),
+                )
+            })
+            .chain(data.shotguns.iter().map(|shotgun| {
+                (
+                    shotgun.id.clone(),
+                    shotgun.name.clone(),
+                    crate::widgets::shotgun_caliber_name(&shotgun.caliber),
+                )
+            }))
+            .collect();
+        guns.sort_by_key(|(_, name, _)| name.to_lowercase());
+        for (id, name, detail) in guns {
+            let selected = self.inputs.rifle_id.as_deref() == Some(id.as_str());
+            if ui
+                .selectable_label(selected, format!("{name} ({detail})"))
+                .clicked()
+                && !selected
+            {
+                self.inputs.rifle_id = Some(id);
+                self.inputs.bullet_id = None;
+                self.inputs.barrel = 0;
+            }
+        }
+    }
+
+    /// The chosen gun when it is a shotgun (or the only guns are shotguns).
+    fn selected_shotgun(&mut self, data: &Data) -> Option<ballistics_store::Shotgun> {
+        let chosen = self.inputs.rifle_id.as_deref();
+        let shotgun = data
+            .shotguns
+            .iter()
+            .find(|shotgun| Some(shotgun.id.as_str()) == chosen)
+            .or_else(|| {
+                let a_rifle = data
+                    .rifles
+                    .iter()
+                    .any(|rifle| Some(rifle.id.as_str()) == chosen);
+                (data.rifles.is_empty() && !a_rifle)
+                    .then(|| data.shotguns.first())
+                    .flatten()
+            })?;
+        self.inputs.rifle_id = Some(shotgun.id.clone());
+        Some(shotgun.clone())
+    }
+
     /// Range, angle, wind and target: the inputs that change every shot,
     /// each opening its picker.
     pub(super) fn tiles(&mut self, ui: &mut egui::Ui, aim: &Aim) {
@@ -1121,6 +1177,20 @@ impl CalculatorPage {
         bullet: Option<&Bullet>,
         actions: &mut Vec<Action>,
     ) {
+        self.conditions_for(ui, data, aim, bullet, false, actions);
+    }
+
+    /// The conditions; for a shotgun only the weather, since the fine
+    /// corrections, the precision and the rifle limits don't apply.
+    fn conditions_for(
+        &mut self,
+        ui: &mut egui::Ui,
+        data: &Data,
+        aim: &Aim,
+        bullet: Option<&Bullet>,
+        shotgun: bool,
+        actions: &mut Vec<Action>,
+    ) {
         let u = units::prefs(ui.ctx());
         let inputs = &mut self.inputs;
         let weather = &mut self.weather;
@@ -1130,14 +1200,20 @@ impl CalculatorPage {
             } else {
                 tr("Target moving at")
             });
+            // Birds fly faster than game runs.
+            let fastest = if shotgun { 30.0 } else { 15.0 };
+            // A bird's speed set for a shotgun doesn't carry over to a rifle.
+            inputs.target_speed = inputs.target_speed.min(fastest);
             units::drag(
                 ui,
                 &mut inputs.target_speed,
                 Quantity::WindSpeed,
-                0.0..=15.0,
+                0.0..=fastest,
                 0.1,
             )
-            .on_hover_text(if data.hunting {
+            .on_hover_text(if shotgun {
+                tr("Sideways speed of a crossing bird or animal; 0 for a still one")
+            } else if data.hunting {
                 tr("Walking moose ≈ 1.5, trotting ≈ 4, running ≈ 8 m/s; 0 for a still animal")
             } else {
                 tr("Sideways speed of a moving target; 0 for a still one")
@@ -1259,6 +1335,9 @@ impl CalculatorPage {
             });
         });
 
+        if shotgun {
+            return;
+        }
         let mut on = Vec::new();
         if inputs.spin_drift {
             on.push(tr("spin drift"));
@@ -2151,7 +2230,7 @@ impl ResultsView<'_> {
         ui.heading(tr("Through the scope"));
         let Some((scope, reticle)) = self.optics else {
             ui.weak(tr(
-                "Choose a scope and reticle for this rifle (Rifles page) to see the sight picture \
+                "Choose a scope and reticle for this rifle (Guns page) to see the sight picture \
                  here.",
             ));
             return;
@@ -2262,7 +2341,7 @@ impl ResultsView<'_> {
         if !drawn.field_of_view_known {
             ui.small(trf!(
                 "Field of view not published; estimated as {:.0} mrad from the magnification. \
-                 Enter the scope's field of view (Rifles, My scopes) for a true picture.",
+                 Enter the scope's field of view (Guns, My scopes) for a true picture.",
                 drawn.field_of_view_mrad
             ));
         }

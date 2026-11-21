@@ -1,6 +1,6 @@
 //! Storage for the ballistic calculator: the read-only base catalog of
-//! calibers and bullets, the hunter's own rifles, bullet collection and
-//! shot log in a local SQLite database, and JSON export/import of that
+//! calibers and bullets, the hunter's own rifles, shotguns, bullet
+//! collection and shot log in a local SQLite database, and JSON export/import of that
 //! personal data.
 //!
 //! Nothing here depends on the UI, so a mobile front end can reuse it.
@@ -16,6 +16,7 @@ pub mod optics;
 pub mod print;
 pub mod rules;
 pub mod schema;
+pub mod shotguns;
 pub mod shots;
 pub mod strelok;
 pub mod sun;
@@ -29,7 +30,10 @@ mod tests;
 use std::fmt;
 
 pub use cartridge::{Cartridge, Engraving, Material, Outline, Solid};
-pub use catalog::{BcSource, Caliber, Catalog, CatalogBullet, CatalogKind, Popularity, Ranked};
+pub use catalog::{
+    BcSource, Caliber, Catalog, CatalogBullet, CatalogKind, CatalogShell, NordicUse, Popularity,
+    Ranked, ShotgunCaliber, SteelLimits,
+};
 pub use db::Store;
 pub use deletions::{Deletion, RecordKind};
 pub use drawings::{Body, Drawing, DrawingPart, HitZone, Placement, Ring, TrainingRings};
@@ -41,8 +45,12 @@ pub use model::{
 pub use optics::{
     AngleUnit, FocalPlane, PLAIN_CROSSHAIR, Reticle, ReticleElement, Scope, UserScope,
 };
-pub use print::Print;
+pub use print::{Print, Printed};
 pub use rules::{Country, Load as RulesLoad, Rules};
+pub use shotguns::{
+    Barrel, Choke, ChokeName, Gauge, PatternTest, Payload, Shell, ShotMaterial, Shotgun,
+    ShotgunLoad, VelocityAt,
+};
 pub use shots::{
     AnimalSpot, GeoPoint, Outcome, ShooterPosition, Shot, ShotHold, ShotSolution, ShotWeather,
 };

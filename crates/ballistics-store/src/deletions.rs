@@ -14,6 +14,9 @@ pub enum RecordKind {
     Scope,
     Target,
     Shot,
+    Shotgun,
+    Shell,
+    ShotgunLoad,
 }
 
 impl RecordKind {
@@ -25,6 +28,9 @@ impl RecordKind {
             RecordKind::Scope => "scope",
             RecordKind::Target => "target",
             RecordKind::Shot => "shot",
+            RecordKind::Shotgun => "shotgun",
+            RecordKind::Shell => "shell",
+            RecordKind::ShotgunLoad => "shotgun_load",
         }
     }
 
@@ -36,6 +42,9 @@ impl RecordKind {
             RecordKind::Scope,
             RecordKind::Target,
             RecordKind::Shot,
+            RecordKind::Shotgun,
+            RecordKind::Shell,
+            RecordKind::ShotgunLoad,
         ]
         .into_iter()
         .find(|kind| kind.as_str() == text)
@@ -50,6 +59,9 @@ impl RecordKind {
             RecordKind::Scope => "scopes",
             RecordKind::Target => "targets",
             RecordKind::Shot => "shots",
+            RecordKind::Shotgun => "shotguns",
+            RecordKind::Shell => "shells",
+            RecordKind::ShotgunLoad => "shotgun_loads",
         }
     }
 }

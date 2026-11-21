@@ -26,6 +26,7 @@ mod relaxed_idb;
 mod rifles;
 mod sensors;
 mod shot_log;
+mod shotguns;
 mod sight_picture;
 mod startup;
 mod sync;

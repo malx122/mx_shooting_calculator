@@ -150,21 +150,30 @@ pub fn steel_percent(lead_percent: f64) -> Result<f64, SolveError> {
 /// The 40-yard percentage of a pattern that puts `percent` of its pellets in
 /// the 75 cm circle at 35 m, the Nordic and German test.
 pub fn percent_from_nordic(percent: f64) -> Result<f64, SolveError> {
+    percent_from_test(percent, NORDIC_PATTERN_RADIUS_M, NORDIC_PATTERN_DISTANCE_M)
+}
+
+/// The 40-yard percentage of a pattern that put `percent` of its pellets in
+/// a circle of `radius_m` at `range_m`: a pattern board the hunter shot and
+/// counted.
+pub fn percent_from_test(percent: f64, radius_m: f64, range_m: f64) -> Result<f64, SolveError> {
     check_percent(percent)?;
+    share_inside(50.0, radius_m, range_m)?;
+    if range_m == 0.0 {
+        return Err(SolveError::InvalidInput("a pattern test needs a distance"));
+    }
     let share = percent / 100.0;
-    let nordic = |p40: f64| {
-        share_inside(p40, NORDIC_PATTERN_RADIUS_M, NORDIC_PATTERN_DISTANCE_M).unwrap_or(f64::NAN)
-    };
-    // The Nordic share rises with the 40-yard one; bisect between the ends.
+    let at = |p40: f64| share_inside(p40, radius_m, range_m).unwrap_or(f64::NAN);
+    // The share rises with the 40-yard percentage; bisect between the ends.
     let (mut low, mut high) = (1e-9, 100.0 - 1e-9);
-    if !(nordic(low) <= share && share <= nordic(high)) {
+    if !(at(low) <= share && share <= at(high)) {
         return Err(SolveError::InvalidInput(
             "pattern percentage is beyond what a 40-yard percentage can give",
         ));
     }
     for _ in 0..200 {
         let middle = (low + high) / 2.0;
-        if nordic(middle) < share {
+        if at(middle) < share {
             low = middle;
         } else {
             high = middle;
@@ -236,6 +245,17 @@ pub fn pattern_at(
 ) -> Result<Vec<[f64; 2]>, SolveError> {
     let sigma = sigma_at(pattern_percent, range_m)?;
     super::normal_pairs(count, seed, sigma)
+}
+
+/// A full choke's delay: its 70 % at 40 yards over a cylinder's 40.
+const FULL_DELAY: f64 = DELAY_PER_POINT * 30.0;
+
+/// How much of a pattern's spread grows with each pellet's flight time
+/// rather than at a fixed angle (0–1): all of it for a full choke, whose
+/// spread Compton found proportional to the flight time, none for a
+/// cylinder, and the choke law's delay over a full choke's between.
+pub(super) fn time_share(pattern_percent: f64) -> f64 {
+    (DELAY_PER_POINT * (pattern_percent - CYLINDER_PERCENT) / FULL_DELAY).clamp(0.0, 1.0)
 }
 
 pub(super) fn check_percent(pattern_percent: f64) -> Result<(), SolveError> {

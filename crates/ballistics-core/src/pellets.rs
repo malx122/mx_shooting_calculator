@@ -12,9 +12,11 @@ use crate::solver::{self, BcBands, Bullet, Conditions, Sample, SolveError, Wind}
 mod hits;
 mod sizes;
 mod spread;
+mod swarm;
 pub use hits::*;
 pub use sizes::*;
 pub use spread::*;
+pub use swarm::*;
 
 /// Density of pure lead. Hardened shot (2–4 % antimony) is about 11 100.
 pub const LEAD_DENSITY_KG_M3: f64 = 11_340.0;
@@ -90,6 +92,8 @@ pub const PATTERN_RADIUS_M: f64 = 0.381;
 
 /// The most pellets a load may hold or a pattern may have.
 pub const MAX_PELLETS: usize = 100_000;
+/// The fastest muzzle velocity a pellet is flown at.
+pub const MAX_MUZZLE_VELOCITY_MPS: f64 = 1_000.0;
 
 /// Drag coefficient of a smooth sphere by Mach number: the correlation of
 /// Loth, Daspit, Jeong, Nagata and Nonomura, "Supersonic and hypersonic
@@ -415,7 +419,7 @@ fn validate(pellet: &Pellet, muzzle_velocity: f64) -> Result<(), SolveError> {
             "pellet density must be between 1000 and 25 000 kg/m³",
         ),
         (
-            muzzle_velocity > 0.0 && muzzle_velocity <= 1_000.0,
+            muzzle_velocity > 0.0 && muzzle_velocity <= MAX_MUZZLE_VELOCITY_MPS,
             "pellet muzzle velocity must be above 0 and at most 1000 m/s",
         ),
     ])

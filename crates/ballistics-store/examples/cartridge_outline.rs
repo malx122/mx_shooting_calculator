@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "H2": case.mouth_diameter,
             "L3": case.length,
             "L6": cartridge.overall_length,
-            "G1": cartridge.bullet.diameter,
+            "G1": cartridge.bullet.as_ref().map(|bullet| bullet.diameter),
         },
     });
     println!("{}", serde_json::to_string_pretty(&out)?);

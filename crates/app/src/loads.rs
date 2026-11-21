@@ -1,7 +1,7 @@
 //! A bullet in a rifle, set up once at the range: measured velocities (by
 //! hand or from a chronograph file), where it hits against the rifle's zero
 //! load, the weather it was zeroed in, and truing to a long shot. Shown on
-//! the Rifles page; Calculate shows one line about it.
+//! the Guns page; Calculate shows one line about it.
 
 use ballistics_shot::{Conditions, from_radians, to_radians, unit_label};
 use ballistics_store::{
