@@ -416,7 +416,7 @@ barrel's timing compensates (positive compensation). With 5 to 10 shots
 the slope's range is wide; a large R² from 5 shots can be chance, so read
 the range before the R².
 
-## 11. For comparing and pooling groups later
+## 11. Pooling groups: scatters
 
 Every spread estimate is made from a `Scatter`: the sums Σ(x − cx)²,
 Σ(y − cy)², Σ(x − cx)(y − cy) of the shots about their centres, with the
@@ -434,7 +434,355 @@ pooled scatter; it refuses a scatter that doesn't count the same shots,
 but keeping the units and centres consistent is up to the caller, and its
 ES range and centre ranges still assume one group of that many shots.
 
-## 12. How the distributions are worked out
+## 12. Comparing two groups
+
+Is load A really tighter than load B, or is it the luck of a few shots?
+`compare` takes the two groups' σ̂ with their degrees of freedom ν (a
+`Sigma`: 2(n − 1) for a group of n shots, more for a composite);
+`compare_groups` takes two measured groups, as angles when both have a
+distance (so groups shot at different distances compare fairly) and in
+millimetres when neither has.
+
+- **The ratio** R = σ̂_A / σ̂_B. Under the model, R² ÷ (σ_A / σ_B)²
+  follows F(ν_A, ν_B) exactly (Snedecor and Cochran 1989), so the true
+  ratio lies, with 95% confidence, between
+
+  R / √F₀.₉₇₅(ν_A, ν_B) and R / √F₀.₀₂₅(ν_A, ν_B).
+
+  Two 5-shot groups (ν = 8 each): F₀.₉₇₅(8, 8) = 4.43, so a measured
+  ratio of 2 could be anything from 0.95 to 4.2.
+- **The verdict:**
+  - **Same** when the whole range lies within 1/1.1 to 1.1 (0.91 to
+    1.1, so swapping the groups can't change the verdict): any difference
+    is under 10%. Even two groups that measure exactly alike need 214
+    shots each for it, so expect to see it seldom. It wins over
+    "Different": a difference known to be under 10% is the same for a
+    shooter.
+  - **Different** when the range leaves out 1. When both groups truly
+    come from one spread this happens 5% of the time, exactly (a
+    simulation of 40,000 pairs each: 3 v 3 shots 5.01%, 5 v 5 5.10%,
+    10 v 10 4.82%, 3 v 10 4.83%, 5 v 20 4.88%).
+  - **Can't tell** otherwise: the usual answer with 5-shot groups.
+- **Shots needed:** how many shots each group would need, if the measured
+  ratio were the true one, to show as different 80% of the time (at 5%,
+  two-sided), both groups the same size. The chance is exact under the
+  model: with ν = 2(n − 1), the test says different when R² is beyond
+  F₀.₀₂₅(ν, ν) or F₀.₉₇₅(ν, ν), and R² is ρ² times an F(ν, ν), so
+
+  power = 1 − F_cdf(F₀.₉₇₅ / ρ²) + F_cdf(F₀.₀₂₅ / ρ²),
+
+  and the smallest n with power ≥ 0.8 is searched for. None is given for
+  a ratio within 1/1.1 to 1.1: too small a difference to chase.
+
+| True ratio of σ | 1.15 | 1.2 | 1.3 | 1.5 | 2 | 3 |
+|---|---|---|---|---|---|---|
+| Shots per group | 203 | 120 | 59 | 26 | 10 | 5 |
+| Power at that size, formula | 0.801 | 0.801 | 0.803 | 0.810 | 0.816 | 0.832 |
+| Power simulated | 0.806 | 0.798 | 0.801 | 0.808 | 0.822 | 0.831 |
+
+(40,000 simulated pairs each, 4,000 for 203 and 120 shots.) So "5 shots
+can't tell these apart; about 26 each could" is what a ratio of 1.5
+says.
+
+### Ranking several groups
+
+`rank` puts groups in order by **mean radius** (the default: it uses
+every shot) or by **extreme spread**, as angles (mm ÷ distance), smallest
+first, with each group's size and how much larger than the best it is, in
+percent. A group that can't be measured (no shots, a single shot, a value
+that is not a number, a distance that is not positive, or every shot in
+one hole) is listed apart with the reason, not ranked.
+
+`rank` and the composite (section 13) take groups as shots with a
+distance, which they always have, because they set sizes from different
+groups side by side; `compare_groups` takes measured groups, whose distance
+is optional, because a ratio only needs both sizes in one unit: angles
+when both have a distance, millimetres when neither has, and a refusal
+when only one has.
+
+The ranking is of the sizes as measured; it says nothing about whether the
+differences are real (compare two groups for that). Groups of different
+sizes flatter the small ones: a 3-shot mean radius reads 0.82 of the true
+one and a 10-shot one 0.95 (section 4), and the extreme spread grows much
+faster with the shots (section 5). The ranking says when the shots differ
+(`unequal_shots`).
+
+## 13. Composites: several groups pooled
+
+A composite pools several groups (`Composite`), each given as its shots
+in millimetres, its aim point if any, and its distance. Every shot is
+first turned into an angle, **mrad = mm ÷ distance in m**, so groups shot
+at different distances never mix millimetres; the figures are in mrad,
+and `mm_at` gives them in millimetres at any chosen distance. Every
+figure is worked out from the pooled shots, never by averaging the
+groups' own figures, and each point keeps the index of its group (for
+colouring it on screen).
+
+Each group is first moved onto a common origin:
+
+| Mode | When | Each shot becomes | Centre of the figures | σ̂'s degrees of freedom |
+|---|---|---|---|---|
+| About aims | every group has an aim point | shot − its aim: its impact | the composite's own centre, the mean impact | 2(N − 1) for N shots |
+| About own centres | any group lacks an aim point (or chosen) | (shot − its group's centre) × √(nᵢ / (nᵢ − 1)) | each shot's own group centre | 2Σ(nᵢ − 1) |
+| Cold bore | every group is one shot with an aim point | shot − its aim | the k impacts' centre | 2(k − 1) |
+
+- **About aims** answers "where do my shots go, all told": the shifts of
+  impact between groups (from day to day, after remounting) are part of
+  the spread. σ̂ and its range treat the N impacts as one group of N
+  shots, which they are only if the groups shared one impact. When they
+  didn't, σ̂ is still a fair measure of the total spread, but its range
+  is too narrow, because the shots of one group move together:
+  simulated with a group-to-group SD τ equal to the shots' σ, the range
+  covered the true total σ 82% of the time for 3 groups × 5 shots, 89%
+  for 5 × 3 and 67% for 4 × 10 (95% with τ = 0). The composite also gives
+  σ̂ within the groups for comparison; if σ̂ is well above it, the impact
+  moved between groups, and the zero check (section 14) tells by how
+  much.
+- **About own centres** answers "how precise are the rifle and load":
+  impact is gone, and σ̂ pools the scatter within the groups exactly as
+  the sums of squares add (section 11). Its range is exact under the
+  model whatever the impacts did (simulated: 94.7% to 95.1% coverage for
+  3 × 5, 5 × 3 and 4 × 10 with τ = 0, σ and 2σ). A shot's distance from
+  its own group's centre is shorter than from the true centre, by a
+  factor √(1 − 1/n) on average (0.82 for 3 shots): the centre was fitted
+  to it. So each residual is scaled up by √(n/(n − 1)) before the sizes
+  are measured: the mean and median radius, extreme spread, width and
+  height then read as for shots about a known centre (simulated: the mean
+  radius of 20 groups of 3 averages the true one to within 2%; unscaled it was
+  0.82 and below its own range every time). σ̂ and its sums are of the
+  shots as shot, unscaled. **Single-shot groups are left out** and listed:
+  a single shot is its own centre and shows no spread.
+- **Cold bore**: the first shot from a cold, clean barrel, one per
+  session. Each is its own group, so the k impacts are independent shots
+  from the cold-bore spread (the day-to-day shifts are part of it), with
+  k − 1 degrees of freedom per axis.
+
+Mean radius, median radius, CEP, R90 and R95 are about the centre in the
+table. **The extreme spread** is the two points furthest apart as the
+composite is drawn: an honest figure for the pooled points. Its range
+(section 5) is given only for a cold-bore series (up to 50 shots), the
+one composite whose points are independent shots from one spread. About
+own centres the scaled points of a group are tied to each other (their
+residuals sum to zero) and spread a little more than as many shots from
+one spread (simulated means: 4.35σ for 3 × 5 and 4.36σ for 5 × 3 against
+4.20σ for one group of 15; 5.08σ against 5.02σ for 4 × 10); about aims,
+shifts between groups cluster the points and they spread less (with
+τ = σ, 3.79σ and 4.00σ in total σ). Neither matches the one-group table,
+so neither gets a range.
+
+## 14. Zero check
+
+Is the zero holding, or has it moved? `ZeroCheck` takes groups shot since
+the last zero, each with its impact (centre − aim, mrad), number of
+shots, σ̂ (mrad) and whatever was dialled away from the zero for it,
+which is subtracted first (`ZeroGroup::from_stats` makes one from a
+measured group). It gives back each group's net impact, for plotting. On
+each axis separately:
+
+- **The mean impact** is per shot: ȳ = Σ nᵢ yᵢ / N, so a 10-shot group
+  counts twice a 5-shot one.
+- **Its standard error counts the shifts from group to group** (one-way
+  random-effects model: group i's true impact is the zero's plus a shift
+  of SD τ). The method of moments (Searle, Casella and McCulloch 1992,
+  chapter 3) gives
+
+  τ̂² = max(0, (SSB − (k − 1) σ̂²) ÷ (N − Σnᵢ²/N)), SSB = Σ nᵢ (yᵢ − ȳ)²,
+
+  with σ̂² pooled within the groups, and Var(ȳ) = τ̂² Σwᵢ² + σ̂²/N with
+  wᵢ = nᵢ/N. For groups of the same size this is exactly s²/k, the
+  scatter of the group impacts, whenever τ̂² > 0.
+- **The 95% range** is ȳ ± t₀.₉₇₅ √Var(ȳ). When τ̂² > 0 (the group
+  impacts scatter more than their shots explain), Var(ȳ) is a MSB + b σ̂²
+  with MSB = SSB/(k − 1), a = Σwᵢ²(k − 1)/(N − Σnᵢ²/N) and b = 1/N − a,
+  and t has Satterthwaite's (1946) degrees of freedom,
+  Var(ȳ)² ÷ ((a MSB)²/(k − 1) + (b σ̂²)²/ν_σ), kept between 1 and k − 1:
+  k − 1 for groups of the same size, fewer when one group holds most of
+  the shots. Otherwise t has σ̂'s 2Σ(nᵢ − 1). Single-shot groups
+  (cold-bore shots) have no σ̂ and use the impacts' own scatter, s²/k on
+  k − 1.
+- **With one or two groups** the shifts can't be measured: the range
+  comes from the shots alone, σ̂/√N, and says so
+  (`counts_group_to_group` is false). It is too narrow if the impact does
+  move between groups: simulated with 2 groups × 5 shots and τ = σ, it
+  covered the true zero only 60% of the time. So **one or two groups give
+  no verdict**, only "can't tell" and how many more groups would settle it.
+- **No spread** (every shot in one hole, or identical cold-bore impacts)
+  gives no range, as in the comparison of two groups.
+- **The correction** to dial is minus the mean impact.
+
+The verdict, from three groups or more, with a tolerance of **0.1 mrad**
+either way unless another is chosen (0.1 mrad is 1 cm at 100 m, 0.34 MOA):
+
+- **Holding:** the range lies within ± the tolerance on both axes.
+- **Drifting:** on an axis the range leaves out 0 and the mean impact is
+  beyond the tolerance.
+- **Can't tell:** neither, with how many more groups like these (the same
+  shots per group, scatter and mean impact) would settle it, as a rough
+  guide.
+
+How well this works, simulated with 20,000 checks each (σ = 1 per shot;
+groups × shots; coverage per axis; "drifting" is how often a zero that
+holds on average is called drifting, on either axis; the effective number
+of groups is N²/Σnᵢ²):
+
+| Groups | Effective | τ (in σ) | Range covers | Drifting, tolerance σ | Tolerance σ/2 |
+|---|---|---|---|---|---|
+| 2 × 5 | 2.0 | 1 | 60.4% | none (no verdict) | none |
+| 3 × 5 | 3.0 | 0 | 97.3% | 0.0% | 4.6% |
+| 3 × 5 | 3.0 | 0.5 | 93.9% | 0.7% | 11.0% |
+| 3 × 5 | 3.0 | 1 | 93.4% | 4.8% | 12.2% |
+| 3 × 5 | 3.0 | 2 | 94.4% | 8.5% | 10.7% |
+| 6 × 3 | 6.0 | 0 | 97.5% | 0.0% | 3.5% |
+| 6 × 3 | 6.0 | 1 | 95.0% | 3.4% | 9.3% |
+| 10 × 5 | 10.0 | 0.5 | 95.1% | 0.0% | 2.9% |
+| 10, 3, 5, 3 shots | 3.1 | 0 | 97.3% | 0.0% | 2.5% |
+| 10, 3, 5, 3 shots | 3.1 | 1 | 95.7% | 2.5% | 7.3% |
+| 10, 5, 3, 3, 3 shots | 3.8 | 0.5 | 95.2% | 0.2% | 6.2% |
+| 10, 5, 3, 3, 3 shots | 3.8 | 1 | 96.2% | 3.1% | 6.7% |
+| 20, 3, 3 shots | 1.6 | 0 | 97.2% | 0.0% | 1.2% |
+| 20, 3, 3 shots | 1.6 | 0.5 | 88.7% | 0.9% | 14.4% |
+| 20, 3, 3 shots | 1.6 | 1 | 91.0% | 4.1% | 13.5% |
+| 20, 3, 3 shots | 1.6 | 2 | 96.2% | 4.1% | 7.1% |
+| 5 × 1 (cold bore) | 5.0 | 1 | 94.9% | 6.5% | 9.5% |
+
+A tolerance of σ is a 1-MOA rifle (σ ≈ 0.1 mrad) at the default.
+
+- **The range** covers close to 95% with three groups or more, a little
+  more when the impact doesn't move between groups (the range then rests
+  on the shots, whose estimate is good), **except when one group holds
+  most of the shots** (20, 3 and 3: effectively 1.6 groups). Then the
+  mean is mostly that group's impact, and only the two small groups can
+  show how far impacts move; when they move by about half the shots' σ
+  the small groups usually can't show it, and the range covers 89–91%.
+  `effective_groups` says when this applies: well below the number of
+  groups.
+- **False "drifting"** at a realistic tolerance is rare: 0–0.9% when the
+  impact holds still from group to group or moves by σ/2. When it moves
+  by σ to 2σ from group to group, 2.5–8.5% of checks call it drifting:
+  the zero then really does wander, even if it is right on average. With
+  a tolerance below the shots' own scatter (σ/2 here) the range alone
+  decides, and since either axis can call it, false "drifting" runs to
+  about twice what each axis leaves out (up to 14% in the cases above).
+  Choose a tolerance no tighter than the rifle can show.
+
+## 15. Load ladders
+
+A ladder (`Ladder`) shoots groups at a series of charges (g) or seating
+depths (mm) and looks for a stretch where the impact holds still. Each
+group gives its rung value, impact (mrad), shots, σ̂ and, if measured, its
+chronograph readings (`LadderGroup::from_stats` makes one from a measured
+group).
+
+- **Rungs:** groups at the same value (within **0.001** g or mm of the
+  rung's first value, below any scale or calliper step; configurable, 0
+  for equal values only) pool into one rung: its per-shot mean impact up
+  and across, its σ̂ pooled within its groups, and its velocity mean and
+  SD (all readings about their mean).
+- **Standard errors:** each rung's is σ̂/√N on each axis, where σ̂ is
+  pooled within **every group of the ladder**, not the rung's own. A
+  rung's 3 to 5 shots give a σ̂ that may be half or twice the truth;
+  with each rung's own, runs of loose rungs would score flatter than
+  runs of tight ones. A σ̂ known from other groups (`known_sigma`, with
+  its degrees of freedom) is pooled with the ladder's own by degrees of
+  freedom, σ̂² = (ν₁σ̂₁² + ν₂σ̂₂²)/(ν₁ + ν₂); a ladder of single shots can't
+  measure its own noise and needs one.
+- **Runs:** every run of **3 or more** neighbouring rungs is scored by
+  (highest − lowest vertical impact) ÷ noise, the noise being the RMS of
+  its rungs' vertical standard errors; likewise across.
+- **Flat:** a run whose score is within the **2/3 quantile of the range
+  of as many independent standard normals**: P(W ≤ w) = m ∫ φ(x)
+  (Φ(x + w) − Φ(x))^(m − 1) dx for m rungs, worked out by Simpson's rule
+  and Newton's method (2.00 for 3 rungs, 2.38 for 4, 2.65 for 5, 2.85 for
+  6; a simulation of 400,000 sets each agrees to 0.003). So a run whose
+  impact truly holds still passes two times in three whatever its length.
+  The same limit judges flat across.
+- **Velocity:** each run's change in m/s per unit of the rungs' value
+  (per g of charge, or per mm of seating depth), by least squares over
+  every reading in the run, with its 95% range from t with readings − 2
+  degrees of freedom, from three readings on.
+- **Ranking:** by default vertical, then horizontal, then σ̂, each
+  deciding only between runs the one before can't tell apart: flat runs
+  first, and among those the runs also flat across first, ordered by σ̂;
+  then flat runs that aren't flat across, by horizontal score; then the
+  rest by vertical score. A key can rank by vertical score, horizontal
+  score or σ̂ alone. The best run of each length is given.
+
+**What "flat" catches.** Simulated with 10,000 runs each, with σ̂
+estimated from the shots (which makes the noise itself a little
+uncertain), the share of runs called flat:
+
+| Rungs (3 shots each) | Limit | Truly flat | 0.5 noise per step | 1 noise per step | 2 noise per step |
+|---|---|---|---|---|---|
+| 3 | 2.00 | 63% | 55% | 37% | 6% |
+| 4 | 2.38 | 63% | 48% | 19% | 0% |
+| 5 | 2.65 | 64% | 39% | 7% | 0% |
+| 6 | 2.85 | 63% | 29% | 2% | 0% |
+
+With 5-shot rungs truly flat runs pass 65% at every length and the climbs
+are caught as often to within 1%. A truly flat run passes about two times
+in three at any length (a little less than 2/3 because σ̂ is estimated),
+and a climb of 2 noise per step is almost never called flat; but 3 rungs
+can't tell "flat" from "climbing by its own noise per step" (37%), and
+only longer runs can.
+
+**Most flat spots are noise.** In a simulated 8-rung ladder with no node
+at all, the impact climbing steadily, a run of 3 rungs was called flat
+somewhere in the ladder 97% of the time with a climb of 0.5 noise per
+step, 94% with 1, 72% with 1.5 and 31% with 2, whether the rungs were 3
+or 5 shots. With 3-shot rungs of a 1-MOA rifle (σ ≈ 0.1 mrad) the noise
+is 0.06 mrad, so a ladder climbing 0.06 mrad per rung shows a "flat
+spot" almost every time. Read the error bars; shoot the promising run
+again, with more shots, before believing it.
+
+## 16. Powder temperature sensitivity
+
+`TemperatureSensitivity` fits how the mean velocity of a load changes with
+the powder's temperature, from sessions each given as (temperature °C,
+mean velocity, shots, SD). It needs **at least 3 sessions spanning at
+least 10 °C**, and says which is missing otherwise.
+
+- **The fit** is weighted least squares of the sessions' mean velocities
+  on temperature, each weighted by its shots (as if every shot had been
+  fitted, with one SD for all; a session's own SD from a few shots is too
+  uncertain to weight by): b = Σnᵢ(Tᵢ − T̄)(vᵢ − v̄) / Σnᵢ(Tᵢ − T̄)², with
+  T̄ and v̄ the shot-weighted means (Draper and Smith 1998).
+- **The slope b is in m/s per °C,** the unit MXSC stores a bullet's and a
+  load's sensitivity in (`velocity_per_degree`, which the calculator
+  accepts within ±5 m/s per °C). It is also given as a percentage of the
+  line's velocity at 15 °C per °C; ×15 gives the percent per 15 °C some
+  apps (Strelok) use.
+- **The 95% range** is b ± t₀.₉₇₅ · SE from the larger of two standard
+  errors, with that one's degrees of freedom, as in the zero check: from
+  the sessions' scatter about the line, √(Σnᵢrᵢ² / (k − 2) / Σnᵢ(Tᵢ − T̄)²)
+  on k − 2, which counts whatever else changed between sessions (another
+  lot, the chronograph's placement, a fouled barrel); or from the shots
+  alone, s_p / √Σnᵢ(Tᵢ − T̄)² with the pooled SD s_p, on Σ(nᵢ − 1).
+
+Simulated with 20,000 fits each, shot SD 4 m/s, the range covered the
+true slope:
+
+| Sessions × shots | Between-session SD 0 | 1 m/s | 2 m/s | 4 m/s |
+|---|---|---|---|---|
+| 3 × 5 (0, 10, 20 °C) | 97.1% | 95.8% | 92.3% | 88.4% |
+| 3 × 10 | 96.7% | 93.5% | 88.7% | 87.6% |
+| 5 × 10 (−5 to 35 °C) | 97.4% | 95.5% | 94.5% | 94.6% |
+
+With 3 sessions the scatter about the line rests on 1 degree of freedom
+and often hides real differences between sessions, so the range can be
+too narrow (88% instead of 95%) when the sessions differ by more than
+their shots; 5 sessions do not have that problem. Spread the sessions
+over as wide a span as you can: the slope's error falls with the span.
+
+## 17. Box plots for trends
+
+`BoxPlot` gives the five numbers of a box plot of any values (σ̂ of each
+session, say): min, first quartile, median, third quartile, max. The
+quartiles are Hyndman and Fan's **type 7**, the default of R, NumPy and
+Excel's QUARTILE.INC: the value at position p(n − 1) of the sorted
+values, counted from 0, interpolated between neighbours. For 1, 2, 4, 7,
+11 and 16 that is 2.5, 5.5 and 10.
+
+## 18. How the distributions are worked out
 
 The app has no outside libraries for these; they are written in the crate
 (`distributions`) and tested against closed forms (to 10 significant
@@ -457,12 +805,16 @@ than a wrong one.
 
 ## References
 
+- Draper, N. R. and Smith, H. (1998). *Applied Regression Analysis*, 3rd
+  ed. (weighted least squares). New York: Wiley.
 - Grubbs, F. E. (1964). Approximate circular and noncircular offset
   probabilities of hitting. *Operations Research* 12(1), 51–62.
 - Grubbs, F. E. (1964). *Statistical Measures of Accuracy for Riflemen and
   Missile Engineers.* Ann Arbor: Edwards Brothers.
 - Patnaik, P. B. (1949). The non-central χ²- and F-distributions and their
   applications. *Biometrika* 36, 202–232.
+- Hyndman, R. J. and Fan, Y. (1996). Sample quantiles in statistical
+  packages. *The American Statistician* 50(4), 361–365.
 - Hartley, R. I. (1997). In defense of the eight-point algorithm. *IEEE
   Transactions on Pattern Analysis and Machine Intelligence* 19(6),
   580–593.
@@ -470,6 +822,12 @@ than a wrong one.
   Vision*, 2nd ed., chapter 4. Cambridge University Press.
 - Lanczos, C. (1964). A precision approximation of the gamma function.
   *SIAM Journal on Numerical Analysis, Series B* 1, 86–96.
+- Satterthwaite, F. E. (1946). An approximate distribution of estimates
+  of variance components. *Biometrics Bulletin* 2(6), 110–114.
+- Searle, S. R., Casella, G. and McCulloch, C. E. (1992). *Variance
+  Components*, chapter 3 (the one-way classification). New York: Wiley.
+- Snedecor, G. W. and Cochran, W. G. (1989). *Statistical Methods*, 8th
+  ed. (the F test of two variances). Ames: Iowa State University Press.
 - Press, W. H., Teukolsky, S. A., Vetterling, W. T. and Flannery, B. P.
   (2007). *Numerical Recipes*, 3rd ed., sections 6.1–6.4. Cambridge
   University Press.
