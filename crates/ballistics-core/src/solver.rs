@@ -497,17 +497,40 @@ pub fn interpolate(samples: &[Sample], range: f64) -> Option<Sample> {
     })
 }
 
+/// How a projectile that doesn't spin is flown.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Stepping {
+    pub time_step_s: f64,
+    pub max_time_s: f64,
+}
+
+impl Stepping {
+    /// As a bullet is flown: 0.5 ms steps for up to 15 s.
+    pub const FINE: Stepping = Stepping {
+        time_step_s: TIME_STEP_S,
+        max_time_s: MAX_FLIGHT_TIME_S,
+    };
+}
+
 /// Flies a projectile that doesn't spin, from the origin of the line of sight
-/// along it, until `keep_going` rejects a sample. The caller validates the
-/// projectile; the rifle checks in `solve` don't apply.
+/// along it, until `keep_going` rejects a sample or the time runs out. The
+/// caller validates the projectile; the rifle checks in `solve` don't
+/// apply. Unlike a bullet's, the path goes on however slow the projectile
+/// gets: small shot falls at about 20 m/s, and at the top of a steep shot
+/// into the wind it hangs still over the ground for a moment.
 pub(crate) fn fly_along_sight(
     bullet: Bullet,
     conditions: &Conditions,
     speed: f64,
+    stepping: Stepping,
     keep_going: impl FnMut(&Sample) -> bool,
 ) -> Vec<Sample> {
     let launch = launch_velocity(speed, conditions.inclination_degrees.to_radians(), 0.0);
-    Flight::with(bullet, conditions, 0.0, None).fly(launch, keep_going)
+    let mut flight = Flight::with(bullet, conditions, 0.0, None);
+    flight.min_speed = 0.0;
+    flight.time_step = stepping.time_step_s;
+    flight.max_time = stepping.max_time_s;
+    flight.fly(launch, keep_going)
 }
 
 pub(crate) fn validate_max_range(max_range: f64) -> Result<(), SolveError> {
@@ -766,6 +789,11 @@ struct Flight {
     sight_direction: Vec3,
     sight_up: Vec3,
     spin: Option<(f64, bool)>,
+    /// The path ends below this speed.
+    min_speed: f64,
+    time_step: f64,
+    /// The path ends after this long.
+    max_time: f64,
 }
 
 impl Flight {
@@ -811,6 +839,9 @@ impl Flight {
             sight_direction,
             sight_up,
             spin,
+            min_speed: MIN_SPEED,
+            time_step: TIME_STEP_S,
+            max_time: MAX_FLIGHT_TIME_S,
         }
     }
 
@@ -854,10 +885,10 @@ impl Flight {
     /// Integrates with RK4 until `keep_going` rejects a sample (which is
     /// still recorded, so the path brackets the range asked for).
     fn fly(&self, launch: Vec3, mut keep_going: impl FnMut(&Sample) -> bool) -> Vec<Sample> {
-        let dt = TIME_STEP_S;
+        let dt = self.time_step;
         let (mut position, mut velocity, mut time) = (Vec3::ZERO, launch, 0.0);
         let mut samples = vec![self.sample(time, position, velocity)];
-        while time < MAX_FLIGHT_TIME_S && velocity.length() > MIN_SPEED {
+        while time < self.max_time && velocity.length() > self.min_speed {
             // Density barely changes within one step, so it is evaluated once.
             let air = self.air_at(position.y);
             let k1 = self.acceleration(velocity, air);

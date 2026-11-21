@@ -977,3 +977,737 @@ fn patterns_refuse_impossible_chokes_and_counts() {
     assert!(pellets::pattern(70.0, pellets::MAX_PELLETS + 1, 1).is_err());
     assert!(pellets::pattern(70.0, 0, 1).unwrap().is_empty());
 }
+
+/// The six borings of Gough Thomas's tables, by their 40-yard percentage.
+const BORINGS: [f64; 6] = [40.0, 50.0, 55.0, 60.0, 65.0, 70.0];
+const YARD: f64 = 0.9144;
+const INCH: f64 = 0.0254;
+
+#[test]
+fn patterns_open_as_gough_thomas_tabled_them() {
+    // Percent in the 30-inch circle at 30–60 yards, true cylinder to full
+    // (Gough Thomas, via Spencer 2001, table 7).
+    let table: [[f64; 7]; 6] = [
+        [60.0, 49.0, 40.0, 33.0, 27.0, 22.0, 18.0],
+        [72.0, 60.0, 50.0, 41.0, 33.0, 27.0, 22.0],
+        [77.0, 65.0, 55.0, 46.0, 38.0, 30.0, 25.0],
+        [83.0, 71.0, 60.0, 50.0, 41.0, 33.0, 27.0],
+        [91.0, 77.0, 65.0, 55.0, 46.0, 37.0, 30.0],
+        [100.0, 84.0, 70.0, 59.0, 49.0, 40.0, 32.0],
+    ];
+    for (boring, row) in BORINGS.iter().zip(table) {
+        for (yards, tabled) in [30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0].iter().zip(row) {
+            let share = pellets::share_inside(*boring, pellets::PATTERN_RADIUS_M, yards * YARD)
+                .unwrap()
+                * 100.0;
+            // The table rounds a full pattern up to 100.
+            let ok = if tabled == 100.0 {
+                share >= 92.0
+            } else {
+                (share - tabled).abs() <= 3.0
+            };
+            assert!(ok, "{boring}% at {yards} yd: {share:.1} vs {tabled}");
+        }
+    }
+}
+
+#[test]
+fn pattern_spread_matches_the_spread_table() {
+    // Spread in inches at 20–40 yards (Gough Thomas, via Spencer 2001,
+    // table 11), which is about the circle holding 85 % of the pellets.
+    let table: [[f64; 5]; 6] = [
+        [32.0, 38.0, 44.0, 51.0, 58.0],
+        [26.0, 32.0, 38.0, 44.0, 51.0],
+        [23.0, 29.0, 35.0, 41.0, 48.0],
+        [21.0, 26.0, 32.0, 38.0, 45.0],
+        [18.0, 23.0, 29.0, 35.0, 42.0],
+        [16.0, 21.0, 27.0, 33.0, 40.0],
+    ];
+    for (boring, row) in BORINGS.iter().zip(table) {
+        for (yards, tabled) in [20.0, 25.0, 30.0, 35.0, 40.0].iter().zip(row) {
+            let spread = pellets::spread_diameter(*boring, 0.85, yards * YARD).unwrap() / INCH;
+            assert!(
+                (spread - tabled).abs() <= 3.5,
+                "{boring}% at {yards} yd: {spread:.1} in vs {tabled}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_pattern_is_densest_in_the_middle_as_measured() {
+    // Of the pellets in the 30-inch circle at 40 yards, the share inside
+    // the 20-inch one: true cylinder 46–51 %, improved cylinder 48–54 %,
+    // half 52–57 %, full 57–62 % (Gough Thomas, via Spencer 2001, table 9).
+    for (boring, low, high) in [
+        (40.0, 46.0, 51.0),
+        (50.0, 48.0, 54.0),
+        (60.0, 52.0, 57.0),
+        (70.0, 57.0, 62.0),
+    ] {
+        let at = |radius: f64| {
+            pellets::share_inside(boring, radius, pellets::PATTERN_DISTANCE_M).unwrap()
+        };
+        let share = at(10.0 * INCH) / at(15.0 * INCH) * 100.0;
+        assert!(
+            (low - 1.0..=high + 1.0).contains(&share),
+            "{boring}%: {share:.1}"
+        );
+    }
+}
+
+#[test]
+fn every_choke_opens_with_range_and_tighter_chokes_stay_tighter() {
+    let mut last_by_range = vec![0.0; 50];
+    for choke in pellets::Choke::ALL {
+        let percent = choke.nominal_percent();
+        let mut last = f64::INFINITY;
+        for (i, range) in (1..=50).map(|i| i as f64 * 3.0).enumerate() {
+            let share = pellets::share_inside(percent, pellets::PATTERN_RADIUS_M, range).unwrap();
+            assert!(share <= last, "{choke:?} at {range} m");
+            assert!(share >= last_by_range[i], "{choke:?} at {range} m");
+            (last, last_by_range[i]) = (share, share);
+        }
+        let at_40_yards = pellets::share_inside(
+            percent,
+            pellets::PATTERN_RADIUS_M,
+            pellets::PATTERN_DISTANCE_M,
+        )
+        .unwrap();
+        assert!((at_40_yards * 100.0 - percent).abs() < 1e-9, "{choke:?}");
+    }
+}
+
+#[test]
+fn a_pattern_at_a_range_is_the_same_pellets_spread_to_its_size() {
+    let angles = pellets::pattern(65.0, 300, 42).unwrap();
+    let at_30 = pellets::pattern_at(65.0, 300, 42, 30.0).unwrap();
+    let scale = pellets::sigma_at(65.0, 30.0).unwrap() / pellets::pattern_sigma(65.0).unwrap();
+    for (angle, place) in angles.iter().zip(&at_30) {
+        assert!((angle[0] * scale - place[0]).abs() < 1e-12);
+        assert!((angle[1] * scale - place[1]).abs() < 1e-12);
+    }
+    let circle = 0.30;
+    let inside = pellets::pattern_at(60.0, 40_000, 3, 25.0)
+        .unwrap()
+        .iter()
+        .filter(|[right, up]| right.hypot(*up) <= circle)
+        .count() as f64
+        / 40_000.0;
+    let expected = pellets::share_inside(60.0, circle, 25.0).unwrap();
+    assert!((inside - expected).abs() < 0.01, "{inside} vs {expected}");
+}
+
+#[test]
+fn choke_names_constrictions_steel_and_the_nordic_test_convert() {
+    assert_eq!(pellets::percent_from_constriction(0.0).unwrap(), 40.0);
+    assert_eq!(pellets::percent_from_constriction(0.000_5).unwrap(), 60.0);
+    assert_eq!(pellets::percent_from_constriction(0.001_2).unwrap(), 70.0);
+    let quarter = pellets::percent_from_constriction(0.000_315).unwrap();
+    assert!((52.0..53.0).contains(&quarter), "{quarter}");
+    assert!(pellets::percent_from_constriction(-0.000_1).is_err());
+    assert!(pellets::percent_from_constriction(f64::NAN).is_err());
+
+    assert_eq!(pellets::steel_percent(50.0).unwrap(), 60.0);
+    assert_eq!(pellets::steel_percent(70.0).unwrap(), 72.0);
+    assert_eq!(pellets::steel_percent(75.0).unwrap(), 75.0);
+    assert!(pellets::Choke::Modified.suits_steel());
+    assert!(!pellets::Choke::Full.suits_steel());
+
+    // The 75 cm circle at 35 m holds 1.5–4 points more than the 30-inch one
+    // at 40 yards, and the conversion goes back exactly.
+    for p40 in BORINGS {
+        let nordic = pellets::share_inside(
+            p40,
+            pellets::NORDIC_PATTERN_RADIUS_M,
+            pellets::NORDIC_PATTERN_DISTANCE_M,
+        )
+        .unwrap()
+            * 100.0;
+        assert!((1.5..4.0).contains(&(nordic - p40)), "{p40}: {nordic:.1}");
+        let back = pellets::percent_from_nordic(nordic).unwrap();
+        assert!((back - p40).abs() < 1e-6, "{p40}: {back}");
+    }
+    assert!(pellets::percent_from_nordic(100.0).is_err());
+    assert!(pellets::sigma_at(60.0, -1.0).is_err());
+    assert!(pellets::sigma_at(60.0, 1000.0).is_err());
+    assert!(pellets::spread_diameter(60.0, 1.0, 30.0).is_err());
+    assert_eq!(pellets::share_inside(60.0, 0.1, 0.0).unwrap(), 1.0);
+}
+
+const FOOT: f64 = 0.3048;
+const FPS: f64 = 0.3048;
+
+/// Lowry's standard air: 59 °F, 29.54 inHg, 50 %.
+fn lowry_air() -> Conditions {
+    pellets::calm(Atmosphere {
+        temperature_c: 15.0,
+        pressure_hpa: 1000.33,
+        humidity: 0.5,
+    })
+}
+
+#[test]
+fn pellets_slow_down_as_lowry_measured() {
+    // Velocity (ft/s) at 0, 60, 90, 120 and 150 ft and time to 120 ft, from
+    // the front pellets' true starting velocity (E. D. Lowry, Winchester,
+    // American Rifleman 1989, table 3).
+    let table: [(f64, f64, [f64; 5], f64); 8] = [
+        (0.180, 7_860.0, [1376.0, 952.0, 823.0, 722.0, 639.0], 0.1262),
+        (0.160, 7_860.0, [1391.0, 932.0, 797.0, 692.0, 607.0], 0.1291),
+        (0.150, 7_860.0, [1399.0, 920.0, 782.0, 676.0, 590.0], 0.1308),
+        (0.130, 7_860.0, [1415.0, 892.0, 749.0, 639.0, 552.0], 0.1350),
+        (
+            0.150,
+            11_100.0,
+            [1351.0, 968.0, 847.0, 749.0, 669.0],
+            0.1241,
+        ),
+        (
+            0.130,
+            11_100.0,
+            [1363.0, 944.0, 816.0, 715.0, 633.0],
+            0.1273,
+        ),
+        (
+            0.120,
+            11_100.0,
+            [1369.0, 930.0, 799.0, 696.0, 613.0],
+            0.1293,
+        ),
+        (
+            0.110,
+            11_100.0,
+            [1375.0, 914.0, 780.0, 675.0, 591.0],
+            0.1316,
+        ),
+    ];
+    for (inches, density, velocities, time_to_120) in table {
+        let pellet = pellets::Pellet {
+            diameter_m: inches * INCH,
+            density_kg_m3: density,
+        };
+        let path = pellets::fly(&pellet, velocities[0] * FPS, &lowry_air(), 50.0).unwrap();
+        for (feet, tabled, tolerance) in [
+            (60.0, velocities[1], 0.05),
+            (90.0, velocities[2], 0.05),
+            (120.0, velocities[3], 0.05),
+            (150.0, velocities[4], 0.06),
+        ] {
+            let velocity = pellet_at(&path, feet * FOOT).velocity / FPS;
+            assert!(
+                (velocity / tabled - 1.0).abs() <= tolerance,
+                "{inches} in, {density}: {velocity:.0} vs {tabled} ft/s at {feet} ft"
+            );
+        }
+        let time = pellet_at(&path, 120.0 * FOOT).time;
+        assert!(
+            (time / time_to_120 - 1.0).abs() <= 0.04,
+            "{inches} in, {density}: {time:.4} vs {time_to_120} s"
+        );
+    }
+}
+
+#[test]
+fn pellets_strike_as_eley_tabled() {
+    // Striking velocity (m/s) at 30, 35 and 40 m of Eley's standard game
+    // cartridges, observed velocity 325 m/s, about 402 m/s at the muzzle
+    // (Eley Shooter's Diary 1992, via Spencer 2001, table 13). Nearer than
+    // 35 m Eley's small shot is a few per cent faster than one muzzle
+    // velocity for all sizes gives.
+    for (size, tabled) in [
+        ("BB", [254.0, 238.0, 226.0]),
+        ("3", [236.0, 219.0, 203.0]),
+        ("4", [231.0, 214.0, 197.0]),
+        ("5", [224.0, 205.0, 188.0]),
+        ("6", [219.0, 199.0, 180.0]),
+        ("7", [212.0, 191.0, 172.0]),
+    ] {
+        let diameter = pellets::diameter_of(&pellets::ENGLISH_SIZES, size).unwrap();
+        let pellet = pellets::Pellet::of(pellets::Material::Lead, diameter);
+        let calm = pellets::calm(Atmosphere::standard());
+        let path = pellets::fly(&pellet, 402.0, &calm, 45.0).unwrap();
+        for ((range, tolerance), tabled) in [(30.0, 0.05), (35.0, 0.04), (40.0, 0.025)]
+            .iter()
+            .zip(tabled)
+        {
+            let velocity = pellet_at(&path, *range).velocity;
+            assert!(
+                (velocity / tabled - 1.0).abs() <= *tolerance,
+                "English {size}: {velocity:.0} vs {tabled} m/s at {range} m"
+            );
+        }
+    }
+}
+
+#[test]
+fn pellet_energies_match_gough_thomas_from_the_observed_velocity() {
+    // One pellet's energy (ft-lb) at 30, 35, 40 and 45 yards for an
+    // observed velocity of 1070 ft/s over 20 yards (Gough Thomas, via
+    // Spencer 2001, table 14).
+    const FOOT_POUND: f64 = 1.355_818;
+    for (size, tabled) in [
+        ("3", [4.48, 3.92, 3.43, 2.99]),
+        ("4", [3.54, 3.08, 2.66, 2.30]),
+        ("5", [2.60, 2.23, 1.90, 1.61]),
+        ("6", [2.03, 1.71, 1.44, 1.20]),
+        ("7", [1.52, 1.27, 1.06, 0.86]),
+    ] {
+        let diameter = pellets::diameter_of(&pellets::ENGLISH_SIZES, size).unwrap();
+        let pellet = pellets::Pellet::of(pellets::Material::Lead, diameter);
+        let calm = pellets::calm(Atmosphere::standard());
+        let muzzle = pellets::muzzle_velocity(
+            &pellet,
+            1070.0 * FPS,
+            pellets::VelocityAt::AverageOver(20.0 * YARD),
+            &calm,
+        )
+        .unwrap();
+        // An observed 1070 ft/s is about 1320–1350 ft/s at the muzzle, more
+        // for small shot, which slows faster.
+        assert!(
+            (1290.0..1430.0).contains(&(muzzle / FPS)),
+            "{size}: {muzzle}"
+        );
+        let path = pellets::fly(&pellet, muzzle, &calm, 45.0).unwrap();
+        for (yards, tabled) in [30.0, 35.0, 40.0, 45.0].iter().zip(tabled) {
+            let energy = pellet.energy_j(pellet_at(&path, yards * YARD).velocity) / FOOT_POUND;
+            assert!(
+                (energy / tabled - 1.0).abs() <= 0.08,
+                "English {size}: {energy:.2} vs {tabled} ft-lb at {yards} yd"
+            );
+        }
+    }
+}
+
+#[test]
+fn small_shot_drifts_by_the_wind_times_its_lag() {
+    // No. 8 lead (0.090 in) at 1377 ft/s drifts 9.1 in at 40 yards in a
+    // 10 mph crosswind (Lowry and Garner, Shotshell Ballistics for Windows).
+    let pellet = pellets::Pellet {
+        diameter_m: 0.090 * INCH,
+        density_kg_m3: pellets::HARD_LEAD_DENSITY_KG_M3,
+    };
+    let muzzle = 1377.0 * FPS;
+    let wind = 10.0 * 0.447_04;
+    let crosswind = Conditions {
+        wind: Wind {
+            speed: wind,
+            from_degrees: 90.0,
+        },
+        ..lowry_air()
+    };
+    let path = pellets::fly(&pellet, muzzle, &crosswind, 40.0).unwrap();
+    let there = pellet_at(&path, pellets::PATTERN_DISTANCE_M);
+    let drift = there.windage.abs();
+    assert!(
+        (drift / INCH / 9.1 - 1.0).abs() <= 0.15,
+        "{} in",
+        drift / INCH
+    );
+    // Didion's rule: the drift is the wind times the time lost to drag.
+    let lag = there.time - pellets::PATTERN_DISTANCE_M / muzzle;
+    assert!(
+        (drift / (wind * lag) - 1.0).abs() < 0.01,
+        "{drift} vs {}",
+        wind * lag
+    );
+}
+
+#[test]
+fn shot_carries_about_as_far_as_journees_rule() {
+    // 2200 yards per inch of pellet: 79.2 m a millimetre, for lead.
+    let calm = pellets::calm(Atmosphere::standard());
+    let reach = |pellet| pellets::max_range(&pellet, 400.0, &calm).unwrap();
+    let mut lead_3_5 = None;
+    for millimetres in [2.0, 3.0, 3.5, 4.0] {
+        let pellet = pellets::Pellet::of(pellets::Material::Lead, millimetres / 1000.0);
+        let farthest = reach(pellet);
+        let rule = 2200.0 * YARD * millimetres / 25.4;
+        assert!(
+            (farthest.distance_m / rule - 1.0).abs() <= 0.10,
+            "{millimetres} mm: {:.0} vs {rule:.0} m",
+            farthest.distance_m
+        );
+        assert!(
+            (22.0..30.0).contains(&farthest.elevation_degrees),
+            "{millimetres} mm: {}°",
+            farthest.elevation_degrees
+        );
+        assert!(farthest.time_s > 2.0 && farthest.velocity > 10.0);
+        if millimetres == 3.5 {
+            lead_3_5 = Some(farthest.distance_m);
+        }
+    }
+    let lead_3_5 = lead_3_5.unwrap();
+    // Steel carries less far than lead of its size, buckshot much farther.
+    let steel = reach(pellets::Pellet::of(pellets::Material::Steel, 0.0035)).distance_m;
+    assert!((0.7..0.85).contains(&(steel / lead_3_5)), "{steel}");
+    let buck = reach(pellets::Pellet::of(pellets::Material::Lead, 0.008_38)).distance_m;
+    assert!((480.0..620.0).contains(&buck), "{buck}");
+    // A round ball from a 12 bore flies longer than a bullet's 15 s.
+    let ball = reach(pellets::Pellet::of(pellets::Material::Lead, 0.0185));
+    assert!(
+        ball.time_s > 14.0 && (25.0..40.0).contains(&ball.elevation_degrees),
+        "{ball:?}"
+    );
+}
+
+#[test]
+fn wind_carries_shot_farther_and_steeper() {
+    let calm = pellets::calm(Atmosphere::standard());
+    let small = pellets::Pellet::of(pellets::Material::Lead, 0.002);
+    let still = pellets::max_range(&small, 400.0, &calm).unwrap();
+    let blown = |speed: f64, from_degrees: f64| {
+        let windy = Conditions {
+            wind: Wind {
+                speed,
+                from_degrees,
+            },
+            ..calm
+        };
+        pellets::max_range(&small, 400.0, &windy).unwrap()
+    };
+    let tailwind = blown(5.0, 180.0);
+    assert!(
+        tailwind.distance_m > still.distance_m * 1.05,
+        "{tailwind:?}"
+    );
+    // In a gale the best elevation is far above a calm day's, and found,
+    // not the end of the search.
+    let gale = blown(30.0, 180.0);
+    assert!(
+        (50.0..78.0).contains(&gale.elevation_degrees) && gale.distance_m > tailwind.distance_m,
+        "{gale:?}"
+    );
+    // A headwind shortens it, and nothing blown back counts as far.
+    let headwind = blown(10.0, 0.0);
+    assert!(headwind.distance_m < still.distance_m, "{headwind:?}");
+}
+
+#[test]
+fn a_velocity_measured_downrange_gives_the_muzzle_velocity_back() {
+    let pellet = pellets::Pellet::of(pellets::Material::Lead, 0.003);
+    let calm = pellets::calm(Atmosphere::standard());
+    let path = pellets::fly(&pellet, 400.0, &calm, 20.0).unwrap();
+    let at = |range| pellet_at(&path, range);
+    let v2_5 = at(2.5).velocity;
+    // A V2.5 is 25–35 m/s below the muzzle velocity.
+    assert!((365.0..376.0).contains(&v2_5), "{v2_5}");
+    for (velocity, measured) in [
+        (v2_5, pellets::VelocityAt::Distance(2.5)),
+        (
+            18.288 / at(18.288).time,
+            pellets::VelocityAt::AverageOver(18.288),
+        ),
+        (400.0, pellets::VelocityAt::Muzzle),
+    ] {
+        let muzzle = pellets::muzzle_velocity(&pellet, velocity, measured, &calm).unwrap();
+        assert!((muzzle - 400.0).abs() < 0.05, "{measured:?}: {muzzle}");
+    }
+    for refused in [
+        pellets::VelocityAt::Distance(0.0),
+        pellets::VelocityAt::Distance(80.0),
+        pellets::VelocityAt::AverageOver(f64::NAN),
+    ] {
+        assert!(pellets::muzzle_velocity(&pellet, 370.0, refused, &calm).is_err());
+    }
+    assert!(
+        pellets::muzzle_velocity(&pellet, 990.0, pellets::VelocityAt::Distance(40.0), &calm)
+            .is_err()
+    );
+    // A tailwind faster than the shot carries even a pellet that barely
+    // leaves the muzzle 18 m at 10 m/s on average: the muzzle velocity
+    // found is that slow one.
+    let gale = Conditions {
+        wind: Wind {
+            speed: 30.0,
+            from_degrees: 180.0,
+        },
+        ..calm
+    };
+    let muzzle =
+        pellets::muzzle_velocity(&pellet, 10.0, pellets::VelocityAt::AverageOver(18.0), &gale)
+            .unwrap();
+    let path = pellets::fly(&pellet, muzzle, &gale, 18.0).unwrap();
+    assert!(
+        muzzle < 10.0 && (18.0 / pellet_at(&path, 18.0).time - 10.0).abs() < 0.01,
+        "{muzzle}"
+    );
+}
+
+#[test]
+fn slugs_fly_as_their_makers_tabled_with_a_g1_bc() {
+    // Brenneke Classic 12/70, 31.5 g at 430 m/s: 370, 330, 300 and 275 m/s
+    // at 25, 50, 75 and 100 m; G1 BC about 0.071.
+    let mut slug = scenario();
+    slug.bullet = Bullet {
+        mass_kg: 0.0315,
+        diameter_m: 0.0185,
+        length_m: None,
+        ballistic_coefficient: 0.071,
+        drag_model: DragModel::G1,
+        bc_bands: BcBands::NONE,
+        drag_curve: None,
+    };
+    slug.load.muzzle_velocity = 430.0;
+    slug.rifle.zero_range_m = 50.0;
+    slug.spin_drift = false;
+    for (range, tabled) in [(25.0, 370.0), (50.0, 330.0), (75.0, 300.0), (100.0, 275.0)] {
+        let velocity = row(&slug, range).velocity;
+        assert!(
+            (velocity / tabled - 1.0).abs() <= 0.02,
+            "{velocity:.0} vs {tabled} m/s at {range} m"
+        );
+    }
+}
+
+#[test]
+fn shot_sizes_read_as_their_countries_number_them() {
+    assert_eq!(
+        pellets::diameter_of(&pellets::US_SIZES, "5"),
+        Some(0.003_05)
+    );
+    assert_eq!(
+        pellets::diameter_of(&pellets::US_SIZES, "bb"),
+        Some(0.004_57)
+    );
+    assert_eq!(
+        pellets::diameter_of(&pellets::ENGLISH_SIZES, "5"),
+        Some(0.002_79)
+    );
+    assert_eq!(pellets::diameter_of(&pellets::US_SIZES, "13"), None);
+    for (number, millimetres) in [
+        ("1", 4.1),
+        ("2", 3.75),
+        ("3", 3.5),
+        ("5", 3.0),
+        ("7", 2.5),
+        ("7½", 2.4),
+        ("9", 2.0),
+    ] {
+        let diameter = pellets::nordic_diameter(number).unwrap();
+        assert!((diameter * 1000.0 - millimetres).abs() < 1e-9, "{number}");
+    }
+    assert_eq!(pellets::nordic_diameter("0"), None);
+    assert_eq!(pellets::nordic_diameter("BB"), None);
+    // Sizes grow down the tables; whole US numbers from 7 to FF by 0.010 in.
+    for sizes in [&pellets::US_SIZES[..], &pellets::ENGLISH_SIZES[..]] {
+        let diameters: Vec<f64> = sizes.iter().map(|&(_, diameter)| diameter).collect();
+        let rising = diameters.windows(2).all(|pair| pair[0] < pair[1]);
+        let falling = diameters.windows(2).all(|pair| pair[0] > pair[1]);
+        assert!(rising || falling);
+    }
+    for pair in pellets::US_SIZES[4..18].windows(2) {
+        assert!(
+            (pair[1].1 - pair[0].1 - 0.000_254).abs() < 0.000_03,
+            "{pair:?}"
+        );
+    }
+    assert!((pellets::steel_for_lead(0.003) - 0.0035).abs() < 1e-12);
+    // 32 g of hardened lead US 5 holds about 190 pellets (SAAMI: 171 an ounce).
+    let count = pellets::Pellet::of(pellets::Material::Lead, 0.003_05)
+        .count_in(0.032)
+        .unwrap();
+    assert!((185..200).contains(&count), "{count}");
+    for material in pellets::Material::ALL {
+        assert!((7_000.0..19_000.0).contains(&material.density_kg_m3()));
+        assert_eq!(material.is_lead(), material == pellets::Material::Lead);
+    }
+}
+
+#[test]
+fn a_disc_catches_its_share_of_a_round_normal_spread() {
+    let (sigma, radius) = (0.2, 0.09);
+    let centred = pellets::share_on_disc(sigma, radius, 0.0);
+    assert!((centred - (1.0 - (-(radius * radius) / (2.0 * sigma * sigma)).exp())).abs() < 1e-12);
+    // Off centre, against counting a large seeded pattern.
+    let places = pellets::pattern_at(60.0, 100_000, 11, 30.0).unwrap();
+    let sigma = pellets::sigma_at(60.0, 30.0).unwrap();
+    for offset in [0.05, 0.2, 0.4, 0.8] {
+        let counted = places
+            .iter()
+            .filter(|[right, up]| (right - offset).hypot(*up) <= radius)
+            .count() as f64
+            / places.len() as f64;
+        let share = pellets::share_on_disc(sigma, radius, offset);
+        assert!(
+            (share - counted).abs() < 0.002 + share * 0.05,
+            "{offset}: {share} vs {counted}"
+        );
+    }
+    assert!(
+        (pellets::share_on_disc(sigma, radius, 1e-9) - pellets::share_on_disc(sigma, radius, 0.0))
+            .abs()
+            < 1e-6
+    );
+    // The side the offset is on doesn't matter.
+    assert_eq!(
+        pellets::share_on_disc(0.1, 0.09, -0.05),
+        pellets::share_on_disc(0.1, 0.09, 0.05)
+    );
+    // A spread far smaller than the disc, one σ inside its edge: 84 %.
+    let edge = pellets::share_on_disc(0.000_5, 0.09, 0.089_5);
+    assert!((edge - 0.841).abs() < 0.003, "{edge}");
+    assert_eq!(pellets::share_on_disc(0.01, 0.09, 0.5), 0.0);
+    assert!(pellets::share_on_disc(f64::NAN, 0.09, 0.0).is_nan());
+    assert_eq!(pellets::share_on_disc(0.0, 0.1, 0.05), 1.0);
+    assert_eq!(pellets::share_on_disc(0.0, 0.1, 0.5), 0.0);
+    assert_eq!(pellets::share_on_disc(0.1, 0.0, 0.0), 0.0);
+}
+
+#[test]
+fn hits_on_the_vitals_are_binomial() {
+    // Many pellets each unlikely to hit: Poisson, P(at least k) for 3 and 5
+    // hits expected.
+    for (expected, k, chance) in [
+        (3.0, 1, 0.950),
+        (3.0, 3, 0.577),
+        (5.0, 3, 0.875),
+        (5.0, 5, 0.560),
+    ] {
+        let got = pellets::chance_of_at_least(k, 20_000, expected / 20_000.0);
+        assert!((got - chance).abs() < 0.001, "{expected}, {k}: {got}");
+    }
+    // Few pellets: 5 or more of 9, each half the time, is exactly half.
+    assert!((pellets::chance_of_at_least(5, 9, 0.5) - 0.5).abs() < 1e-12);
+    assert_eq!(pellets::chance_of_at_least(5, 9, 1.0), 1.0);
+    assert_eq!(pellets::chance_of_at_least(10, 9, 0.9), 0.0);
+    assert_eq!(pellets::chance_of_at_least(0, 0, 0.0), 1.0);
+    assert_eq!(pellets::chance_of_at_least(2, 100, 0.0), 0.0);
+    // Hundreds expected: no underflow. 800 or more where 750 are expected
+    // is about 3.5 % (normal approximation).
+    let far = pellets::chance_of_at_least(800, 100_000, 0.0075);
+    assert!((0.025..0.05).contains(&far), "{far}");
+
+    // Nine 00 buckshot all on the vitals at a metre: five hits for sure.
+    let buck = pellets::chance_of_hits(9, 60.0, 1.0, 0.18, 5, 0.0).unwrap();
+    assert!(buck > 0.999, "{buck}");
+
+    // The Swedish hunting test's roe deer at 20 m: 28 pellets in an 18 cm
+    // circle. A 32 g load of US 7 (2.5 mm, about 350 pellets) from half
+    // choke, aimed true, puts twice that there; the test leaves room for
+    // the running target's aim.
+    let pellet = pellets::Pellet::of(pellets::Material::Lead, 0.0025);
+    let load = pellet.count_in(0.032).unwrap();
+    let sigma = pellets::sigma_at(60.0, 20.0).unwrap();
+    let expected = load as f64 * pellets::share_on_disc(sigma, 0.09, 0.0);
+    assert!((55.0..80.0).contains(&expected), "{expected}");
+
+    // Aim error lowers the chance; a perfect aim at close range is near
+    // certain, a sloppy one isn't.
+    let chance = |aim| pellets::chance_of_hits(load, 60.0, 20.0, 0.18, 10, aim).unwrap();
+    assert!(chance(0.0) > 0.99);
+    assert!(chance(0.1) < chance(0.0) && chance(0.3) < chance(0.1));
+    assert!(chance(0.3) > 0.01);
+    assert!(pellets::chance_of_hits(load, 60.0, 20.0, 0.18, 1_001, 0.0).is_err());
+    assert!(pellets::chance_of_hits(load, 60.0, 20.0, 0.0, 3, 0.0).is_err());
+    assert!(pellets::chance_of_hits(load, 60.0, 20.0, 0.18, 3, -1.0).is_err());
+    assert!(pellets::chance_of_hits(load, 0.0, 20.0, 0.18, 3, 0.0).is_err());
+    assert!(pellets::chance_of_hits(pellets::MAX_PELLETS + 1, 60.0, 20.0, 0.18, 3, 0.0).is_err());
+}
+
+#[test]
+fn aim_error_is_averaged_as_drawing_many_misses_would() {
+    // 36 g of 3.5 mm lead (144 pellets), half choke, 18 cm vitals, 5 hits.
+    let misses = pellets::pattern(50.0, 20_000, 5).unwrap();
+    let unit = pellets::pattern_sigma(50.0).unwrap();
+    for (range, aim_rad) in [(25.0, 0.005), (30.0, 0.05), (10.0, 0.05), (40.0, 0.099)] {
+        let aim = aim_rad * range;
+        let sigma = pellets::sigma_at(60.0, range).unwrap();
+        let drawn = misses
+            .iter()
+            .map(|[right, up]| {
+                let offset = right.hypot(*up) / unit * aim;
+                pellets::chance_of_at_least(5, 144, pellets::share_on_disc(sigma, 0.09, offset))
+            })
+            .sum::<f64>()
+            / misses.len() as f64;
+        let averaged = pellets::chance_of_hits(144, 60.0, range, 0.18, 5, aim).unwrap();
+        assert!(
+            (averaged - drawn).abs() < 0.004 + 0.02 * drawn,
+            "{range} m, {aim_rad} rad: {averaged} vs {drawn}"
+        );
+    }
+}
+
+#[test]
+fn a_load_is_enough_out_to_where_its_hits_or_energy_run_out() {
+    let calm = pellets::calm(Atmosphere::standard());
+    // 36 g of US 3 (3.5 mm) lead from half choke on a roe deer: 5 pellets of
+    // at least 6 J in its 18 cm heart-lung circle, nine times in ten, with a
+    // good shot's 5 mrad aim error. Finnish advice is 25 m at most, Danish
+    // 20 m.
+    let pellet = pellets::Pellet::of(pellets::Material::Lead, 0.0035);
+    let load = pellets::ShotLoad {
+        pellet,
+        muzzle_velocity: 400.0,
+        pellets: pellet.count_in(0.036).unwrap(),
+        pattern_percent: 60.0,
+    };
+    let roe_deer = pellets::Quarry {
+        vital_diameter_m: 0.18,
+        min_hits: 5,
+        min_pellet_energy_j: 6.0,
+    };
+    let effective = pellets::effective_range(&load, &roe_deer, &calm, 0.005, 0.9)
+        .unwrap()
+        .unwrap();
+    assert_eq!(effective.limit, Some(pellets::RangeLimit::Hits));
+    assert!(
+        (20.0..32.0).contains(&effective.farthest_m),
+        "{effective:?}"
+    );
+    // Aimed true, a tighter choke reaches farther. With a hunter's aim
+    // error it gains little: its denser middle misses more often (BASC
+    // found fewer mallard hit with tighter chokes).
+    let full = pellets::ShotLoad {
+        pattern_percent: 70.0,
+        ..load
+    };
+    let reach = |load: &pellets::ShotLoad, aim: f64| {
+        pellets::effective_range(load, &roe_deer, &calm, aim, 0.9)
+            .unwrap()
+            .unwrap()
+            .farthest_m
+    };
+    let aimed_true =
+        |percent| pellets::chance_of_hits(load.pellets, percent, 35.0, 0.18, 5, 0.0).unwrap();
+    assert!(aimed_true(70.0) > aimed_true(60.0) + 0.05);
+    assert!(reach(&full, 0.005) <= effective.farthest_m + 3.0);
+    // A sloppier aim reaches less far.
+    let sloppy = pellets::effective_range(&load, &roe_deer, &calm, 0.012, 0.9)
+        .unwrap()
+        .unwrap();
+    assert!(sloppy.farthest_m < effective.farthest_m, "{sloppy:?}");
+    // Small shot runs out of energy before it runs out of pellets.
+    let small = pellets::Pellet::of(pellets::Material::Lead, 0.0024);
+    let small_load = pellets::ShotLoad {
+        pellet: small,
+        pellets: small.count_in(0.036).unwrap(),
+        ..load
+    };
+    let goose = pellets::Quarry {
+        vital_diameter_m: 0.16,
+        min_hits: 3,
+        min_pellet_energy_j: 2.03,
+    };
+    let by_energy = pellets::effective_range(&small_load, &goose, &calm, 0.005, 0.9)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        by_energy.limit,
+        Some(pellets::RangeLimit::Energy),
+        "{by_energy:?}"
+    );
+    let impossible = pellets::Quarry {
+        min_pellet_energy_j: 100.0,
+        ..roe_deer
+    };
+    assert_eq!(
+        pellets::effective_range(&load, &impossible, &calm, 0.005, 0.9).unwrap(),
+        None
+    );
+    assert!(pellets::effective_range(&load, &roe_deer, &calm, 0.005, 1.0).is_err());
+    assert!(pellets::effective_range(&load, &roe_deer, &calm, -0.1, 0.9).is_err());
+}
