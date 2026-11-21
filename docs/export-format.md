@@ -171,7 +171,12 @@ where. Its `marks` say where the shots are:
     taken to face the target squarely, its x to the right and y down;
   - `four_corner`: the corners of a rectangle `width_mm` × `height_mm`,
     from its top left clockwise, map the photo onto the target's plane (a
-    homography), which also straightens a photo taken at an angle.
+    homography), which also straightens a photo taken at an angle. Tapped
+    corners are taken as the photo shows them, so the target's up is the
+    photo's; with `ordered: true` (corners found from a printed MX target's
+    marks, see [mx-targets.md](mx-targets.md)) they are the rectangle's own
+    top left, top right, bottom right and bottom left, and its up is the
+    rectangle's whichever way the photo is turned.
   Until its photo has a calibration a group has no sizes. Several groups
   may be marked on one photo, each with its own aim point.
 - **On a grid** (`"on": "grid"`): a blank grid at true scale, for targets
@@ -883,7 +888,7 @@ How a photo's pixels map to millimetres on the target. Points are in the photo's
 One of:
 
 - `kind`: `"two_point"`, with `a_px` (array of 2 × number), `b_px` (array of 2 × number), `distance_mm` (number): Two points a known distance apart on the target, such as lines of its grid: gives the scale, the photo taken to face the target squarely.
-- `kind`: `"four_corner"`, with `corners_px` (array of 4 × array of 2 × number), `width_mm` (number), `height_mm` (number): The corners of a rectangle of known size on the target, such as the sheet's edges: gives the scale and straightens a photo taken at an angle.
+- `kind`: `"four_corner"`, with `corners_px` (array of 4 × array of 2 × number), `width_mm` (number), `height_mm` (number), `ordered` (boolean): The corners of a rectangle of known size on the target, such as the sheet's edges: gives the scale and straightens a photo taken at an angle.
 
 ### Group
 

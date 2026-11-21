@@ -141,6 +141,7 @@ impl ScaleDraft {
                 corners_px,
                 width_mm,
                 height_mm,
+                ..
             }) => {
                 let rectangle = ScaleDraft {
                     mode: ScaleMode::FourCorners,
@@ -289,6 +290,7 @@ impl ScaleDraft {
                 corners_px: corners.map(xy),
                 width_mm,
                 height_mm,
+                ordered: calibration.is_ordered(),
             },
         })
     }

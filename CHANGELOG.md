@@ -39,6 +39,13 @@ any release may still change things noticeably.
     square size with one tap; the app remembers it. On paper with heavier
     lines every few (1 inch over ¼ inch, 10 mm over 1 mm) you choose the
     big squares or the small ones, each with its own size.
+  - **Detect** (⌖, or D on a computer) on the shots step looks for bullet
+    holes in the part of the photo on screen, sized by the scale and the
+    calibre, dark on paper and light in the black, touching pairs split.
+    They show as dashed rings to check, never added by themselves: tap a
+    ring to tick or untick it, then **Add** the ticked ones as shots in one
+    undo step, numbered from the top left. Holes already marked, and doubtful
+    ones, start unticked.
   - **Blank grid** for a target you didn't photograph, at true scale.
   - **Photos stay on the device:** reduced to 4096 pixels unless you keep
     the originals, with their location and other metadata taken out. Groups,
@@ -81,6 +88,13 @@ any release may still change things noticeably.
     vertical follows velocity against what the solver expects, and save the
     string as the load's velocity.
   - **Share a group** as a picture (PNG), and save groups or shots as CSV.
+- **Cards:** MX targets, printable targets for Groups: A4, A3 or Letter,
+  portrait or landscape, with 1, 2, 4 or 6 diamond or square aim marks sized
+  for 100–300 m, a light 10 mm or 1-inch grid and a 100 mm check ruler. A
+  coded mark near each corner tells the app the sheet's layout, so a photo
+  of the sheet can set its own scale, straighten itself and place the aim
+  points, even when one mark is covered or holed. The format is open and
+  documented in docs/mx-targets.md.
 - **Calculator:** "Use my groups" sets "Your precision" from your measured
   groups.
 - **Rifles** show their round counts (action, barrel, since clean), turning

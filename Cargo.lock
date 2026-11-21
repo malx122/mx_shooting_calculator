@@ -1508,6 +1508,7 @@ name = "groups-vision"
 version = "0.10.1"
 dependencies = [
  "ballistics-store",
+ "groups-core",
  "image",
  "kamadak-exif",
 ]

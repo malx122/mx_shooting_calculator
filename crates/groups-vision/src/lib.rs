@@ -10,6 +10,7 @@
 pub mod grid;
 pub mod holes;
 mod jpeg;
+pub mod marks;
 mod resample;
 
 use std::fmt;

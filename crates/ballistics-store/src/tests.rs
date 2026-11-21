@@ -1627,6 +1627,7 @@ fn range_day(store: &Store, rifle: &Rifle, bullet: &Bullet) -> GroupsData {
         ],
         width_mm: 297.0,
         height_mm: 210.0,
+        ordered: true,
     });
     store.save_photo(&mut photo).unwrap();
 
@@ -1803,6 +1804,7 @@ fn impossible_range_records_are_refused() {
         corners_px: [[0.0, 0.0], [90.0, 0.0], [90.0, 90.0], [90.0, 90.0]],
         width_mm: 210.0,
         height_mm: 297.0,
+        ordered: false,
     });
     assert!(invalid(store.save_photo(&mut photo)));
     let mut group = Group::on_photo(&photo_id(b"x"), 0);

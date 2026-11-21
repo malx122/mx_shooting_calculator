@@ -26,6 +26,9 @@ pub enum Ink {
     White,
     /// Any colour.
     Rgb([u8; 3]),
+    /// Pure black from the black ink alone, for marks that are measured:
+    /// a printer may mix a dark grey from all its inks.
+    Key,
 }
 
 impl Ink {
@@ -42,6 +45,7 @@ impl Ink {
             Ink::GreenShade => [0xDF, 0xF0, 0xDC],
             Ink::White => [0xFF, 0xFF, 0xFF],
             Ink::Rgb(rgb) => rgb,
+            Ink::Key => [0, 0, 0],
         }
     }
 

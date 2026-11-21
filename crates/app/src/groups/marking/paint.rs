@@ -25,6 +25,8 @@ pub const FLIER: Color32 = theme::AMBER;
 pub const AIM: Color32 = theme::MEADOW;
 /// The group's centre and mean radius.
 pub const STATS: Color32 = theme::BONE;
+/// A suggested hole's ring.
+pub const SUGGESTED: Color32 = Color32::from_rgb(0xD4, 0x8C, 0xFF);
 /// Under every mark.
 pub const OUTLINE: Color32 = Color32::from_rgba_premultiplied(0, 0, 0, 190);
 /// The label pills' fill.
@@ -235,7 +237,7 @@ fn circle_points(centre: Pos2, radius: f32, count: usize) -> Vec<Pos2> {
         .collect()
 }
 
-fn dashed_circle(painter: &Painter, centre: Pos2, radius: f32, stroke: Stroke) {
+pub fn dashed_circle(painter: &Painter, centre: Pos2, radius: f32, stroke: Stroke) {
     let dashes = ((radius * std::f32::consts::TAU / 7.0).round() as usize).clamp(6, 64) * 2;
     let points = circle_points(centre, radius, dashes);
     for pair in points.chunks(2) {
@@ -455,6 +457,7 @@ pub enum Icon {
     ZoomIn,
     ZoomOut,
     Fit,
+    Detect,
 }
 
 /// The undo arrow (or, mirrored, redo's) in a square from −1 to 1 with y
@@ -528,6 +531,17 @@ pub fn paint_icon(painter: &Painter, at: Pos2, size: f32, color: Color32, icon: 
             painter.line_segment([p(-0.65, 0.0), p(0.65, 0.0)], stroke);
             if icon == Icon::ZoomIn {
                 painter.line_segment([p(0.0, -0.65), p(0.0, 0.65)], stroke);
+            }
+        }
+        Icon::Detect => {
+            painter.circle_stroke(at, 0.55 * s, stroke);
+            for direction in [
+                vec2(1.0, 0.0),
+                vec2(-1.0, 0.0),
+                vec2(0.0, 1.0),
+                vec2(0.0, -1.0),
+            ] {
+                painter.line_segment([at + direction * 0.3 * s, at + direction * s], stroke);
             }
         }
         Icon::Fit => {

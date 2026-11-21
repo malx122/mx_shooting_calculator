@@ -11,6 +11,7 @@ mod gesture;
 mod grid;
 pub use grid::GridSizes;
 mod history;
+mod holes;
 mod live;
 mod paint;
 mod scale;
@@ -133,6 +134,12 @@ enum Command {
     NoAim,
     /// Back to an earlier step.
     GoTo(Step),
+    /// Look for holes on screen.
+    Detect,
+    /// Add the ticked suggestions as shots.
+    AddSuggested,
+    /// Drop the suggestions.
+    CancelSuggested,
     Back,
     Cancel,
     Done,
@@ -185,6 +192,10 @@ pub struct Marking {
     sight: scale::Sight,
     /// The part of the photo on screen last frame, photo px.
     visible_px: Option<[f64; 4]>,
+    /// The hole search of the shots step.
+    holes: holes::Search,
+    /// The camera and canvas of the last frame.
+    last_canvas: Option<(Camera, Rect)>,
 }
 
 /// How far (points) round a mark a press still takes it.
@@ -265,6 +276,8 @@ impl Marking {
             finder: grid::Finder::new(false),
             sight: scale::Sight::default(),
             visible_px: None,
+            holes: holes::Search::Idle,
+            last_canvas: None,
         }
     }
 
@@ -357,6 +370,7 @@ impl Marking {
                 .map(|photo| f64::from(photo.size_px[0].min(photo.size_px[1]))),
         };
         self.find_grid(context);
+        self.find_holes(ui.ctx(), context);
         let narrow = mobile::is_narrow(ui.ctx());
         let full = ui.available_rect_before_wrap();
         let live = self.live_view(&crate::units::prefs(ui.ctx()), context);
@@ -390,6 +404,7 @@ impl Marking {
             self.commit();
         }
         self.finder.after_frame(ui.ctx());
+        self.holes.after_frame(ui.ctx());
         ui.advance_cursor_after_rect(full);
         outcome
     }
@@ -440,6 +455,84 @@ impl Marking {
         self.selected = None;
     }
 
+    /// Looks for holes on the part of the photo shown last frame, once
+    /// "Looking for holes…" has been on screen.
+    fn find_holes(&mut self, context: &egui::Context, marking: &MarkingContext) {
+        if !self.holes.due() {
+            return;
+        }
+        let (Some(photo), Some(space), Some((camera, rect))) =
+            (marking.photo, self.space(marking), self.last_canvas)
+        else {
+            self.holes = holes::Search::Refused(holes::Refusal::Unreadable);
+            return;
+        };
+        let Some(ink) = photo.ink.as_ref() else {
+            self.holes = holes::Search::Refused(holes::Refusal::Unreadable);
+            return;
+        };
+        let marked: Vec<[f64; 2]> = (0..self.shot_count())
+            .filter_map(|index| self.shot(index).map(|(at, ..)| at))
+            .collect();
+        let calibration = self.core_calibration();
+        let look = holes::Look {
+            space: &space,
+            camera: &camera,
+            rect,
+            pixels_per_point: context.pixels_per_point(),
+            ink,
+            photo_px: photo.size_px,
+            calibration: calibration.as_ref(),
+            calibre_mm: marking.calibre_mm,
+            marked: &marked,
+        };
+        self.holes = match holes::look(&look) {
+            Ok(suggestions) => holes::Search::Shown(suggestions),
+            Err(refusal) => holes::Search::Refused(refusal),
+        };
+        self.selected = None;
+    }
+
+    /// Adds the ticked suggestions as shots in one undo step, numbered from
+    /// the top left as they show on screen.
+    fn add_suggested(&mut self, space: Option<&Space>) {
+        let Some(space) = space else {
+            return;
+        };
+        let Some(suggestions) = self.holes.shown() else {
+            return;
+        };
+        let ticked: Vec<(Point, [f64; 2], f64)> = suggestions
+            .iter()
+            .filter(|suggestion| suggestion.ticked)
+            .filter_map(|s| Some((space.to_display(s.at)?, s.at, s.radius)))
+            .collect();
+        if ticked.is_empty() {
+            return;
+        }
+        let row = 2.0 * ticked.iter().map(|t| t.2).sum::<f64>() / ticked.len() as f64;
+        let points: Vec<Point> = ticked.iter().map(|t| t.0).collect();
+        self.commit();
+        let bounds = mark_bounds(space);
+        let mut added = 0;
+        for index in holes::reading_order(&points, row) {
+            if self
+                .add_shot(xy(bounds.clamp(point(ticked[index].1))))
+                .is_none()
+            {
+                break;
+            }
+            added += 1;
+        }
+        self.commit();
+        self.holes = match ticked.len() - added {
+            0 => holes::Search::Idle,
+            left_out => holes::Search::Refused(holes::Refusal::Full { left_out }),
+        };
+        self.selected = None;
+        self.last_tap = None;
+    }
+
     /// The photo's scale, to keep on the photo record.
     pub fn calibration(&self) -> Option<&Calibration> {
         self.calibration.as_ref()
@@ -455,19 +548,33 @@ impl Marking {
         self.view
     }
 
-    /// How many views deep marking is, for the browser's Back button.
+    /// How many views deep marking is, for the browser's Back button: the
+    /// step, and the hole suggestions while they show.
     pub fn depth(&self) -> usize {
+        self.step_index() + 1 + usize::from(self.suggesting())
+    }
+
+    fn step_index(&self) -> usize {
         self.steps()
             .iter()
             .position(|step| *step == self.step)
             .unwrap_or(0)
-            + 1
     }
 
-    /// Goes back one step. `false` when already at the first step, so the
-    /// caller closes marking (asking first if `unsaved`).
+    /// Whether hole suggestions are showing.
+    fn suggesting(&self) -> bool {
+        self.holes.shown().is_some()
+    }
+
+    /// Goes back: drops the hole suggestions, or back one step. `false`
+    /// when already at the first step, so the caller closes marking (asking
+    /// first if `unsaved`).
     pub fn back(&mut self) -> bool {
-        let index = self.depth() - 1;
+        if self.suggesting() {
+            self.holes = holes::Search::Idle;
+            return true;
+        }
+        let index = self.step_index();
         if index == 0 {
             self.press = None;
             return false;
@@ -498,6 +605,7 @@ impl Marking {
         self.press = None;
         self.selected = None;
         self.last_tap = None;
+        self.holes = holes::Search::Idle;
         if step == Step::Shots && self.step == Step::Aim && self.aim().is_some() {
             self.zoom_to_aim = true;
         }
@@ -704,6 +812,9 @@ impl Marking {
 
     /// Whether a tap off the marks would place one in this step.
     fn places(&self) -> bool {
+        if self.holes.shown().is_some() {
+            return false;
+        }
         match self.step {
             Step::Scale => matches!(self.scale.state(), ScaleState::ToTap(_)),
             Step::Aim | Step::Shots => true,
@@ -712,6 +823,9 @@ impl Marking {
 
     /// Places what this step places at `at` (mark units).
     fn place(&mut self, at: [f64; 2]) {
+        if matches!(self.holes, holes::Search::Refused(_)) {
+            self.holes = holes::Search::Idle;
+        }
         self.selected = match self.step {
             Step::Scale => self.scale.place(at).map(Handle::Scale),
             Step::Aim => {
@@ -850,6 +964,14 @@ impl Marking {
                 }
             }
             Command::Zoom(to) => self.zoom_view(to),
+            Command::Detect => {
+                if self.step == Step::Shots && self.is_photo() && !self.holes.looking() {
+                    self.selected = None;
+                    self.holes.ask();
+                }
+            }
+            Command::AddSuggested => self.add_suggested(space),
+            Command::CancelSuggested => self.holes = holes::Search::Idle,
             Command::Back | Command::Cancel | Command::Done => {}
         }
     }
@@ -953,6 +1075,9 @@ impl Marking {
         touch: bool,
         calibre_mm: Option<f64>,
     ) -> Under<Handle> {
+        if self.suggesting() {
+            return Under::Nothing;
+        }
         let core = self.core_calibration();
         let nearest = self
             .handles()
@@ -1082,7 +1207,7 @@ impl Marking {
             } else {
                 self.press = None;
                 let release = press.gesture.release(at, time);
-                if self.on_release(release, time, &space, &camera) {
+                if self.on_release(release, time, &space, &camera, press.touch) {
                     camera = Camera {
                         centre: extent.centre(),
                         scale: fit,
@@ -1092,6 +1217,7 @@ impl Marking {
             }
         }
         let camera = geometry::clamped(camera, &extent, fit, max_scale);
+        self.last_canvas = Some((camera, rect));
         self.visible_px = match space {
             Space::Photo { .. } => extent
                 .intersect(&camera.visible(rect))
@@ -1171,12 +1297,20 @@ impl Marking {
         time: f64,
         space: &Space,
         camera: &Camera,
+        touch: bool,
     ) -> bool {
         let landing = |at: Pos2| {
             space
                 .to_mark(camera.to_display(at))
                 .filter(|mark| mark_bounds(space).contains(point(*mark)))
         };
+        if self.suggesting() {
+            if let Release::Tap { at, .. } = release {
+                self.holes.toggle_at(at, space, camera, reach(touch));
+            }
+            self.last_tap = None;
+            return false;
+        }
         match release {
             Release::Tap { at, on } => {
                 let last = self.last_tap.take();
@@ -1308,6 +1442,10 @@ impl Marking {
                 aim,
                 self.step == Step::Aim && self.selected == Some(Handle::Aim),
             );
+        }
+
+        if let Some(suggestions) = self.holes.shown() {
+            holes::paint(painter, suggestions, space, camera);
         }
 
         let shots: Vec<(usize, [f64; 2], bool, bool, Pos2)> = (0..self.shot_count())
@@ -1449,43 +1587,17 @@ impl Marking {
         use egui::{Key, Modifiers};
         let selected = self.selected.is_some();
         let shot = matches!(self.selected, Some(Handle::Shot(_)));
+        let suggesting = self.suggesting();
+        let detect = self.step == Step::Shots && self.is_photo();
         ui.input_mut(|input| {
-            if input.consume_key(Modifiers::COMMAND | Modifiers::SHIFT, Key::Z)
-                || input.consume_key(Modifiers::COMMAND, Key::Y)
-            {
-                commands.push(Command::Redo);
-            } else if input.consume_key(Modifiers::COMMAND, Key::Z) {
-                commands.push(Command::Undo);
-            }
-            if selected
-                && (input.consume_key(Modifiers::NONE, Key::Backspace)
-                    || input.consume_key(Modifiers::NONE, Key::Delete))
-            {
-                commands.push(Command::Delete);
-            }
-            if selected && input.consume_key(Modifiers::NONE, Key::Escape) {
-                commands.push(Command::Deselect);
-            }
-            if shot && input.consume_key(Modifiers::NONE, Key::C) {
-                commands.push(Command::ColdBore);
-            }
-            if shot && input.consume_key(Modifiers::NONE, Key::F) {
-                commands.push(Command::Flier);
-            }
-            if selected {
-                for (key, direction) in [
-                    (Key::ArrowLeft, vec2(-1.0, 0.0)),
-                    (Key::ArrowRight, vec2(1.0, 0.0)),
-                    (Key::ArrowUp, vec2(0.0, -1.0)),
-                    (Key::ArrowDown, vec2(0.0, 1.0)),
-                ] {
-                    for _ in 0..input.count_and_consume_key(Modifiers::SHIFT, key) {
-                        commands.push(Command::Nudge(direction, true));
-                    }
-                    for _ in 0..input.count_and_consume_key(Modifiers::NONE, key) {
-                        commands.push(Command::Nudge(direction, false));
-                    }
+            if suggesting {
+                if input.consume_key(Modifiers::NONE, Key::Escape) {
+                    commands.push(Command::CancelSuggested);
+                } else if input.consume_key(Modifiers::NONE, Key::Enter) {
+                    commands.push(Command::AddSuggested);
                 }
+            } else {
+                Self::edit_keys(input, selected, shot, detect, commands);
             }
             if input.consume_key(Modifiers::NONE, Key::Plus)
                 || input.consume_key(Modifiers::NONE, Key::Equals)
@@ -1501,6 +1613,66 @@ impl Marking {
         });
     }
 
+    /// The keys that change the marks: undo, redo, delete, flags, nudges,
+    /// and D for Detect.
+    fn edit_keys(
+        input: &mut egui::InputState,
+        selected: bool,
+        shot: bool,
+        detect: bool,
+        commands: &mut Vec<Command>,
+    ) {
+        use egui::{Key, Modifiers};
+        if input.consume_key(Modifiers::COMMAND | Modifiers::SHIFT, Key::Z)
+            || input.consume_key(Modifiers::COMMAND, Key::Y)
+        {
+            commands.push(Command::Redo);
+        } else if input.consume_key(Modifiers::COMMAND, Key::Z) {
+            commands.push(Command::Undo);
+        }
+        if selected
+            && (input.consume_key(Modifiers::NONE, Key::Backspace)
+                || input.consume_key(Modifiers::NONE, Key::Delete))
+        {
+            commands.push(Command::Delete);
+        }
+        if selected && input.consume_key(Modifiers::NONE, Key::Escape) {
+            commands.push(Command::Deselect);
+        }
+        if shot && input.consume_key(Modifiers::NONE, Key::C) {
+            commands.push(Command::ColdBore);
+        }
+        if shot && input.consume_key(Modifiers::NONE, Key::F) {
+            commands.push(Command::Flier);
+        }
+        if selected {
+            for (key, direction) in [
+                (Key::ArrowLeft, vec2(-1.0, 0.0)),
+                (Key::ArrowRight, vec2(1.0, 0.0)),
+                (Key::ArrowUp, vec2(0.0, -1.0)),
+                (Key::ArrowDown, vec2(0.0, 1.0)),
+            ] {
+                for _ in 0..input.count_and_consume_key(Modifiers::SHIFT, key) {
+                    commands.push(Command::Nudge(direction, true));
+                }
+                for _ in 0..input.count_and_consume_key(Modifiers::NONE, key) {
+                    commands.push(Command::Nudge(direction, false));
+                }
+            }
+        }
+        if detect && input.consume_key(Modifiers::NONE, Key::D) {
+            commands.push(Command::Detect);
+        }
+    }
+
+    /// The instruction's colour: a warning when holes weren't looked for.
+    fn instruction_color(&self, palette: &theme::Palette) -> egui::Color32 {
+        match self.holes {
+            holes::Search::Refused(_) if self.step == Step::Shots => palette.warning,
+            _ => palette.text_muted,
+        }
+    }
+
     /// The line telling what to do now.
     fn instruction(&self, narrow: bool) -> String {
         match self.step {
@@ -1510,6 +1682,22 @@ impl Marking {
                 Some(_) => tr("Drag the crosshair to move it, or go on to the shots.").to_owned(),
             },
             Step::Shots => {
+                match &self.holes {
+                    holes::Search::Looking { .. } => return tr("Looking for holes…").to_owned(),
+                    holes::Search::Refused(refusal) => return refusal.message(),
+                    holes::Search::Shown(_) if narrow => {
+                        return tr("Suggestions to check: tap a ring to tick or untick it.")
+                            .to_owned();
+                    }
+                    holes::Search::Shown(_) => {
+                        return tr(
+                            "Suggestions to check against the photo: click a ring to tick or \
+                             untick it · Enter adds the ticked ones · Esc cancels",
+                        )
+                        .to_owned();
+                    }
+                    holes::Search::Idle => {}
+                }
                 let next = self.shot_count() + 1;
                 if self.press.is_some_and(|press| press.gesture.is_placing()) {
                     return trf!("Lift to place shot {}.", next);
@@ -1523,7 +1711,13 @@ impl Marking {
                          Esc deselects",
                         index + 1
                     ),
-                    _ => trf!("Tap to place shot {} · hold a shot to select it", next),
+                    _ if narrow || !self.is_photo() => {
+                        trf!("Tap to place shot {} · hold a shot to select it", next)
+                    }
+                    _ => trf!(
+                        "Tap to place shot {} · hold a shot to select it · D detects holes",
+                        next
+                    ),
                 }
             }
         }

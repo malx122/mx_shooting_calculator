@@ -50,7 +50,14 @@ pub fn scale(calibration: &Calibration) -> Result<groups_core::Calibration, Cali
             corners_px,
             width_mm,
             height_mm,
+            ordered: false,
         } => groups_core::Calibration::four_corners(corners_px.map(point), *width_mm, *height_mm),
+        Calibration::FourCorner {
+            corners_px,
+            width_mm,
+            height_mm,
+            ordered: true,
+        } => groups_core::Calibration::sheet_corners(corners_px.map(point), *width_mm, *height_mm),
     }
 }
 
@@ -139,4 +146,34 @@ pub fn measure(
         stats,
         with_called_fliers,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A sheet upside down on the photo: tapped corners give the photo's up,
+    /// ordered ones the sheet's.
+    #[test]
+    fn ordered_corners_keep_the_sheets_up() {
+        let corners_px = [
+            [500.0, 400.0],
+            [100.0, 400.0],
+            [100.0, 100.0],
+            [500.0, 100.0],
+        ];
+        let up_the_photo = |ordered: bool| {
+            let mapping = scale(&Calibration::FourCorner {
+                corners_px,
+                width_mm: 200.0,
+                height_mm: 150.0,
+                ordered,
+            })
+            .unwrap();
+            let at = |y: f64| mapping.to_mm(Point::new(300.0, y)).unwrap();
+            at(230.0).y - at(250.0).y
+        };
+        assert!((up_the_photo(false) - 10.0).abs() < 1e-9);
+        assert!((up_the_photo(true) + 10.0).abs() < 1e-9);
+    }
 }

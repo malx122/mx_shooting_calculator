@@ -36,7 +36,10 @@ pub fn write(pages: &[Sheet], title: &str) -> Vec<u8> {
     let kids: Vec<String> = (0..pages.len())
         .map(|index| format!("{} 0 R", first_page + 2 * index))
         .collect();
-    objects[0] = b"<< /Type /Catalog /Pages 2 0 R >>".to_vec();
+    // Printed at the sheet's own size: no shrinking to the printer's margins.
+    objects[0] = b"<< /Type /Catalog /Pages 2 0 R \
+        /ViewerPreferences << /PrintScaling /None /PickTrayByPDFSize true >> >>"
+        .to_vec();
     objects[1] = format!(
         "<< /Type /Pages /Kids [{}] /Count {} >>",
         kids.join(" "),
@@ -65,7 +68,7 @@ pub fn write(pages: &[Sheet], title: &str) -> Vec<u8> {
 
     // Plain ASCII throughout: text outside it is written as octal escapes,
     // font files in hex.
-    let mut pdf = b"%PDF-1.4\n".to_vec();
+    let mut pdf = b"%PDF-1.7\n".to_vec();
     let mut offsets = Vec::with_capacity(objects.len());
     for (index, object) in objects.iter().enumerate() {
         offsets.push(pdf.len());
@@ -158,13 +161,19 @@ fn content(sheet: &Sheet, fonts: &BTreeMap<Font, usize>) -> Vec<u8> {
             sheet.height * MM
         ),
     );
-    let colour = |ink: Ink| {
+    // The fill colour (`rg`, or `g` for pure black) or with `stroke` the
+    // line colour (`RG`, `G`).
+    let colour = |ink: Ink, stroke: bool| {
+        if ink == Ink::Key {
+            return if stroke { "0 G" } else { "0 g" }.to_owned();
+        }
         let [r, g, b] = ink.rgb();
         format!(
-            "{:.3} {:.3} {:.3}",
+            "{:.3} {:.3} {:.3} {}",
             f32::from(r) / 255.0,
             f32::from(g) / 255.0,
-            f32::from(b) / 255.0
+            f32::from(b) / 255.0,
+            if stroke { "RG" } else { "rg" }
         )
     };
     let path = |points: &[[f32; 2]]| {
@@ -189,8 +198,8 @@ fn content(sheet: &Sheet, fonts: &BTreeMap<Font, usize>) -> Vec<u8> {
                 put(
                     &mut out,
                     format!(
-                        "{} RG {width:.3} w {dash} {}{close}S\n",
-                        colour(*ink),
+                        "{} {width:.3} w {dash} {}{close}S\n",
+                        colour(*ink, true),
                         path(points)
                     ),
                 );
@@ -198,7 +207,7 @@ fn content(sheet: &Sheet, fonts: &BTreeMap<Font, usize>) -> Vec<u8> {
             Mark::Fill { points, ink, .. } => {
                 put(
                     &mut out,
-                    format!("{} rg {}h f\n", colour(*ink), path(points)),
+                    format!("{} {}h f\n", colour(*ink, false), path(points)),
                 );
             }
             Mark::Text {
@@ -217,8 +226,8 @@ fn content(sheet: &Sheet, fonts: &BTreeMap<Font, usize>) -> Vec<u8> {
                 };
                 // The text matrix flips y back, so the letters stand upright.
                 let mut op = format!(
-                    "BT {} rg /F{} {:.3} Tf 1 0 0 -1 {x:.3} {:.3} Tm ",
-                    colour(*ink),
+                    "BT {} /F{} {:.3} Tf 1 0 0 -1 {x:.3} {:.3} Tm ",
+                    colour(*ink, false),
                     fonts.get(font).copied().unwrap_or(1),
                     size * PT,
                     at[1]
@@ -266,7 +275,8 @@ mod tests {
         );
         let pdf = write(&[sheet.clone(), sheet], "Test");
         let text = String::from_utf8(pdf).unwrap();
-        assert!(text.starts_with("%PDF-1.4"));
+        assert!(text.starts_with("%PDF-1.7"));
+        assert!(text.contains("/PrintScaling /None"));
         assert!(text.contains("/Count 2"));
         assert!(text.contains("(\\304lg \\(moose\\) 3 \\260C) Tj"));
         // The cross-reference table points at each object.

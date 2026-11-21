@@ -14,3 +14,4 @@ image = { version = "0.25.10", default-features = false, features = ["jpeg", "pn
 kamadak-exif = "0.6.2"
 # Photo ids, as the store names photos.
 ballistics-store.workspace = true
+groups-core.workspace = true

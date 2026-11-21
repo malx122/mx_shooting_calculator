@@ -54,6 +54,14 @@ pub enum Calibration {
         /// The rectangle's height: from its top-right to its bottom-right
         /// corner.
         height_mm: f64,
+        /// `true` when the corners are the rectangle's own top left, top
+        /// right, bottom right and bottom left, whichever way the photo
+        /// shows them, as found from a printed MX target's marks: the
+        /// target's up is then the rectangle's, not the photo's. `false`
+        /// (or left out) for corners tapped on the photo, which are taken
+        /// in the order the photo shows them.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        ordered: bool,
     },
 }
 
@@ -80,6 +88,7 @@ impl Calibration {
                 corners_px,
                 width_mm,
                 height_mm,
+                ordered,
             } => {
                 let distinct = (0..4).all(|i| (i + 1..4).all(|j| corners_px[i] != corners_px[j]));
                 if !corners_px.iter().all(|corner| on_photo(*corner)) {
@@ -88,12 +97,26 @@ impl Calibration {
                     Some("the rectangle's four corners must differ")
                 } else if !length(*width_mm) || !length(*height_mm) {
                     Some("the rectangle's sides must be more than 0 and at most 10 m")
+                } else if *ordered && !goes_round(corners_px) {
+                    Some("the rectangle's ordered corners must go round it")
                 } else {
                     None
                 }
             }
         }
     }
+}
+
+/// Whether the corners, in their order, turn the same way at each corner:
+/// round a convex quadrilateral, not across it.
+fn goes_round(corners: &[[f64; 2]; 4]) -> bool {
+    let turns: Vec<f64> = (0..4)
+        .map(|i| {
+            let [a, b, c] = [corners[(i + 3) % 4], corners[i], corners[(i + 1) % 4]];
+            (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        })
+        .collect();
+    turns.iter().all(|&t| t > 0.0) || turns.iter().all(|&t| t < 0.0)
 }
 
 fn on_photo(point: [f64; 2]) -> bool {

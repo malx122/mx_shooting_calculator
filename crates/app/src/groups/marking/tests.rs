@@ -680,6 +680,7 @@ fn four_corners_keep_their_sorted_order_and_say_when_they_look_turned() {
         corners_px,
         width_mm,
         height_mm,
+        ..
     }) = draft.to_store()
     else {
         panic!("a four-corner scale");
@@ -754,6 +755,7 @@ fn a_sheet_reopens_as_a_sheet() {
         corners_px: [[0.0, 0.0], [400.0, 0.0], [400.0, 560.0], [0.0, 560.0]],
         width_mm,
         height_mm,
+        ordered: false,
     };
     // Letter is a whole 17 × 22 half-inch squares, but it is a sheet.
     for (width, height) in [(210.0, 297.0), (215.9, 279.4), (420.0, 297.0)] {
@@ -861,6 +863,7 @@ struct Run {
     context: egui::Context,
     width: f32,
     time: f64,
+    calibre_mm: Option<f64>,
 }
 
 impl Run {
@@ -872,6 +875,7 @@ impl Run {
             context,
             width,
             time: 10.0,
+            calibre_mm: Some(6.5),
         }
     }
 
@@ -890,7 +894,7 @@ impl Run {
         };
         let context = MarkingContext {
             photo,
-            calibre_mm: Some(6.5),
+            calibre_mm: self.calibre_mm,
             distance_m: Some(100.0),
         };
         let mut outcome = MarkingOutcome::Working;
@@ -1007,12 +1011,39 @@ fn every_step() -> Vec<(&'static str, Marking)> {
     grid.add_shot([-6.0, 2.0]);
     grid.add_shot([1.0, -9.0]);
 
+    let mut suggested = Marking::new_photo(
+        "photo".into(),
+        Some(Calibration::TwoPoint {
+            a_px: [100.0, 100.0],
+            b_px: [600.0, 100.0],
+            distance_mm: 100.0,
+        }),
+    );
+    suggested.set_aim(Some([640.0, 480.0]));
+    suggested.go_to(Step::Shots);
+    suggested.add_shot([650.0, 470.0]);
+    let ring = |at: [f64; 2], ticked: bool, blob: Option<u32>| holes::Suggestion {
+        at,
+        radius: 16.0,
+        ticked,
+        near_marked: !ticked,
+        score: 0.8,
+        blob,
+    };
+    suggested.holes = holes::Search::Shown(vec![
+        ring([651.0, 471.0], false, None),
+        ring([600.0, 520.0], true, None),
+        ring([700.0, 430.0], true, Some(0)),
+        ring([728.0, 438.0], true, Some(0)),
+    ]);
+
     vec![
         ("two points", two),
         ("four corners", four),
         ("aim on a straightened photo", aim),
         ("shots", shots),
         ("grid", grid),
+        ("hole suggestions", suggested),
     ]
 }
 
@@ -1411,6 +1442,7 @@ fn the_last_square_size_is_kept_only_for_a_blank_scale() {
         ],
         width_mm: 100.0,
         height_mm: 75.0,
+        ordered: false,
     };
     let kept = Marking::new_photo("photo".into(), Some(scaled)).with_grid_sizes(sizes);
     assert_eq!(kept.scale.square_mm, 25.0);
@@ -1492,4 +1524,621 @@ fn sizes_no_target_has_are_warned_about() {
     draft.square_mm = 1.0;
     (draft.squares_across, draft.squares_down) = (4, 4);
     assert_eq!(warnings(&draft).len(), 2, "{:?}", warnings(&draft));
+}
+
+// --- Hole suggestions ---
+
+/// A hole drawn on a synthetic target: its centre and radius in target mm.
+struct DrawnHole {
+    mm: Point,
+    radius_mm: f64,
+}
+
+/// A target photo `width` × `height` pixels, a reduction by `per_px` of the
+/// photo: cream paper, blue grid lines every 10 mm, a black aiming disc and
+/// the holes, dark on the paper and light on the black, edges smoothed.
+/// `to_mm` takes photo pixels to target mm.
+fn target_rgba(
+    width: u32,
+    height: u32,
+    per_px: f64,
+    to_mm: &dyn Fn(Point) -> Option<Point>,
+    bull: (Point, f64),
+    holes: &[DrawnHole],
+) -> Vec<u8> {
+    let mut rgba = Vec::with_capacity((width * height * 4) as usize);
+    for y in 0..height {
+        for x in 0..width {
+            let mut sum = [0.0f64; 3];
+            for sy in 0..3 {
+                for sx in 0..3 {
+                    let px = Point::new(
+                        (f64::from(x) + (f64::from(sx) + 0.5) / 3.0) / per_px,
+                        (f64::from(y) + (f64::from(sy) + 0.5) / 3.0) / per_px,
+                    );
+                    let Some(mm) = to_mm(px) else {
+                        continue;
+                    };
+                    let in_bull = (mm - bull.0).length() < bull.1;
+                    let on_line = (mm.x.rem_euclid(10.0) < 0.25) || (mm.y.rem_euclid(10.0) < 0.25);
+                    let mut colour = if in_bull {
+                        [25.0, 25.0, 28.0]
+                    } else if on_line {
+                        [120.0, 160.0, 220.0]
+                    } else {
+                        [242.0, 236.0, 222.0]
+                    };
+                    if holes
+                        .iter()
+                        .any(|hole| (mm - hole.mm).length() < hole.radius_mm)
+                    {
+                        colour = if in_bull {
+                            [205.0, 200.0, 190.0]
+                        } else {
+                            [45.0, 40.0, 38.0]
+                        };
+                    }
+                    for (total, value) in sum.iter_mut().zip(colour) {
+                        *total += value;
+                    }
+                }
+            }
+            rgba.extend(sum.map(|total| (total / 9.0).round() as u8));
+            rgba.push(255);
+        }
+    }
+    rgba
+}
+
+/// The test target as a photo ready to mark, 1600 × 1200 pixels shown and
+/// searched at 800 × 600, with the holes' centres in photo pixels.
+fn target_photo(
+    context: &egui::Context,
+    calibration: &Calibration,
+) -> (PhotoImage, Vec<u8>, Vec<[f64; 2]>, Point) {
+    target_photo_at(context, calibration, 0.5)
+}
+
+/// The same, kept at `per_px` image pixels to a photo pixel.
+fn target_photo_at(
+    context: &egui::Context,
+    calibration: &Calibration,
+    per_px: f64,
+) -> (PhotoImage, Vec<u8>, Vec<[f64; 2]>, Point) {
+    let core = crate::groups::measure::scale(calibration).expect("a scale");
+    let centre = core.to_mm(Point::new(800.0, 600.0)).unwrap();
+    let at = |dx: f64, dy: f64| centre + Point::new(dx, dy);
+    let holes = [
+        // On the paper.
+        at(-45.0, 30.0),
+        at(40.0, 35.0),
+        at(45.0, -30.0),
+        at(-40.0, -38.0),
+        // Two touching.
+        at(4.0, 46.0),
+        at(9.2, 46.0),
+        // Through the black.
+        at(-8.0, 6.0),
+        at(9.0, -7.0),
+    ];
+    let drawn: Vec<DrawnHole> = holes
+        .iter()
+        .map(|mm| DrawnHole {
+            mm: *mm,
+            radius_mm: 3.25,
+        })
+        .collect();
+    let (width, height) = ((1600.0 * per_px) as u32, (1200.0 * per_px) as u32);
+    let rgba = target_rgba(
+        width,
+        height,
+        per_px,
+        &|px| core.to_mm(px),
+        (centre, 22.0),
+        &drawn,
+    );
+    let image = egui::ColorImage::from_rgba_unmultiplied([width as usize, height as usize], &rgba);
+    let photo = PhotoImage {
+        id: "photo".into(),
+        texture: context.load_texture("holes-target", image, egui::TextureOptions::LINEAR),
+        size_px: [1600, 1200],
+        ink: Some(groups_vision::grid::InkImage::from_rgba(
+            width, height, &rgba,
+        )),
+    };
+    let centres = holes
+        .iter()
+        .map(|mm| {
+            let px = core.to_px(*mm).unwrap();
+            [px.x, px.y]
+        })
+        .collect();
+    let aim = core.to_px(centre).unwrap();
+    (photo, rgba, centres, aim)
+}
+
+fn two_point_scale() -> Calibration {
+    Calibration::TwoPoint {
+        a_px: [100.0, 100.0],
+        b_px: [600.0, 100.0],
+        distance_mm: 100.0,
+    }
+}
+
+fn four_corner_scale() -> Calibration {
+    Calibration::FourCorner {
+        corners_px: [
+            [300.0, 220.0],
+            [1310.0, 260.0],
+            [1360.0, 1010.0],
+            [250.0, 960.0],
+        ],
+        width_mm: 200.0,
+        height_mm: 150.0,
+        ordered: false,
+    }
+}
+
+fn key(key: egui::Key) -> egui::Event {
+    egui::Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::NONE,
+    }
+}
+
+/// Detect on a drawn target finds its holes, dark and light, on a plain
+/// and on a straightened photo, from the key and the button.
+#[test]
+fn detect_finds_the_holes_of_a_drawn_target() {
+    for (calibration, straightened) in [(two_point_scale(), false), (four_corner_scale(), true)] {
+        for width in [1200.0, 390.0] {
+            let mut run = Run::new(ThemeChoice::Sun, width);
+            let (image, _, centres, _) = target_photo(&run.context, &calibration);
+            let mut marking = Marking::new_photo("photo".into(), Some(calibration));
+            // A hole right on the aim point is suggested too.
+            marking.set_aim(Some(centres[6]));
+            marking.go_to(Step::Shots);
+            marking.zoom_to_aim = false;
+            marking.add_shot(centres[0]);
+            marking.commit();
+            run.frame(&mut marking, Some(&image), Vec::new());
+            assert_eq!(
+                matches!(
+                    marking.space(&MarkingContext {
+                        photo: Some(&image),
+                        calibre_mm: None,
+                        distance_m: None
+                    }),
+                    Some(Space::Straightened { .. })
+                ),
+                straightened
+            );
+            if width > 1000.0 {
+                run.frame(&mut marking, Some(&image), vec![key(egui::Key::D)]);
+            } else {
+                marking.apply(Command::Detect, None);
+            }
+            assert!(marking.holes.looking());
+            run.frame(&mut marking, Some(&image), Vec::new());
+            assert_eq!(marking.instruction(width < 1000.0), "Looking for holes…");
+            for _ in 0..2 {
+                run.frame(&mut marking, Some(&image), Vec::new());
+            }
+            let suggestions = marking
+                .holes
+                .shown()
+                .unwrap_or_else(|| panic!("{straightened} {width}: {:?}", marking.holes))
+                .to_vec();
+            assert_eq!(marking.depth(), 4, "Back drops the suggestions first");
+            for (index, centre) in centres.iter().enumerate() {
+                let found = suggestions.iter().find(|suggestion| {
+                    (suggestion.at[0] - centre[0]).hypot(suggestion.at[1] - centre[1]) < 4.0
+                });
+                let found = found.unwrap_or_else(|| {
+                    panic!("{straightened} {width}: hole {index} at {centre:?} in {suggestions:?}")
+                });
+                assert_eq!(found.ticked, index != 0, "{index}: {found:?}");
+                assert_eq!(found.near_marked, index == 0);
+                assert_eq!(found.blob.is_some(), index == 4 || index == 5, "{found:?}");
+            }
+            assert_eq!(suggestions.len(), centres.len(), "{suggestions:?}");
+            // Each ring is about the hole's size: 6.5 mm.
+            let core = crate::groups::measure::scale(&calibration).unwrap();
+            for suggestion in &suggestions {
+                let at = Point::new(suggestion.at[0], suggestion.at[1]);
+                let mm = if straightened {
+                    2.0 * suggestion.radius
+                } else {
+                    2.0 * suggestion.radius * core.mm_per_px_at(at).unwrap()
+                };
+                assert!((mm - 6.5).abs() < 1.0, "{mm} mm");
+            }
+        }
+    }
+}
+
+/// The photo's colours searched as they are find the same holes as the
+/// one-byte ink image the app keeps.
+#[test]
+fn the_ink_image_finds_what_the_colours_find() {
+    use groups_vision::holes::{HoleQuery, Pixels, Region, find_holes};
+    let context = egui::Context::default();
+    let (image, rgba, _, _) = target_photo(&context, &two_point_scale());
+    let ink = image.ink.as_ref().unwrap();
+    let query = HoleQuery::new(Some(15.0));
+    let region = |pixels| Region {
+        width_px: 800,
+        height_px: 600,
+        pixels,
+    };
+    let from_ink = find_holes(&region(Pixels::Gray(&ink.pixels)), &query).unwrap();
+    let from_colour = find_holes(&region(Pixels::Rgba(&rgba)), &query).unwrap();
+    assert_eq!(from_ink.len(), 8, "{from_ink:?}");
+    assert_eq!(from_ink.len(), from_colour.len());
+    for hole in &from_ink {
+        assert!(
+            from_colour
+                .iter()
+                .any(|other| (other.x_px - hole.x_px).hypot(other.y_px - hole.y_px) < 0.5),
+            "{hole:?}"
+        );
+    }
+}
+
+#[test]
+fn rings_start_ticked_unless_marked_already_or_doubtful() {
+    let hole = groups_vision::holes::Hole {
+        x_px: 10.0,
+        y_px: 10.0,
+        diameter_px: 12.0,
+        score: 0.8,
+        near_marked: false,
+        light: false,
+        split: None,
+    };
+    assert!(holes::starts_ticked(&hole));
+    assert!(!holes::starts_ticked(&groups_vision::holes::Hole {
+        near_marked: true,
+        ..hole
+    }));
+    assert!(!holes::starts_ticked(&groups_vision::holes::Hole {
+        score: holes::LOW_SCORE - 0.01,
+        ..hole
+    }));
+    assert!(holes::starts_ticked(&groups_vision::holes::Hole {
+        score: holes::LOW_SCORE,
+        light: true,
+        ..hole
+    }));
+}
+
+#[test]
+fn shots_are_numbered_in_rows_from_the_top_left() {
+    let points = [
+        Point::new(50.0, 12.0),
+        Point::new(10.0, 40.0),
+        Point::new(12.0, 10.0),
+        Point::new(30.0, 15.0),
+        Point::new(40.0, 42.0),
+    ];
+    assert_eq!(holes::reading_order(&points, 8.0), vec![2, 3, 0, 1, 4]);
+    assert!(holes::reading_order(&[], 8.0).is_empty());
+}
+
+#[test]
+fn tapping_a_ring_ticks_it_and_add_takes_exactly_the_ticked_in_one_undo() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let (image, _, centres, _) = target_photo(&run.context, &two_point_scale());
+    let mut marking = Marking::new_photo("photo".into(), Some(two_point_scale()));
+    marking.go_to(Step::Shots);
+    marking.add_shot([10.0, 10.0]);
+    marking.commit();
+    let ring = |at: [f64; 2], ticked: bool| holes::Suggestion {
+        at,
+        radius: 15.0,
+        ticked,
+        near_marked: false,
+        score: 0.8,
+        blob: None,
+    };
+    // Given out of order: numbered from the top left all the same.
+    marking.holes = holes::Search::Shown(vec![
+        ring(centres[1], true),
+        ring(centres[3], true),
+        ring(centres[0], false),
+        ring(centres[2], true),
+    ]);
+    run.frame(&mut marking, Some(&image), Vec::new());
+    let (camera, _) = marking.last_canvas.unwrap();
+    let space = marking.space(&MarkingContext {
+        photo: Some(&image),
+        calibre_mm: None,
+        distance_m: None,
+    });
+    let screen = |at: [f64; 2]| camera.to_screen(space.unwrap().to_display(at).unwrap());
+
+    // Taps toggle rings and add no shots.
+    run.tap(&mut marking, Some(&image), screen(centres[0]));
+    run.tap(&mut marking, Some(&image), screen(centres[3]));
+    run.tap(
+        &mut marking,
+        Some(&image),
+        screen(centres[3]) + vec2(200.0, 0.0),
+    );
+    let ticked: Vec<bool> = marking
+        .holes
+        .shown()
+        .unwrap()
+        .iter()
+        .map(|s| s.ticked)
+        .collect();
+    assert_eq!(ticked, [true, false, true, true]);
+    run.tap(&mut marking, Some(&image), screen(centres[3]));
+    run.tap(&mut marking, Some(&image), screen(centres[1]));
+    assert_eq!(marking.shot_count(), 1, "taps on and off rings add nothing");
+
+    let before = marking.marks.clone();
+    marking.apply(Command::AddSuggested, space.as_ref());
+    assert!(marking.holes.shown().is_none());
+    assert_eq!(marking.shot_count(), 4);
+    let mut expected = vec![centres[0], centres[3], centres[2]];
+    expected.sort_by(|a, b| a[1].total_cmp(&b[1]));
+    let added: Vec<[f64; 2]> = (1..4).map(|i| marking.shot(i).unwrap().0).collect();
+    assert_eq!(added, expected, "from the top");
+    marking.undo();
+    assert_eq!(marking.marks, before, "one undo takes them all back");
+
+    // Cancel and Escape add nothing.
+    for cancel in [Some(Command::CancelSuggested), Some(Command::Back), None] {
+        marking.holes = holes::Search::Shown(vec![ring(centres[2], true)]);
+        match cancel {
+            Some(command) => {
+                assert_eq!(marking.run_command(command, space.as_ref()), None);
+            }
+            None => {
+                run.frame(&mut marking, Some(&image), vec![key(egui::Key::Escape)]);
+            }
+        }
+        assert!(marking.holes.shown().is_none(), "{cancel:?}");
+        assert_eq!(marking.step, Step::Shots);
+        assert_eq!(marking.shot_count(), 1);
+    }
+    // The browser's Back too.
+    marking.holes = holes::Search::Shown(vec![ring(centres[2], true)]);
+    assert!(marking.back());
+    assert_eq!((marking.step, marking.shot_count()), (Step::Shots, 1));
+
+    // Enter with nothing ticked keeps the rings.
+    marking.holes = holes::Search::Shown(vec![ring(centres[2], false)]);
+    run.frame(&mut marking, Some(&image), vec![key(egui::Key::Enter)]);
+    assert_eq!(marking.holes.shown().map(<[_]>::len), Some(1));
+    assert_eq!(marking.shot_count(), 1);
+
+    // A full group says how many were left out.
+    while marking.shot_count() < ballistics_store::groups::MAX_SHOTS - 1 {
+        marking.add_shot([20.0, 20.0]);
+    }
+    marking.commit();
+    marking.holes = holes::Search::Shown(vec![
+        ring(centres[1], true),
+        ring(centres[2], true),
+        ring(centres[3], true),
+    ]);
+    marking.apply(Command::AddSuggested, space.as_ref());
+    assert_eq!(marking.shot_count(), ballistics_store::groups::MAX_SHOTS);
+    assert_eq!(
+        marking.holes,
+        holes::Search::Refused(holes::Refusal::Full { left_out: 2 })
+    );
+    assert!(marking.instruction(false).contains("2 holes weren't added"));
+}
+
+#[test]
+fn detect_says_why_it_did_not_look() {
+    let mut run = Run::new(ThemeChoice::Dark, 1200.0);
+    let (image, ..) = target_photo(&run.context, &two_point_scale());
+    let detect = |run: &mut Run, marking: &mut Marking| {
+        marking.apply(Command::Detect, None);
+        for _ in 0..3 {
+            run.frame(marking, Some(&image), Vec::new());
+        }
+        match &marking.holes {
+            holes::Search::Refused(refusal) => (*refusal, marking.instruction(false)),
+            other => panic!("{other:?}"),
+        }
+    };
+    let mut marking = Marking::new_photo("photo".into(), None);
+    marking.go_to(Step::Shots);
+    run.frame(&mut marking, Some(&image), Vec::new());
+    assert_eq!(
+        detect(&mut run, &mut marking),
+        (
+            holes::Refusal::NoSize,
+            "Set the scale and the bullet first".to_owned()
+        )
+    );
+    let mut marking = Marking::new_photo("photo".into(), Some(two_point_scale()));
+    marking.go_to(Step::Shots);
+    run.calibre_mm = None;
+    run.frame(&mut marking, Some(&image), Vec::new());
+    assert_eq!(detect(&mut run, &mut marking).0, holes::Refusal::NoSize);
+    run.calibre_mm = Some(6.5);
+
+    // 2 mm a pixel: holes about 3 pixels across, under 2 in the image kept.
+    let coarse = Calibration::TwoPoint {
+        a_px: [100.0, 100.0],
+        b_px: [600.0, 100.0],
+        distance_mm: 1000.0,
+    };
+    let mut marking = Marking::new_photo("photo".into(), Some(coarse));
+    marking.go_to(Step::Shots);
+    run.frame(&mut marking, Some(&image), Vec::new());
+    assert_eq!(
+        detect(&mut run, &mut marking),
+        (
+            holes::Refusal::Coarse,
+            "The photo is too coarse here to find holes".to_owned()
+        )
+    );
+    assert_eq!(
+        marking.instruction_color(theme::palette(&run.context)),
+        theme::palette(&run.context).warning
+    );
+
+    // 0.8 mm a pixel in an image kept whole: 8 pixels a hole, 5 on screen.
+    // The image's own pixels are searched, so zooming isn't asked for; it
+    // is only when the part on screen is too large to search whole.
+    let (sharp, ..) = target_photo_at(&run.context, &two_point_scale(), 1.0);
+    let small = Calibration::TwoPoint {
+        a_px: [100.0, 100.0],
+        b_px: [600.0, 100.0],
+        distance_mm: 400.0,
+    };
+    let mut marking = Marking::new_photo("photo".into(), Some(small));
+    marking.go_to(Step::Shots);
+    run.frame(&mut marking, Some(&sharp), Vec::new());
+    marking.apply(Command::Detect, None);
+    for _ in 0..3 {
+        run.frame(&mut marking, Some(&sharp), Vec::new());
+    }
+    assert!(
+        !matches!(
+            marking.holes,
+            holes::Search::Looking { .. }
+                | holes::Search::Refused(holes::Refusal::ZoomIn(_) | holes::Refusal::Coarse)
+        ),
+        "{:?}",
+        marking.holes
+    );
+
+    // 0.02 mm a pixel: holes 300 pixels across.
+    let fine = Calibration::TwoPoint {
+        a_px: [100.0, 100.0],
+        b_px: [600.0, 100.0],
+        distance_mm: 10.0,
+    };
+    let mut marking = Marking::new_photo("photo".into(), Some(fine));
+    marking.go_to(Step::Shots);
+    run.frame(&mut marking, Some(&image), Vec::new());
+    assert_eq!(
+        detect(&mut run, &mut marking),
+        (holes::Refusal::ZoomOut, "Zoom out a little".to_owned())
+    );
+
+    assert_eq!(
+        holes::Refusal::ZoomIn(1.9).message(),
+        "Zoom in about 2× to look for holes"
+    );
+    assert_eq!(
+        holes::Refusal::ZoomIn(1.1).message(),
+        "Zoom in about 1.5× to look for holes"
+    );
+}
+
+/// The window searched maps screen points, photo pixels and its own pixels
+/// onto each other in the straightened view.
+#[test]
+fn the_window_maps_the_straightened_view_both_ways() {
+    let space = straightened();
+    let rect = Rect::from_min_size(pos2(0.0, 80.0), vec2(390.0, 600.0));
+    let extent = space.extent();
+    let camera = Camera {
+        centre: extent.centre(),
+        scale: geometry::fit_scale(&extent, rect) * 2.0,
+        screen_centre: rect.center(),
+    };
+    let window = holes::Window::over(&space, &camera, rect, 3.0, [0.5, 0.5]).unwrap();
+    assert!(close(window.density, 3.0, 1e-9), "{window:?}");
+    assert!(window.size_px[0] <= 390 * 3 && window.size_px[1] <= 600 * 3);
+    for mark in [[500.0, 500.0], [400.0, 300.0], [620.0, 700.0]] {
+        let screen = camera.to_screen(space.to_display(mark).unwrap());
+        let inside = window.to_window(screen);
+        let back = space
+            .to_mark(camera.to_display(window.to_screen(inside)))
+            .unwrap();
+        assert!(close(back[0], mark[0], 1e-3) && close(back[1], mark[1], 1e-3));
+    }
+    // Zoomed far out the photo's own pixels are finer than the screen's.
+    let far = Camera {
+        scale: camera.scale / 20.0,
+        ..camera
+    };
+    let window = holes::Window::over(&space, &far, rect, 1.0, [1.0, 1.0]).unwrap();
+    assert!(window.density > 1.0, "{window:?}");
+}
+
+/// Writes a target photo with .308 holes for trying Detect in the app (`cargo
+/// test -p mxsc holes_sample_photo -- --ignored`, then convert the BMP with
+/// `sips -s format jpeg`).
+#[test]
+#[ignore]
+fn holes_sample_photo() {
+    let calibration = Calibration::FourCorner {
+        corners_px: [
+            [400.0, 300.0],
+            [2000.0, 360.0],
+            [2080.0, 1500.0],
+            [330.0, 1440.0],
+        ],
+        width_mm: 200.0,
+        height_mm: 150.0,
+        ordered: false,
+    };
+    let core = crate::groups::measure::scale(&calibration).unwrap();
+    let centre = core.to_mm(Point::new(1200.0, 900.0)).unwrap();
+    let offsets = [
+        (-30.0, 22.0),
+        (28.0, 30.0),
+        (35.0, -25.0),
+        (-26.0, -31.0),
+        (8.0, 36.0),
+        (14.2, 36.0),
+        (-7.0, 5.0),
+        (6.0, -8.0),
+        (-50.0, 2.0),
+    ];
+    let holes: Vec<DrawnHole> = offsets
+        .iter()
+        .map(|(dx, dy)| DrawnHole {
+            mm: centre + Point::new(*dx, *dy),
+            radius_mm: 3.9,
+        })
+        .collect();
+    let (width, height) = (2400u32, 1800u32);
+    let rgba = target_rgba(
+        width,
+        height,
+        1.0,
+        &|px| core.to_mm(px),
+        (centre, 20.0),
+        &holes,
+    );
+    let row = (width * 3).div_ceil(4) * 4;
+    let mut bmp = Vec::new();
+    let size = 54 + row * height;
+    bmp.extend(b"BM");
+    bmp.extend(size.to_le_bytes());
+    bmp.extend([0u8; 4]);
+    bmp.extend(54u32.to_le_bytes());
+    bmp.extend(40u32.to_le_bytes());
+    bmp.extend(width.to_le_bytes());
+    bmp.extend(height.to_le_bytes());
+    bmp.extend(1u16.to_le_bytes());
+    bmp.extend(24u16.to_le_bytes());
+    bmp.extend([0u8; 24]);
+    for y in (0..height).rev() {
+        let start = bmp.len();
+        for x in 0..width {
+            let i = ((y * width + x) * 4) as usize;
+            bmp.extend([rgba[i + 2], rgba[i + 1], rgba[i]]);
+        }
+        bmp.resize(start + row as usize, 0);
+    }
+    let directory =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/screens/m4");
+    std::fs::create_dir_all(&directory).unwrap();
+    std::fs::write(directory.join("holes-sample.bmp"), bmp).unwrap();
 }

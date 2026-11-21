@@ -2328,6 +2328,10 @@
               "description": "The rectangle's height: from its top-right to its bottom-right\ncorner.",
               "type": "number",
               "format": "double"
+            },
+            "ordered": {
+              "description": "`true` when the corners are the rectangle's own top left, top\nright, bottom right and bottom left, whichever way the photo\nshows them, as found from a printed MX target's marks: the\ntarget's up is then the rectangle's, not the photo's. `false`\n(or left out) for corners tapped on the photo, which are taken\nin the order the photo shows them.",
+              "type": "boolean"
             }
           },
           "required": [

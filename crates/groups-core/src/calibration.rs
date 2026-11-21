@@ -293,6 +293,8 @@ pub struct Calibration {
     reference: Reference,
     to_mm: Homography,
     to_px: Homography,
+    /// Made by [`Calibration::sheet_corners`].
+    ordered: bool,
 }
 
 impl Calibration {
@@ -314,6 +316,7 @@ impl Calibration {
             reference: Reference::TwoPoints { a, b, distance_mm },
             to_mm: Homography([[s, 0.0, -s * a.x], [0.0, -s, s * a.y], [0.0, 0.0, 1.0]]),
             to_px: Homography([[1.0 / s, 0.0, a.x], [0.0, -1.0 / s, a.y], [0.0, 0.0, 1.0]]),
+            ordered: false,
         })
     }
 
@@ -329,24 +332,40 @@ impl Calibration {
         width_mm: f64,
         height_mm: f64,
     ) -> Result<Self, CalibrationError> {
-        if corners.iter().any(|corner| !corner.is_finite())
-            || !width_mm.is_finite()
-            || !height_mm.is_finite()
-        {
-            return Err(CalibrationError::NotFinite);
-        }
-        if width_mm <= 0.0 || height_mm <= 0.0 {
-            return Err(CalibrationError::SizeNotPositive);
-        }
-        for (i, a) in corners.iter().enumerate() {
-            if corners[i + 1..]
-                .iter()
-                .any(|&b| a.distance(b) < MIN_SPACING_PX)
-            {
-                return Err(CalibrationError::TooClose);
-            }
-        }
-        let corners = sort_corners(corners)?;
+        check_rectangle(&corners, width_mm, height_mm)?;
+        Self::rectangle(sort_corners(corners)?, width_mm, height_mm, false)
+    }
+
+    /// Like [`four_corners`](Calibration::four_corners), with the corners
+    /// given in order and kept as given: the rectangle's own top-left,
+    /// top-right, bottom-right and bottom-left, whichever way the photo
+    /// shows them. The millimetres follow the rectangle (its top is up),
+    /// not the photo; `width_mm` is from its top-left to its top-right
+    /// corner. For corners that something other than a tap placed, such as
+    /// a printed target's marks.
+    pub fn sheet_corners(
+        corners: [Point; 4],
+        width_mm: f64,
+        height_mm: f64,
+    ) -> Result<Self, CalibrationError> {
+        check_rectangle(&corners, width_mm, height_mm)?;
+        check_convex(&corners)?;
+        Self::rectangle(corners, width_mm, height_mm, true)
+    }
+
+    /// Whether the corners were given in the rectangle's own order
+    /// ([`sheet_corners`](Calibration::sheet_corners)) rather than sorted as
+    /// the photo shows them.
+    pub fn is_ordered(&self) -> bool {
+        self.ordered
+    }
+
+    fn rectangle(
+        corners: [Point; 4],
+        width_mm: f64,
+        height_mm: f64,
+        ordered: bool,
+    ) -> Result<Self, CalibrationError> {
         let rectangle = [
             Point::new(0.0, height_mm),
             Point::new(width_mm, height_mm),
@@ -370,6 +389,7 @@ impl Calibration {
             },
             to_mm,
             to_px,
+            ordered,
         })
     }
 
@@ -454,12 +474,53 @@ fn sort_corners(corners: [Point; 4]) -> Result<[Point; 4], CalibrationError> {
         let angle = |p: &Point| (p.y - middle.y).atan2(p.x - middle.x);
         angle(a).total_cmp(&angle(b))
     });
+    check_convex(&sorted)?;
+    let first = (0..4)
+        .min_by(|&a, &b| {
+            let rank = |i: usize| sorted[i].x + sorted[i].y;
+            rank(a).total_cmp(&rank(b))
+        })
+        .unwrap_or(0);
+    sorted.rotate_left(first);
+    Ok(sorted)
+}
+
+/// Sizes and corners a rectangle can be made from: finite, positive and
+/// far enough apart.
+fn check_rectangle(
+    corners: &[Point; 4],
+    width_mm: f64,
+    height_mm: f64,
+) -> Result<(), CalibrationError> {
+    if corners.iter().any(|corner| !corner.is_finite())
+        || !width_mm.is_finite()
+        || !height_mm.is_finite()
+    {
+        return Err(CalibrationError::NotFinite);
+    }
+    if width_mm <= 0.0 || height_mm <= 0.0 {
+        return Err(CalibrationError::SizeNotPositive);
+    }
+    for (i, a) in corners.iter().enumerate() {
+        if corners[i + 1..]
+            .iter()
+            .any(|&b| a.distance(b) < MIN_SPACING_PX)
+        {
+            return Err(CalibrationError::TooClose);
+        }
+    }
+    Ok(())
+}
+
+/// The corners, in their order round the rectangle, turn the same way at
+/// each corner and no three are on a line.
+fn check_convex(corners: &[Point; 4]) -> Result<(), CalibrationError> {
     let min_sine = MIN_CORNER_ANGLE_DEGREES.to_radians().sin();
     let mut turns = [0.0; 4];
     for (i, turn) in turns.iter_mut().enumerate() {
-        let before = sorted[(i + 3) % 4];
-        let corner = sorted[i];
-        let after = sorted[(i + 1) % 4];
+        let before = corners[(i + 3) % 4];
+        let corner = corners[i];
+        let after = corners[(i + 1) % 4];
         let (incoming, outgoing) = (corner - before, after - corner);
         let sine = incoming.cross(outgoing) / (incoming.length() * outgoing.length());
         if sine.abs() < min_sine {
@@ -470,14 +531,7 @@ fn sort_corners(corners: [Point; 4]) -> Result<[Point; 4], CalibrationError> {
     if turns.iter().any(|&t| t.signum() != turns[0].signum()) {
         return Err(CalibrationError::NotConvex);
     }
-    let first = (0..4)
-        .min_by(|&a, &b| {
-            let rank = |i: usize| sorted[i].x + sorted[i].y;
-            rank(a).total_cmp(&rank(b))
-        })
-        .unwrap_or(0);
-    sorted.rotate_left(first);
-    Ok(sorted)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -833,6 +887,41 @@ mod tests {
         assert_eq!(
             Calibration::four_corners(square, 0.0, 50.0),
             Err(CalibrationError::SizeNotPositive)
+        );
+    }
+
+    #[test]
+    fn sheet_corners_keep_the_sheets_own_up() {
+        // A 200 × 150 rectangle at 2 px/mm, upside down on the photo: its
+        // top-left corner is at the photo's bottom right.
+        let corners = [
+            Point::new(500.0, 400.0),
+            Point::new(100.0, 400.0),
+            Point::new(100.0, 100.0),
+            Point::new(500.0, 100.0),
+        ];
+        let sheet = Calibration::sheet_corners(corners, WIDTH, HEIGHT).unwrap();
+        assert!(sheet.is_ordered());
+        let top_left = sheet.to_mm(corners[0]).unwrap();
+        assert!(top_left.distance(Point::new(0.0, HEIGHT)) < 1e-9);
+        // Up the sheet is down the photo.
+        let up = sheet.to_mm(Point::new(300.0, 230.0)).unwrap()
+            - sheet.to_mm(Point::new(300.0, 250.0)).unwrap();
+        assert!(up.distance(Point::new(0.0, -10.0)) < 1e-9, "{up:?}");
+        let photo = Calibration::four_corners(corners, WIDTH, HEIGHT).unwrap();
+        assert!(!photo.is_ordered());
+        assert!(
+            photo
+                .to_mm(corners[0])
+                .unwrap()
+                .distance(Point::new(WIDTH, 0.0))
+                < 1e-9
+        );
+        // Out of order is refused, not sorted.
+        let crossed = [corners[0], corners[2], corners[1], corners[3]];
+        assert_eq!(
+            Calibration::sheet_corners(crossed, WIDTH, HEIGHT),
+            Err(CalibrationError::NotConvex)
         );
     }
 }

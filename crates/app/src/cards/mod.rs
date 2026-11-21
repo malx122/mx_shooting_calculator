@@ -7,6 +7,7 @@ mod designs;
 pub mod dope;
 pub mod fonts;
 mod line_control;
+pub mod mx_target;
 mod pdf;
 pub mod sheet;
 pub mod stand;
@@ -199,6 +200,8 @@ pub enum Kind {
     Stand,
     Turret,
     Windage,
+    /// A target to print, with corner marks found on a photo of it.
+    MxTarget,
 }
 
 /// The hunter's card choices and stands, kept on this device.
@@ -219,6 +222,7 @@ pub struct CardSettings {
     /// Named label appearances for each rifle; device-local, like the other
     /// card settings, and not included in personal-data backups or sync.
     pub label_designs: std::collections::BTreeMap<String, LabelDesigns>,
+    pub mx_target: mx_target::MxTargetOptions,
 }
 
 /// A compass reading wanted for a field.
@@ -263,6 +267,8 @@ pub struct CardsPage {
     /// The windage label's own, so a design chosen for one label isn't
     /// updated from the other by mistake.
     windage_design_editor: DesignEditor,
+    /// The MX target as laid out, for the options it was laid out with.
+    mx_preview: Option<(mx_target::MxTargetOptions, Sheet)>,
 }
 
 impl CardsPage {
@@ -276,6 +282,7 @@ impl CardsPage {
             hunting: true,
             design_editor: DesignEditor::default(),
             windage_design_editor: DesignEditor::default(),
+            mx_preview: None,
         }
     }
 
@@ -288,9 +295,14 @@ impl CardsPage {
         let context = &ui.ctx().clone();
         let mut actions = Vec::new();
         self.hunting = hunting;
+        if self.settings.kind == Kind::MxTarget {
+            self.show_mx_target(ui);
+            return actions;
+        }
         let Some(subject) = subject else {
             egui::CentralPanel::default().show(ui, |ui| {
                 ui.heading(tr("Cards"));
+                self.kind_picker(ui);
                 ui.label(tr(
                     "Dope cards and stand cards are made for a rifle and a bullet. Add a rifle \
                      and a bullet for it first.",
@@ -356,6 +368,83 @@ impl CardsPage {
         actions
     }
 
+    /// The MX target's page: it needs no rifle.
+    fn show_mx_target(&mut self, ui: &mut egui::Ui) {
+        let options = self.settings.mx_target.clone();
+        if self
+            .mx_preview
+            .as_ref()
+            .is_none_or(|(old, _)| *old != options)
+        {
+            let sheet = mx_target::page(&options.layout());
+            self.mx_preview = Some((options, sheet));
+        }
+        if mobile::is_narrow(ui.ctx()) {
+            egui::CentralPanel::default().show(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.kind_picker(ui);
+                    self.mx_save_button(ui);
+                    let width = ui.available_width();
+                    self.mx_paint(ui, egui::vec2(width, f32::INFINITY));
+                    ui.add_space(8.0);
+                    mx_target::controls(ui, &mut self.settings.mx_target);
+                });
+            });
+            return;
+        }
+        egui::Panel::left("card-controls")
+            .resizable(true)
+            .default_size(390.0)
+            .show(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.kind_picker(ui);
+                    ui.separator();
+                    mx_target::controls(ui, &mut self.settings.mx_target);
+                });
+            });
+        egui::CentralPanel::default().show(ui, |ui| {
+            ui.horizontal_wrapped(|ui| {
+                self.mx_save_button(ui);
+                ui.separator();
+                ui.selectable_value(&mut self.true_size, false, tr("Fit"));
+                ui.selectable_value(&mut self.true_size, true, tr("Printed size"))
+                    .on_hover_text(tr("About the size it prints, on a typical screen"));
+            });
+            ui.add_space(4.0);
+            let room = ui.available_size();
+            egui::ScrollArea::both().show(ui, |ui| {
+                self.mx_paint(ui, room);
+            });
+        });
+    }
+
+    fn mx_save_button(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            if ui
+                .button(RichText::new(tr("Save PDF")).strong())
+                .on_hover_text(tr("A PDF to print or keep on the phone"))
+                .clicked()
+                && let Some((options, sheet)) = &self.mx_preview
+            {
+                let bytes = pdf::write(std::slice::from_ref(sheet), tr("MX target"));
+                self.status = Some(save(ui.ctx(), &options.file_name(), &bytes));
+            }
+            if let Some((text, error)) = &self.status {
+                if *error {
+                    ui.colored_label(ui.visuals().error_fg_color, text);
+                } else {
+                    ui.weak(text);
+                }
+            }
+        });
+    }
+
+    fn mx_paint(&self, ui: &mut egui::Ui, room: egui::Vec2) {
+        if let Some((_, sheet)) = &self.mx_preview {
+            paint_card(ui, sheet, room, self.true_size);
+        }
+    }
+
     fn kind_picker(&mut self, ui: &mut egui::Ui) {
         ui.horizontal_wrapped(|ui| {
             for (kind, label, hint) in [
@@ -378,6 +467,11 @@ impl CardsPage {
                     Kind::Windage,
                     tr("Windage label"),
                     tr("A strip for the windage turret with the winds at their clicks, a band for each range"),
+                ),
+                (
+                    Kind::MxTarget,
+                    tr("MX target"),
+                    tr("A target to print, with corner marks that set the scale and find the aim points on a photo of it"),
                 ),
             ] {
                 let selected = self.settings.kind == kind;
@@ -545,6 +639,20 @@ impl CardsPage {
                     }
                 })
             }
+            Kind::MxTarget => {
+                let sheet = mx_target::page(&self.settings.mx_target.layout());
+                Ok(Preview {
+                    pages: vec![sheet.clone()],
+                    card: sheet,
+                    text_size: None,
+                    rows: 0,
+                    columns: 0,
+                    ethical_m: None,
+                    notes: Vec::new(),
+                    plan: None,
+                    wind_plan: None,
+                })
+            }
         };
         self.preview = Some((key, preview));
     }
@@ -612,22 +720,7 @@ impl CardsPage {
         let Some(Ok(preview)) = self.current() else {
             return;
         };
-        let card = &preview.card;
-        // A point is a CSS pixel: 96 to the inch, 3.78 to the millimetre.
-        let scale = if self.true_size {
-            3.78
-        } else {
-            ((room.x - 8.0) / card.width).min((room.y - 8.0) / card.height)
-        };
-        let size = egui::vec2(card.width * scale, card.height * scale);
-        let (rect, _) = ui.allocate_exact_size(size + egui::vec2(8.0, 8.0), egui::Sense::hover());
-        let paper = egui::Rect::from_min_size(rect.min + egui::vec2(4.0, 4.0), size);
-        ui.painter().rect_filled(
-            paper.translate(egui::vec2(2.0, 3.0)),
-            2.0,
-            Color32::from_black_alpha(90),
-        );
-        card.paint(ui.painter(), paper);
+        paint_card(ui, &preview.card, room, self.true_size);
     }
 
     fn save_button(&mut self, ui: &mut egui::Ui, subject: &Subject) {
@@ -662,6 +755,10 @@ impl CardsPage {
                         format!("windage-label-{}.pdf", file_part(&subject.rifle.name)),
                         trf!("Windage label, {}", subject.rifle.name),
                     ),
+                    Kind::MxTarget => (
+                        self.settings.mx_target.file_name(),
+                        tr("MX target").to_owned(),
+                    ),
                 };
                 let bytes = pdf::write(&preview.pages, &title);
                 self.status = Some(save(ui.ctx(), &file, &bytes));
@@ -694,6 +791,7 @@ impl CardsPage {
             Kind::Stand => self.stand_controls(ui),
             Kind::Turret => self.turret_controls(ui, subject),
             Kind::Windage => self.windage_controls(ui, subject),
+            Kind::MxTarget => mx_target::controls(ui, &mut self.settings.mx_target),
         }
     }
 
@@ -1550,6 +1648,26 @@ impl CardsPage {
 }
 
 /// The card's sizes as little sheets drawn to scale, to pick one.
+/// The card fitted into `room`, or at about its printed size, on paper
+/// with a shadow.
+fn paint_card(ui: &mut egui::Ui, card: &Sheet, room: egui::Vec2, true_size: bool) {
+    // A point is a CSS pixel: 96 to the inch, 3.78 to the millimetre.
+    let scale = if true_size {
+        3.78
+    } else {
+        ((room.x - 8.0) / card.width).min((room.y - 8.0) / card.height)
+    };
+    let size = egui::vec2(card.width * scale, card.height * scale);
+    let (rect, _) = ui.allocate_exact_size(size + egui::vec2(8.0, 8.0), egui::Sense::hover());
+    let paper = egui::Rect::from_min_size(rect.min + egui::vec2(4.0, 4.0), size);
+    ui.painter().rect_filled(
+        paper.translate(egui::vec2(2.0, 3.0)),
+        2.0,
+        Color32::from_black_alpha(90),
+    );
+    card.paint(ui.painter(), paper);
+}
+
 fn size_tiles(ui: &mut egui::Ui, size: &mut CardSize, landscape: bool, sizes: &[CardSize]) {
     ui.horizontal_wrapped(|ui| {
         for &option in sizes {

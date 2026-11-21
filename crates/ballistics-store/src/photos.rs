@@ -346,13 +346,47 @@ mod tests {
             corners_px: [[0.0, 0.0], [10.0, 0.0], [10.0, 0.0], [0.0, 10.0]],
             width_mm: 100.0,
             height_mm: 100.0,
+            ordered: false,
         });
         assert!(photo.validate().is_err(), "two corners are the same");
         photo.calibration = Some(Calibration::FourCorner {
             corners_px: [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]],
             width_mm: 100.0,
             height_mm: 100.0,
+            ordered: false,
         });
         assert!(photo.validate().is_ok());
+        photo.calibration = Some(Calibration::FourCorner {
+            corners_px: [[0.0, 0.0], [10.0, 0.0], [0.0, 10.0], [10.0, 10.0]],
+            width_mm: 100.0,
+            height_mm: 100.0,
+            ordered: true,
+        });
+        assert!(
+            photo.validate().is_err(),
+            "ordered corners across the rectangle"
+        );
+        // `ordered` is written only when set, and read as false when left out.
+        let tapped = Calibration::FourCorner {
+            corners_px: [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]],
+            width_mm: 100.0,
+            height_mm: 100.0,
+            ordered: false,
+        };
+        let json = serde_json::to_value(tapped).unwrap();
+        assert!(json.get("ordered").is_none(), "{json}");
+        assert_eq!(serde_json::from_value::<Calibration>(json).unwrap(), tapped);
+        let Calibration::FourCorner { corners_px, .. } = tapped else {
+            unreachable!()
+        };
+        let marked = Calibration::FourCorner {
+            corners_px,
+            width_mm: 100.0,
+            height_mm: 100.0,
+            ordered: true,
+        };
+        let json = serde_json::to_value(marked).unwrap();
+        assert_eq!(json["ordered"], true);
+        assert_eq!(serde_json::from_value::<Calibration>(json).unwrap(), marked);
     }
 }

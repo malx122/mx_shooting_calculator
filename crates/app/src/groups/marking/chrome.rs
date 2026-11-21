@@ -9,7 +9,7 @@ use eframe::egui::{
 use super::paint::{Icon, paint_icon};
 use super::scale::{self, ScaleState};
 use super::{Command, Handle, LiveView, Marking, Step, ZoomTo};
-use crate::i18n::tr;
+use crate::i18n::{tr, trf};
 use crate::{mobile, theme};
 
 /// The smallest a tall button's label is drawn before it is cut short.
@@ -225,7 +225,7 @@ impl Marking {
     /// back, the later ones dimmed.
     fn step_chips(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
         let palette = theme::palette(ui.ctx());
-        let current = self.depth() - 1;
+        let current = self.step_index();
         for (index, step) in self.steps().iter().enumerate() {
             if index > 0 {
                 ui.label(RichText::new("›").color(palette.text_muted));
@@ -245,7 +245,7 @@ impl Marking {
     /// one named, and Cancel.
     fn phone_header(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
         let palette = theme::palette(ui.ctx());
-        let current = self.depth() - 1;
+        let current = self.step_index();
         let steps = self.steps();
         if current > 0 {
             let back = egui::Button::new(
@@ -378,6 +378,12 @@ impl Marking {
                 if tool_button(ui, Icon::Delete, tr("Delete"), shot.is_some(), false, tall) {
                     commands.push(Command::Delete);
                 }
+                if self.is_photo() {
+                    let looking = self.holes.looking();
+                    if tool_button(ui, Icon::Detect, tr("Detect"), !looking, looking, tall) {
+                        commands.push(Command::Detect);
+                    }
+                }
             }
             Step::Scale => {
                 let point = matches!(self.selected, Some(Handle::Scale(_)));
@@ -404,6 +410,34 @@ impl Marking {
             tall,
         ) {
             commands.push(Command::Redo);
+        }
+    }
+
+    /// While hole suggestions show: how many, Add and Cancel.
+    fn suggestion_bar(&self, ui: &mut Ui, commands: &mut Vec<Command>) {
+        let Some(suggestions) = self.holes.shown() else {
+            return;
+        };
+        let palette = theme::palette(ui.ctx());
+        let narrow = mobile::is_narrow(ui.ctx());
+        let found = suggestions.len();
+        let ticked = suggestions.iter().filter(|s| s.ticked).count();
+        let text = if found == 1 {
+            tr("1 hole found").to_owned()
+        } else {
+            trf!("{} holes found", found)
+        };
+        ui.label(RichText::new(text).color(palette.text).strong());
+        let add = if narrow {
+            trf!("Add {}", ticked)
+        } else {
+            trf!("Add {} ticked", ticked)
+        };
+        if primary(ui, &add, ticked > 0) {
+            commands.push(Command::AddSuggested);
+        }
+        if secondary(ui, tr("Cancel")) {
+            commands.push(Command::CancelSuggested);
         }
     }
 
@@ -502,14 +536,30 @@ impl Marking {
                 });
             });
             child.horizontal_wrapped(|ui| {
-                self.undo_redo(ui, None, commands);
-                self.step_tools(ui, None, commands);
+                if self.suggesting() {
+                    self.suggestion_bar(ui, commands);
+                } else {
+                    self.undo_redo(ui, None, commands);
+                    self.step_tools(ui, None, commands);
+                }
                 if self.step == Step::Shots {
-                    ui.separator();
+                    let font = TextStyle::Body.resolve(ui.style());
+                    let width = ui
+                        .painter()
+                        .layout_no_wrap(live.text.clone(), font, Color32::WHITE)
+                        .size()
+                        .x;
+                    if ui.available_width() < width + 30.0 {
+                        ui.end_row();
+                    } else {
+                        ui.separator();
+                    }
                     self.strip(ui, live);
                 }
             });
-            child.label(RichText::new(self.instruction(false)).color(palette.text_muted));
+            child.label(
+                RichText::new(self.instruction(false)).color(self.instruction_color(palette)),
+            );
             if self.step == Step::Scale {
                 scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
             }
@@ -556,16 +606,22 @@ impl Marking {
         );
         child.add_space(4.0);
         child.add(
-            egui::Label::new(RichText::new(self.instruction(true)).color(palette.text_muted))
-                .wrap(),
+            egui::Label::new(
+                RichText::new(self.instruction(true)).color(self.instruction_color(palette)),
+            )
+            .wrap(),
         );
         if self.step == Step::Scale {
             scale::controls(&mut child, &mut self.scale, &mut self.finder, self.sight);
         }
         let row = child.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
-            if self.step == Step::Shots {
-                let width = ((ui.available_width() - 10.0) / 6.0).floor();
+            if self.suggesting() {
+                ui.spacing_mut().item_spacing.x = 8.0;
+                self.suggestion_bar(ui, commands);
+            } else if self.step == Step::Shots {
+                let slots = if self.is_photo() { 7.0 } else { 6.0 };
+                let width = ((ui.available_width() - 10.0) / slots).floor();
                 self.undo_redo(ui, Some(width), commands);
                 self.step_tools(ui, Some(width), commands);
                 if tool_button(ui, Icon::Done, tr("Done"), true, true, Some(width)) {
