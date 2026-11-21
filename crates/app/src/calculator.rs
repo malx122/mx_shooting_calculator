@@ -2451,6 +2451,7 @@ impl ResultsView<'_> {
         ethical: Option<f64>,
     ) {
         let u = units::prefs(ui.ctx());
+        let palette = theme::palette(ui.ctx());
         let x = |metres: f64| u.show(Quantity::Distance, metres);
         let y = |metres: f64| u.show(Quantity::ShortLength, metres * 100.0);
         let max_range = self.table.end_m.max(self.inputs.target_range_m);
@@ -2543,18 +2544,18 @@ impl ResultsView<'_> {
 
                 if let Some(zone) = zone {
                     let zone_name = capitalised(self.aim.zone_name());
-                    plot_ui.hline(HLine::new(&zone_name, zone).color(theme::MEADOW));
-                    plot_ui.hline(HLine::new(&zone_name, -zone).color(theme::MEADOW));
+                    plot_ui.hline(HLine::new(&zone_name, zone).color(palette.good));
+                    plot_ui.hline(HLine::new(&zone_name, -zone).color(palette.good));
                 }
-                plot_ui.hline(HLine::new(tr("Line of sight"), 0.0).color(theme::BONE_MUTED));
+                plot_ui.hline(HLine::new(tr("Line of sight"), 0.0).color(palette.text_muted));
                 plot_ui.line(
                     Line::new(tr("Bullet"), PlotPoints::from(path))
                         .width(2.0_f32)
-                        .color(theme::BLAZE),
+                        .color(palette.accent),
                 );
-                plot_ui.vline(VLine::new(tr("Target"), target).color(theme::BONE));
+                plot_ui.vline(VLine::new(tr("Target"), target).color(palette.text));
                 if let Some(limit) = ethical.filter(|limit| *limit <= max_range) {
-                    plot_ui.vline(VLine::new(tr("Ethical limit"), x(limit)).color(theme::ALARM));
+                    plot_ui.vline(VLine::new(tr("Ethical limit"), x(limit)).color(palette.alarm));
                 }
             });
     }
@@ -2785,6 +2786,7 @@ impl ResultsView<'_> {
     ) {
         let prefs = units::prefs(ui.ctx());
         let u = &prefs;
+        let palette = theme::palette(ui.ctx());
         let show = self.table.columns;
         let unit = self.unit();
         let (other_unit, unit_name, other_name) = match unit {
@@ -2939,7 +2941,7 @@ impl ResultsView<'_> {
         let painter = ui.painter().clone();
         let measure = |text: &str, font: egui::FontId| {
             painter
-                .layout_no_wrap(text.to_owned(), font, theme::BONE)
+                .layout_no_wrap(text.to_owned(), font, palette.text)
                 .size()
                 .x
         };
@@ -2985,7 +2987,7 @@ impl ResultsView<'_> {
                 align,
                 header,
                 header_font.clone(),
-                theme::BONE_MUTED,
+                palette.text_muted,
             );
             x += width;
         }
@@ -3001,14 +3003,14 @@ impl ResultsView<'_> {
                 egui::Align2::LEFT_TOP,
                 title,
                 egui::FontId::proportional(13.0),
-                theme::BONE,
+                palette.text,
             );
             painter.line_segment(
                 [
                     egui::pos2(from, rect.top() + 18.0),
                     egui::pos2(to - 18.0, rect.top() + 18.0),
                 ],
-                egui::Stroke::new(1.0_f32, theme::FOREST_600),
+                egui::Stroke::new(1.0_f32, palette.stroke),
             );
         }
 
@@ -3031,11 +3033,11 @@ impl ResultsView<'_> {
             }
             let is_current = current == Some(index);
             let fill = if is_current {
-                theme::FOREST_700
+                palette.raised
             } else if response.hovered() {
-                theme::FOREST_600
+                palette.hover
             } else if index % 2 == 1 {
-                theme::FOREST_800
+                palette.background
             } else {
                 egui::Color32::TRANSPARENT
             };
@@ -3044,7 +3046,7 @@ impl ResultsView<'_> {
                 painter.rect_stroke(
                     rect.shrink(1.0),
                     5.0,
-                    egui::Stroke::new(2.0_f32, theme::BLAZE),
+                    egui::Stroke::new(2.0_f32, palette.accent),
                     egui::StrokeKind::Inside,
                 );
             }
@@ -3055,7 +3057,7 @@ impl ResultsView<'_> {
                         egui::vec2(4.0, rect.height() - 8.0),
                     ),
                     2.0,
-                    theme::MEADOW,
+                    palette.good,
                 );
             }
             let beyond = ethical.is_some_and(|limit| *range > limit);
@@ -3067,10 +3069,10 @@ impl ResultsView<'_> {
                     cell(row, index)
                 };
                 let colour = match (beyond, weight) {
-                    (true, Weight::Other) => theme::ALARM.gamma_multiply(0.8),
-                    (true, _) => theme::ALARM,
-                    (false, Weight::Other) => theme::BONE_MUTED,
-                    (false, _) => theme::BONE,
+                    (true, Weight::Other) if palette.dark => palette.alarm.gamma_multiply(0.8),
+                    (true, _) => palette.alarm,
+                    (false, Weight::Other) => palette.text_muted,
+                    (false, _) => palette.text,
                 };
                 let (align, at) = if *weight == Weight::Range {
                     (egui::Align2::LEFT_CENTER, x)
@@ -3092,7 +3094,7 @@ impl ResultsView<'_> {
             let y = (bottom + top) / 2.0;
             painter.line_segment(
                 [egui::pos2(left, y), egui::pos2(left + total, y)],
-                egui::Stroke::new(2.0_f32, theme::BLAZE),
+                egui::Stroke::new(2.0_f32, palette.accent),
             );
             painter.add(egui::Shape::convex_polygon(
                 vec![
@@ -3100,7 +3102,7 @@ impl ResultsView<'_> {
                     egui::pos2(left + 7.0, y),
                     egui::pos2(left, y + 5.0),
                 ],
-                theme::BLAZE,
+                palette.accent,
                 egui::Stroke::NONE,
             ));
         }
@@ -3125,14 +3127,15 @@ impl ResultsView<'_> {
 /// A quiet panel in the results' right rail: darker than the page, unlike
 /// the input tiles, which are buttons.
 fn rail_panel(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
+    let chrome = theme::palette(ui.ctx()).chrome;
     egui::Frame::new()
-        .fill(theme::FOREST_900)
+        .fill(chrome)
         .corner_radius(6)
         .inner_margin(12)
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             // The scope view masks its corners in the panel's colour.
-            ui.visuals_mut().panel_fill = theme::FOREST_900;
+            ui.visuals_mut().panel_fill = chrome;
             add(ui);
         });
 }

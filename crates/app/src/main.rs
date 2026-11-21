@@ -148,7 +148,9 @@ fn app_creator(store: Result<Store, StartupError>) -> eframe::AppCreator<'static
         match store {
             Ok(store) => {
                 photos::forget_unused(&store, &creation_context.egui_ctx);
-                Ok(Box::new(app::App::new(store)) as Box<dyn eframe::App>)
+                let mut app = app::App::new(store);
+                app.show_theme(&creation_context.egui_ctx);
+                Ok(Box::new(app) as Box<dyn eframe::App>)
             }
             Err(error) => Ok(Box::new(error)),
         }

@@ -19,7 +19,7 @@ use crate::rifles::RiflesPage;
 use crate::shot_log::ShotLogPage;
 use crate::sync::{self, Sync};
 use crate::targets::TargetsPage;
-use crate::theme;
+use crate::theme::{self, ThemeChoice};
 use crate::units::{self, UnitPrefs};
 
 const CALCULATOR_SETTINGS: &str = "calculator";
@@ -34,6 +34,8 @@ pub(crate) const LANGUAGE_SETTING: &str = "language";
 const PURPOSE_SETTING: &str = "purpose";
 /// The version the hunter last used, to mention an update once.
 const SEEN_VERSION: &str = "seen_version";
+/// Dark, Sun or the device's theme.
+const THEME_SETTING: &str = "theme";
 const UNIT_SETTINGS: &str = "units";
 
 /// What the app is used for. Target shooting leaves out everything about
@@ -153,6 +155,7 @@ enum MenuSheet {
     Main,
     Units,
     Language,
+    Theme,
     Country,
     Purpose,
     Sync,
@@ -169,6 +172,7 @@ enum MenuSheet {
 enum MenuChoice {
     Units,
     Language,
+    Theme,
     Country,
     Purpose,
     Sync,
@@ -207,6 +211,12 @@ pub struct App {
     units: UnitPrefs,
     /// The language chosen in the menu; `None` follows the device.
     language: Option<Language>,
+    theme: ThemeChoice,
+    /// The theme last handed to egui.
+    theme_shown: Option<ThemeChoice>,
+    /// The theme the web page around the app was last told about.
+    #[cfg(target_arch = "wasm32")]
+    page_theme: Option<(ThemeChoice, egui::Theme)>,
     status: Option<Status>,
     /// An import being previewed.
     import: Option<ImportPreview>,
@@ -288,6 +298,11 @@ impl App {
             .flatten()
             .flatten();
         i18n::set(Language::chosen(language));
+        let theme = store
+            .setting(THEME_SETTING)
+            .ok()
+            .flatten()
+            .unwrap_or_default();
         let mut app = Self {
             sync,
             watch: crate::watch::WatchSync::load(&store),
@@ -313,6 +328,10 @@ impl App {
             saved_inputs: inputs,
             units,
             language,
+            theme,
+            theme_shown: None,
+            #[cfg(target_arch = "wasm32")]
+            page_theme: None,
             status: None,
             import: None,
             menu: None,
@@ -631,6 +650,7 @@ impl App {
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let context = &ui.ctx().clone();
+        self.show_theme(context);
         self.units.install(context);
         mobile::apply_style(context);
         let narrow = mobile::is_narrow(context);
@@ -897,10 +917,11 @@ impl App {
 
     fn desktop_header(&mut self, ui: &mut egui::Ui) {
         let context = &ui.ctx().clone();
+        let palette = theme::palette(context);
         let header = egui::Frame::new()
-            .fill(theme::FOREST_900)
+            .fill(palette.chrome)
             .inner_margin(egui::Margin::symmetric(14, 8))
-            .stroke(theme::hairline(theme::FOREST_600));
+            .stroke(theme::hairline(palette.stroke));
         egui::Panel::top("navigation").frame(header).show(ui, |ui| {
             ui.horizontal(|ui| {
                 if brand(ui) {
@@ -932,14 +953,14 @@ impl App {
                         egui::Sense::click(),
                     );
                     let colour = if sync.hovered() {
-                        theme::BONE
+                        palette.text
                     } else {
-                        theme::BONE_MUTED
+                        palette.text_muted
                     };
                     ui.painter().circle_filled(
                         rect.left_center() + egui::vec2(4.0, 0.0),
                         4.0,
-                        self.sync.colour(),
+                        self.sync.colour(palette),
                     );
                     ui.painter().galley(
                         egui::pos2(rect.left() + dot, rect.center().y - galley.size().y / 2.0),
@@ -993,6 +1014,7 @@ impl App {
             let mut rows = vec![
                 (tr("Units…").to_owned(), MenuSheet::Units),
                 (trf!("Language: {}…", language), MenuSheet::Language),
+                (trf!("Theme: {}…", self.theme.name()), MenuSheet::Theme),
                 (trf!("Use for: {}…", purpose), MenuSheet::Purpose),
             ];
             if self.hunting() {
@@ -1160,6 +1182,33 @@ impl App {
         }
     }
 
+    /// Hands the chosen theme to egui (and to the web page) when it changed.
+    pub fn show_theme(&mut self, context: &egui::Context) {
+        if self.theme_shown != Some(self.theme) {
+            theme::choose(context, self.theme);
+            self.theme_shown = Some(self.theme);
+            context.request_repaint();
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let shown = (self.theme, context.theme());
+            // Before the first frame egui doesn't know the system's theme yet.
+            let known = self.theme != ThemeChoice::System || context.system_theme().is_some();
+            if known && self.page_theme != Some(shown) {
+                crate::web::show_theme(self.theme, theme::palette(context));
+                self.page_theme = Some(shown);
+            }
+        }
+    }
+
+    fn set_theme(&mut self, context: &egui::Context, choice: ThemeChoice) {
+        self.theme = choice;
+        self.show_theme(context);
+        if let Err(error) = self.store.set_setting(THEME_SETTING, &choice) {
+            self.report(Err(error));
+        }
+    }
+
     fn units_changed(&mut self, context: &egui::Context) {
         self.units.install(context);
         if let Err(error) = self.store.set_setting(UNIT_SETTINGS, &self.units) {
@@ -1251,10 +1300,11 @@ impl App {
 
     /// The phone's header: the logo and the menu button.
     fn phone_header(&mut self, ui: &mut egui::Ui) {
+        let palette = theme::palette(ui.ctx());
         let header = egui::Frame::new()
-            .fill(theme::FOREST_900)
+            .fill(palette.chrome)
             .inner_margin(egui::Margin::symmetric(12, 6))
-            .stroke(theme::hairline(theme::FOREST_600));
+            .stroke(theme::hairline(palette.stroke));
         egui::Panel::top("phone-header")
             .frame(header)
             .show(ui, |ui| {
@@ -1263,17 +1313,17 @@ impl App {
                         egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(30.0, 30.0)),
                     );
                     ui.add(
-                        egui::Image::new(theme::wordmark())
+                        egui::Image::new(theme::wordmark(palette))
                             .fit_to_exact_size(egui::vec2(32.0, 18.0)),
                     );
                     ui.label(
                         RichText::new(format!("v{}", crate::VERSION))
                             .small()
-                            .color(theme::BONE_MUTED),
+                            .color(palette.text_muted),
                     );
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let menu = ui.add(
-                            egui::Button::new(RichText::new("•••").color(theme::BONE))
+                            egui::Button::new(RichText::new("•••").color(palette.text))
                                 .min_size(egui::vec2(mobile::TOUCH, mobile::TOUCH)),
                         );
                         if menu.on_hover_text(tr("Menu")).clicked() {
@@ -1286,15 +1336,16 @@ impl App {
 
     /// The phone's tab bar: one tab per page.
     fn tab_bar(&mut self, ui: &mut egui::Ui) {
+        let palette = theme::palette(ui.ctx());
         let frame = egui::Frame::new()
-            .fill(theme::FOREST_900)
+            .fill(palette.chrome)
             .inner_margin(egui::Margin {
                 left: 4,
                 right: 4,
                 top: 4,
                 bottom: 10,
             })
-            .stroke(theme::hairline(theme::FOREST_600));
+            .stroke(theme::hairline(palette.stroke));
         let height = 54.0
             + frame.total_margin().sum().y
             + ui.visuals().widgets.noninteractive.bg_stroke.width.round();
@@ -1314,9 +1365,9 @@ impl App {
                     let (rect, response) =
                         ui.allocate_exact_size(egui::vec2(width, 54.0), egui::Sense::click());
                     let colour = if self.page == page {
-                        theme::BLAZE
+                        palette.accent
                     } else {
-                        theme::BONE_MUTED
+                        palette.text_muted
                     };
                     tab_icon(
                         ui.painter(),
@@ -1370,6 +1421,9 @@ impl App {
                     let language = self.language.map_or(tr("System"), Language::own_name);
                     if mobile::list_row(ui, tr("Language"), language, false).clicked() {
                         choice = Some(MenuChoice::Language);
+                    }
+                    if mobile::list_row(ui, tr("Theme"), self.theme.name(), false).clicked() {
+                        choice = Some(MenuChoice::Theme);
                     }
                     let purpose = self.purpose.unwrap_or(Purpose::Hunting);
                     if mobile::list_row(ui, tr("Use for"), purpose.name(), false).clicked() {
@@ -1482,6 +1536,7 @@ impl App {
                 match shown.inner {
                     Some(MenuChoice::Units) => self.menu = Some(MenuSheet::Units),
                     Some(MenuChoice::Language) => self.menu = Some(MenuSheet::Language),
+                    Some(MenuChoice::Theme) => self.menu = Some(MenuSheet::Theme),
                     Some(MenuChoice::Country) => self.menu = Some(MenuSheet::Country),
                     Some(MenuChoice::Purpose) => self.menu = Some(MenuSheet::Purpose),
                     Some(MenuChoice::Sync) => self.menu = Some(MenuSheet::Sync),
@@ -1693,6 +1748,26 @@ impl App {
                     self.menu = None;
                 }
             }
+            MenuSheet::Theme => {
+                let current = self.theme;
+                let shown = mobile::sheet(context, "theme", tr("Theme"), |ui| {
+                    let mut chosen = None;
+                    for choice in ThemeChoice::ALL {
+                        if mobile::list_row(ui, choice.name(), choice.detail(), current == choice)
+                            .clicked()
+                        {
+                            chosen = Some(choice);
+                        }
+                    }
+                    chosen
+                });
+                if let Some(choice) = shown.inner {
+                    self.set_theme(context, choice);
+                    self.menu = None;
+                } else if shown.closed {
+                    self.menu = None;
+                }
+            }
         }
     }
 }
@@ -1789,18 +1864,22 @@ fn tab_icon(painter: &egui::Painter, center: egui::Pos2, page: Page, colour: egu
 /// The logo in the header: icon, MX wordmark and tagline, all vector.
 /// Returns true when the version number was clicked (for What's new).
 fn brand(ui: &mut egui::Ui) -> bool {
+    let palette = theme::palette(ui.ctx());
     let mut clicked = false;
     ui.add(egui::Image::new(theme::icon()).fit_to_exact_size(egui::vec2(36.0, 36.0)));
     ui.vertical(|ui| {
         ui.spacing_mut().item_spacing.y = 3.0;
         ui.horizontal(|ui| {
-            ui.add(egui::Image::new(theme::wordmark()).fit_to_exact_size(egui::vec2(34.0, 19.0)));
+            ui.add(
+                egui::Image::new(theme::wordmark(palette))
+                    .fit_to_exact_size(egui::vec2(34.0, 19.0)),
+            );
             let version = ui
                 .add(
                     egui::Label::new(
                         RichText::new(format!("v{}", crate::VERSION))
                             .size(10.0)
-                            .color(theme::BONE_MUTED),
+                            .color(palette.text_muted),
                     )
                     .sense(egui::Sense::click()),
                 )
@@ -1820,7 +1899,7 @@ fn brand(ui: &mut egui::Ui) -> bool {
             RichText::new("SHOOTING CALCULATOR")
                 .size(9.5)
                 .strong()
-                .color(theme::BLAZE)
+                .color(palette.accent)
                 .extra_letter_spacing(1.6),
         );
     });
@@ -1916,6 +1995,77 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn every_page_draws_in_both_themes_on_a_desktop_and_a_phone() {
+        for choice in [ThemeChoice::Dark, ThemeChoice::Sun] {
+            for width in [1200.0, 390.0] {
+                let context = egui::Context::default();
+                theme::apply(&context);
+                let store = Store::open_in_memory().unwrap();
+                store.set_setting(THEME_SETTING, &choice).unwrap();
+                store
+                    .set_setting(PURPOSE_SETTING, &Purpose::Hunting)
+                    .unwrap();
+                let mut app = App::new(store);
+                app.apply(Action::LoadDemo);
+                assert!(!app.data.rifles.is_empty(), "the demo data loads");
+                let mut frame = eframe::Frame::_new_kittest();
+                let views = [
+                    (Page::Calculate, None),
+                    (Page::Rifles, None),
+                    (Page::Bullets, None),
+                    (Page::Targets, None),
+                    (Page::Cards, None),
+                    (Page::ShotLog, None),
+                    (Page::Calculate, Some(MenuSheet::Main)),
+                    (Page::Calculate, Some(MenuSheet::Theme)),
+                ];
+                for (page, menu) in views {
+                    app.page = page;
+                    app.menu = menu;
+                    for _ in 0..2 {
+                        let mut output = context.run_ui(
+                            egui::RawInput {
+                                screen_rect: Some(egui::Rect::from_min_size(
+                                    egui::Pos2::ZERO,
+                                    egui::vec2(width, 844.0),
+                                )),
+                                ..Default::default()
+                            },
+                            |ui| eframe::App::ui(&mut app, ui, &mut frame),
+                        );
+                        output.textures_delta.clear();
+                    }
+                }
+                let expected = match choice {
+                    ThemeChoice::Sun => &theme::SUN,
+                    _ => &theme::DARK,
+                };
+                assert_eq!(theme::palette(&context), expected, "{choice:?}");
+                assert_eq!(context.global_style().visuals.dark_mode, expected.dark);
+            }
+        }
+    }
+
+    #[test]
+    fn the_theme_is_kept_on_the_device() {
+        let context = egui::Context::default();
+        theme::apply(&context);
+        let store = Store::open_in_memory().unwrap();
+        let mut app = App::new(store);
+        assert_eq!(app.theme, ThemeChoice::Dark, "Dark until another is chosen");
+        app.set_theme(&context, ThemeChoice::Sun);
+        assert_eq!(theme::palette(&context), &theme::SUN);
+        let saved: Option<ThemeChoice> = app.store.setting(THEME_SETTING).unwrap();
+        assert_eq!(saved, Some(ThemeChoice::Sun));
+        app.set_theme(&context, ThemeChoice::System);
+        assert_eq!(
+            theme::palette(&context),
+            &theme::DARK,
+            "no system theme: Dark"
+        );
     }
 
     #[test]

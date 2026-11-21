@@ -97,13 +97,13 @@ pub fn show(ui: &mut egui::Ui) {
             ui.label(
                 RichText::new(crate::i18n::trf!("Version {}", release.version))
                     .heading()
-                    .color(theme::BLAZE),
+                    .color(theme::palette(ui.ctx()).accent),
             );
             if release.version == crate::VERSION {
                 ui.label(
                     RichText::new(crate::i18n::tr("this version"))
                         .small()
-                        .color(theme::MEADOW),
+                        .color(theme::palette(ui.ctx()).good),
                 );
             }
         });
@@ -133,7 +133,8 @@ fn inline(ui: &egui::Ui, text: &str) -> LayoutJob {
     let body = egui::TextStyle::Body.resolve(ui.style());
     let mono = egui::TextStyle::Monospace.resolve(ui.style());
     // Bold shows as the bright text colour against a quieter one.
-    let plain = theme::BONE_MUTED;
+    let palette = theme::palette(ui.ctx());
+    let plain = palette.text_muted;
     let mut job = LayoutJob::default();
     let mut bold = false;
     let mut rest = text;
@@ -141,7 +142,7 @@ fn inline(ui: &egui::Ui, text: &str) -> LayoutJob {
         let next = rest.find(['*', '`', '[']).unwrap_or(rest.len());
         let (before, after) = rest.split_at(next);
         let format = |bold: bool| {
-            egui::TextFormat::simple(body.clone(), if bold { theme::BONE } else { plain })
+            egui::TextFormat::simple(body.clone(), if bold { palette.text } else { plain })
         };
         if !before.is_empty() {
             job.append(before, 0.0, format(bold));

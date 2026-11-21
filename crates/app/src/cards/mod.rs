@@ -574,12 +574,13 @@ impl CardsPage {
         let Some(size) = preview.text_size else {
             return;
         };
+        let palette = theme::palette(ui.ctx());
         let (colour, verdict) = if size >= 6.5 {
-            (theme::MEADOW, tr("easy to read"))
+            (palette.good, tr("easy to read"))
         } else if size >= 5.0 {
-            (theme::AMBER, tr("small, but readable"))
+            (palette.warning, tr("small, but readable"))
         } else {
-            (theme::ALARM, tr("too small to read"))
+            (palette.alarm, tr("too small to read"))
         };
         ui.horizontal_wrapped(|ui| {
             let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
@@ -1563,10 +1564,23 @@ fn size_tiles(ui: &mut egui::Ui, size: &mut CardSize, landscape: bool, sizes: &[
             );
             let selected = *size == option;
             let painter = ui.painter();
+            let palette = theme::palette(ui.ctx());
             if response.hovered() {
-                painter.rect_filled(rect, 4.0, theme::FOREST_700);
+                painter.rect(
+                    rect,
+                    4.0,
+                    palette.raised,
+                    palette.edge,
+                    egui::StrokeKind::Inside,
+                );
             }
-            painter.rect_filled(paper, 1.5, theme::BONE);
+            painter.rect(
+                paper,
+                1.5,
+                theme::BONE,
+                palette.edge,
+                egui::StrokeKind::Outside,
+            );
             for line in 1..4 {
                 let y = paper.top() + paper.height() * line as f32 / 4.5;
                 painter.line_segment(
@@ -1581,7 +1595,7 @@ fn size_tiles(ui: &mut egui::Ui, size: &mut CardSize, landscape: bool, sizes: &[
                 painter.rect_stroke(
                     paper.expand(2.0),
                     2.0,
-                    egui::Stroke::new(2.0_f32, theme::BLAZE),
+                    egui::Stroke::new(2.0_f32, palette.accent),
                     egui::StrokeKind::Outside,
                 );
             }
@@ -1590,7 +1604,11 @@ fn size_tiles(ui: &mut egui::Ui, size: &mut CardSize, landscape: bool, sizes: &[
                 egui::Align2::CENTER_CENTER,
                 option.name(),
                 egui::FontId::proportional(12.0),
-                if selected { theme::BLAZE } else { theme::BONE },
+                if selected {
+                    palette.accent
+                } else {
+                    palette.text
+                },
             );
             if response.on_hover_text(option.hint()).clicked() {
                 *size = option;
@@ -1612,11 +1630,13 @@ fn chips(
 ) -> bool {
     let before = values.clone();
     let mut remove = None;
+    let palette = theme::palette(ui.ctx());
     ui.push_id(id, |ui| {
         ui.horizontal_wrapped(|ui| {
             for (index, value) in values.iter_mut().enumerate() {
                 egui::Frame::new()
-                    .fill(theme::FOREST_700)
+                    .fill(palette.raised)
+                    .stroke(palette.edge)
                     .corner_radius(10.0)
                     .inner_margin(egui::Margin::symmetric(6, 2))
                     .show(ui, |ui| {
@@ -1852,16 +1872,20 @@ fn look_controls(
                 });
             ui.end_row();
             ui.label(tr("Number size"));
-            ui.add(
-                egui::Slider::new(&mut options.number_size, 0.35..=0.9)
-                    .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
-                    .custom_parser(|text| {
-                        text.trim_end_matches(['%', ' '])
-                            .parse::<f64>()
-                            .ok()
-                            .map(|value| value / 100.0)
-                    }),
-            )
+            ui.scope(|ui| {
+                theme::rails(ui);
+                ui.add(
+                    egui::Slider::new(&mut options.number_size, 0.35..=0.9)
+                        .custom_formatter(|value, _| format!("{:.0} %", value * 100.0))
+                        .custom_parser(|text| {
+                            text.trim_end_matches(['%', ' '])
+                                .parse::<f64>()
+                                .ok()
+                                .map(|value| value / 100.0)
+                        }),
+                )
+            })
+            .inner
             .on_hover_text(tr("Of the band's height"));
             ui.end_row();
         });
