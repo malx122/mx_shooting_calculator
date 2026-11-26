@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A shotgun keeps its own range on Calculate:** choosing a shotgun after
+  a rifle no longer takes the rifle's 150 m or more, where shot shows no
+  pattern. A shotgun starts at 30 m, and each kind of gun gets its own
+  range back when you switch. Past 150 m the page says plainly that the
+  range is too far for shot.
+
 ## [0.12.1] - 2026-11-26
 
 ### Fixed

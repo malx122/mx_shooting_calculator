@@ -127,7 +127,15 @@ pub struct Inputs {
     pub lower_view: LowerView,
     /// For a shotgun: which of its barrels, counted from 0.
     pub barrel: usize,
+    /// Whether `target_range_m` is a shotgun's range rather than a rifle's.
+    pub range_is_shotgun: bool,
+    /// The other kind of gun's range, metres: a rifle's while a shotgun is
+    /// chosen and a shotgun's while a rifle is, so that each keeps its own.
+    pub other_range_m: Option<f64>,
 }
+
+/// A shotgun's range before the hunter has chosen one.
+const SHOTGUN_RANGE_M: f64 = 30.0;
 
 impl Default for Inputs {
     fn default() -> Self {
@@ -173,11 +181,33 @@ impl Default for Inputs {
             trajectory_3d: false,
             lower_view: LowerView::Table,
             barrel: 0,
+            range_is_shotgun: false,
+            other_range_m: None,
         }
     }
 }
 
 impl Inputs {
+    /// Takes the range for the kind of gun chosen: a shotgun after a rifle
+    /// gets the shotgun's range back (30 m the first time) and the rifle's
+    /// is kept for when a rifle is chosen again, and the other way round.
+    pub fn range_for(&mut self, shotgun: bool) {
+        if self.range_is_shotgun == shotgun {
+            return;
+        }
+        let first_time = if shotgun {
+            SHOTGUN_RANGE_M
+        } else {
+            Inputs::default().target_range_m
+        };
+        let range = self
+            .other_range_m
+            .replace(self.target_range_m)
+            .unwrap_or(first_time);
+        self.target_range_m = range;
+        self.range_is_shotgun = shotgun;
+    }
+
     /// The weather and the shot, for the engine.
     pub fn conditions(&self) -> ballistics_shot::Conditions {
         ballistics_shot::Conditions {
@@ -599,7 +629,9 @@ impl CalculatorPage {
             crate::weather::apply(&report, &mut self.inputs);
         }
         let mut actions = Vec::new();
-        if let Some(shotgun) = self.selected_shotgun(data) {
+        let shotgun = self.selected_shotgun(data);
+        self.inputs.range_for(shotgun.is_some());
+        if let Some(shotgun) = shotgun {
             self.show_shotgun(ui, data, &shotgun, &mut actions);
             return actions;
         }
@@ -3558,6 +3590,28 @@ mod tests {
     use super::*;
     use ballistics_core::DragModel;
     use ballistics_store::{VelocityPoint, ZeroWeather};
+
+    #[test]
+    fn rifles_and_shotguns_keep_their_own_ranges() {
+        let mut inputs = Inputs {
+            target_range_m: 200.0,
+            ..Inputs::default()
+        };
+        inputs.range_for(false);
+        assert_eq!(inputs.target_range_m, 200.0);
+
+        // The first shotgun starts close, not at the rifle's 200 m.
+        inputs.range_for(true);
+        assert_eq!(inputs.target_range_m, SHOTGUN_RANGE_M);
+        inputs.target_range_m = 25.0;
+        inputs.range_for(true);
+        assert_eq!(inputs.target_range_m, 25.0);
+
+        inputs.range_for(false);
+        assert_eq!(inputs.target_range_m, 200.0);
+        inputs.range_for(true);
+        assert_eq!(inputs.target_range_m, 25.0);
+    }
 
     #[test]
     fn velocity_measured_in_the_rifle_overrides_the_box() {

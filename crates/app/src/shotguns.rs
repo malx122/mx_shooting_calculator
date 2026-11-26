@@ -497,11 +497,15 @@ impl ShotgunResults {
         if let (Some(pattern), Some(swarm)) = (pattern, swarm) {
             ui.add_space(6.0);
             if range_m > SHOT_TABLE_LIMIT_M {
-                ui.weak(trf!(
-                    "The pattern is worked out to {} m; {} m is beyond it.",
-                    SHOT_TABLE_LIMIT_M,
-                    range_m.round()
-                ));
+                ui.colored_label(
+                    theme::ALARM,
+                    trf!(
+                        "{} m is too far for shot: the pattern on the animal is worked out to \
+                         {} m at most. Choose a shorter range to see it.",
+                        range_m.round(),
+                        SHOT_TABLE_LIMIT_M
+                    ),
+                );
                 return;
             }
             ui.horizontal(|ui| {
