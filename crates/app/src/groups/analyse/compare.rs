@@ -538,8 +538,8 @@ fn table(ui: &mut egui::Ui, compared: &Compared, u: &UnitPrefs) {
             }
             ui.end_row();
             ui.label(trf!("Vel. SD ({})", u.label(Quantity::Speed)));
-            for index in 0..n {
-                ui.label(compared.velocity_sd[index].map_or_else(
+            for sd in compared.velocity_sd.iter().take(n) {
+                ui.label(sd.map_or_else(
                     || "—".to_owned(),
                     |sd| format!("{:.1}", u.show(Quantity::Speed, sd)),
                 ));
