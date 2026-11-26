@@ -6,6 +6,8 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-26
+
 ### Fixed
 
 - **A shotgun keeps its own range on Calculate:** choosing a shotgun after
@@ -921,7 +923,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.0...v0.11.1
