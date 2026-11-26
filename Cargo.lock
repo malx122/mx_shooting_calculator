@@ -186,11 +186,11 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "ballistics-core"
-version = "0.12.0"
+version = "0.12.1"
 
 [[package]]
 name = "ballistics-shot"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "ballistics-core",
  "ballistics-store",
@@ -199,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "ballistics-store"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "chacha20poly1305",
  "flate2",
@@ -1501,11 +1501,11 @@ dependencies = [
 
 [[package]]
 name = "groups-core"
-version = "0.12.0"
+version = "0.12.1"
 
 [[package]]
 name = "groups-vision"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "ballistics-store",
  "groups-core",
@@ -2192,7 +2192,7 @@ checksum = "13d2233c9842d08cfe13f9eac96e207ca6a2ea10b80259ebe8ad0268be27d2af"
 
 [[package]]
 name = "mxsc"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "aes",
  "ballistics-core",
@@ -2238,7 +2238,7 @@ dependencies = [
 
 [[package]]
 name = "mxsc-mcp"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "ballistics-core",
  "ballistics-shot",

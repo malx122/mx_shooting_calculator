@@ -6,6 +6,14 @@ any release may still change things noticeably.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-26
+
+### Fixed
+
+- **0.12.0 is out at last:** its build stopped on a check that newer Rust
+  added, so 0.12.0 never reached the desktop or the web. 0.12.1 is the same
+  app.
+
 ## [0.12.0] - 2026-11-21
 
 ### Added
@@ -905,7 +913,8 @@ The first public version.
 - **Platforms:** desktop (macOS, Windows, Linux) and the web (WebAssembly,
   data kept in the browser).
 
-[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/malx122/mx_shooting_calculator/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/malx122/mx_shooting_calculator/compare/v0.10.1...v0.11.0
